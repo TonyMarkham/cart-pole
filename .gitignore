@@ -1,0 +1,10 @@
+# IDE
+.idea/
+
+# Freecad
+*.FCBak
+*.FCStd1
+
+# Python
+__pycache__/
+*.pyc
