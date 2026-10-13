@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5a92e9567519fb8488ff2f7c65095f8, type: 3}
+  m_Name: 02-Cart.Slider.joint
+  m_EditorClassIdentifier: com.greyhound.step.runtime::Greyhound.Step.StepJoint
+  root: {fileID: 11400000, guid: 8cadb91f77a9547bb96d92c7e759076c, type: 2}
+  body:
+    indices: 04000000i
+    name: asy-cart
+  mj:
+    type: 0
+    pos: {x: 0, y: 0, z: 0}
+    axis: {x: 1, y: 0, z: 0}
+    limited: 1
+    rangeLo: -0.45
+    rangeHi: 0.45
+    damping: 0
+    frictionloss: 0.05
+    armature: 0

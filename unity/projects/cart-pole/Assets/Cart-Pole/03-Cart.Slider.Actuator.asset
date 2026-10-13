@@ -1,0 +1,43 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 22119f3aa5d240906911a0ba99a26ddb, type: 3}
+  m_Name: 03-Cart.Slider.Actuator
+  m_EditorClassIdentifier: com.greyhound.step.runtime::Greyhound.Step.StepActuator
+  root: {fileID: 11400000, guid: 8cadb91f77a9547bb96d92c7e759076c, type: 2}
+  target: {fileID: 11400000, guid: 343dcbb6b7965ec60884e9ab790d3dd8, type: 2}
+  mj:
+    type: 0
+    group: 0
+    delay: 0
+    ctrllimited: 1
+    ctrlLo: -0.4
+    ctrlHi: 0.4
+    forcelimited: 1
+    forceLo: -157
+    forceHi: 157
+    lengthrangeLo: 0
+    lengthrangeHi: 0
+    gear:
+    - 1
+    - 0
+    - 0
+    - 0
+    - 0
+    - 0
+    cranklength: 0
+    kp: 8000
+    kv: 0
+    dampratio: 1
+    timeconst: 0
+    inheritrange: 0
+    damping: 0
+    armature: 0

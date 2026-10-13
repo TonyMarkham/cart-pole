@@ -1,0 +1,1412 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- exported by com.greyhound.step from asy-cart-pole -->
+<mujoco model="asy-cart-pole">
+  <compiler angle="radian" meshdir="meshes" autolimits="true" inertiafromgeom="auto" balanceinertia="false" />
+  <asset>
+    <!-- first used by: base-motor -->
+    <mesh name="mesh_000" file="mesh_000.stl" />
+    <!-- first used by: rod-clamp-16mm -->
+    <mesh name="mesh_001" file="mesh_001.stl" />
+    <!-- first used by: M5x12-Screw -->
+    <mesh name="mesh_002" file="mesh_002.stl" />
+    <!-- first used by: M5x12-Screw002 -->
+    <mesh name="mesh_003" file="mesh_003.stl" />
+    <!-- first used by: M5x12-Screw007 -->
+    <mesh name="mesh_004" file="mesh_004.stl" />
+    <!-- first used by: M5x12-Screw008 -->
+    <mesh name="mesh_005" file="mesh_005.stl" />
+    <!-- first used by: M5-Washer -->
+    <mesh name="mesh_006" file="mesh_006.stl" />
+    <!-- first used by: M5-Washer007 -->
+    <mesh name="mesh_007" file="mesh_007.stl" />
+    <!-- first used by: M5-Washer008 -->
+    <mesh name="mesh_008" file="mesh_008.stl" />
+    <!-- first used by: M5-Washer009 -->
+    <mesh name="mesh_009" file="mesh_009.stl" />
+    <!-- first used by: M5-Nut -->
+    <mesh name="mesh_010" file="mesh_010.stl" />
+    <!-- first used by: M5-Nut007 -->
+    <mesh name="mesh_011" file="mesh_011.stl" />
+    <!-- first used by: M5-Nut008 -->
+    <mesh name="mesh_012" file="mesh_012.stl" />
+    <!-- first used by: M5-Nut009 -->
+    <mesh name="mesh_013" file="mesh_013.stl" />
+    <!-- first used by: Nema23_Stepper_Motor -->
+    <mesh name="mesh_014" file="mesh_014.stl" />
+    <!-- first used by: M5x18-Screw -->
+    <mesh name="mesh_015" file="mesh_015.stl" />
+    <!-- first used by: M5x18-Screw001 -->
+    <mesh name="mesh_016" file="mesh_016.stl" />
+    <!-- first used by: M5x18-Screw002 -->
+    <mesh name="mesh_017" file="mesh_017.stl" />
+    <!-- first used by: M5x18-Screw003 -->
+    <mesh name="mesh_018" file="mesh_018.stl" />
+    <!-- first used by: M5-Washer014 -->
+    <mesh name="mesh_019" file="mesh_019.stl" />
+    <!-- first used by: M5-Washer018 -->
+    <mesh name="mesh_020" file="mesh_020.stl" />
+    <!-- first used by: M5-Washer019 -->
+    <mesh name="mesh_021" file="mesh_021.stl" />
+    <!-- first used by: M5-Washer020 -->
+    <mesh name="mesh_022" file="mesh_022.stl" />
+    <!-- first used by: M5-Nut018 -->
+    <mesh name="mesh_023" file="mesh_023.stl" />
+    <!-- first used by: M5-Nut019 -->
+    <mesh name="mesh_024" file="mesh_024.stl" />
+    <!-- first used by: M5-Nut020 -->
+    <mesh name="mesh_025" file="mesh_025.stl" />
+    <!-- first used by: M5-Nut021 -->
+    <mesh name="mesh_026" file="mesh_026.stl" />
+    <!-- first used by: pully-gt2-48t-6w-8b -->
+    <mesh name="mesh_027" file="mesh_027.stl" />
+    <!-- first used by: limit-switch -->
+    <mesh name="mesh_028" file="mesh_028.stl" />
+    <!-- first used by: washer-m2.5 -->
+    <mesh name="mesh_029" file="mesh_029.stl" />
+    <!-- first used by: screw-m2.5x0.45x12-button-head-hex -->
+    <mesh name="mesh_030" file="mesh_030.stl" />
+    <!-- first used by: nut-m2.5x0.45 -->
+    <mesh name="mesh_031" file="mesh_031.stl" />
+    <!-- first used by: bar-rd-d16x1000 -->
+    <mesh name="mesh_032" file="mesh_032.stl" />
+    <!-- first used by: base-idler -->
+    <mesh name="mesh_033" file="mesh_033.stl" />
+    <!-- first used by: rod-clamp-5mm -->
+    <mesh name="mesh_034" file="mesh_034.stl" />
+    <!-- first used by: M5x12-Screw009 -->
+    <mesh name="mesh_035" file="mesh_035.stl" />
+    <!-- first used by: M5x12-Screw015 -->
+    <mesh name="mesh_036" file="mesh_036.stl" />
+    <!-- first used by: M5x12-Screw016 -->
+    <mesh name="mesh_037" file="mesh_037.stl" />
+    <!-- first used by: M5x12-Screw017 -->
+    <mesh name="mesh_038" file="mesh_038.stl" />
+    <!-- first used by: M5x12-Screw018 -->
+    <mesh name="mesh_039" file="mesh_039.stl" />
+    <!-- first used by: M5x12-Screw019 -->
+    <mesh name="mesh_040" file="mesh_040.stl" />
+    <!-- first used by: M5x12-Screw020 -->
+    <mesh name="mesh_041" file="mesh_041.stl" />
+    <!-- first used by: M5x12-Screw021 -->
+    <mesh name="mesh_042" file="mesh_042.stl" />
+    <!-- first used by: M5-Washer021 -->
+    <mesh name="mesh_043" file="mesh_043.stl" />
+    <!-- first used by: M5-Washer022 -->
+    <mesh name="mesh_044" file="mesh_044.stl" />
+    <!-- first used by: M5-Washer023 -->
+    <mesh name="mesh_045" file="mesh_045.stl" />
+    <!-- first used by: M5-Washer024 -->
+    <mesh name="mesh_046" file="mesh_046.stl" />
+    <!-- first used by: M5-Washer025 -->
+    <mesh name="mesh_047" file="mesh_047.stl" />
+    <!-- first used by: M5-Washer026 -->
+    <mesh name="mesh_048" file="mesh_048.stl" />
+    <!-- first used by: M5-Washer027 -->
+    <mesh name="mesh_049" file="mesh_049.stl" />
+    <!-- first used by: M5-Washer028 -->
+    <mesh name="mesh_050" file="mesh_050.stl" />
+    <!-- first used by: M5-Nut022 -->
+    <mesh name="mesh_051" file="mesh_051.stl" />
+    <!-- first used by: M5-Nut015 -->
+    <mesh name="mesh_052" file="mesh_052.stl" />
+    <!-- first used by: M5-Nut016 -->
+    <mesh name="mesh_053" file="mesh_053.stl" />
+    <!-- first used by: M5-Nut023 -->
+    <mesh name="mesh_054" file="mesh_054.stl" />
+    <!-- first used by: M5-Nut024 -->
+    <mesh name="mesh_055" file="mesh_055.stl" />
+    <!-- first used by: M5-Nut025 -->
+    <mesh name="mesh_056" file="mesh_056.stl" />
+    <!-- first used by: M5-Nut026 -->
+    <mesh name="mesh_057" file="mesh_057.stl" />
+    <!-- first used by: M5-Nut027 -->
+    <mesh name="mesh_058" file="mesh_058.stl" />
+    <!-- first used by: M5-Washer029 -->
+    <mesh name="mesh_059" file="mesh_059.stl" />
+    <!-- first used by: M5-Washer030 -->
+    <mesh name="mesh_060" file="mesh_060.stl" />
+    <!-- first used by: M5-Nut028 -->
+    <mesh name="mesh_061" file="mesh_061.stl" />
+    <!-- first used by: M5-Nut029 -->
+    <mesh name="mesh_062" file="mesh_062.stl" />
+    <!-- first used by: M5x30-Screw -->
+    <mesh name="mesh_063" file="mesh_063.stl" />
+    <!-- first used by: M5x30-Screw002 -->
+    <mesh name="mesh_064" file="mesh_064.stl" />
+    <!-- first used by: bar-rd-d5x51 -->
+    <mesh name="mesh_065" file="mesh_065.stl" />
+    <!-- first used by: pully-gt2-idler-6mm-5b -->
+    <mesh name="mesh_066" file="mesh_066.stl" />
+    <!-- first used by: linear-bearing-16mm001 -->
+    <mesh name="mesh_067" file="mesh_067.stl" />
+    <!-- first used by: Pillow Block -->
+    <mesh name="mesh_068" file="mesh_068.stl" />
+    <!-- first used by: cart -->
+    <mesh name="mesh_069" file="mesh_069.stl" />
+    <!-- first used by: 5972K91_Steel Ball Bearing -->
+    <mesh name="mesh_070" file="mesh_070.stl" />
+    <!-- first used by: 5972K91_Steel Ball Bearing001 -->
+    <mesh name="mesh_071" file="mesh_071.stl" />
+    <!-- first used by: 5972K91_Steel Ball Bearing002 -->
+    <mesh name="mesh_072" file="mesh_072.stl" />
+    <!-- first used by: 5972K91_Steel Ball Bearing003 -->
+    <mesh name="mesh_073" file="mesh_073.stl" />
+    <!-- first used by: 5972K91_Steel Ball Bearing004 -->
+    <mesh name="mesh_074" file="mesh_074.stl" />
+    <!-- first used by: 5972K91_Steel Ball Bearing005 -->
+    <mesh name="mesh_075" file="mesh_075.stl" />
+    <!-- first used by: 5972K91_Steel Ball Bearing006 -->
+    <mesh name="mesh_076" file="mesh_076.stl" />
+    <!-- first used by: 5972K91_Steel Ball Bearing007 -->
+    <mesh name="mesh_077" file="mesh_077.stl" />
+    <!-- first used by: 5972K91_Steel Ball Bearing008 -->
+    <mesh name="mesh_078" file="mesh_078.stl" />
+    <!-- first used by: 5972K91_Steel Ball Bearing009 -->
+    <mesh name="mesh_079" file="mesh_079.stl" />
+    <!-- first used by: bearing-cap -->
+    <mesh name="mesh_080" file="mesh_080.stl" />
+    <!-- first used by: M5x12-Screw022 -->
+    <mesh name="mesh_081" file="mesh_081.stl" />
+    <!-- first used by: M5x12-Screw023 -->
+    <mesh name="mesh_082" file="mesh_082.stl" />
+    <!-- first used by: M5x12-Screw005 -->
+    <mesh name="mesh_083" file="mesh_083.stl" />
+    <!-- first used by: M5x12-Screw006 -->
+    <mesh name="mesh_084" file="mesh_084.stl" />
+    <!-- first used by: M5x12-Screw011 -->
+    <mesh name="mesh_085" file="mesh_085.stl" />
+    <!-- first used by: M5x12-Screw012 -->
+    <mesh name="mesh_086" file="mesh_086.stl" />
+    <!-- first used by: M5x12-Screw013 -->
+    <mesh name="mesh_087" file="mesh_087.stl" />
+    <!-- first used by: M5x12-Screw014 -->
+    <mesh name="mesh_088" file="mesh_088.stl" />
+    <!-- first used by: M5x20-Screw -->
+    <mesh name="mesh_089" file="mesh_089.stl" />
+    <!-- first used by: M5x20-Screw002 -->
+    <mesh name="mesh_090" file="mesh_090.stl" />
+    <!-- first used by: M5x20-Screw005 -->
+    <mesh name="mesh_091" file="mesh_091.stl" />
+    <!-- first used by: M5x20-Screw006 -->
+    <mesh name="mesh_092" file="mesh_092.stl" />
+    <!-- first used by: M5-Washer031 -->
+    <mesh name="mesh_093" file="mesh_093.stl" />
+    <!-- first used by: M5-Washer002 -->
+    <mesh name="mesh_094" file="mesh_094.stl" />
+    <!-- first used by: M5-Washer005 -->
+    <mesh name="mesh_095" file="mesh_095.stl" />
+    <!-- first used by: M5-Washer006 -->
+    <mesh name="mesh_096" file="mesh_096.stl" />
+    <!-- first used by: M5-Nut030 -->
+    <mesh name="mesh_097" file="mesh_097.stl" />
+    <!-- first used by: M5-Nut002 -->
+    <mesh name="mesh_098" file="mesh_098.stl" />
+    <!-- first used by: M5-Nut005 -->
+    <mesh name="mesh_099" file="mesh_099.stl" />
+    <!-- first used by: M5-Nut006 -->
+    <mesh name="mesh_100" file="mesh_100.stl" />
+    <!-- first used by: M3x12-Screw -->
+    <mesh name="mesh_101" file="mesh_101.stl" />
+    <!-- first used by: M3x12-Screw023 -->
+    <mesh name="mesh_102" file="mesh_102.stl" />
+    <!-- first used by: M3x12-Screw024 -->
+    <mesh name="mesh_103" file="mesh_103.stl" />
+    <!-- first used by: M3x12-Screw025 -->
+    <mesh name="mesh_104" file="mesh_104.stl" />
+    <!-- first used by: M3x12-Screw015 -->
+    <mesh name="mesh_105" file="mesh_105.stl" />
+    <!-- first used by: M3x12-Screw016 -->
+    <mesh name="mesh_106" file="mesh_106.stl" />
+    <!-- first used by: M3x12-Screw017 -->
+    <mesh name="mesh_107" file="mesh_107.stl" />
+    <!-- first used by: M3x12-Screw018 -->
+    <mesh name="mesh_108" file="mesh_108.stl" />
+    <!-- first used by: belt-retainer -->
+    <mesh name="mesh_109" file="mesh_109.stl" />
+    <!-- first used by: M3-Washer -->
+    <mesh name="mesh_110" file="mesh_110.stl" />
+    <!-- first used by: M3-Washer002 -->
+    <mesh name="mesh_111" file="mesh_111.stl" />
+    <!-- first used by: M3-Washer007 -->
+    <mesh name="mesh_112" file="mesh_112.stl" />
+    <!-- first used by: M3-Washer006 -->
+    <mesh name="mesh_113" file="mesh_113.stl" />
+    <!-- first used by: M3-Washer016 -->
+    <mesh name="mesh_114" file="mesh_114.stl" />
+    <!-- first used by: M3-Washer013 -->
+    <mesh name="mesh_115" file="mesh_115.stl" />
+    <!-- first used by: M3-Washer017 -->
+    <mesh name="mesh_116" file="mesh_116.stl" />
+    <!-- first used by: M3-Washer018 -->
+    <mesh name="mesh_117" file="mesh_117.stl" />
+    <!-- first used by: M3-Nut -->
+    <mesh name="mesh_118" file="mesh_118.stl" />
+    <!-- first used by: M3-Nut002 -->
+    <mesh name="mesh_119" file="mesh_119.stl" />
+    <!-- first used by: M3-Nut005 -->
+    <mesh name="mesh_120" file="mesh_120.stl" />
+    <!-- first used by: M3-Nut006 -->
+    <mesh name="mesh_121" file="mesh_121.stl" />
+    <!-- first used by: M3-Nut016 -->
+    <mesh name="mesh_122" file="mesh_122.stl" />
+    <!-- first used by: M3-Nut015 -->
+    <mesh name="mesh_123" file="mesh_123.stl" />
+    <!-- first used by: M3-Nut019 -->
+    <mesh name="mesh_124" file="mesh_124.stl" />
+    <!-- first used by: M3-Nut020 -->
+    <mesh name="mesh_125" file="mesh_125.stl" />
+    <!-- first used by: bar-rd-d8x240 -->
+    <mesh name="mesh_126" file="mesh_126.stl" />
+    <!-- first used by: pole-target-clamp -->
+    <mesh name="mesh_127" file="mesh_127.stl" />
+    <!-- first used by: pole-target-holder -->
+    <mesh name="mesh_128" file="mesh_128.stl" />
+    <!-- first used by: bar-rd-d8x500 -->
+    <mesh name="mesh_129" file="mesh_129.stl" />
+    <!-- first used by: rod-clamp-8mm -->
+    <mesh name="mesh_130" file="mesh_130.stl" />
+    <!-- first used by: spacer-8mm -->
+    <mesh name="mesh_131" file="mesh_131.stl" />
+    <!-- first used by: M5x12-Screw024 -->
+    <mesh name="mesh_132" file="mesh_132.stl" />
+    <!-- first used by: M5x12-Screw025 -->
+    <mesh name="mesh_133" file="mesh_133.stl" />
+    <!-- first used by: M5x12-Screw026 -->
+    <mesh name="mesh_134" file="mesh_134.stl" />
+    <!-- first used by: M5x12-Screw027 -->
+    <mesh name="mesh_135" file="mesh_135.stl" />
+    <!-- first used by: M5x12-Screw028 -->
+    <mesh name="mesh_136" file="mesh_136.stl" />
+    <!-- first used by: M5x12-Screw010 -->
+    <mesh name="mesh_137" file="mesh_137.stl" />
+    <!-- first used by: M5x12-Screw029 -->
+    <mesh name="mesh_138" file="mesh_138.stl" />
+    <!-- first used by: M5x12-Screw030 -->
+    <mesh name="mesh_139" file="mesh_139.stl" />
+    <!-- first used by: M5x12-Screw031 -->
+    <mesh name="mesh_140" file="mesh_140.stl" />
+    <!-- first used by: M5x12-Screw032 -->
+    <mesh name="mesh_141" file="mesh_141.stl" />
+    <!-- first used by: M5x12-Screw033 -->
+    <mesh name="mesh_142" file="mesh_142.stl" />
+    <!-- first used by: M5x12-Screw034 -->
+    <mesh name="mesh_143" file="mesh_143.stl" />
+    <!-- first used by: M5-Washer032 -->
+    <mesh name="mesh_144" file="mesh_144.stl" />
+    <!-- first used by: M5-Washer033 -->
+    <mesh name="mesh_145" file="mesh_145.stl" />
+    <!-- first used by: M5-Washer034 -->
+    <mesh name="mesh_146" file="mesh_146.stl" />
+    <!-- first used by: M5-Washer035 -->
+    <mesh name="mesh_147" file="mesh_147.stl" />
+    <!-- first used by: M5-Washer012 -->
+    <mesh name="mesh_148" file="mesh_148.stl" />
+    <!-- first used by: M5-Washer011 -->
+    <mesh name="mesh_149" file="mesh_149.stl" />
+    <!-- first used by: M5-Washer036 -->
+    <mesh name="mesh_150" file="mesh_150.stl" />
+    <!-- first used by: M5-Washer037 -->
+    <mesh name="mesh_151" file="mesh_151.stl" />
+    <!-- first used by: M5-Washer038 -->
+    <mesh name="mesh_152" file="mesh_152.stl" />
+    <!-- first used by: M5-Washer039 -->
+    <mesh name="mesh_153" file="mesh_153.stl" />
+    <!-- first used by: M5-Washer040 -->
+    <mesh name="mesh_154" file="mesh_154.stl" />
+    <!-- first used by: M5-Washer041 -->
+    <mesh name="mesh_155" file="mesh_155.stl" />
+    <!-- first used by: M5-Nut031 -->
+    <mesh name="mesh_156" file="mesh_156.stl" />
+    <!-- first used by: M5-Nut032 -->
+    <mesh name="mesh_157" file="mesh_157.stl" />
+    <!-- first used by: M5-Nut033 -->
+    <mesh name="mesh_158" file="mesh_158.stl" />
+    <!-- first used by: M5-Nut034 -->
+    <mesh name="mesh_159" file="mesh_159.stl" />
+    <!-- first used by: M5-Nut010 -->
+    <mesh name="mesh_160" file="mesh_160.stl" />
+    <!-- first used by: M5-Nut011 -->
+    <mesh name="mesh_161" file="mesh_161.stl" />
+    <!-- first used by: M5-Nut035 -->
+    <mesh name="mesh_162" file="mesh_162.stl" />
+    <!-- first used by: M5-Nut036 -->
+    <mesh name="mesh_163" file="mesh_163.stl" />
+    <!-- first used by: M5-Nut037 -->
+    <mesh name="mesh_164" file="mesh_164.stl" />
+    <!-- first used by: M5-Nut038 -->
+    <mesh name="mesh_165" file="mesh_165.stl" />
+    <!-- first used by: M5-Nut039 -->
+    <mesh name="mesh_166" file="mesh_166.stl" />
+    <!-- first used by: M5-Nut040 -->
+    <mesh name="mesh_167" file="mesh_167.stl" />
+  </asset>
+  <worldbody>
+    <!-- part: asy-cart-pole -->
+    <body name="asy-cart-pole" pos="0 0 0" quat="1 0 0 0">
+      <!-- part: asy-base-motor -->
+      <body name="asy-base-motor" pos="0.48 -1.18329133E-32 5.3290704E-17" quat="1 0 0 0">
+        <!-- part: base-motor -->
+        <body name="base-motor" pos="-4.996004E-18 -0.045 0.05" quat="1 0 0 0">
+          <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_000" />
+          <inertial pos="0.0204408355 0.0416403338 -0.03097035" quat="0.6233987 -0.6271968 -0.33263284 -0.327649" mass="0.11893642972610891" diaginertia="0.000329766568 0.000287503965 0.000104026753" />
+        </body>
+        <!-- part: rod-clamp-16mm -->
+        <body name="rod-clamp-16mm" pos="-4.996004E-18 -0.045 0.05" quat="1 0 0 0">
+          <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_001" />
+          <inertial pos="-4.031046E-18 -1.46456639E-18 0.004090056" quat="-0.5 0.5 0.5 0.5" mass="0.0038191460501967229" diaginertia="7.565256E-07 6.711467E-07 1.66176164E-07" />
+        </body>
+        <!-- part: rod-clamp-16mm001 -->
+        <body name="rod-clamp-16mm001" pos="-4.996004E-18 0.045 0.05" quat="1 0 0 0">
+          <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_001" />
+          <inertial pos="-4.031046E-18 -1.46456639E-18 0.004090056" quat="-0.5 0.5 0.5 0.5" mass="0.0038191460501967229" diaginertia="7.565256E-07 6.711467E-07 1.66176164E-07" />
+        </body>
+        <!-- part: M5x12-Screw -->
+        <body name="M5x12-Screw" pos="-4.362937E-18 -0.063 0.053" quat="1 0 0 6.45E-16">
+          <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_002" />
+          <inertial pos="3.5995834E-14 5.9848456E-19 -0.003798961" quat="0.707267463 -2.98023451E-07 2.98023451E-07 0.706946135" mass="0.002667928402341509" diaginertia="5.607913E-08 5.607913E-08 1.33813209E-08" />
+        </body>
+        <!-- part: M5x12-Screw002 -->
+        <body name="M5x12-Screw002" pos="-1.2129367E-18 -0.027 0.053" quat="1 0 0 6.45E-16">
+          <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_003" />
+          <inertial pos="3.5995834E-14 5.9848456E-19 -0.003798961" quat="0.707267463 -2.98023451E-07 2.98023451E-07 0.706946135" mass="0.002667928402341509" diaginertia="5.607913E-08 5.607913E-08 1.33813209E-08" />
+        </body>
+        <!-- part: M5x12-Screw007 -->
+        <body name="M5x12-Screw007" pos="-2.99760224E-18 0.027 0.053" quat="1 0 0 7.005112E-16">
+          <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_004" />
+          <inertial pos="3.5995834E-14 5.9848456E-19 -0.003798961" quat="0.707267463 -2.98023451E-07 2.98023451E-07 0.706946135" mass="0.002667928402341509" diaginertia="5.607913E-08 5.607913E-08 1.33813209E-08" />
+        </body>
+        <!-- part: M5x12-Screw008 -->
+        <body name="M5x12-Screw008" pos="-3.944405E-18 0.063 0.053" quat="1 0 0 7.005112E-16">
+          <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_005" />
+          <inertial pos="3.5995834E-14 5.9848456E-19 -0.003798961" quat="0.707267463 -2.98023451E-07 2.98023451E-07 0.706946135" mass="0.002667928402341509" diaginertia="5.607913E-08 5.607913E-08 1.33813209E-08" />
+        </body>
+        <!-- part: M5-Washer -->
+        <body name="M5-Washer" pos="-5.32907056E-18 -0.063 0.047" quat="0 1 0 0">
+          <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_006" />
+          <inertial pos="-5.86384763E-17 -1.84014612E-19 0.000492760155" quat="-0.4985746 0.501421332 0.4985746 0.501421332" mass="0.00043577387432931937" diaginertia="6.915349E-09 3.49325768E-09 3.49325768E-09" />
+        </body>
+        <!-- part: M5-Washer007 -->
+        <body name="M5-Washer007" pos="-5.32907056E-18 -0.027 0.047" quat="0 1 0 0">
+          <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_007" />
+          <inertial pos="-5.86384763E-17 -1.84014612E-19 0.000492760155" quat="-0.4985746 0.501421332 0.4985746 0.501421332" mass="0.00043577387432931937" diaginertia="6.915349E-09 3.49325768E-09 3.49325768E-09" />
+        </body>
+        <!-- part: M5-Washer008 -->
+        <body name="M5-Washer008" pos="-5.32907056E-18 0.027 0.047" quat="0 1 0 0">
+          <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_008" />
+          <inertial pos="-5.86384763E-17 -1.84014612E-19 0.000492760155" quat="-0.4985746 0.501421332 0.4985746 0.501421332" mass="0.00043577387432931937" diaginertia="6.915349E-09 3.49325768E-09 3.49325768E-09" />
+        </body>
+        <!-- part: M5-Washer009 -->
+        <body name="M5-Washer009" pos="-5.32907056E-18 0.063 0.047" quat="0 1 0 0">
+          <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_009" />
+          <inertial pos="-5.86384763E-17 -1.84014612E-19 0.000492760155" quat="-0.4985746 0.501421332 0.4985746 0.501421332" mass="0.00043577387432931937" diaginertia="6.915349E-09 3.49325768E-09 3.49325768E-09" />
+        </body>
+        <!-- part: M5-Nut -->
+        <body name="M5-Nut" pos="-5.99999965E-18 -0.063 0.0413" quat="1 0 0 0">
+          <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_010" />
+          <inertial pos="-5.480601E-14 -2.8429933E-17 0.0023500002" quat="0.50191766 -0.498074949 -0.501917839 -0.498074949" mass="0.0015232949010801022" diaginertia="1.689134E-08 1.11607905E-08 1.11607905E-08" />
+        </body>
+        <!-- part: M5-Nut007 -->
+        <body name="M5-Nut007" pos="-5.99999965E-18 -0.027 0.0413" quat="1 0 0 0">
+          <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_011" />
+          <inertial pos="-5.480601E-14 -2.8429933E-17 0.0023500002" quat="0.50191766 -0.498074949 -0.501917839 -0.498074949" mass="0.0015232949010801022" diaginertia="1.689134E-08 1.11607905E-08 1.11607905E-08" />
+        </body>
+        <!-- part: M5-Nut008 -->
+        <body name="M5-Nut008" pos="-5.99999965E-18 0.027 0.0413" quat="1 0 0 0">
+          <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_012" />
+          <inertial pos="-5.480601E-14 -2.8429933E-17 0.0023500002" quat="0.50191766 -0.498074949 -0.501917839 -0.498074949" mass="0.0015232949010801022" diaginertia="1.689134E-08 1.11607905E-08 1.11607905E-08" />
+        </body>
+        <!-- part: M5-Nut009 -->
+        <body name="M5-Nut009" pos="-5.99999965E-18 0.063 0.0413" quat="1 0 0 0">
+          <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_013" />
+          <inertial pos="-5.480601E-14 -2.8429933E-17 0.0023500002" quat="0.50191766 -0.498074949 -0.501917839 -0.498074949" mass="0.0015232949010801022" diaginertia="1.689134E-08 1.11607905E-08 1.11607905E-08" />
+        </body>
+        <!-- part: Nema23_Stepper_Motor -->
+        <body name="Nema23_Stepper_Motor" pos="0.045 0.0980500057 0.03508" quat="0 1 3.330669E-16 0">
+          <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_014" />
+          <inertial pos="2.15512755E-05 0.0415128469 6.48215064E-07" quat="-0.4999547 0.4988528 0.50111 0.50008" mass="0.00023550663618596444" diaginertia="1.90399717E-07 1.89202581E-07 1.07297105E-07" />
+        </body>
+        <!-- part: M5x18-Screw -->
+        <body name="M5x18-Screw" pos="0.0685 0.0212000012 0.05878" quat="-0.5 0.5 0.5 0.5">
+          <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_015" />
+          <inertial pos="2.6726727E-14 4.638837E-19 -0.006658197" quat="0.00022634858 0 -5.960463E-08 1" mass="0.0035927347158743648" diaginertia="1.45052013E-07 1.45052013E-07 1.62713381E-08" />
+        </body>
+        <!-- part: M5x18-Screw001 -->
+        <body name="M5x18-Screw001" pos="0.02125 0.0212000012 0.05878" quat="-0.5 0.5 0.5 0.5">
+          <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_016" />
+          <inertial pos="2.6726727E-14 4.638837E-19 -0.006658197" quat="0.00022634858 0 -5.960463E-08 1" mass="0.0035927347158743648" diaginertia="1.45052013E-07 1.45052013E-07 1.62713381E-08" />
+        </body>
+        <!-- part: M5x18-Screw002 -->
+        <body name="M5x18-Screw002" pos="0.02125 0.0212000012 0.01153" quat="-0.5 0.5 0.5 0.5">
+          <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_017" />
+          <inertial pos="2.6726727E-14 4.638837E-19 -0.006658197" quat="0.00022634858 0 -5.960463E-08 1" mass="0.0035927347158743648" diaginertia="1.45052013E-07 1.45052013E-07 1.62713381E-08" />
+        </body>
+        <!-- part: M5x18-Screw003 -->
+        <body name="M5x18-Screw003" pos="0.0685 0.0212000012 0.01153" quat="-0.5 0.5 0.5 0.5">
+          <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_018" />
+          <inertial pos="2.6726727E-14 4.638837E-19 -0.006658197" quat="0.00022634858 0 -5.960463E-08 1" mass="0.0035927347158743648" diaginertia="1.45052013E-07 1.45052013E-07 1.62713381E-08" />
+        </body>
+        <!-- part: M5-Washer014 -->
+        <body name="M5-Washer014" pos="0.0686200038 0.0133500006 0.0587" quat="0.7071067 0.707106948 -1.72879769E-16 1.72879769E-16">
+          <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_019" />
+          <inertial pos="-5.86384763E-17 -1.84014612E-19 0.000492760155" quat="-0.4985746 0.501421332 0.4985746 0.501421332" mass="0.00043577387432931937" diaginertia="6.915349E-09 3.49325768E-09 3.49325768E-09" />
+        </body>
+        <!-- part: M5-Washer018 -->
+        <body name="M5-Washer018" pos="0.02138 0.0133500006 0.0587" quat="0.7071067 0.707106948 -1.72879769E-16 1.72879769E-16">
+          <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_020" />
+          <inertial pos="-5.86384763E-17 -1.84014612E-19 0.000492760155" quat="-0.4985746 0.501421332 0.4985746 0.501421332" mass="0.00043577387432931937" diaginertia="6.915349E-09 3.49325768E-09 3.49325768E-09" />
+        </body>
+        <!-- part: M5-Washer019 -->
+        <body name="M5-Washer019" pos="0.0686200038 0.0133500006 0.01146" quat="0.7071067 0.707106948 0 0">
+          <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_021" />
+          <inertial pos="-5.86384763E-17 -1.84014612E-19 0.000492760155" quat="-0.4985746 0.501421332 0.4985746 0.501421332" mass="0.00043577387432931937" diaginertia="6.915349E-09 3.49325768E-09 3.49325768E-09" />
+        </body>
+        <!-- part: M5-Washer020 -->
+        <body name="M5-Washer020" pos="0.02138 0.0133500006 0.01146" quat="0.7071067 0.707106948 0 0">
+          <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_022" />
+          <inertial pos="-5.86384763E-17 -1.84014612E-19 0.000492760155" quat="-0.4985746 0.501421332 0.4985746 0.501421332" mass="0.00043577387432931937" diaginertia="6.915349E-09 3.49325768E-09 3.49325768E-09" />
+        </body>
+        <!-- part: M5-Nut018 -->
+        <body name="M5-Nut018" pos="0.02138 0.00765 0.01146" quat="0.7071067 -0.707106948 0 0">
+          <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_023" />
+          <inertial pos="-5.480601E-14 -2.8429933E-17 0.0023500002" quat="0.50191766 -0.498074949 -0.501917839 -0.498074949" mass="0.0015232949010801022" diaginertia="1.689134E-08 1.11607905E-08 1.11607905E-08" />
+        </body>
+        <!-- part: M5-Nut019 -->
+        <body name="M5-Nut019" pos="0.0686200038 0.00765 0.0587" quat="0.7071067 -0.707106948 -1.72879769E-16 -1.72879769E-16">
+          <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_024" />
+          <inertial pos="-5.480601E-14 -2.8429933E-17 0.0023500002" quat="0.50191766 -0.498074949 -0.501917839 -0.498074949" mass="0.0015232949010801022" diaginertia="1.689134E-08 1.11607905E-08 1.11607905E-08" />
+        </body>
+        <!-- part: M5-Nut020 -->
+        <body name="M5-Nut020" pos="0.02138 0.00765 0.0587" quat="0.7071067 -0.707106948 -1.72879769E-16 -1.72879769E-16">
+          <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_025" />
+          <inertial pos="-5.480601E-14 -2.8429933E-17 0.0023500002" quat="0.50191766 -0.498074949 -0.501917839 -0.498074949" mass="0.0015232949010801022" diaginertia="1.689134E-08 1.11607905E-08 1.11607905E-08" />
+        </body>
+        <!-- part: M5-Nut021 -->
+        <body name="M5-Nut021" pos="0.0686200038 0.00765 0.01146" quat="0.7071067 -0.707106948 0 0">
+          <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_026" />
+          <inertial pos="-5.480601E-14 -2.8429933E-17 0.0023500002" quat="0.50191766 -0.498074949 -0.501917839 -0.498074949" mass="0.0015232949010801022" diaginertia="1.689134E-08 1.11607905E-08 1.11607905E-08" />
+        </body>
+        <!-- part: pully-gt2-48t-6w-8b -->
+        <body name="pully-gt2-48t-6w-8b" pos="0.045 0.0121 0.03508" quat="-2.66972265E-16 -0.7071068 0 0.7071068">
+          <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_027" />
+          <inertial pos="-3.344131E-05 0.010304057 -3.34418837E-05" quat="0.6515819 0.268983752 0.274695665 0.6539351" mass="0.023969943880355685" diaginertia="2.73872479E-06 1.84285238E-06 1.84283761E-06" />
+        </body>
+        <!-- part: limit-switch -->
+        <body name="limit-switch" pos="-6.62650542E-18 0.00025 0.06675" quat="-0.5 -0.5 0.5 0.5">
+          <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_028" />
+          <inertial pos="0.000184824647 9.837273E-20 0.002561988" quat="0.5069606 0.492941141 0.492941141 0.5069607" mass="1.175067560695524E-06" diaginertia="5.10462124E-11 4.24739133E-11 1.54796471E-11" />
+        </body>
+        <!-- part: washer-m2.5 -->
+        <body name="washer-m2.5" pos="-7.346922E-18 -0.005 0.0603499971" quat="1 0 0 0">
+          <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_029" />
+          <inertial pos="-7.749287E-20 -1.64635567E-20 2.46953366E-20" quat="0.270598054 0.6532815 -0.270598054 0.6532815" mass="0.00010587324433450339" diaginertia="5.72477066E-10 2.89397367E-10 2.89397367E-10" />
+        </body>
+        <!-- part: screw-m2.5x0.45x12-button-head-hex -->
+        <body name="screw-m2.5x0.45x12-button-head-hex" pos="-6.79736247E-18 -0.005 0.0653" quat="0 1 0 0">
+          <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_030" />
+          <inertial pos="-3.92099339E-11 4.84911156E-13 0.0006922578" quat="0.6601175 -3.278257E-07 3.10535967E-07 0.7511623" mass="0.00058334826676255391" diaginertia="9.950196E-09 9.950196E-09 6.407189E-10" />
+        </body>
+        <!-- part: washer-m2.001 -->
+        <body name="washer-m2.001" pos="-6.26001437E-18 -0.005 0.07014" quat="1 0 0 0">
+          <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_029" />
+          <inertial pos="-7.749287E-20 -1.64635567E-20 2.46953366E-20" quat="0.270598054 0.6532815 -0.270598054 0.6532815" mass="0.00010587324433450339" diaginertia="5.72477066E-10 2.89397367E-10 2.89397367E-10" />
+        </body>
+        <!-- part: nut-m2.5x0.45 -->
+        <body name="nut-m2.5x0.45" pos="-6.11568541E-18 -0.005 0.0714400038" quat="1 0 0 0">
+          <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_031" />
+          <inertial pos="-2.68003242E-09 4.896248E-10 -4.184664E-14" quat="0.269830674 0.653598547 -0.2698305 0.6535992" mass="0.00025858689165677971" diaginertia="1.10083032E-09 6.342579E-10 6.34240771E-10" />
+        </body>
+        <!-- part: washer-m2.002 -->
+        <body name="washer-m2.002" pos="-7.346922E-18 0.005 0.0603499971" quat="1 0 0 0">
+          <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_029" />
+          <inertial pos="-7.749287E-20 -1.64635567E-20 2.46953366E-20" quat="0.270598054 0.6532815 -0.270598054 0.6532815" mass="0.00010587324433450339" diaginertia="5.72477066E-10 2.89397367E-10 2.89397367E-10" />
+        </body>
+        <!-- part: screw-m2.5x0.45x12-button-head-hex001 -->
+        <body name="screw-m2.5x0.45x12-button-head-hex001" pos="-6.79736247E-18 0.005 0.0653" quat="0 1 0 0">
+          <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_030" />
+          <inertial pos="-3.92099339E-11 4.84911156E-13 0.0006922578" quat="0.6601175 -3.278257E-07 3.10535967E-07 0.7511623" mass="0.00058334826676255391" diaginertia="9.950196E-09 9.950196E-09 6.407189E-10" />
+        </body>
+        <!-- part: washer-m2.003 -->
+        <body name="washer-m2.003" pos="-8.178871E-18 0.005 0.07015" quat="0.7071067 0 0 -0.707106948">
+          <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_029" />
+          <inertial pos="-7.749287E-20 -1.64635567E-20 2.46953366E-20" quat="0.270598054 0.6532815 -0.270598054 0.6532815" mass="0.00010587324433450339" diaginertia="5.72477066E-10 2.89397367E-10 2.89397367E-10" />
+        </body>
+        <!-- part: nut-m2.5x0.001 -->
+        <body name="nut-m2.5x0.001" pos="-9.10073457E-18 0.005 0.071449995" quat="0.7071067 0 0 -0.707106948">
+          <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_031" />
+          <inertial pos="-2.68003242E-09 4.896248E-10 -4.184664E-14" quat="0.269830674 0.653598547 -0.2698305 0.6535992" mass="0.00025858689165677971" diaginertia="1.10083032E-09 6.342579E-10 6.34240771E-10" />
+        </body>
+      </body>
+      <!-- part: bar-rd-d16x1000 -->
+      <body name="bar-rd-d16x1000" pos="-0.01 -0.045 0.05" quat="1 0 0 0">
+        <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_032" />
+        <inertial pos="-9.264037E-18 -1.01325406E-18 -2.36154869E-19" quat="0.500007331 0.499992669 0.5000075 0.499992669" mass="1.5783361902002393" diaginertia="0.131553277 0.131553277 5.05067546E-05" />
+      </body>
+      <!-- part: bar-rd-d16x1001 -->
+      <body name="bar-rd-d16x1001" pos="-0.01 0.045 0.05" quat="1 0 0 0">
+        <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_032" />
+        <inertial pos="-9.264037E-18 -1.01325406E-18 -2.36154869E-19" quat="0.500007331 0.499992669 0.5000075 0.499992669" mass="1.5783361902002393" diaginertia="0.131553277 0.131553277 5.05067546E-05" />
+      </body>
+      <!-- part: asy-base-idler -->
+      <body name="asy-base-idler" pos="-0.485 -3.35536861E-18 -8.305949E-17" quat="1 0 0 0">
+        <!-- part: base-idler -->
+        <body name="base-idler" pos="-0.01 0.045 0.05" quat="6.123234E-17 0 0 1">
+          <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_033" />
+          <inertial pos="0.0284412727 0.045 -0.0287067574" quat="0.5631441 -0.5631441 -0.4276315 -0.4276315" mass="0.16917544422242789" diaginertia="0.000459085277 0.000399056415 0.000163551929" />
+        </body>
+        <!-- part: rod-clamp-16mm002 -->
+        <body name="rod-clamp-16mm002" pos="-0.01 0.045 0.05" quat="1 0 0 0">
+          <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_001" />
+          <inertial pos="-4.031046E-18 -1.46456639E-18 0.004090056" quat="-0.5 0.5 0.5 0.5" mass="0.0038191460501967229" diaginertia="7.565256E-07 6.711467E-07 1.66176164E-07" />
+        </body>
+        <!-- part: rod-clamp-16mm003 -->
+        <body name="rod-clamp-16mm003" pos="-0.01 -0.045 0.05" quat="1 0 0 0">
+          <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_001" />
+          <inertial pos="-4.031046E-18 -1.46456639E-18 0.004090056" quat="-0.5 0.5 0.5 0.5" mass="0.0038191460501967229" diaginertia="7.565256E-07 6.711467E-07 1.66176164E-07" />
+        </body>
+        <!-- part: rod-clamp-5mm -->
+        <body name="rod-clamp-5mm" pos="-0.07 0.015 0.044" quat="0.7071067 0 0 -0.707106948">
+          <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_034" />
+          <inertial pos="-2.367612E-16 7.15279671E-19 0.001974478" quat="-0.5 0.5 0.5 0.5" mass="0.0016211921542641358" diaginertia="1.73371888E-07 1.48788928E-07 2.96011162E-08" />
+        </body>
+        <!-- part: rod-clamp-5mm001 -->
+        <body name="rod-clamp-5mm001" pos="-0.07 -0.015 0.044" quat="0.7071067 0 0 -0.707106948">
+          <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_034" />
+          <inertial pos="-2.367612E-16 7.15279671E-19 0.001974478" quat="-0.5 0.5 0.5 0.5" mass="0.0016211921542641358" diaginertia="1.73371888E-07 1.48788928E-07 2.96011162E-08" />
+        </body>
+        <!-- part: M5x12-Screw009 -->
+        <body name="M5x12-Screw009" pos="-0.01 0.063 0.053" quat="1 0 0 0">
+          <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_035" />
+          <inertial pos="3.5995834E-14 5.9848456E-19 -0.003798961" quat="0.707267463 -2.98023451E-07 2.98023451E-07 0.706946135" mass="0.002667928402341509" diaginertia="5.607913E-08 5.607913E-08 1.33813209E-08" />
+        </body>
+        <!-- part: M5x12-Screw015 -->
+        <body name="M5x12-Screw015" pos="-0.01 0.027 0.053" quat="1 0 0 0">
+          <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_036" />
+          <inertial pos="3.5995834E-14 5.9848456E-19 -0.003798961" quat="0.707267463 -2.98023451E-07 2.98023451E-07 0.706946135" mass="0.002667928402341509" diaginertia="5.607913E-08 5.607913E-08 1.33813209E-08" />
+        </body>
+        <!-- part: M5x12-Screw016 -->
+        <body name="M5x12-Screw016" pos="-0.01 -0.027 0.053" quat="1 0 0 0">
+          <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_037" />
+          <inertial pos="3.5995834E-14 5.9848456E-19 -0.003798961" quat="0.707267463 -2.98023451E-07 2.98023451E-07 0.706946135" mass="0.002667928402341509" diaginertia="5.607913E-08 5.607913E-08 1.33813209E-08" />
+        </body>
+        <!-- part: M5x12-Screw017 -->
+        <body name="M5x12-Screw017" pos="-0.01 -0.063 0.053" quat="1 0 0 0">
+          <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_038" />
+          <inertial pos="3.5995834E-14 5.9848456E-19 -0.003798961" quat="0.707267463 -2.98023451E-07 2.98023451E-07 0.706946135" mass="0.002667928402341509" diaginertia="5.607913E-08 5.607913E-08 1.33813209E-08" />
+        </body>
+        <!-- part: M5x12-Screw018 -->
+        <body name="M5x12-Screw018" pos="-0.08 0.015 0.047" quat="0.7071067 0 0 -0.707106948">
+          <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_039" />
+          <inertial pos="3.5995834E-14 5.9848456E-19 -0.003798961" quat="0.707267463 -2.98023451E-07 2.98023451E-07 0.706946135" mass="0.002667928402341509" diaginertia="5.607913E-08 5.607913E-08 1.33813209E-08" />
+        </body>
+        <!-- part: M5x12-Screw019 -->
+        <body name="M5x12-Screw019" pos="-0.06 0.015 0.047" quat="0.7071067 0 0 -0.707106948">
+          <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_040" />
+          <inertial pos="3.5995834E-14 5.9848456E-19 -0.003798961" quat="0.707267463 -2.98023451E-07 2.98023451E-07 0.706946135" mass="0.002667928402341509" diaginertia="5.607913E-08 5.607913E-08 1.33813209E-08" />
+        </body>
+        <!-- part: M5x12-Screw020 -->
+        <body name="M5x12-Screw020" pos="-0.08 -0.015 0.047" quat="0.7071067 0 0 -0.707106948">
+          <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_041" />
+          <inertial pos="3.5995834E-14 5.9848456E-19 -0.003798961" quat="0.707267463 -2.98023451E-07 2.98023451E-07 0.706946135" mass="0.002667928402341509" diaginertia="5.607913E-08 5.607913E-08 1.33813209E-08" />
+        </body>
+        <!-- part: M5x12-Screw021 -->
+        <body name="M5x12-Screw021" pos="-0.06 -0.015 0.047" quat="0.7071067 0 0 -0.707106948">
+          <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_042" />
+          <inertial pos="3.5995834E-14 5.9848456E-19 -0.003798961" quat="0.707267463 -2.98023451E-07 2.98023451E-07 0.706946135" mass="0.002667928402341509" diaginertia="5.607913E-08 5.607913E-08 1.33813209E-08" />
+        </body>
+        <!-- part: M5-Washer021 -->
+        <body name="M5-Washer021" pos="-0.01 0.063 0.047" quat="0 0 1 0">
+          <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_043" />
+          <inertial pos="-5.86384763E-17 -1.84014612E-19 0.000492760155" quat="-0.4985746 0.501421332 0.4985746 0.501421332" mass="0.00043577387432931937" diaginertia="6.915349E-09 3.49325768E-09 3.49325768E-09" />
+        </body>
+        <!-- part: M5-Washer022 -->
+        <body name="M5-Washer022" pos="-0.01 0.027 0.047" quat="0 0 1 0">
+          <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_044" />
+          <inertial pos="-5.86384763E-17 -1.84014612E-19 0.000492760155" quat="-0.4985746 0.501421332 0.4985746 0.501421332" mass="0.00043577387432931937" diaginertia="6.915349E-09 3.49325768E-09 3.49325768E-09" />
+        </body>
+        <!-- part: M5-Washer023 -->
+        <body name="M5-Washer023" pos="-0.01 -0.027 0.047" quat="0 0 1 0">
+          <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_045" />
+          <inertial pos="-5.86384763E-17 -1.84014612E-19 0.000492760155" quat="-0.4985746 0.501421332 0.4985746 0.501421332" mass="0.00043577387432931937" diaginertia="6.915349E-09 3.49325768E-09 3.49325768E-09" />
+        </body>
+        <!-- part: M5-Washer024 -->
+        <body name="M5-Washer024" pos="-0.01 -0.063 0.047" quat="0 0 1 0">
+          <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_046" />
+          <inertial pos="-5.86384763E-17 -1.84014612E-19 0.000492760155" quat="-0.4985746 0.501421332 0.4985746 0.501421332" mass="0.00043577387432931937" diaginertia="6.915349E-09 3.49325768E-09 3.49325768E-09" />
+        </body>
+        <!-- part: M5-Washer025 -->
+        <body name="M5-Washer025" pos="-0.08 0.015 0.041" quat="0 0 1 0">
+          <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_047" />
+          <inertial pos="-5.86384763E-17 -1.84014612E-19 0.000492760155" quat="-0.4985746 0.501421332 0.4985746 0.501421332" mass="0.00043577387432931937" diaginertia="6.915349E-09 3.49325768E-09 3.49325768E-09" />
+        </body>
+        <!-- part: M5-Washer026 -->
+        <body name="M5-Washer026" pos="-0.06 0.015 0.041" quat="0 0 1 0">
+          <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_048" />
+          <inertial pos="-5.86384763E-17 -1.84014612E-19 0.000492760155" quat="-0.4985746 0.501421332 0.4985746 0.501421332" mass="0.00043577387432931937" diaginertia="6.915349E-09 3.49325768E-09 3.49325768E-09" />
+        </body>
+        <!-- part: M5-Washer027 -->
+        <body name="M5-Washer027" pos="-0.08 -0.015 0.041" quat="0 0 1 0">
+          <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_049" />
+          <inertial pos="-5.86384763E-17 -1.84014612E-19 0.000492760155" quat="-0.4985746 0.501421332 0.4985746 0.501421332" mass="0.00043577387432931937" diaginertia="6.915349E-09 3.49325768E-09 3.49325768E-09" />
+        </body>
+        <!-- part: M5-Washer028 -->
+        <body name="M5-Washer028" pos="-0.06 -0.015 0.041" quat="0 0 1 0">
+          <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_050" />
+          <inertial pos="-5.86384763E-17 -1.84014612E-19 0.000492760155" quat="-0.4985746 0.501421332 0.4985746 0.501421332" mass="0.00043577387432931937" diaginertia="6.915349E-09 3.49325768E-09 3.49325768E-09" />
+        </body>
+        <!-- part: M5-Nut022 -->
+        <body name="M5-Nut022" pos="-0.01 0.063 0.0413" quat="0 0 0 1">
+          <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_051" />
+          <inertial pos="-5.480601E-14 -2.8429933E-17 0.0023500002" quat="0.50191766 -0.498074949 -0.501917839 -0.498074949" mass="0.0015232949010801022" diaginertia="1.689134E-08 1.11607905E-08 1.11607905E-08" />
+        </body>
+        <!-- part: M5-Nut015 -->
+        <body name="M5-Nut015" pos="-0.01 0.027 0.0415165052" quat="0 0 0 1">
+          <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_052" />
+          <inertial pos="-5.480601E-14 -2.8429933E-17 0.0023500002" quat="0.50191766 -0.498074949 -0.501917839 -0.498074949" mass="0.0015232949010801022" diaginertia="1.689134E-08 1.11607905E-08 1.11607905E-08" />
+        </body>
+        <!-- part: M5-Nut016 -->
+        <body name="M5-Nut016" pos="-0.01 -0.027 0.0415165052" quat="0 0 0 1">
+          <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_053" />
+          <inertial pos="-5.480601E-14 -2.8429933E-17 0.0023500002" quat="0.50191766 -0.498074949 -0.501917839 -0.498074949" mass="0.0015232949010801022" diaginertia="1.689134E-08 1.11607905E-08 1.11607905E-08" />
+        </body>
+        <!-- part: M5-Nut023 -->
+        <body name="M5-Nut023" pos="-0.01 -0.063 0.0415165052" quat="0 0 0 1">
+          <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_054" />
+          <inertial pos="-5.480601E-14 -2.8429933E-17 0.0023500002" quat="0.50191766 -0.498074949 -0.501917839 -0.498074949" mass="0.0015232949010801022" diaginertia="1.689134E-08 1.11607905E-08 1.11607905E-08" />
+        </body>
+        <!-- part: M5-Nut024 -->
+        <body name="M5-Nut024" pos="-0.08 0.015 0.0352999978" quat="0 0 0 1">
+          <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_055" />
+          <inertial pos="-5.480601E-14 -2.8429933E-17 0.0023500002" quat="0.50191766 -0.498074949 -0.501917839 -0.498074949" mass="0.0015232949010801022" diaginertia="1.689134E-08 1.11607905E-08 1.11607905E-08" />
+        </body>
+        <!-- part: M5-Nut025 -->
+        <body name="M5-Nut025" pos="-0.06 0.015 0.0352999978" quat="0 0 0 1">
+          <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_056" />
+          <inertial pos="-5.480601E-14 -2.8429933E-17 0.0023500002" quat="0.50191766 -0.498074949 -0.501917839 -0.498074949" mass="0.0015232949010801022" diaginertia="1.689134E-08 1.11607905E-08 1.11607905E-08" />
+        </body>
+        <!-- part: M5-Nut026 -->
+        <body name="M5-Nut026" pos="-0.08 -0.015 0.0352999978" quat="0 0 0 1">
+          <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_057" />
+          <inertial pos="-5.480601E-14 -2.8429933E-17 0.0023500002" quat="0.50191766 -0.498074949 -0.501917839 -0.498074949" mass="0.0015232949010801022" diaginertia="1.689134E-08 1.11607905E-08 1.11607905E-08" />
+        </body>
+        <!-- part: M5-Nut027 -->
+        <body name="M5-Nut027" pos="-0.06 -0.015 0.0352999978" quat="0 0 0 1">
+          <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_058" />
+          <inertial pos="-5.480601E-14 -2.8429933E-17 0.0023500002" quat="0.50191766 -0.498074949 -0.501917839 -0.498074949" mass="0.0015232949010801022" diaginertia="1.689134E-08 1.11607905E-08 1.11607905E-08" />
+        </body>
+        <!-- part: M5-Washer029 -->
+        <body name="M5-Washer029" pos="-0.05 0.045 0.05" quat="-0.5 0.5 -0.5 0.5">
+          <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_059" />
+          <inertial pos="-5.86384763E-17 -1.84014612E-19 0.000492760155" quat="-0.4985746 0.501421332 0.4985746 0.501421332" mass="0.00043577387432931937" diaginertia="6.915349E-09 3.49325768E-09 3.49325768E-09" />
+        </body>
+        <!-- part: M5-Washer030 -->
+        <body name="M5-Washer030" pos="-0.05 -0.045 0.05" quat="-0.5 0.5 -0.5 0.5">
+          <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_060" />
+          <inertial pos="-5.86384763E-17 -1.84014612E-19 0.000492760155" quat="-0.4985746 0.501421332 0.4985746 0.501421332" mass="0.00043577387432931937" diaginertia="6.915349E-09 3.49325768E-09 3.49325768E-09" />
+        </body>
+        <!-- part: M5-Nut028 -->
+        <body name="M5-Nut028" pos="-0.0442999974 0.045 0.05" quat="-0.5 -0.5 0.5 0.5">
+          <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_061" />
+          <inertial pos="-5.480601E-14 -2.8429933E-17 0.0023500002" quat="0.50191766 -0.498074949 -0.501917839 -0.498074949" mass="0.0015232949010801022" diaginertia="1.689134E-08 1.11607905E-08 1.11607905E-08" />
+        </body>
+        <!-- part: M5-Nut029 -->
+        <body name="M5-Nut029" pos="-0.0442999974 -0.045 0.05" quat="-0.5 -0.5 0.5 0.5">
+          <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_062" />
+          <inertial pos="-5.480601E-14 -2.8429933E-17 0.0023500002" quat="0.50191766 -0.498074949 -0.501917839 -0.498074949" mass="0.0015232949010801022" diaginertia="1.689134E-08 1.11607905E-08 1.11607905E-08" />
+        </body>
+        <!-- part: M5x30-Screw -->
+        <body name="M5x30-Screw" pos="-0.055 0.045 0.05" quat="-0.5 -0.5 0.5 0.5">
+          <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_063" />
+          <inertial pos="2.03654385E-14 3.320088E-19 -0.0125201875" quat="0.7072225 -2.38418721E-07 2.38418721E-07 0.706991" mass="0.0054423473429400767" diaginertia="5.334426E-07 5.334426E-07 2.205138E-08" />
+        </body>
+        <!-- part: M5x30-Screw002 -->
+        <body name="M5x30-Screw002" pos="-0.055 -0.045 0.05" quat="-0.5 -0.5 0.5 0.5">
+          <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_064" />
+          <inertial pos="2.03654385E-14 3.320088E-19 -0.0125201875" quat="0.7072225 -2.38418721E-07 2.38418721E-07 0.706991" mass="0.0054423473429400767" diaginertia="5.334426E-07 5.334426E-07 2.205138E-08" />
+        </body>
+        <!-- part: bar-rd-d5x51 -->
+        <body name="bar-rd-d5x51" pos="-0.07 -4E-18 0.044" quat="1 0 0 0">
+          <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_065" />
+          <inertial pos="8.51474E-20 4.54119468E-19 -1.71519945E-19" quat="0.7071067 -0.707106948 -3.55217229E-17 -4.29829152E-17" mass="0.00786085354524778" diaginertia="1.7161226E-06 1.7161226E-06 2.45651677E-08" />
+        </body>
+        <!-- part: pully-gt2-idler-6mm-5b -->
+        <body name="pully-gt2-idler-6mm-5b" pos="-0.07 -0.00425 0.044" quat="1 0 0 0">
+          <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_066" />
+          <inertial pos="2.24585327E-18 0.00425 6.10079771E-19" quat="0.707102835 0.002131091 0.00213158247 0.7071043" mass="0.002870198268462962" diaginertia="8.77386555E-08 6.71734E-08 6.71734E-08" />
+        </body>
+        <!-- part: limit-switch001 -->
+        <body name="limit-switch001" pos="-0.01 -0.00025 0.06958" quat="-0.5 0.5 -0.5 0.5">
+          <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_028" />
+          <inertial pos="0.000184824647 9.837273E-20 0.002561988" quat="0.5069606 0.492941141 0.492941141 0.5069607" mass="1.175067560695524E-06" diaginertia="5.10462124E-11 4.24739133E-11 1.54796471E-11" />
+        </body>
+        <!-- part: washer-m2.004 -->
+        <body name="washer-m2.004" pos="-0.01 -0.005 0.06318" quat="6.123234E-17 0 0 1">
+          <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_029" />
+          <inertial pos="-7.749287E-20 -1.64635567E-20 2.46953366E-20" quat="0.270598054 0.6532815 -0.270598054 0.6532815" mass="0.00010587324433450339" diaginertia="5.72477066E-10 2.89397367E-10 2.89397367E-10" />
+        </body>
+        <!-- part: screw-m2.5x0.45x12-button-head-hex002 -->
+        <body name="screw-m2.5x0.45x12-button-head-hex002" pos="-0.01 -0.005 0.068129994" quat="6.123234E-17 0 1 0">
+          <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_030" />
+          <inertial pos="-3.92099339E-11 4.84911156E-13 0.0006922578" quat="0.6601175 -3.278257E-07 3.10535967E-07 0.7511623" mass="0.00058334826676255391" diaginertia="9.950196E-09 9.950196E-09 6.407189E-10" />
+        </body>
+        <!-- part: washer-m2.005 -->
+        <body name="washer-m2.005" pos="-0.01 -0.005 0.07298" quat="0.7071067 0 0 -0.707106948">
+          <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_029" />
+          <inertial pos="-7.749287E-20 -1.64635567E-20 2.46953366E-20" quat="0.270598054 0.6532815 -0.270598054 0.6532815" mass="0.00010587324433450339" diaginertia="5.72477066E-10 2.89397367E-10 2.89397367E-10" />
+        </body>
+        <!-- part: nut-m2.5x0.002 -->
+        <body name="nut-m2.5x0.002" pos="-0.01 -0.005 0.07428" quat="0.7071067 0 0 -0.707106948">
+          <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_031" />
+          <inertial pos="-2.68003242E-09 4.896248E-10 -4.184664E-14" quat="0.269830674 0.653598547 -0.2698305 0.6535992" mass="0.00025858689165677971" diaginertia="1.10083032E-09 6.342579E-10 6.34240771E-10" />
+        </body>
+        <!-- part: washer-m2.006 -->
+        <body name="washer-m2.006" pos="-0.01 0.005 0.06318" quat="6.123234E-17 0 0 1">
+          <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_029" />
+          <inertial pos="-7.749287E-20 -1.64635567E-20 2.46953366E-20" quat="0.270598054 0.6532815 -0.270598054 0.6532815" mass="0.00010587324433450339" diaginertia="5.72477066E-10 2.89397367E-10 2.89397367E-10" />
+        </body>
+        <!-- part: screw-m2.5x0.45x12-button-head-hex003 -->
+        <body name="screw-m2.5x0.45x12-button-head-hex003" pos="-0.01 0.005 0.068129994" quat="6.123234E-17 0 1 0">
+          <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_030" />
+          <inertial pos="-3.92099339E-11 4.84911156E-13 0.0006922578" quat="0.6601175 -3.278257E-07 3.10535967E-07 0.7511623" mass="0.00058334826676255391" diaginertia="9.950196E-09 9.950196E-09 6.407189E-10" />
+        </body>
+        <!-- part: washer-m2.007 -->
+        <body name="washer-m2.007" pos="-0.01 0.005 0.07298" quat="6.123234E-17 0 0 1">
+          <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_029" />
+          <inertial pos="-7.749287E-20 -1.64635567E-20 2.46953366E-20" quat="0.270598054 0.6532815 -0.270598054 0.6532815" mass="0.00010587324433450339" diaginertia="5.72477066E-10 2.89397367E-10 2.89397367E-10" />
+        </body>
+        <!-- part: nut-m2.5x0.003 -->
+        <body name="nut-m2.5x0.003" pos="-0.01 0.005 0.07428" quat="6.123234E-17 0 0 1">
+          <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_031" />
+          <inertial pos="-2.68003242E-09 4.896248E-10 -4.184664E-14" quat="0.269830674 0.653598547 -0.2698305 0.6535992" mass="0.00025858689165677971" diaginertia="1.10083032E-09 6.342579E-10 6.34240771E-10" />
+        </body>
+      </body>
+      <!-- part: asy-cart -->
+      <body name="asy-cart" pos="-0.01 -1.43773884E-17 0.05" quat="1 0 0 0">
+        <joint name="02-Cart.Slider.joint" type="slide" pos="0 0 0" axis="1 0 0" limited="true" range="-0.45 0.45" damping="0" frictionloss="0.05" armature="0" />
+        <!-- part: asy-linear-bearing -->
+        <body name="asy-linear-bearing" pos="-4.996004E-18 -0.045 0" quat="1 0 0 0">
+          <!-- part: linear-bearing-16mm001 -->
+          <body name="linear-bearing-16mm001" pos="0 0 0" quat="1 0 0 0">
+            <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_067" />
+            <inertial pos="-4.754885E-19 -5.34924571E-19 -2.12899888E-19" quat="-0.00223365868 0.707103 -0.00223366 0.7071036" mass="0.065462250751212231" diaginertia="1.16828842E-05 1.16828842E-05 8.510093E-06" />
+          </body>
+          <!-- part: Pillow Block -->
+          <body name="Pillow_Block" pos="0 0 0" quat="0.7071067 0 0 0.707106948">
+            <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_068" />
+            <inertial pos="-3.98097147E-16 -5.207012E-16 0.0029582174" quat="-4.28725421E-14 0.7071065 1.60869344E-14 0.707107067" mass="0.10959456287300959" diaginertia="4.468192E-05 4.25232938E-05 3.1179854E-05" />
+          </body>
+        </body>
+        <!-- part: asy-linear-bearing -->
+        <body name="asy-linear-bearing_2" pos="4.996004E-18 0.045 -1.0688288E-34" quat="1 0 0 0">
+          <!-- part: 707 -->
+          <body name="707" pos="0 0 0" quat="1 0 0 0">
+            <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_067" />
+            <inertial pos="-4.754885E-19 -5.34924571E-19 -2.12899888E-19" quat="-0.00223365868 0.707103 -0.00223366 0.7071036" mass="0.065462250751212231" diaginertia="1.16828842E-05 1.16828842E-05 8.510093E-06" />
+          </body>
+          <!-- part: Pillow Block001 -->
+          <body name="Pillow_Block001" pos="0 0 0" quat="0.7071067 0 0 0.707106948">
+            <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_068" />
+            <inertial pos="-3.98097147E-16 -5.207012E-16 0.0029582174" quat="-4.28725421E-14 0.7071065 1.60869344E-14 0.707107067" mass="0.10959456287300959" diaginertia="4.468192E-05 4.25232938E-05 3.1179854E-05" />
+          </body>
+        </body>
+        <!-- part: cart -->
+        <body name="cart" pos="-0.017 -0.063 0.019" quat="1 0 -6E-16 0">
+          <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_069" />
+          <inertial pos="0.0169976763 0.06293478 -0.000228126752" quat="-0.499862224 0.500146151 0.4998776 0.5001139" mass="0.0643267103686137" diaginertia="0.000178155737 0.000162960365 2.58553537E-05" />
+        </body>
+        <!-- part: bearing-8x22x7 -->
+        <body name="bearing-8x22x7" pos="-1.27955527E-17 -0.0785 0.032" quat="0.5 0.5 -0.5 0.5">
+          <!-- part: 5972K91_Steel Ball Bearing -->
+          <body name="5972K91_Steel_Ball_Bearing" pos="0 0 0" quat="1 0 0 0">
+            <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_070" />
+            <inertial pos="1.32415982E-18 6.9169944E-19 -5.3895933E-18" quat="-0.490078151 0.5097288 0.490078151 0.509728849" mass="0.0039753599248490059" diaginertia="1.11972632E-07 7.44800843E-08 7.44800843E-08" />
+          </body>
+          <!-- part: 5972K91_Steel Ball Bearing001 -->
+          <body name="5972K91_Steel_Ball_Bearing001" pos="0 0 0" quat="1 0 0 0">
+            <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_071" />
+            <inertial pos="6.167414E-20 0.0075000003 -4.94333474E-18" quat="0.9994924 -0.0318564735 -9.19070662E-05 -0.000253209932" mass="0.00022609803335167907" diaginertia="3.27026156E-10 3.27026156E-10 3.27026156E-10" />
+          </body>
+          <!-- part: 5972K91_Steel Ball Bearing002 -->
+          <body name="5972K91_Steel_Ball_Bearing002" pos="0 0 0" quat="1 0 0 0">
+            <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_072" />
+            <inertial pos="0.00586373638 0.004676174 -5.44132476E-18" quat="0.637081861 -0.306808174 -0.637078345 -0.306800634" mass="0.00022609803335167907" diaginertia="3.27026156E-10 3.27026156E-10 3.27026156E-10" />
+          </body>
+          <!-- part: 5972K91_Steel Ball Bearing003 -->
+          <body name="5972K91_Steel_Ball_Bearing003" pos="0 0 0" quat="1 0 0 0">
+            <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_073" />
+            <inertial pos="0.00731195975 -0.00166890712 -6.649046E-18" quat="-0.4408768 0.552840531 0.4408711 0.552836061" mass="0.00022609803335167907" diaginertia="3.27026156E-10 3.27026156E-10 3.27026156E-10" />
+          </body>
+          <!-- part: 5972K91_Steel Ball Bearing004 -->
+          <body name="5972K91_Steel_Ball_Bearing004" pos="0 0 0" quat="1 0 0 0">
+            <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_074" />
+            <inertial pos="0.00325412815 -0.006757267 -7.57486345E-18" quat="-0.157354012 0.6893766 0.157351613 0.689376652" mass="0.00022609803335167907" diaginertia="3.27026156E-10 3.27026156E-10 3.27026156E-10" />
+          </body>
+          <!-- part: 5972K91_Steel Ball Bearing005 -->
+          <body name="5972K91_Steel_Ball_Bearing005" pos="0 0 0" quat="1 0 0 0">
+            <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_075" />
+            <inertial pos="-0.00325412815 -0.006757267 -7.59689044E-18" quat="0.157341555 0.689370155 -0.15737927 0.6893796" mass="0.00022609803335167907" diaginertia="3.27026156E-10 3.27026156E-10 3.27026156E-10" />
+          </body>
+          <!-- part: 5972K91_Steel Ball Bearing006 -->
+          <body name="5972K91_Steel_Ball_Bearing006" pos="0 0 0" quat="1 0 0 0">
+            <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_076" />
+            <inertial pos="-0.00731195975 -0.00166890712 -6.664521E-18" quat="0.552835 -0.440869153 -0.55284214 -0.440878123" mass="0.00022609803335167907" diaginertia="3.27026156E-10 3.27026156E-10 3.27026156E-10" />
+          </body>
+          <!-- part: 5972K91_Steel Ball Bearing007 -->
+          <body name="5972K91_Steel_Ball_Bearing007" pos="0 0 0" quat="1 0 0 0">
+            <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_077" />
+            <inertial pos="-0.00586373638 0.004676174 -5.44146538E-18" quat="-0.3067807 0.637088835 0.306786358 0.6370915" mass="0.00022609803335167907" diaginertia="3.27026156E-10 3.27026156E-10 3.27026156E-10" />
+          </body>
+          <!-- part: 5972K91_Steel Ball Bearing008 -->
+          <body name="5972K91_Steel_Ball_Bearing008" pos="0 0 0" quat="1 0 0 0">
+            <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_078" />
+            <inertial pos="5.38616877E-18 1.52419215E-18 2.669593E-17" quat="0.270598054 0.6532815 -0.270598054 0.6532815" mass="0.0074496393687249508" diaginertia="7.337323E-07 3.99548583E-07 3.99548583E-07" />
+          </body>
+          <!-- part: 5972K91_Steel Ball Bearing009 -->
+          <body name="5972K91_Steel_Ball_Bearing009" pos="0 0 0" quat="1 0 0 0">
+            <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_079" />
+            <inertial pos="1.31265421E-09 2.46256238E-10 -2.8992575E-09" quat="0.173858419 0.6854 -0.173857987 0.685400367" mass="0.00040041276063842811" diaginertia="2.365095E-08 1.23049277E-08 1.23049233E-08" />
+          </body>
+        </body>
+        <!-- part: bearing-8x22x001 -->
+        <body name="bearing-8x22x001" pos="-6.59607254E-17 0.0785 0.032" quat="-0.5 -0.5 -0.5 0.5">
+          <!-- part: 5972K91_Steel Ball Bearing -->
+          <body name="5972K91_Steel_Ball_Bearing_2" pos="0 0 0" quat="1 0 0 0">
+            <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_070" />
+            <inertial pos="1.32415982E-18 6.9169944E-19 -5.3895933E-18" quat="-0.490078151 0.5097288 0.490078151 0.509728849" mass="0.0039753599248490059" diaginertia="1.11972632E-07 7.44800843E-08 7.44800843E-08" />
+          </body>
+          <!-- part: 5972K91_Steel Ball Bearing001 -->
+          <body name="5972K91_Steel_Ball_Bearing001_2" pos="0 0 0" quat="1 0 0 0">
+            <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_071" />
+            <inertial pos="6.167414E-20 0.0075000003 -4.94333474E-18" quat="0.9994924 -0.0318564735 -9.19070662E-05 -0.000253209932" mass="0.00022609803335167907" diaginertia="3.27026156E-10 3.27026156E-10 3.27026156E-10" />
+          </body>
+          <!-- part: 5972K91_Steel Ball Bearing002 -->
+          <body name="5972K91_Steel_Ball_Bearing002_2" pos="0 0 0" quat="1 0 0 0">
+            <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_072" />
+            <inertial pos="0.00586373638 0.004676174 -5.44132476E-18" quat="0.637081861 -0.306808174 -0.637078345 -0.306800634" mass="0.00022609803335167907" diaginertia="3.27026156E-10 3.27026156E-10 3.27026156E-10" />
+          </body>
+          <!-- part: 5972K91_Steel Ball Bearing003 -->
+          <body name="5972K91_Steel_Ball_Bearing003_2" pos="0 0 0" quat="1 0 0 0">
+            <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_073" />
+            <inertial pos="0.00731195975 -0.00166890712 -6.649046E-18" quat="-0.4408768 0.552840531 0.4408711 0.552836061" mass="0.00022609803335167907" diaginertia="3.27026156E-10 3.27026156E-10 3.27026156E-10" />
+          </body>
+          <!-- part: 5972K91_Steel Ball Bearing004 -->
+          <body name="5972K91_Steel_Ball_Bearing004_2" pos="0 0 0" quat="1 0 0 0">
+            <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_074" />
+            <inertial pos="0.00325412815 -0.006757267 -7.57486345E-18" quat="-0.157354012 0.6893766 0.157351613 0.689376652" mass="0.00022609803335167907" diaginertia="3.27026156E-10 3.27026156E-10 3.27026156E-10" />
+          </body>
+          <!-- part: 5972K91_Steel Ball Bearing005 -->
+          <body name="5972K91_Steel_Ball_Bearing005_2" pos="0 0 0" quat="1 0 0 0">
+            <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_075" />
+            <inertial pos="-0.00325412815 -0.006757267 -7.59689044E-18" quat="0.157341555 0.689370155 -0.15737927 0.6893796" mass="0.00022609803335167907" diaginertia="3.27026156E-10 3.27026156E-10 3.27026156E-10" />
+          </body>
+          <!-- part: 5972K91_Steel Ball Bearing006 -->
+          <body name="5972K91_Steel_Ball_Bearing006_2" pos="0 0 0" quat="1 0 0 0">
+            <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_076" />
+            <inertial pos="-0.00731195975 -0.00166890712 -6.664521E-18" quat="0.552835 -0.440869153 -0.55284214 -0.440878123" mass="0.00022609803335167907" diaginertia="3.27026156E-10 3.27026156E-10 3.27026156E-10" />
+          </body>
+          <!-- part: 5972K91_Steel Ball Bearing007 -->
+          <body name="5972K91_Steel_Ball_Bearing007_2" pos="0 0 0" quat="1 0 0 0">
+            <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_077" />
+            <inertial pos="-0.00586373638 0.004676174 -5.44146538E-18" quat="-0.3067807 0.637088835 0.306786358 0.6370915" mass="0.00022609803335167907" diaginertia="3.27026156E-10 3.27026156E-10 3.27026156E-10" />
+          </body>
+          <!-- part: 5972K91_Steel Ball Bearing008 -->
+          <body name="5972K91_Steel_Ball_Bearing008_2" pos="0 0 0" quat="1 0 0 0">
+            <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_078" />
+            <inertial pos="5.38616877E-18 1.52419215E-18 2.669593E-17" quat="0.270598054 0.6532815 -0.270598054 0.6532815" mass="0.0074496393687249508" diaginertia="7.337323E-07 3.99548583E-07 3.99548583E-07" />
+          </body>
+          <!-- part: 5972K91_Steel Ball Bearing009 -->
+          <body name="5972K91_Steel_Ball_Bearing009_2" pos="0 0 0" quat="1 0 0 0">
+            <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_079" />
+            <inertial pos="1.31265421E-09 2.46256238E-10 -2.8992575E-09" quat="0.173858419 0.6854 -0.173857987 0.685400367" mass="0.00040041276063842811" diaginertia="2.365095E-08 1.23049277E-08 1.23049233E-08" />
+          </body>
+        </body>
+        <!-- part: bearing-cap -->
+        <body name="bearing-cap" pos="-1.42108554E-17 -0.082 0.032" quat="1 0 -6E-16 0">
+          <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_080" />
+          <inertial pos="6.68091043E-16 -0.0015 -2.292048E-16" quat="0.5 0.5 0.5 0.5" mass="0.0024282191394575056" diaginertia="5.76931143E-07 4.57707358E-07 1.22866084E-07" />
+        </body>
+        <!-- part: bearing-cap001 -->
+        <body name="bearing-cap001" pos="-7.22179563E-17 0.085 0.032" quat="7.140085E-16 0 1 0">
+          <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_080" />
+          <inertial pos="6.68091043E-16 -0.0015 -2.292048E-16" quat="0.5 0.5 0.5 0.5" mass="0.0024282191394575056" diaginertia="5.76931143E-07 4.57707358E-07 1.22866084E-07" />
+        </body>
+        <!-- part: M5x12-Screw022 -->
+        <body name="M5x12-Screw022" pos="0.017 -0.063 0.022" quat="1 0 -6E-16 0">
+          <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_081" />
+          <inertial pos="3.5995834E-14 5.9848456E-19 -0.003798961" quat="0.707267463 -2.98023451E-07 2.98023451E-07 0.706946135" mass="0.002667928402341509" diaginertia="5.607913E-08 5.607913E-08 1.33813209E-08" />
+        </body>
+        <!-- part: M5x12-Screw023 -->
+        <body name="M5x12-Screw023" pos="-0.017 -0.063 0.022" quat="1 0 -5E-16 0">
+          <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_082" />
+          <inertial pos="3.5995834E-14 5.9848456E-19 -0.003798961" quat="0.707267463 -2.98023451E-07 2.98023451E-07 0.706946135" mass="0.002667928402341509" diaginertia="5.607913E-08 5.607913E-08 1.33813209E-08" />
+        </body>
+        <!-- part: M5x12-Screw005 -->
+        <body name="M5x12-Screw005" pos="0.017 -0.027 0.022" quat="1 0 -6E-16 0">
+          <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_083" />
+          <inertial pos="3.5995834E-14 5.9848456E-19 -0.003798961" quat="0.707267463 -2.98023451E-07 2.98023451E-07 0.706946135" mass="0.002667928402341509" diaginertia="5.607913E-08 5.607913E-08 1.33813209E-08" />
+        </body>
+        <!-- part: M5x12-Screw006 -->
+        <body name="M5x12-Screw006" pos="-0.017 -0.027 0.022" quat="1 0 -5E-16 0">
+          <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_084" />
+          <inertial pos="3.5995834E-14 5.9848456E-19 -0.003798961" quat="0.707267463 -2.98023451E-07 2.98023451E-07 0.706946135" mass="0.002667928402341509" diaginertia="5.607913E-08 5.607913E-08 1.33813209E-08" />
+        </body>
+        <!-- part: M5x12-Screw011 -->
+        <body name="M5x12-Screw011" pos="-0.017 0.027 0.022" quat="1 0 -5E-16 0">
+          <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_085" />
+          <inertial pos="3.5995834E-14 5.9848456E-19 -0.003798961" quat="0.707267463 -2.98023451E-07 2.98023451E-07 0.706946135" mass="0.002667928402341509" diaginertia="5.607913E-08 5.607913E-08 1.33813209E-08" />
+        </body>
+        <!-- part: M5x12-Screw012 -->
+        <body name="M5x12-Screw012" pos="0.017 0.027 0.022" quat="1 0 -6E-16 0">
+          <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_086" />
+          <inertial pos="3.5995834E-14 5.9848456E-19 -0.003798961" quat="0.707267463 -2.98023451E-07 2.98023451E-07 0.706946135" mass="0.002667928402341509" diaginertia="5.607913E-08 5.607913E-08 1.33813209E-08" />
+        </body>
+        <!-- part: M5x12-Screw013 -->
+        <body name="M5x12-Screw013" pos="0.017 0.063 0.022" quat="1 0 -6E-16 0">
+          <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_087" />
+          <inertial pos="3.5995834E-14 5.9848456E-19 -0.003798961" quat="0.707267463 -2.98023451E-07 2.98023451E-07 0.706946135" mass="0.002667928402341509" diaginertia="5.607913E-08 5.607913E-08 1.33813209E-08" />
+        </body>
+        <!-- part: M5x12-Screw014 -->
+        <body name="M5x12-Screw014" pos="-0.017 0.063 0.022" quat="0.7071067 0 0 0.707106948">
+          <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_088" />
+          <inertial pos="3.5995834E-14 5.9848456E-19 -0.003798961" quat="0.707267463 -2.98023451E-07 2.98023451E-07 0.706946135" mass="0.002667928402341509" diaginertia="5.607913E-08 5.607913E-08 1.33813209E-08" />
+        </body>
+        <!-- part: M5x20-Screw -->
+        <body name="M5x20-Screw" pos="0.022 -0.085 0.032" quat="0.7071067 0.707106948 -3.06507236E-16 5.420211E-16">
+          <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_089" />
+          <inertial pos="2.46135374E-14 3.82558522E-19 -0.007626107" quat="0.7072676 -2.68221044E-07 2.980234E-07 0.706945956" mass="0.0039010036467606404" diaginertia="1.88236882E-07 1.88236882E-07 1.72346812E-08" />
+        </body>
+        <!-- part: M5x20-Screw002 -->
+        <body name="M5x20-Screw002" pos="-0.022 -0.085 0.032" quat="0.7071067 0.707106948 -3.06507236E-16 5.420211E-16">
+          <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_090" />
+          <inertial pos="2.46135374E-14 3.82558522E-19 -0.007626107" quat="0.7072676 -2.68221044E-07 2.980234E-07 0.706945956" mass="0.0039010036467606404" diaginertia="1.88236882E-07 1.88236882E-07 1.72346812E-08" />
+        </body>
+        <!-- part: M5x20-Screw005 -->
+        <body name="M5x20-Screw005" pos="0.022 0.085 0.032" quat="3.67739486E-16 -6.42021063E-16 0.7071068 0.7071068">
+          <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_091" />
+          <inertial pos="2.46135374E-14 3.82558522E-19 -0.007626107" quat="0.7072676 -2.68221044E-07 2.980234E-07 0.706945956" mass="0.0039010036467606404" diaginertia="1.88236882E-07 1.88236882E-07 1.72346812E-08" />
+        </body>
+        <!-- part: M5x20-Screw006 -->
+        <body name="M5x20-Screw006" pos="-0.022 0.085 0.032" quat="3.67739486E-16 -6.42021063E-16 0.7071068 0.7071068">
+          <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_092" />
+          <inertial pos="2.46135374E-14 3.82558522E-19 -0.007626107" quat="0.7072676 -2.68221044E-07 2.980234E-07 0.706945956" mass="0.0039010036467606404" diaginertia="1.88236882E-07 1.88236882E-07 1.72346812E-08" />
+        </body>
+        <!-- part: M5-Washer031 -->
+        <body name="M5-Washer031" pos="0.022 -0.072 0.032" quat="0.7071067 -0.707106948 -5.420211E-16 -3.06507236E-16">
+          <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_093" />
+          <inertial pos="-5.86384763E-17 -1.84014612E-19 0.000492760155" quat="-0.4985746 0.501421332 0.4985746 0.501421332" mass="0.00043577387432931937" diaginertia="6.915349E-09 3.49325768E-09 3.49325768E-09" />
+        </body>
+        <!-- part: M5-Washer002 -->
+        <body name="M5-Washer002" pos="-0.022 -0.072 0.032" quat="0.7071067 -0.707106948 -5.420211E-16 -3.06507236E-16">
+          <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_094" />
+          <inertial pos="-5.86384763E-17 -1.84014612E-19 0.000492760155" quat="-0.4985746 0.501421332 0.4985746 0.501421332" mass="0.00043577387432931937" diaginertia="6.915349E-09 3.49325768E-09 3.49325768E-09" />
+        </body>
+        <!-- part: M5-Washer005 -->
+        <body name="M5-Washer005" pos="0.022 0.071 0.032" quat="3.67739486E-16 -5.42021042E-16 0.7071068 0.7071068">
+          <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_095" />
+          <inertial pos="-5.86384763E-17 -1.84014612E-19 0.000492760155" quat="-0.4985746 0.501421332 0.4985746 0.501421332" mass="0.00043577387432931937" diaginertia="6.915349E-09 3.49325768E-09 3.49325768E-09" />
+        </body>
+        <!-- part: M5-Washer006 -->
+        <body name="M5-Washer006" pos="-0.022 0.071 0.032" quat="3.67739486E-16 -5.42021042E-16 0.7071068 0.7071068">
+          <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_096" />
+          <inertial pos="-5.86384763E-17 -1.84014612E-19 0.000492760155" quat="-0.4985746 0.501421332 0.4985746 0.501421332" mass="0.00043577387432931937" diaginertia="6.915349E-09 3.49325768E-09 3.49325768E-09" />
+        </body>
+        <!-- part: M5-Nut030 -->
+        <body name="M5-Nut030" pos="0.022 -0.0663000047 0.032" quat="0.7071067 0.707106948 -3.06507236E-16 5.420211E-16">
+          <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_097" />
+          <inertial pos="-5.480601E-14 -2.8429933E-17 0.0023500002" quat="0.50191766 -0.498074949 -0.501917839 -0.498074949" mass="0.0015232949010801022" diaginertia="1.689134E-08 1.11607905E-08 1.11607905E-08" />
+        </body>
+        <!-- part: M5-Nut002 -->
+        <body name="M5-Nut002" pos="-0.022 -0.0663000047 0.032" quat="0.7071067 0.707106948 -3.06507236E-16 5.420211E-16">
+          <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_098" />
+          <inertial pos="-5.480601E-14 -2.8429933E-17 0.0023500002" quat="0.50191766 -0.498074949 -0.501917839 -0.498074949" mass="0.0015232949010801022" diaginertia="1.689134E-08 1.11607905E-08 1.11607905E-08" />
+        </body>
+        <!-- part: M5-Nut005 -->
+        <body name="M5-Nut005" pos="0.022 0.071 0.032" quat="-5.42021042E-16 -3.67739486E-16 -0.7071068 0.7071068">
+          <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_099" />
+          <inertial pos="-5.480601E-14 -2.8429933E-17 0.0023500002" quat="0.50191766 -0.498074949 -0.501917839 -0.498074949" mass="0.0015232949010801022" diaginertia="1.689134E-08 1.11607905E-08 1.11607905E-08" />
+        </body>
+        <!-- part: M5-Nut006 -->
+        <body name="M5-Nut006" pos="-0.022 0.071 0.032" quat="-5.42021042E-16 -3.67739486E-16 -0.7071068 0.7071068">
+          <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_100" />
+          <inertial pos="-5.480601E-14 -2.8429933E-17 0.0023500002" quat="0.50191766 -0.498074949 -0.501917839 -0.498074949" mass="0.0015232949010801022" diaginertia="1.689134E-08 1.11607905E-08 1.11607905E-08" />
+        </body>
+        <!-- part: M3x12-Screw -->
+        <body name="M3x12-Screw" pos="-0.019 0.01 0.003" quat="1 0 -6E-16 0">
+          <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_101" />
+          <inertial pos="2.00365711E-14 -2.06185017E-19 -0.004604058" quat="0.7069796 -3.2782583E-07 2.235172E-07 0.707234" mass="0.00083791915447794954" diaginertia="1.45223353E-08 1.45223353E-08 1.353021E-09" />
+        </body>
+        <!-- part: M3x12-Screw023 -->
+        <body name="M3x12-Screw023" pos="-0.019 -0.01 0.003" quat="1 0 -5E-16 0">
+          <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_102" />
+          <inertial pos="2.00365711E-14 -2.06185017E-19 -0.004604058" quat="0.7069796 -3.2782583E-07 2.235172E-07 0.707234" mass="0.00083791915447794954" diaginertia="1.45223353E-08 1.45223353E-08 1.353021E-09" />
+        </body>
+        <!-- part: M3x12-Screw024 -->
+        <body name="M3x12-Screw024" pos="-0.005 -0.01 0.003" quat="1 0 -6E-16 0">
+          <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_103" />
+          <inertial pos="2.00365711E-14 -2.06185017E-19 -0.004604058" quat="0.7069796 -3.2782583E-07 2.235172E-07 0.707234" mass="0.00083791915447794954" diaginertia="1.45223353E-08 1.45223353E-08 1.353021E-09" />
+        </body>
+        <!-- part: M3x12-Screw025 -->
+        <body name="M3x12-Screw025" pos="-0.005 0.01 0.003" quat="1 0 -6E-16 0">
+          <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_104" />
+          <inertial pos="2.00365711E-14 -2.06185017E-19 -0.004604058" quat="0.7069796 -3.2782583E-07 2.235172E-07 0.707234" mass="0.00083791915447794954" diaginertia="1.45223353E-08 1.45223353E-08 1.353021E-09" />
+        </body>
+        <!-- part: M3x12-Screw015 -->
+        <body name="M3x12-Screw015" pos="0.005 0.01 0.003" quat="1 0 -6E-16 0">
+          <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_105" />
+          <inertial pos="2.00365711E-14 -2.06185017E-19 -0.004604058" quat="0.7069796 -3.2782583E-07 2.235172E-07 0.707234" mass="0.00083791915447794954" diaginertia="1.45223353E-08 1.45223353E-08 1.353021E-09" />
+        </body>
+        <!-- part: M3x12-Screw016 -->
+        <body name="M3x12-Screw016" pos="0.005 -0.01 0.003" quat="1 0 -6E-16 0">
+          <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_106" />
+          <inertial pos="2.00365711E-14 -2.06185017E-19 -0.004604058" quat="0.7069796 -3.2782583E-07 2.235172E-07 0.707234" mass="0.00083791915447794954" diaginertia="1.45223353E-08 1.45223353E-08 1.353021E-09" />
+        </body>
+        <!-- part: M3x12-Screw017 -->
+        <body name="M3x12-Screw017" pos="0.019 -0.01 0.003" quat="1 0 -6E-16 0">
+          <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_107" />
+          <inertial pos="2.00365711E-14 -2.06185017E-19 -0.004604058" quat="0.7069796 -3.2782583E-07 2.235172E-07 0.707234" mass="0.00083791915447794954" diaginertia="1.45223353E-08 1.45223353E-08 1.353021E-09" />
+        </body>
+        <!-- part: M3x12-Screw018 -->
+        <body name="M3x12-Screw018" pos="0.019 0.01 0.003" quat="1 0 -6E-16 0">
+          <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_108" />
+          <inertial pos="2.00365711E-14 -2.06185017E-19 -0.004604058" quat="0.7069796 -3.2782583E-07 2.235172E-07 0.707234" mass="0.00083791915447794954" diaginertia="1.45223353E-08 1.45223353E-08 1.353021E-09" />
+        </body>
+        <!-- part: belt-retainer -->
+        <body name="belt-retainer" pos="0.012 -1.8E-18 -0.003" quat="1 0 -6E-16 0">
+          <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_109" />
+          <inertial pos="0.00333575136 1.46432423E-19 0.001549128" quat="-0.499715984 0.499715984 0.500283837 0.500283837" mass="0.0024552487303753151" diaginertia="2.94360774E-07 1.83438914E-07 1.14916261E-07" />
+        </body>
+        <!-- part: belt-retainer001 -->
+        <body name="belt-retainer001" pos="-0.012 -9.574216E-18 -0.003" quat="-2.27765783E-16 -6E-16 0 1">
+          <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_109" />
+          <inertial pos="0.00333575136 1.46432423E-19 0.001549128" quat="-0.499715984 0.499715984 0.500283837 0.500283837" mass="0.0024552487303753151" diaginertia="2.94360774E-07 1.83438914E-07 1.14916261E-07" />
+        </body>
+        <!-- part: M3-Washer -->
+        <body name="M3-Washer" pos="-0.019 -0.01 -0.003" quat="6E-16 -2.27765783E-16 1 0">
+          <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_110" />
+          <inertial pos="2.33408449E-19 -1.26658089E-19 0.00025" quat="-0.498484761 0.501510739 0.498484761 0.5015107" mass="0.00011948497360029068" diaginertia="8.847862E-10 4.44882353E-10 4.44882353E-10" />
+        </body>
+        <!-- part: M3-Washer002 -->
+        <body name="M3-Washer002" pos="-0.019 0.01 -0.003" quat="6E-16 -2.27765783E-16 1 0">
+          <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_111" />
+          <inertial pos="2.33408449E-19 -1.26658089E-19 0.00025" quat="-0.498484761 0.501510739 0.498484761 0.5015107" mass="0.00011948497360029068" diaginertia="8.847862E-10 4.44882353E-10 4.44882353E-10" />
+        </body>
+        <!-- part: M3-Washer007 -->
+        <body name="M3-Washer007" pos="-0.005 0.01 -0.003" quat="6E-16 -2.27765783E-16 1 0">
+          <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_112" />
+          <inertial pos="2.33408449E-19 -1.26658089E-19 0.00025" quat="-0.498484761 0.501510739 0.498484761 0.5015107" mass="0.00011948497360029068" diaginertia="8.847862E-10 4.44882353E-10 4.44882353E-10" />
+        </body>
+        <!-- part: M3-Washer006 -->
+        <body name="M3-Washer006" pos="-0.005 -0.01 -0.003" quat="6E-16 -2.27765783E-16 1 0">
+          <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_113" />
+          <inertial pos="2.33408449E-19 -1.26658089E-19 0.00025" quat="-0.498484761 0.501510739 0.498484761 0.5015107" mass="0.00011948497360029068" diaginertia="8.847862E-10 4.44882353E-10 4.44882353E-10" />
+        </body>
+        <!-- part: M3-Washer016 -->
+        <body name="M3-Washer016" pos="0.019 -0.01 -0.003" quat="0 1 0 6E-16">
+          <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_114" />
+          <inertial pos="2.33408449E-19 -1.26658089E-19 0.00025" quat="-0.498484761 0.501510739 0.498484761 0.5015107" mass="0.00011948497360029068" diaginertia="8.847862E-10 4.44882353E-10 4.44882353E-10" />
+        </body>
+        <!-- part: M3-Washer013 -->
+        <body name="M3-Washer013" pos="0.005 -0.01 -0.003" quat="0 1 0 6E-16">
+          <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_115" />
+          <inertial pos="2.33408449E-19 -1.26658089E-19 0.00025" quat="-0.498484761 0.501510739 0.498484761 0.5015107" mass="0.00011948497360029068" diaginertia="8.847862E-10 4.44882353E-10 4.44882353E-10" />
+        </body>
+        <!-- part: M3-Washer017 -->
+        <body name="M3-Washer017" pos="0.005 0.01 -0.003" quat="0 1 0 6E-16">
+          <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_116" />
+          <inertial pos="2.33408449E-19 -1.26658089E-19 0.00025" quat="-0.498484761 0.501510739 0.498484761 0.5015107" mass="0.00011948497360029068" diaginertia="8.847862E-10 4.44882353E-10 4.44882353E-10" />
+        </body>
+        <!-- part: M3-Washer018 -->
+        <body name="M3-Washer018" pos="0.019 0.01 -0.003" quat="0 1 0 6E-16">
+          <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_117" />
+          <inertial pos="2.33408449E-19 -1.26658089E-19 0.00025" quat="-0.498484761 0.501510739 0.498484761 0.5015107" mass="0.00011948497360029068" diaginertia="8.847862E-10 4.44882353E-10 4.44882353E-10" />
+        </body>
+        <!-- part: M3-Nut -->
+        <body name="M3-Nut" pos="-0.019 -0.01 -0.0035" quat="6E-16 -2.27765783E-16 1 0">
+          <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_118" />
+          <inertial pos="-3.62910927E-14 2.69229042E-17 0.0012" quat="0.5003931 -0.4996067 -0.500393331 -0.4996067" mass="0.00039754186776711685" diaginertia="1.97926919E-09 1.17480914E-09 1.17480914E-09" />
+        </body>
+        <!-- part: M3-Nut002 -->
+        <body name="M3-Nut002" pos="-0.019 0.01 -0.0035" quat="6E-16 -2.27765783E-16 1 0">
+          <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_119" />
+          <inertial pos="-3.62910927E-14 2.69229042E-17 0.0012" quat="0.5003931 -0.4996067 -0.500393331 -0.4996067" mass="0.00039754186776711685" diaginertia="1.97926919E-09 1.17480914E-09 1.17480914E-09" />
+        </body>
+        <!-- part: M3-Nut005 -->
+        <body name="M3-Nut005" pos="-0.005 -0.01 -0.0035" quat="6E-16 -2.27765783E-16 1 0">
+          <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_120" />
+          <inertial pos="-3.62910927E-14 2.69229042E-17 0.0012" quat="0.5003931 -0.4996067 -0.500393331 -0.4996067" mass="0.00039754186776711685" diaginertia="1.97926919E-09 1.17480914E-09 1.17480914E-09" />
+        </body>
+        <!-- part: M3-Nut006 -->
+        <body name="M3-Nut006" pos="-0.005 0.01 -0.0035" quat="6E-16 -2.27765783E-16 1 0">
+          <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_121" />
+          <inertial pos="-3.62910927E-14 2.69229042E-17 0.0012" quat="0.5003931 -0.4996067 -0.500393331 -0.4996067" mass="0.00039754186776711685" diaginertia="1.97926919E-09 1.17480914E-09 1.17480914E-09" />
+        </body>
+        <!-- part: M3-Nut016 -->
+        <body name="M3-Nut016" pos="0.019 0.01 -0.0035" quat="0 1 0 6E-16">
+          <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_122" />
+          <inertial pos="-3.62910927E-14 2.69229042E-17 0.0012" quat="0.5003931 -0.4996067 -0.500393331 -0.4996067" mass="0.00039754186776711685" diaginertia="1.97926919E-09 1.17480914E-09 1.17480914E-09" />
+        </body>
+        <!-- part: M3-Nut015 -->
+        <body name="M3-Nut015" pos="0.005 -0.01 -0.0035" quat="0 1 0 6E-16">
+          <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_123" />
+          <inertial pos="-3.62910927E-14 2.69229042E-17 0.0012" quat="0.5003931 -0.4996067 -0.500393331 -0.4996067" mass="0.00039754186776711685" diaginertia="1.97926919E-09 1.17480914E-09 1.17480914E-09" />
+        </body>
+        <!-- part: M3-Nut019 -->
+        <body name="M3-Nut019" pos="0.005 0.01 -0.0035" quat="0 1 0 6E-16">
+          <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_124" />
+          <inertial pos="-3.62910927E-14 2.69229042E-17 0.0012" quat="0.5003931 -0.4996067 -0.500393331 -0.4996067" mass="0.00039754186776711685" diaginertia="1.97926919E-09 1.17480914E-09 1.17480914E-09" />
+        </body>
+        <!-- part: M3-Nut020 -->
+        <body name="M3-Nut020" pos="0.019 -0.01 -0.0035" quat="0 1 0 6E-16">
+          <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_125" />
+          <inertial pos="-3.62910927E-14 2.69229042E-17 0.0012" quat="0.5003931 -0.4996067 -0.500393331 -0.4996067" mass="0.00039754186776711685" diaginertia="1.97926919E-09 1.17480914E-09 1.17480914E-09" />
+        </body>
+        <!-- part: asy-pole -->
+        <body name="asy-pole" pos="-4.23471276E-17 0.005 0.032" quat="1 3.88578138E-16 0 -8.42936956E-08">
+          <joint name="04-Pole.Hinge.joint" type="hinge" pos="0 0 0" axis="0 -1 0" limited="false" damping="0" frictionloss="0.02" armature="0" />
+          <!-- part: bar-rd-d8x240 -->
+          <body name="bar-rd-d8x240" pos="0 0 0" quat="0.7071067 0 0 0.7071068">
+            <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_126" />
+            <inertial pos="2.41250969E-18 -5.27736526E-19 -1.37173261E-19" quat="0.500162661 -0.499836445 0.500164747 -0.4998364" mass="0.094700168038967525" diaginertia="0.000454939553 0.000454939553 7.576013E-07" />
+          </body>
+          <!-- part: pole-target-clamp -->
+          <body name="pole-target-clamp" pos="2.0904837E-08 -0.124 4E-18" quat="1 0 0 8.42936956E-08">
+            <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_127" />
+            <inertial pos="-3.51078171E-07 0.0106636416 -0.0106637347" quat="0.653282464 -0.2706038 -0.270593584 -0.6532801" mass="0.0046435264540484059" diaginertia="8.795893E-07 5.78134461E-07 4.43917884E-07" />
+          </body>
+          <!-- part: pole-target-clamp001 -->
+          <body name="pole-target-clamp001" pos="2.0904837E-08 -0.124 4.69999971E-18" quat="6.123234E-17 -8.42936956E-08 1 -3E-16">
+            <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_127" />
+            <inertial pos="-3.51078171E-07 0.0106636416 -0.0106637347" quat="0.653282464 -0.2706038 -0.270593584 -0.6532801" mass="0.0046435264540484059" diaginertia="8.795893E-07 5.78134461E-07 4.43917884E-07" />
+          </body>
+          <!-- part: pole-target-holder -->
+          <body name="pole-target-holder" pos="2.30964741E-08 -0.137 1.18E-17" quat="1 -3.330669E-16 0 8.42936956E-08">
+            <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_128" />
+            <inertial pos="-4.28902654E-14 0.005473092 2.65149879E-15" quat="0.707105935 -3.12924556E-07 3.12924556E-07 0.7071076" mass="0.017645015154274878" diaginertia="6.20041328E-06 3.75041873E-06 3.1643317E-06" />
+          </body>
+          <!-- part: bar-rd-d8x500 -->
+          <body name="bar-rd-d8x500" pos="2.0904837E-08 -0.124 -0.225" quat="0.5 -0.5 0.5 0.50000006">
+            <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_129" />
+            <inertial pos="-4.6320187E-18 -5.06627032E-19 -1.18077435E-19" quat="0.500007331 0.499992669 0.5000075 0.499992669" mass="0.19729202377502991" diaginertia="0.00411104 0.00411104 1.57833608E-06" />
+          </body>
+          <!-- part: pole-target-holder001 -->
+          <body name="pole-target-holder001" pos="2.30964741E-08 -0.137 -0.45" quat="1 -3.330669E-16 0 8.42936956E-08">
+            <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_128" />
+            <inertial pos="-4.28902654E-14 0.005473092 2.65149879E-15" quat="0.707105935 -3.12924556E-07 3.12924556E-07 0.7071076" mass="0.017645015154274878" diaginertia="6.20041328E-06 3.75041873E-06 3.1643317E-06" />
+          </body>
+          <!-- part: rod-clamp-8mm -->
+          <body name="rod-clamp-8mm" pos="2.0904837E-08 -0.124 -0.4675" quat="1 -3.330669E-16 0 8.42936956E-08">
+            <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_130" />
+            <inertial pos="-1.06937761E-17 0.00251173251 2.43851714E-20" quat="0.5 0.5 0.5 0.5" mass="0.001951874198654259" diaginertia="2.23227374E-07 1.92012109E-07 4.31581242E-08" />
+          </body>
+          <!-- part: rod-clamp-8mm001 -->
+          <body name="rod-clamp-8mm001" pos="2.0904837E-08 -0.124 -0.4325" quat="1 -3.3306696E-16 6.45947855E-16 8.42936956E-08">
+            <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_130" />
+            <inertial pos="-1.06937761E-17 0.00251173251 2.43851714E-20" quat="0.5 0.5 0.5 0.5" mass="0.001951874198654259" diaginertia="2.23227374E-07 1.92012109E-07 4.31581242E-08" />
+          </body>
+          <!-- part: spacer-8mm -->
+          <body name="spacer-8mm" pos="1.4667104E-08 -0.087 -8.7E-18" quat="5.05321539E-16 -8.42936956E-08 1 -3E-16">
+            <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_131" />
+            <inertial pos="3.31869932E-09 -0.00600000145 -9.40315E-10" quat="0.6681021 0.231598184 0.231597155 0.668105364" mass="0.0010307045331440167" diaginertia="3.40268755E-08 2.97607574E-08 2.97607574E-08" />
+          </body>
+          <!-- part: rod-clamp-8mm002 -->
+          <body name="rod-clamp-8mm002" pos="-1.64372711E-08 0.0975 0" quat="0.7071067 0.707106948 5.960465E-08 5.960465E-08">
+            <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_130" />
+            <inertial pos="-1.06937761E-17 0.00251173251 2.43851714E-20" quat="0.5 0.5 0.5 0.5" mass="0.001951874198654259" diaginertia="2.23227374E-07 1.92012109E-07 4.31581242E-08" />
+          </body>
+          <!-- part: rod-clamp-8mm003 -->
+          <body name="rod-clamp-8mm003" pos="-1.64372711E-08 0.0975 0" quat="0.7071067 -0.707106948 -5.960465E-08 5.960465E-08">
+            <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_130" />
+            <inertial pos="-1.06937761E-17 0.00251173251 2.43851714E-20" quat="0.5 0.5 0.5 0.5" mass="0.001951874198654259" diaginertia="2.23227374E-07 1.92012109E-07 4.31581242E-08" />
+          </body>
+          <!-- part: spacer-8mm001 -->
+          <body name="spacer-8mm001" pos="-1.51728656E-08 0.09 0" quat="6.123234E-17 -8.42936956E-08 1 0">
+            <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_131" />
+            <inertial pos="3.31869932E-09 -0.00600000145 -9.40315E-10" quat="0.6681021 0.231598184 0.231597155 0.668105364" mass="0.0010307045331440167" diaginertia="3.40268755E-08 2.97607574E-08 2.97607574E-08" />
+          </body>
+          <!-- part: M5x12-Screw024 -->
+          <body name="M5x12-Screw024" pos="0.0125000179 -0.1065 0.003" quat="-8.42936956E-08 0 0 1">
+            <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_132" />
+            <inertial pos="3.5995834E-14 5.9848456E-19 -0.003798961" quat="0.707267463 -2.98023451E-07 2.98023451E-07 0.706946135" mass="0.002667928402341509" diaginertia="5.607913E-08 5.607913E-08 1.33813209E-08" />
+          </body>
+          <!-- part: M5x12-Screw025 -->
+          <body name="M5x12-Screw025" pos="-0.0124999816 -0.1065 0.003" quat="-8.42936956E-08 0 0 1">
+            <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_133" />
+            <inertial pos="3.5995834E-14 5.9848456E-19 -0.003798961" quat="0.707267463 -2.98023451E-07 2.98023451E-07 0.706946135" mass="0.002667928402341509" diaginertia="5.607913E-08 5.607913E-08 1.33813209E-08" />
+          </body>
+          <!-- part: M5x12-Screw026 -->
+          <body name="M5x12-Screw026" pos="0.01250002 -0.121 0.0175" quat="-5.96046448E-08 -5.96046448E-08 0.7071068 0.7071068">
+            <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_134" />
+            <inertial pos="3.5995834E-14 5.9848456E-19 -0.003798961" quat="0.707267463 -2.98023451E-07 2.98023451E-07 0.706946135" mass="0.002667928402341509" diaginertia="5.607913E-08 5.607913E-08 1.33813209E-08" />
+          </body>
+          <!-- part: M5x12-Screw027 -->
+          <body name="M5x12-Screw027" pos="-0.01249998 -0.121 0.0175" quat="-5.96046448E-08 -5.96046448E-08 0.7071068 0.7071068">
+            <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_135" />
+            <inertial pos="3.5995834E-14 5.9848456E-19 -0.003798961" quat="0.707267463 -2.98023451E-07 2.98023451E-07 0.706946135" mass="0.002667928402341509" diaginertia="5.607913E-08 5.607913E-08 1.33813209E-08" />
+          </body>
+          <!-- part: M5x12-Screw028 -->
+          <body name="M5x12-Screw028" pos="0.01250002 -0.121 -0.0175" quat="0.7071067 -0.707106948 -5.960465E-08 5.960465E-08">
+            <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_136" />
+            <inertial pos="3.5995834E-14 5.9848456E-19 -0.003798961" quat="0.707267463 -2.98023451E-07 2.98023451E-07 0.706946135" mass="0.002667928402341509" diaginertia="5.607913E-08 5.607913E-08 1.33813209E-08" />
+          </body>
+          <!-- part: M5x12-Screw010 -->
+          <body name="M5x12-Screw010" pos="-0.01249998 -0.121 -0.0175" quat="0.7071067 -0.707106948 -5.960465E-08 5.960465E-08">
+            <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_137" />
+            <inertial pos="3.5995834E-14 5.9848456E-19 -0.003798961" quat="0.707267463 -2.98023451E-07 2.98023451E-07 0.706946135" mass="0.002667928402341509" diaginertia="5.607913E-08 5.607913E-08 1.33813209E-08" />
+          </body>
+          <!-- part: M5x12-Screw029 -->
+          <body name="M5x12-Screw029" pos="-0.01249998 -0.121 -0.4675" quat="0.7071067 -0.707106948 -5.960465E-08 5.960465E-08">
+            <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_138" />
+            <inertial pos="3.5995834E-14 5.9848456E-19 -0.003798961" quat="0.707267463 -2.98023451E-07 2.98023451E-07 0.706946135" mass="0.002667928402341509" diaginertia="5.607913E-08 5.607913E-08 1.33813209E-08" />
+          </body>
+          <!-- part: M5x12-Screw030 -->
+          <body name="M5x12-Screw030" pos="0.01250002 -0.121 -0.4675" quat="0.7071067 -0.707106948 -5.960465E-08 5.960465E-08">
+            <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_139" />
+            <inertial pos="3.5995834E-14 5.9848456E-19 -0.003798961" quat="0.707267463 -2.98023451E-07 2.98023451E-07 0.706946135" mass="0.002667928402341509" diaginertia="5.607913E-08 5.607913E-08 1.33813209E-08" />
+          </body>
+          <!-- part: M5x12-Screw031 -->
+          <body name="M5x12-Screw031" pos="-0.01249998 -0.121 -0.4325" quat="0.7071067 -0.707106948 -5.960465E-08 5.960465E-08">
+            <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_140" />
+            <inertial pos="3.5995834E-14 5.9848456E-19 -0.003798961" quat="0.707267463 -2.98023451E-07 2.98023451E-07 0.706946135" mass="0.002667928402341509" diaginertia="5.607913E-08 5.607913E-08 1.33813209E-08" />
+          </body>
+          <!-- part: M5x12-Screw032 -->
+          <body name="M5x12-Screw032" pos="0.01250002 -0.121 -0.4325" quat="0.7071067 -0.707106948 -5.960465E-08 5.960465E-08">
+            <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_141" />
+            <inertial pos="3.5995834E-14 5.9848456E-19 -0.003798961" quat="0.707267463 -2.98023451E-07 2.98023451E-07 0.706946135" mass="0.002667928402341509" diaginertia="5.607913E-08 5.607913E-08 1.33813209E-08" />
+          </body>
+          <!-- part: M5x12-Screw033 -->
+          <body name="M5x12-Screw033" pos="-0.012500016 0.0975 0.003" quat="1 0 0 8.42936956E-08">
+            <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_142" />
+            <inertial pos="3.5995834E-14 5.9848456E-19 -0.003798961" quat="0.707267463 -2.98023451E-07 2.98023451E-07 0.706946135" mass="0.002667928402341509" diaginertia="5.607913E-08 5.607913E-08 1.33813209E-08" />
+          </body>
+          <!-- part: M5x12-Screw034 -->
+          <body name="M5x12-Screw034" pos="0.0124999834 0.0975 0.003" quat="1 0 0 8.42936956E-08">
+            <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_143" />
+            <inertial pos="3.5995834E-14 5.9848456E-19 -0.003798961" quat="0.707267463 -2.98023451E-07 2.98023451E-07 0.706946135" mass="0.002667928402341509" diaginertia="5.607913E-08 5.607913E-08 1.33813209E-08" />
+          </body>
+          <!-- part: M5-Washer032 -->
+          <body name="M5-Washer032" pos="-0.0124999816 -0.1065 -0.003" quat="2.83276934E-16 1 8.42936956E-08 0">
+            <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_144" />
+            <inertial pos="-5.86384763E-17 -1.84014612E-19 0.000492760155" quat="-0.4985746 0.501421332 0.4985746 0.501421332" mass="0.00043577387432931937" diaginertia="6.915349E-09 3.49325768E-09 3.49325768E-09" />
+          </body>
+          <!-- part: M5-Washer033 -->
+          <body name="M5-Washer033" pos="0.0125000179 -0.1065 -0.003" quat="2.83276934E-16 1 8.42936956E-08 0">
+            <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_145" />
+            <inertial pos="-5.86384763E-17 -1.84014612E-19 0.000492760155" quat="-0.4985746 0.501421332 0.4985746 0.501421332" mass="0.00043577387432931937" diaginertia="6.915349E-09 3.49325768E-09 3.49325768E-09" />
+          </body>
+          <!-- part: M5-Washer034 -->
+          <body name="M5-Washer034" pos="-0.0124999788 -0.127 0.0175" quat="0.7071067 0.707106948 5.960465E-08 5.960465E-08">
+            <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_146" />
+            <inertial pos="-5.86384763E-17 -1.84014612E-19 0.000492760155" quat="-0.4985746 0.501421332 0.4985746 0.501421332" mass="0.00043577387432931937" diaginertia="6.915349E-09 3.49325768E-09 3.49325768E-09" />
+          </body>
+          <!-- part: M5-Washer035 -->
+          <body name="M5-Washer035" pos="0.0125000207 -0.127 0.0175" quat="0.7071067 0.707106948 5.960465E-08 5.960465E-08">
+            <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_147" />
+            <inertial pos="-5.86384763E-17 -1.84014612E-19 0.000492760155" quat="-0.4985746 0.501421332 0.4985746 0.501421332" mass="0.00043577387432931937" diaginertia="6.915349E-09 3.49325768E-09 3.49325768E-09" />
+          </body>
+          <!-- part: M5-Washer012 -->
+          <body name="M5-Washer012" pos="-0.0124999788 -0.127 -0.0175" quat="0.7071067 0.707106948 5.960465E-08 5.960465E-08">
+            <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_148" />
+            <inertial pos="-5.86384763E-17 -1.84014612E-19 0.000492760155" quat="-0.4985746 0.501421332 0.4985746 0.501421332" mass="0.00043577387432931937" diaginertia="6.915349E-09 3.49325768E-09 3.49325768E-09" />
+          </body>
+          <!-- part: M5-Washer011 -->
+          <body name="M5-Washer011" pos="0.0125000207 -0.127 -0.0175" quat="0.7071067 0.707106948 5.960465E-08 5.960465E-08">
+            <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_149" />
+            <inertial pos="-5.86384763E-17 -1.84014612E-19 0.000492760155" quat="-0.4985746 0.501421332 0.4985746 0.501421332" mass="0.00043577387432931937" diaginertia="6.915349E-09 3.49325768E-09 3.49325768E-09" />
+          </body>
+          <!-- part: M5-Washer036 -->
+          <body name="M5-Washer036" pos="-0.0124999788 -0.127 -0.4325" quat="0.7071067 0.707106948 5.960465E-08 5.960465E-08">
+            <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_150" />
+            <inertial pos="-5.86384763E-17 -1.84014612E-19 0.000492760155" quat="-0.4985746 0.501421332 0.4985746 0.501421332" mass="0.00043577387432931937" diaginertia="6.915349E-09 3.49325768E-09 3.49325768E-09" />
+          </body>
+          <!-- part: M5-Washer037 -->
+          <body name="M5-Washer037" pos="0.0125000207 -0.127 -0.4325" quat="0.7071067 0.707106948 5.960465E-08 5.960465E-08">
+            <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_151" />
+            <inertial pos="-5.86384763E-17 -1.84014612E-19 0.000492760155" quat="-0.4985746 0.501421332 0.4985746 0.501421332" mass="0.00043577387432931937" diaginertia="6.915349E-09 3.49325768E-09 3.49325768E-09" />
+          </body>
+          <!-- part: M5-Washer038 -->
+          <body name="M5-Washer038" pos="-0.0124999788 -0.127 -0.4675" quat="0.7071067 0.707106948 5.960465E-08 5.960465E-08">
+            <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_152" />
+            <inertial pos="-5.86384763E-17 -1.84014612E-19 0.000492760155" quat="-0.4985746 0.501421332 0.4985746 0.501421332" mass="0.00043577387432931937" diaginertia="6.915349E-09 3.49325768E-09 3.49325768E-09" />
+          </body>
+          <!-- part: M5-Washer039 -->
+          <body name="M5-Washer039" pos="0.0125000207 -0.127 -0.4675" quat="0.7071067 0.707106948 5.960465E-08 5.960465E-08">
+            <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_153" />
+            <inertial pos="-5.86384763E-17 -1.84014612E-19 0.000492760155" quat="-0.4985746 0.501421332 0.4985746 0.501421332" mass="0.00043577387432931937" diaginertia="6.915349E-09 3.49325768E-09 3.49325768E-09" />
+          </body>
+          <!-- part: M5-Washer040 -->
+          <body name="M5-Washer040" pos="-0.012500016 0.0975 -0.003" quat="6.123234E-17 1 8.42936956E-08 0">
+            <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_154" />
+            <inertial pos="-5.86384763E-17 -1.84014612E-19 0.000492760155" quat="-0.4985746 0.501421332 0.4985746 0.501421332" mass="0.00043577387432931937" diaginertia="6.915349E-09 3.49325768E-09 3.49325768E-09" />
+          </body>
+          <!-- part: M5-Washer041 -->
+          <body name="M5-Washer041" pos="0.0124999834 0.0975 -0.003" quat="6.123234E-17 1 8.42936956E-08 0">
+            <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_155" />
+            <inertial pos="-5.86384763E-17 -1.84014612E-19 0.000492760155" quat="-0.4985746 0.501421332 0.4985746 0.501421332" mass="0.00043577387432931937" diaginertia="6.915349E-09 3.49325768E-09 3.49325768E-09" />
+          </body>
+          <!-- part: M5-Nut031 -->
+          <body name="M5-Nut031" pos="0.0125000179 -0.1065 -0.0087" quat="1 -2.220446E-16 0 8.42936956E-08">
+            <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_156" />
+            <inertial pos="-5.480601E-14 -2.8429933E-17 0.0023500002" quat="0.50191766 -0.498074949 -0.501917839 -0.498074949" mass="0.0015232949010801022" diaginertia="1.689134E-08 1.11607905E-08 1.11607905E-08" />
+          </body>
+          <!-- part: M5-Nut032 -->
+          <body name="M5-Nut032" pos="-0.0124999816 -0.1065 -0.0087" quat="1 -2.220446E-16 0 8.42936956E-08">
+            <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_157" />
+            <inertial pos="-5.480601E-14 -2.8429933E-17 0.0023500002" quat="0.50191766 -0.498074949 -0.501917839 -0.498074949" mass="0.0015232949010801022" diaginertia="1.689134E-08 1.11607905E-08 1.11607905E-08" />
+          </body>
+          <!-- part: M5-Nut033 -->
+          <body name="M5-Nut033" pos="-0.0124999778 -0.1327 0.0175" quat="0.7071067 -0.707106948 -5.960465E-08 5.960465E-08">
+            <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_158" />
+            <inertial pos="-5.480601E-14 -2.8429933E-17 0.0023500002" quat="0.50191766 -0.498074949 -0.501917839 -0.498074949" mass="0.0015232949010801022" diaginertia="1.689134E-08 1.11607905E-08 1.11607905E-08" />
+          </body>
+          <!-- part: M5-Nut034 -->
+          <body name="M5-Nut034" pos="0.0125000216 -0.1327 0.0175" quat="0.7071067 -0.707106948 -5.960465E-08 5.960465E-08">
+            <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_159" />
+            <inertial pos="-5.480601E-14 -2.8429933E-17 0.0023500002" quat="0.50191766 -0.498074949 -0.501917839 -0.498074949" mass="0.0015232949010801022" diaginertia="1.689134E-08 1.11607905E-08 1.11607905E-08" />
+          </body>
+          <!-- part: M5-Nut010 -->
+          <body name="M5-Nut010" pos="-0.0124999778 -0.1327 -0.0175" quat="0.7071067 -0.707106948 -5.960465E-08 5.960465E-08">
+            <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_160" />
+            <inertial pos="-5.480601E-14 -2.8429933E-17 0.0023500002" quat="0.50191766 -0.498074949 -0.501917839 -0.498074949" mass="0.0015232949010801022" diaginertia="1.689134E-08 1.11607905E-08 1.11607905E-08" />
+          </body>
+          <!-- part: M5-Nut011 -->
+          <body name="M5-Nut011" pos="0.0125000216 -0.1327 -0.0175" quat="0.7071067 -0.707106948 -5.960465E-08 5.960465E-08">
+            <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_161" />
+            <inertial pos="-5.480601E-14 -2.8429933E-17 0.0023500002" quat="0.50191766 -0.498074949 -0.501917839 -0.498074949" mass="0.0015232949010801022" diaginertia="1.689134E-08 1.11607905E-08 1.11607905E-08" />
+          </body>
+          <!-- part: M5-Nut035 -->
+          <body name="M5-Nut035" pos="0.0125000216 -0.1327 -0.4675" quat="0.7071067 -0.707106948 -5.960465E-08 5.960465E-08">
+            <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_162" />
+            <inertial pos="-5.480601E-14 -2.8429933E-17 0.0023500002" quat="0.50191766 -0.498074949 -0.501917839 -0.498074949" mass="0.0015232949010801022" diaginertia="1.689134E-08 1.11607905E-08 1.11607905E-08" />
+          </body>
+          <!-- part: M5-Nut036 -->
+          <body name="M5-Nut036" pos="-0.0124999778 -0.1327 -0.4675" quat="0.7071067 -0.707106948 -5.960465E-08 5.960465E-08">
+            <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_163" />
+            <inertial pos="-5.480601E-14 -2.8429933E-17 0.0023500002" quat="0.50191766 -0.498074949 -0.501917839 -0.498074949" mass="0.0015232949010801022" diaginertia="1.689134E-08 1.11607905E-08 1.11607905E-08" />
+          </body>
+          <!-- part: M5-Nut037 -->
+          <body name="M5-Nut037" pos="0.0125000216 -0.1327 -0.4325" quat="0.7071067 -0.707106948 -5.960465E-08 5.960465E-08">
+            <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_164" />
+            <inertial pos="-5.480601E-14 -2.8429933E-17 0.0023500002" quat="0.50191766 -0.498074949 -0.501917839 -0.498074949" mass="0.0015232949010801022" diaginertia="1.689134E-08 1.11607905E-08 1.11607905E-08" />
+          </body>
+          <!-- part: M5-Nut038 -->
+          <body name="M5-Nut038" pos="-0.0124999778 -0.1327 -0.4325" quat="0.7071067 -0.707106948 -5.960465E-08 5.960465E-08">
+            <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_165" />
+            <inertial pos="-5.480601E-14 -2.8429933E-17 0.0023500002" quat="0.50191766 -0.498074949 -0.501917839 -0.498074949" mass="0.0015232949010801022" diaginertia="1.689134E-08 1.11607905E-08 1.11607905E-08" />
+          </body>
+          <!-- part: M5-Nut039 -->
+          <body name="M5-Nut039" pos="-0.012500016 0.0975 -0.0087" quat="1 0 0 8.42936956E-08">
+            <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_166" />
+            <inertial pos="-5.480601E-14 -2.8429933E-17 0.0023500002" quat="0.50191766 -0.498074949 -0.501917839 -0.498074949" mass="0.0015232949010801022" diaginertia="1.689134E-08 1.11607905E-08 1.11607905E-08" />
+          </body>
+          <!-- part: M5-Nut040 -->
+          <body name="M5-Nut040" pos="0.0124999834 0.0975 -0.0087" quat="1 0 0 8.42936956E-08">
+            <geom type="mesh" pos="0 0 0" quat="1 0 0 0" size="0 0 0" contype="0" conaffinity="0" condim="3" group="0" priority="0" friction="1 0.005 0.0001" solmix="1" solref="0.02 1" solimp="0.9 0.95 0.001 0.5 2" margin="0" gap="0" density="1000" rgba="0.5 0.5 0.5 1" shellinertia="false" fitscale="1" fluidshape="none" fluidcoef="0.5 0.25 1.5 1 1" surfacevel="0 0 0 0 0 0" adhesion="0" mesh="mesh_167" />
+            <inertial pos="-5.480601E-14 -2.8429933E-17 0.0023500002" quat="0.50191766 -0.498074949 -0.501917839 -0.498074949" mass="0.0015232949010801022" diaginertia="1.689134E-08 1.11607905E-08 1.11607905E-08" />
+          </body>
+        </body>
+      </body>
+    </body>
+  </worldbody>
+  <actuator>
+    <position name="03-Cart.Slider.Actuator" group="0" delay="0" ctrllimited="true" forcelimited="true" ctrlrange="-0.4 0.4" forcerange="-157 157" gear="1 0 0 0 0 0" joint="02-Cart.Slider.joint" kp="8000" dampratio="1" timeconst="0" inheritrange="0" damping="0" armature="0" />
+  </actuator>
+</mujoco>

@@ -1,0 +1,11 @@
+[package]
+name = "aruco-gen"
+version = "0.1.0"
+edition = "2024"
+description = "4x4 ArUco marker SVG generator (DICT_4X4_50), library + CLI"
+
+[dependencies]
+clap = { version = "4", features = ["derive"] }
+
+[lib]
+name = "aruco_gen"

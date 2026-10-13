@@ -119,3 +119,8 @@ root itself gets no mass component.
 - Never treat a fresh FreeCAD export as final: exporting wipes everything
   the patcher injected, so step 3 always follows step 2.
 - Keep the STEP stem and the FCStd stem identical.
+- Run the patcher with the Unity Editor closed (or hit **Reimport** on the
+  STEP asset right after patching). Patching a STEP in place while the
+  Editor is running stales Unity 6's import bookkeeping and produces
+  `VerifyAsset called with invalid importResultID` / `GuidPersistentManager`
+  errors on the next Project-window interaction.

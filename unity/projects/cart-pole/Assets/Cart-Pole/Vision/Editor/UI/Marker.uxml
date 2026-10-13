@@ -1,0 +1,18 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:ue="UnityEditor.UIElements">
+    <ui:VisualElement class="marker-form">
+        <ui:Label text="ArUco Marker" class="section-title" />
+        <ue:PropertyField binding-path="label" />
+        <ue:PropertyField binding-path="arUcoId" name="arUcoId-field" />
+        <ui:Label name="anchor-empty-warning" class="warning" text="anchor is empty — drop a robot-assembly part to rebind" />
+        <ui:Label name="anchor-source-warning" class="warning" text="anchor has no STEP source — drop a robot-assembly part to rebind" />
+        <ui:Label name="anchor-unresolved-warning" class="warning" text="anchor path does not resolve inside the assembly instance" />
+        <ui:VisualElement name="anchor-slot" />
+        <ue:PropertyField binding-path="prefab" />
+        <ui:VisualElement name="prefab-slot" />
+        <ue:PropertyField binding-path="size" />
+        <ui:Label name="size-warning" class="warning" text="size must be greater than 0" />
+        <ue:PropertyField binding-path="localOffset" />
+        <ue:PropertyField binding-path="localEuler" />
+        <ui:Button name="save-button" text="Save" class="save-button" />
+    </ui:VisualElement>
+</ui:UXML>

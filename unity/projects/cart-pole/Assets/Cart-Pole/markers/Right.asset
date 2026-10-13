@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cc4d64d224c59051bae3bf24c54006c2, type: 3}
+  m_Name: Right
+  m_EditorClassIdentifier: Assembly-CSharp::CartPole.Vision.MarkerSO
+  label: Right
+  arUcoId: 0596
+  anchor:
+    indices: 000000001d000000i
+    name: empty
+  stepAssetPath: Assets/asy-cart-pole.step
+  prefab: {fileID: 4157401687642900028, guid: a6e0d5adf9d24ab718c42760d303514b, type: 3}
+  size: 0.05
+  localOffset: {x: 0, y: 0, z: -0.002}
+  localEuler: {x: 0, y: 0, z: 0}
