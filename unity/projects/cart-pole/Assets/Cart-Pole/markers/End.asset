@@ -22,3 +22,5 @@ MonoBehaviour:
   size: 0.05
   localOffset: {x: 0, y: 0, z: -0.002}
   localEuler: {x: 0, y: 0, z: 0}
+  flipVertical: 0
+  flipHorizontal: 0

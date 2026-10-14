@@ -13,6 +13,8 @@
         <ui:Label name="size-warning" class="warning" text="size must be greater than 0" />
         <ue:PropertyField binding-path="localOffset" />
         <ue:PropertyField binding-path="localEuler" />
+        <ue:PropertyField binding-path="flipVertical" />
+        <ue:PropertyField binding-path="flipHorizontal" />
         <ui:Button name="save-button" text="Save" class="save-button" />
     </ui:VisualElement>
 </ui:UXML>

@@ -488,14 +488,8 @@ namespace CartPole.Vision
                     Mathf.CeilToInt((max.y - min.y) * Marker8KHeight) + 40, 1, Marker8KHeight - yTop);
                 var yGl = Marker8KHeight - yTop - ch;
                 var block = markerReadback.GetPixels(x0, yGl, cw, ch);
-                var upright = new Color[cw * ch];
-                for (var row = 0; row < ch; row++)
-                {
-                    Array.Copy(
-                        block, (ch - 1 - row) * cw, upright, row * cw, cw);
-                }
                 var crop = new Texture2D(cw, ch, TextureFormat.RGB24, false);
-                crop.SetPixels(upright);
+                crop.SetPixels(block);
                 crop.Apply();
                 File.WriteAllBytes(
                     $"{outputDirectory}/{name}_8k_marker_{tagId:0000}.jpg",

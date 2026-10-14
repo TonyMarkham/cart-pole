@@ -63,5 +63,14 @@ namespace CartPole.Vision
         public Vector3 localOffset = Vector3.zero;
 
         public Vector3 localEuler = Vector3.zero;
+
+        // Orientation correction for the rendered marker relative to the
+        // physical printed marker: flips the texture mapping on the
+        // applied quad so the rendered marker matches the physical
+        // marker's mounting. Consumed by the MarkerManager at
+        // instantiation, the same way localOffset/localEuler are.
+        public bool flipVertical;
+
+        public bool flipHorizontal;
     }
 }

@@ -10,4 +10,6 @@
 *.csproj
 *.sln
 *.slnx
-.vscode/
+
+/[Aa]ssets/Captures/
+/[Aa]ssets/Captures.meta

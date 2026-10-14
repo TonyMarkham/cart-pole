@@ -1,6 +1,7 @@
 {
   "dependencies": {
     "com.greyhound.step": "file:../../../../../greyhound-snake/dist/package/com.greyhound.step",
+    "com.greyhound.vision": "file:../../../../../greyhound-snake/dist/package/com.greyhound.vision",
     "com.unity.ai.navigation": "2.0.15",
     "com.unity.collab-proxy": "2.13.6",
     "com.unity.ide.rider": "3.0.40",

@@ -6,6 +6,14 @@
       "source": "local",
       "dependencies": {}
     },
+    "com.greyhound.vision": {
+      "version": "file:../../../../../greyhound-snake/dist/package/com.greyhound.vision",
+      "depth": 0,
+      "source": "local",
+      "dependencies": {
+        "com.greyhound.step": "0.1.0"
+      }
+    },
     "com.unity.ai.navigation": {
       "version": "2.0.15",
       "depth": 0,

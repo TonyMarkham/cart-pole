@@ -99,6 +99,24 @@ namespace CartPole.Vision
                 instance.name = markerName;
                 instance.transform.localPosition = marker.localOffset;
                 instance.transform.localRotation = Quaternion.Euler(marker.localEuler);
+                // The SO's authored orientation correction: flip the
+                // texture mapping on the quad's material. A negative
+                // scale mirrors the texture on that axis; the +1 offset
+                // keeps the mirrored image inside the [0, 1] UV range.
+                // renderer.material (not sharedMaterial): a per-instance
+                // material, so the authored flags of one marker never
+                // touch another's.
+                var markerRenderer = instance.GetComponentInChildren<MeshRenderer>();
+                if (markerRenderer != null)
+                {
+                    var material = markerRenderer.material;
+                    material.mainTextureScale = new Vector2(
+                        marker.flipHorizontal ? -1f : 1f,
+                        marker.flipVertical ? -1f : 1f);
+                    material.mainTextureOffset = new Vector2(
+                        marker.flipHorizontal ? 1f : 0f,
+                        marker.flipVertical ? 1f : 0f);
+                }
                 applied++;
                 classIndex++;
             }
