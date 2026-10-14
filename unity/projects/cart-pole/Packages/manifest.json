@@ -1,7 +1,7 @@
 {
   "dependencies": {
-    "com.greyhound.step": "file:/home/tony/git/greyhound-snake/dist/package/com.greyhound.step",
-    "com.unity.ai.navigation": "2.0.14",
+    "com.greyhound.step": "file:../../../../../greyhound-snake/dist/package/com.greyhound.step",
+    "com.unity.ai.navigation": "2.0.15",
     "com.unity.collab-proxy": "2.13.6",
     "com.unity.ide.rider": "3.0.40",
     "com.unity.ide.visualstudio": "2.0.27",

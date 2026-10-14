@@ -1,13 +1,13 @@
 {
   "dependencies": {
     "com.greyhound.step": {
-      "version": "file:/home/tony/git/greyhound-snake/dist/package/com.greyhound.step",
+      "version": "file:../../../../../greyhound-snake/dist/package/com.greyhound.step",
       "depth": 0,
       "source": "local",
       "dependencies": {}
     },
     "com.unity.ai.navigation": {
-      "version": "2.0.14",
+      "version": "2.0.15",
       "depth": 0,
       "source": "registry",
       "dependencies": {
