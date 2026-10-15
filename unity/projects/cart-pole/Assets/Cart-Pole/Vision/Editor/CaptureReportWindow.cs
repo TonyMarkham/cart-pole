@@ -149,6 +149,18 @@ namespace CartPole.Vision.Editor
             }
         }
 
+        // The marker crops live in the wip~ sidecar directory (the
+        // folder Unity's AssetDatabase ignores); corpora captured
+        // before that layout keep them at the dataset root.
+        private static string CropPath(string directory, string stem, int id)
+        {
+            var wip = Path.Combine(
+                directory, "wip~", $"{stem}_8k_marker_{id:0000}.jpg");
+            return File.Exists(wip)
+                ? wip
+                : Path.Combine(directory, $"{stem}_8k_marker_{id:0000}.jpg");
+        }
+
         private void Load()
         {
             rows.Clear();
@@ -161,8 +173,14 @@ namespace CartPole.Vision.Editor
 
             // The authored marker classes, from markers.json - the
             // missing 8K crops per frame name the dropped markers.
+            // Sidecars live in the wip~ directory Unity ignores;
+            // legacy corpora keep them at the dataset root.
             var markerDefs = new List<MarkerDef>();
-            var markersPath = Path.Combine(directory, "markers.json");
+            var markersPath = Path.Combine(directory, "wip~", "markers.json");
+            if (!File.Exists(markersPath))
+            {
+                markersPath = Path.Combine(directory, "markers.json");
+            }
             if (File.Exists(markersPath))
             {
                 var list = JsonUtility.FromJson<MarkerList>(
@@ -181,7 +199,17 @@ namespace CartPole.Vision.Editor
                 }
             }
 
-            foreach (var jsonPath in Directory.GetFiles(directory, "frame_*_state.json"))
+            // The per-frame state jsons live in the wip~ sidecar
+            // directory; legacy corpora keep them at the dataset root.
+            var wip = Path.Combine(directory, "wip~");
+            var jsonFiles = Directory.Exists(wip)
+                ? Directory.GetFiles(wip, "frame_*_state.json")
+                : Array.Empty<string>();
+            if (jsonFiles.Length == 0)
+            {
+                jsonFiles = Directory.GetFiles(directory, "frame_*_state.json");
+            }
+            foreach (var jsonPath in jsonFiles)
             {
                 var state = JsonUtility.FromJson<StateEntry>(
                     File.ReadAllText(jsonPath));
@@ -194,8 +222,7 @@ namespace CartPole.Vision.Editor
                 var missing = new List<string>();
                 foreach (var def in markerDefs)
                 {
-                    var cropPath = Path.Combine(directory,
-                        $"{stem}_8k_marker_{def.id:0000}.jpg");
+                    var cropPath = CropPath(directory, stem, def.id);
                     if (!File.Exists(cropPath))
                     {
                         missing.Add($"{def.id:0000}");
@@ -218,7 +245,11 @@ namespace CartPole.Vision.Editor
             }
             rows.Sort((a, b) => string.CompareOrdinal(a.frame, b.frame));
 
-            var zeroPath = Path.Combine(directory, "zero_marker_crops.txt");
+            var zeroPath = Path.Combine(directory, "wip~", "zero_marker_crops.txt");
+            if (!File.Exists(zeroPath))
+            {
+                zeroPath = Path.Combine(directory, "zero_marker_crops.txt");
+            }
             if (File.Exists(zeroPath))
             {
                 foreach (var line in File.ReadAllLines(zeroPath))

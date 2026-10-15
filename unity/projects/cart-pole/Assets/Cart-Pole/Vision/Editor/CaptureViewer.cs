@@ -125,7 +125,14 @@ namespace CartPole.Vision.Editor
                 }
                 frames.Sort();
             }
-            var classesPath = $"{directory}/classes.txt";
+            // classes.txt is a capture sidecar: it lives in the wip~
+            // directory Unity's AssetDatabase ignores; legacy corpora
+            // keep it at the dataset root.
+            var classesPath = $"{directory}/wip~/classes.txt";
+            if (!File.Exists(classesPath))
+            {
+                classesPath = $"{directory}/classes.txt";
+            }
             classNames = File.Exists(classesPath)
                 ? File.ReadAllLines(classesPath)
                 : System.Array.Empty<string>();

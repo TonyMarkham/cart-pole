@@ -741,12 +741,15 @@ MonoBehaviour:
   minLightIntensity: 2
   maxLightIntensity: 4
   frontLightRange: 90
-  states: 20
+  states: 50
   interval: 0.5
   cartRange: 0.45
   poleSpan: 3
   seed: 0
-  forcedSituations: []
+  forcedSituations:
+  - {fileID: 11400000, guid: 435cf8e03dbf4556fbbd21a5902cd803, type: 2}
+  - {fileID: 11400000, guid: 99e6ebf37541fa543bf7275cd63c942f, type: 2}
+  - {fileID: 11400000, guid: ab48461c93dc2dd438c96eded6d976da, type: 2}
 --- !u!1 &1090045406 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: -3307206622709248564, guid: db4039a097603222aa79557805afca4e, type: 3}

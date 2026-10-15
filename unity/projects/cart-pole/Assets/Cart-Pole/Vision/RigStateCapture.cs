@@ -11,8 +11,13 @@ namespace CartPole.Vision
     // the assigned camera, writes a JPEG and a YOLO label derived from
     // the placed ArUco marker quads. Where the images land is this
     // component's outputDirectory - the randomizer itself writes
-    // nothing. Play mode only; the subscription lives with the
-    // component's enable state.
+    // nothing. The camera frames and the labels land in
+    // outputDirectory itself; every other artifact (8K renders, marker
+    // crops, manifests, the marker/class lists) goes to its wip~
+    // sidecar directory - Unity's AssetDatabase skips trailing-tilde
+    // folders entirely, and git ignores them, so the committed corpus
+    // is exactly the camera frames and their labels. Play mode only;
+    // the subscription lives with the component's enable state.
     //
     // Label math: each marker quad's four corners are projected through
     // the capture camera (WorldToViewportPoint, a pinhole model - FOV
@@ -50,6 +55,15 @@ namespace CartPole.Vision
 
         [SerializeField] private string outputDirectory = "Assets/Captures/cart-pole";
 
+        // The sidecar directory: everything the capture writes beyond
+        // the 1440x1080 camera frames and the YOLO labels - the 8K
+        // renders, the marker crops, the per-frame manifests,
+        // markers.json, classes.txt. The trailing "~" makes Unity's
+        // AssetDatabase skip the folder entirely (not imported, no
+        // .meta minted, invisible in the Project browser), and the
+        // repo's .gitignore (wip~/) keeps it out of git.
+        private string WipDirectory => $"{outputDirectory}/wip~";
+
         [SerializeField] private int captureWidth = 960;
 
         [SerializeField] private int captureHeight = 540;
@@ -67,7 +81,6 @@ namespace CartPole.Vision
         private Vector3 cameraBasePosition;
         private System.Random jitterRandom;
         private RigStateRandomizer.StateEvent lastEvent;
-        private string lastFrame;
         private readonly Dictionary<string, string> arucoDroppedMarkers =
             new Dictionary<string, string>();
         private bool warnedNoBounds;
@@ -90,6 +103,7 @@ namespace CartPole.Vision
                 ? new System.Random()
                 : new System.Random(jitterSeed);
             Directory.CreateDirectory(outputDirectory);
+            Directory.CreateDirectory(WipDirectory);
             target = new RenderTexture(captureWidth, captureHeight, 24);
             readback = new Texture2D(captureWidth, captureHeight, TextureFormat.RGB24, false);
             randomizer.StateApplied += OnStateApplied;
@@ -127,144 +141,50 @@ namespace CartPole.Vision
             Capture();
         }
 
-        private int arucoFrames;
-        private int arucoKept;
-        private int arucoDropped;
-        private readonly List<VerificationFrame> arucoPerFrame =
-            new List<VerificationFrame>();
-
-        [Serializable]
-        private sealed class VerificationFrame
-        {
-            public string frame;
-            public int confirmed;
-            public int dropped;
-            public string droppedMarkers;
-        }
-
-        [Serializable]
-        private sealed class VerificationStats
-        {
-            public string dataset;
-            public int framesScanned;
-            public int labelsConfirmed;
-            public int labelsDropped;
-            public VerificationFrame[] frames;
-        }
-
-        private static int ParseCount(string data, string keyword)
-        {
-            var parts = data.Split(' ');
-            for (var i = 1; i < parts.Length; i++)
-            {
-                if (parts[i].StartsWith(keyword) &&
-                    int.TryParse(parts[i - 1], out var value))
-                {
-                    return value;
-                }
-            }
-            return 0;
-        }
-
-        // Run over: the OpenCV verification runs automatically - the
-        // checker saves a cropped tag scan per detected 4K marker and
-        // rewrites the labels, dropping every box whose tag cannot be
-        // re-verified from its own crop (cropped scans are the only
-        // verification basis).
+        // Run over: the verification runs in-process - every retained
+        // crop (frame_NNNNNN_8k_marker_TTTT.jpg, in wip~) goes through
+        // the native ghcv detector, and a label line survives only when
+        // its class's crop decodes to exactly that class's marker. The
+        // verifier never wipes: zero confirmations refuse the rewrite
+        // and keep the labels as written.
         private void OnRunCompleted()
         {
 #if UNITY_EDITOR
-            var projectRoot = Directory.GetParent(Application.dataPath).FullName;
-            var checker = Path.Combine(projectRoot, "Tools", "aruco_check.py");
-            var uvCandidates = new[] { "uv", "/home/tony/.local/bin/uv" };
-            foreach (var uv in uvCandidates)
+            var entries = new List<ArUcoVerifierEntry>();
+            if (markerManager != null && markerManager.rig != null)
             {
-                var psi = new System.Diagnostics.ProcessStartInfo
+                // The class id is the rig slot order - the same rule
+                // EnsureMarkers applies when it builds classTagIds; a
+                // marker without a tag gets no entry, so its labels
+                // drop as unmapped.
+                var classIndex = 0;
+                foreach (var marker in markerManager.rig.Markers)
                 {
-                    FileName = uv,
-                    Arguments = $"run --with opencv-python python \"{checker}\" \"{outputDirectory}\" --write",
-                    WorkingDirectory = projectRoot,
-                    RedirectStandardOutput = true,
-                    RedirectStandardError = true,
-                    UseShellExecute = false,
-                    CreateNoWindow = true,
-                };
-                System.Diagnostics.Process process;
-                try
-                {
-                    process = System.Diagnostics.Process.Start(psi);
-                }
-                catch (System.ComponentModel.Win32Exception)
-                {
-                    continue;   // uv not on this PATH - try the next candidate
-                }
-                process.OutputDataReceived += (_, line) =>
-                {
-                    var data = line?.Data;
-                    if (string.IsNullOrEmpty(data))
+                    if (marker == null)
                     {
-                        return;
+                        continue;
                     }
-                    Debug.Log($"[aruco_check] {data}");
-                    if (data.StartsWith("frame_") &&
-                        data.Contains("confirmed") && data.Contains("dropped"))
+                    if (marker.TagId >= 0)
                     {
-                        // "frame_000000.jpg: 2 confirmed, 1 dropped"
-                        arucoFrames++;
-                        arucoKept += ParseCount(data, "confirmed");
-                        arucoDropped += ParseCount(data, "dropped");
-                        lastFrame = data.Substring(0, data.IndexOf(".jpg"));
-                        arucoPerFrame.Add(new VerificationFrame
+                        entries.Add(new ArUcoVerifierEntry
                         {
-                            frame = lastFrame,
-                            confirmed = ParseCount(data, "confirmed"),
-                            dropped = ParseCount(data, "dropped"),
+                            classId = classIndex,
+                            tagId = marker.TagId,
+                            label = marker.label,
                         });
                     }
-                    else if (data.StartsWith("dropped_markers: "))
-                    {
-                        // "dropped_markers: Pivot, End" - names the
-                        // unrecognized markers of the preceding frame.
-                        if (arucoPerFrame.Count > 0)
-                        {
-                            arucoPerFrame[^1].droppedMarkers =
-                                data["dropped_markers: ".Length..];
-                        }
-                    }
-                    else if (data.StartsWith("done:"))
-                    {
-                        // "done: 23 kept, 6 dropped (...)"
-                        arucoKept = ParseCount(data, "kept");
-                        arucoDropped = ParseCount(data, "dropped");
-                        File.WriteAllText(
-                            $"{outputDirectory}/verification_stats.json",
-                            JsonUtility.ToJson(new VerificationStats
-                            {
-                                dataset = outputDirectory,
-                                framesScanned = arucoFrames,
-                                labelsConfirmed = arucoKept,
-                                labelsDropped = arucoDropped,
-                                frames = arucoPerFrame.ToArray(),
-                            }, true) + "\n");
-                        Debug.Log(
-                            "[RigStateCapture] verification stats: " +
-                            $"{arucoFrames} frames scanned, {arucoKept} labels " +
-                            $"confirmed, {arucoDropped} labels dropped " +
-                            "- saved to verification_stats.json");
-                    }
-                };
-                process.ErrorDataReceived += (_, line) =>
-                {
-                    if (!string.IsNullOrEmpty(line?.Data))
-                    {
-                        Debug.LogWarning($"[aruco_check] {line.Data}");
-                    }
-                };
-                process.BeginOutputReadLine();
-                process.BeginErrorReadLine();
-                return;
+                    classIndex++;
+                }
             }
-            Debug.LogError("[RigStateCapture] could not start uv - OpenCV verification not run");
+            var result = ArUcoVerifier.Verify(outputDirectory, entries);
+            Debug.Log(
+                "[RigStateCapture] verification stats: " +
+                $"{result.framesScanned} frames scanned, {result.labelsConfirmed} " +
+                $"labels confirmed, {result.labelsDropped} labels dropped" +
+                (result.WriteRefused
+                    ? " - zero confirmations, labels kept as written"
+                    : " - labels rewritten") +
+                " - saved to verification_stats.json");
 #endif
         }
 
@@ -302,8 +222,8 @@ namespace CartPole.Vision
                 {
                     continue;
                 }
-                // Python-friendly form: the plain int id OpenCV reports,
-                // exported here - not reassembled in Python.
+                // The detector's plain int id, exported as-is - no
+                // consumer reassembles the id from parts.
                 list.markers.Add(new MarkerEntry
                 {
                     classId = classIndex,
@@ -313,7 +233,7 @@ namespace CartPole.Vision
                 classIndex++;
             }
             File.WriteAllText(
-                $"{outputDirectory}/markers.json",
+                $"{WipDirectory}/markers.json",
                 JsonUtility.ToJson(list, true));
         }
 
@@ -355,19 +275,30 @@ namespace CartPole.Vision
             {
                 JitterCamera();
             }
+            var name = $"frame_{frames:D6}";
             var previousActive = RenderTexture.active;
             var previousTarget = captureCamera.targetTexture;
             captureCamera.targetTexture = target;
             captureCamera.Render();
+            // The label projection must run while the camera is still in
+            // the configuration that rendered the image: this camera is
+            // physical (Pi GS sensor gate 4.968x3.726 mm), and a gate fit
+            // makes the vertical projection target-aspect-dependent.
+            // Restoring the target first would re-project the boxes in
+            // the Game view's aspect - measured skew: boxes ~1.5x too
+            // tall, tags up to 128 px off at the frame's bottom edge,
+            // while x stayed correct (the horizontal half-tangent is the
+            // gate fit's anchor). The 8K side never had this bug: the
+            // marker camera's RT stays attached for its render and its
+            // crop-cut projection alike.
+            WriteLabel(name);
             captureCamera.targetTexture = previousTarget;
             RenderTexture.active = target;
             readback.ReadPixels(new Rect(0, 0, captureWidth, captureHeight), 0, 0);
             RenderTexture.active = previousActive;
             readback.Apply();
-            var name = $"frame_{frames:D6}";
             File.WriteAllBytes($"{outputDirectory}/{name}.jpg",
                 readback.EncodeToJPG(jpegQuality));
-            WriteLabel(name);
             WriteManifest(name);
             CaptureMarker8K(name);
             frames++;
@@ -444,7 +375,7 @@ namespace CartPole.Vision
             markerReadback.Apply();
             RenderTexture.active = previousActive;
             File.WriteAllBytes(
-                $"{outputDirectory}/{name}_8k.jpg",
+                $"{WipDirectory}/{name}_8k.jpg",
                 markerReadback.EncodeToJPG(jpegQuality));
 
             // Retain a crop of every marker: the pixel rectangle comes
@@ -492,7 +423,7 @@ namespace CartPole.Vision
                 crop.SetPixels(block);
                 crop.Apply();
                 File.WriteAllBytes(
-                    $"{outputDirectory}/{name}_8k_marker_{tagId:0000}.jpg",
+                    $"{WipDirectory}/{name}_8k_marker_{tagId:0000}.jpg",
                     crop.EncodeToJPG(jpegQuality));
                 DestroyImmediate(crop);
             }
@@ -534,7 +465,7 @@ namespace CartPole.Vision
                 cameraRotation = captureCamera.transform.eulerAngles,
             };
             File.WriteAllText(
-                $"{outputDirectory}/{name}_state.json",
+                $"{WipDirectory}/{name}_state.json",
                 JsonUtility.ToJson(entry, true) + "\n");
         }
 
@@ -612,7 +543,7 @@ namespace CartPole.Vision
             {
                 builder.AppendLine(pair.Value);
             }
-            File.WriteAllText($"{outputDirectory}/classes.txt", builder.ToString());
+            File.WriteAllText($"{WipDirectory}/classes.txt", builder.ToString());
         }
 
         // Jitters the capture position around its authored base: a random

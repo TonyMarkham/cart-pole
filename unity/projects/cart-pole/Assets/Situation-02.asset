@@ -10,19 +10,19 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c32dfde347e20270b80c8ef87b630093, type: 3}
-  m_Name: Situation
+  m_Name: Situation-02
   m_EditorClassIdentifier: Assembly-CSharp::CartPole.Vision.ForcedSituationSO
-  label: frame_000000_state
-  cartPosition: -0.27417
-  poleRotation: 2.7167103
-  useCameraPosition: 1
-  cameraPosition: {x: -0.23868938, y: 0.07999627, z: -3.0997193}
-  cameraRotation: {x: -0.00006865572, y: 4.4032893, z: -4.0711095e-13}
+  label: frame_000012_state
+  cartPosition: 0.06274121
+  poleRotation: -1.459707
+  useCameraPosition: 0
+  cameraPosition: {x: -0.0429324, y: 0.6930201, z: -3.6544971}
+  cameraRotation: {x: 9.5217285, y: 0.67306995, z: 0.000000006763284}
   useDesk: 1
-  desk: {fileID: 11400000, guid: 687552c19743502dfbc751022127a864, type: 2}
+  desk: {fileID: 11400000, guid: 85998a8d900ca98e881c971c290d42f9, type: 2}
   useSkybox: 1
   skybox: {fileID: 2100000, guid: aa692ef708e44a800a86b2a546921c18, type: 2}
-  skyboxYaw: 23.520388
+  skyboxYaw: 52.82105
   useLight: 1
-  lightIntensity: 2.5497558
-  lightYaw: 146.71747
+  lightIntensity: 2.895659
+  lightYaw: 75.517784

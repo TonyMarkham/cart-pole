@@ -64,7 +64,13 @@ namespace CartPole.Vision
 
         // Forced situations applied verbatim before the random states -
         // every run contains them, so the hard cases are always in the
-        // dataset.
+        // dataset. Verbatim covers the whole situation: cart, pole,
+        // camera pose (when useCameraPosition) and the authored desk,
+        // skybox (+ yaw), and light (+ intensity) when those use* flags
+        // are set. A false flag leaves that element untouched, which is
+        // deterministic only because forced states run first - the
+        // scene is still pristine, not the previous state's
+        // randomization.
         [SerializeField] private List<ForcedSituationSO> forcedSituations =
             new List<ForcedSituationSO>();
 
@@ -149,12 +155,25 @@ namespace CartPole.Vision
             // One frame of grace so the MarkerManager's Start has applied
             // the markers before the first state (and its capture) fires.
             yield return null;
+            var plannedForced = 0;
+            foreach (var situation in forcedSituations)
+            {
+                if (situation != null)
+                {
+                    plannedForced++;
+                }
+            }
+            Debug.Log(
+                $"[RigStateRandomizer] plan: {plannedForced} forced + {states} " +
+                "random states, forced first");
+            var forcedCount = 0;
             foreach (var situation in forcedSituations)
             {
                 if (situation == null)
                 {
                     continue;
                 }
+                forcedCount++;
                 yield return ApplyOneState(situation);
             }
             for (var i = 0; i < states; i++)
@@ -164,8 +183,8 @@ namespace CartPole.Vision
                 yield return ApplyRandomState(cart, pole);
             }
             Debug.Log(
-                $"[RigStateRandomizer] done - {forcedSituations.Count} forced + " +
-                $"{states} random states applied");
+                $"[RigStateRandomizer] done - {forcedCount} forced + {states} " +
+                "random states applied, forced first");
             RunCompleted?.Invoke();
         }
 
@@ -184,7 +203,8 @@ namespace CartPole.Vision
                 situation.useCameraPosition,
                 situation.cameraPosition,
                 situation.cameraRotation,
-                json);
+                json,
+                situation);
         }
 
         private IEnumerator ApplyRandomState(float cart, float pole)
@@ -201,13 +221,25 @@ namespace CartPole.Vision
         // The StateEvent is built here - after this state's desk, skybox
         // and light have been applied - so the manifest records what is
         // actually in the frame, not the state of the previous one.
+        // Random states pass forced = null and get the randomization;
+        // forced states get their situation's environment verbatim.
         private IEnumerator RunState(
             string situation, float cart, float pole, bool hasCamera,
-            Vector3 cameraPosition, Vector3 cameraRotation, string json)
+            Vector3 cameraPosition, Vector3 cameraRotation, string json,
+            ForcedSituationSO forced = null)
         {
-            ApplyLight();
-            ApplySkybox();
-            SpawnDesk();
+            if (forced != null)
+            {
+                ApplyLight(forced);
+                ApplySkybox(forced);
+                SpawnDesk(forced);
+            }
+            else
+            {
+                ApplyLight();
+                ApplySkybox();
+                SpawnDesk();
+            }
             var stateEvent = new StateEvent
             {
                 situation = situation,
@@ -268,6 +300,39 @@ namespace CartPole.Vision
             lastLightApplied = true;
         }
 
+        // The forced situation's light verbatim: the authored intensity
+        // and yaw, reconstructed over the light's base rotation the
+        // same way the source manifest recorded it (yaw about the
+        // base's x/z). useLight=false leaves the light pristine -
+        // deterministic because forced states run before the first
+        // random one mutates it.
+        private void ApplyLight(ForcedSituationSO forced)
+        {
+            lastLightApplied = false;
+            if (!forced.useLight)
+            {
+                return;
+            }
+            if (directionalLight == null)
+            {
+                Debug.LogWarning(
+                    $"[RigStateRandomizer] situation '{forced.label}' wants its light but no directional light is assigned");
+                return;
+            }
+            if (lightBaseIntensity < 0f)
+            {
+                lightBaseRotation = directionalLight.transform.rotation;
+                lightBaseIntensity = directionalLight.intensity;
+            }
+            var baseEuler = lightBaseRotation.eulerAngles;
+            directionalLight.intensity = forced.lightIntensity;
+            directionalLight.transform.rotation =
+                Quaternion.Euler(baseEuler.x, forced.lightYaw, baseEuler.z);
+            lastLightIntensity = forced.lightIntensity;
+            lastLightYaw = forced.lightYaw;
+            lastLightApplied = true;
+        }
+
         // The sun's world yaw: the camera-to-robot heading plus a random
         // offset within frontLightRange - the light always comes from
         // the camera hemisphere, so the rig is never back-lit.
@@ -322,6 +387,28 @@ namespace CartPole.Vision
             lastSkyboxYaw = yaw;
         }
 
+        // The forced situation's skybox verbatim. useSkybox=false leaves
+        // the scene's skybox - pristine because forced states run first.
+        private void ApplySkybox(ForcedSituationSO forced)
+        {
+            lastSkyboxApplied = false;
+            if (!forced.useSkybox)
+            {
+                return;
+            }
+            if (forced.skybox == null)
+            {
+                Debug.LogWarning(
+                    $"[RigStateRandomizer] situation '{forced.label}' wants its skybox but none is assigned");
+                return;
+            }
+            forced.skybox.SetFloat("_Rotation", forced.skyboxYaw);
+            RenderSettings.skybox = forced.skybox;
+            lastSkyboxAsset = forced.skybox;
+            lastSkyboxApplied = true;
+            lastSkyboxYaw = forced.skyboxYaw;
+        }
+
         // The desk for this state: a random entry from the registered
         // pool, spawned with the SO's placement modifiers, replacing the
         // previous instance. DestroyImmediate covers the edit-mode
@@ -332,11 +419,7 @@ namespace CartPole.Vision
             lastDeskApplied = false;
             if (!randomizeDesks)
             {
-                if (deskInstance != null)
-                {
-                    DestroyImmediate(deskInstance);
-                    deskInstance = null;
-                }
+                RemoveDesk();
                 lastDeskLabel = "";
                 lastDeskAsset = null;
                 return;
@@ -357,25 +440,60 @@ namespace CartPole.Vision
                 Debug.LogWarning($"[RigStateRandomizer] desk '{desk.label}' has no prefab");
                 return;
             }
-            if (deskInstance != null)
-            {
-                // A destroyed object that is still selected throws the
-                // inspector's MissingReferenceException on its next
-                // OnEnable - deselect it before the kill.
-#if UNITY_EDITOR
-                if (UnityEditor.Selection.activeGameObject == deskInstance)
-                {
-                    UnityEditor.Selection.activeGameObject = null;
-                }
-#endif
-                DestroyImmediate(deskInstance);
-            }
+            RemoveDesk();
             deskInstance = Instantiate(
                 desk.prefab, desk.position, Quaternion.Euler(desk.localEuler));
             deskInstance.transform.localScale = desk.scale;
             deskInstance.name = $"Desk_{desk.label}";
             lastDeskLabel = desk.label;
             lastDeskAsset = desk;
+            lastDeskApplied = true;
+        }
+
+        // The spawned desk, if any, removed. A destroyed object that is
+        // still selected throws the inspector's MissingReferenceException
+        // on its next OnEnable - deselect it before the kill.
+        private void RemoveDesk()
+        {
+            if (deskInstance == null)
+            {
+                return;
+            }
+#if UNITY_EDITOR
+            if (UnityEditor.Selection.activeGameObject == deskInstance)
+            {
+                UnityEditor.Selection.activeGameObject = null;
+            }
+#endif
+            DestroyImmediate(deskInstance);
+            deskInstance = null;
+        }
+
+        // The forced situation's desk verbatim: the SO's desk with its
+        // placement modifiers - or, with useDesk false, no desk at all
+        // (the situation is desk-free as captured).
+        private void SpawnDesk(ForcedSituationSO forced)
+        {
+            lastDeskApplied = false;
+            if (!forced.useDesk)
+            {
+                RemoveDesk();
+                return;
+            }
+            if (forced.desk == null || forced.desk.prefab == null)
+            {
+                Debug.LogWarning(
+                    $"[RigStateRandomizer] situation '{forced.label}' wants a desk but none with a prefab is assigned");
+                return;
+            }
+            RemoveDesk();
+            deskInstance = Instantiate(
+                forced.desk.prefab, forced.desk.position,
+                Quaternion.Euler(forced.desk.localEuler));
+            deskInstance.transform.localScale = forced.desk.scale;
+            deskInstance.name = $"Desk_{forced.desk.label}";
+            lastDeskLabel = forced.desk.label;
+            lastDeskAsset = forced.desk;
             lastDeskApplied = true;
         }
 
