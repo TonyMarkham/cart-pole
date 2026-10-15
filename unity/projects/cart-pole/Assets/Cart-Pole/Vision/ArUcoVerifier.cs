@@ -28,6 +28,14 @@ namespace CartPole.Vision
     // unverifiable box; detection absence is the visibility signal
     // that keeps bad labels out of the dataset.
     //
+    // Basis variants: a caller may hand in preConfirmed (stem ->
+    // confirmed class ids) for crops it detected in memory and did
+    // not retain (the capture's GenerateDebugImages=off path); for
+    // those frames a line survives when its class sits in the set -
+    // no crop file is consulted. Frames without a preConfirmed
+    // entry verify against retained crop files exactly as before.
+    // The never-wipe accounting is global across both bases.
+    //
     // Basis decision (2026-10-14): the frame-level trial - detecting
     // on the 1440x1080 image only - confirmed 66/80 against the crop
     // basis' 80/80 and was reverted; the 8K render and the crops stay.
@@ -43,9 +51,16 @@ namespace CartPole.Vision
         // accounting. The class-to-tag mapping comes from the caller
         // (the capture resolves it from the rig's Marker SOs) - no
         // markers.json inter-lingua: the retired checker's file
-        // contract died with it.
+        // contract died with it. preConfirmed carries the in-memory
+        // basis for non-retained crops (see the header comment).
+        // writeStats=false (the capture's GenerateDebugDocs=off)
+        // skips the stats file: the accounting lives in the return
+        // value and the log only - the run carries no file-level
+        // verification receipt.
         public static ArUcoVerifierStats Verify(
-            string datasetDirectory, List<ArUcoVerifierEntry> markers)
+            string datasetDirectory, List<ArUcoVerifierEntry> markers,
+            Dictionary<string, HashSet<int>> preConfirmed = null,
+            bool writeStats = true)
         {
             var stats = new ArUcoVerifierStats
             {
@@ -101,16 +116,30 @@ namespace CartPole.Vision
                     bool confirmed = false;
                     if (tags.TryGetValue(classId, out int expected))
                     {
-                        // Crops live in the wip~ sidecar directory;
-                        // corpora captured before that layout keep them
-                        // at the dataset root.
-                        string cropName = $"{stem}_8k_marker_{expected:D4}.jpg";
-                        string cropPath = $"{wipDirectory}/{cropName}";
-                        if (!File.Exists(cropPath))
+                        if (preConfirmed != null &&
+                            preConfirmed.TryGetValue(stem, out var set) &&
+                            set.Contains(classId))
                         {
-                            cropPath = $"{datasetDirectory}/{cropName}";
+                            // In-memory basis: the caller detected this
+                            // frame's crops at capture time and did not
+                            // retain them.
+                            confirmed = true;
                         }
-                        confirmed = File.Exists(cropPath) && CropConfirms(cropPath, expected);
+                        else
+                        {
+                            // File basis: crops live in the wip~
+                            // sidecar directory; corpora captured
+                            // before that layout keep them at the
+                            // dataset root.
+                            string cropName = $"{stem}_8k_marker_{expected:D4}.jpg";
+                            string cropPath = $"{wipDirectory}/{cropName}";
+                            if (!File.Exists(cropPath))
+                            {
+                                cropPath = $"{datasetDirectory}/{cropName}";
+                            }
+                            confirmed = File.Exists(cropPath) &&
+                                CropConfirms(cropPath, expected);
+                        }
                     }
                     if (confirmed)
                     {
@@ -164,10 +193,13 @@ namespace CartPole.Vision
                     File.WriteAllText(rewrite.path, builder.ToString());
                 }
             }
-            Directory.CreateDirectory(wipDirectory);
-            File.WriteAllText(
-                $"{wipDirectory}/verification_stats.json",
-                JsonUtility.ToJson(stats, true) + "\n");
+            if (writeStats)
+            {
+                Directory.CreateDirectory(wipDirectory);
+                File.WriteAllText(
+                    $"{wipDirectory}/verification_stats.json",
+                    JsonUtility.ToJson(stats, true) + "\n");
+            }
             return stats;
         }
 
@@ -179,11 +211,22 @@ namespace CartPole.Vision
         // native resolution (80/80 crops through this shim).
         private static bool CropConfirms(string cropPath, int expected)
         {
-            int[] detected = Greyhound.Vision.Ghcv.Detect(
-                File.ReadAllBytes(cropPath), out string error);
+            return CropConfirms(
+                File.ReadAllBytes(cropPath), expected,
+                Path.GetFileName(cropPath));
+        }
+
+        // The in-memory form, called from the capture (public): same
+        // single-pass rule, over crop bytes the caller chose not to
+        // write to disk. context names the crop in warnings as its
+        // would-be file name.
+        public static bool CropConfirms(
+            byte[] jpeg, int expected, string context)
+        {
+            int[] detected = Greyhound.Vision.Ghcv.Detect(jpeg, out string error);
             if (error != null)
             {
-                Debug.LogWarning($"[ArUcoVerifier] {Path.GetFileName(cropPath)}: {error}");
+                Debug.LogWarning($"[ArUcoVerifier] {context}: {error}");
                 return false;
             }
             return detected.Length == 1 && detected[0] == expected;

@@ -140,10 +140,24 @@ adds repo structure around them, never overrides them.
   package keeps only the `Ghcv` detection bridge and the OpenCV payload
   provisioner). Inventory verified by file list; roles by the files'
   own headers.
+- **The Executive desk is excluded by decision** (2026-10-14):
+  `Assets/Cart-Pole/Props/Desks/Desk (Executive).asset` is deliberately not
+  wired into the randomizer's `desks` list — the desk would poison the
+  dataset. The 4-of-5 wiring is the intended state, not an omission: do not
+  re-propose wiring it, and do not "fix" its `label: Classic` field (moot
+  while unwired).
+- **The capture's debug toggles are off by decision** (2026-10-14):
+  `RigStateCapture.generateDebugImages` and `generateDebugDocs` stay off for
+  every run, iteration and training alike. Verification is unaffected — the
+  crops are cut and detected in memory on the encoded JPEG bytes either way.
+  The file-level receipt (`verification_stats.json`) and the per-frame
+  manifests are deliberately forgone. Do not re-propose flipping either
+  toggle on, including for pilot/training runs, and treat the plans' and
+  audit's instructions to the contrary as superseded.
 - `unity/projects/cart-pole/Assets/Captures/cart-pole/` — the capture
-  corpus (committed): main frames, YOLO labels, 8K renders, per-marker
-  crops, manifests, `markers.json`, `classes.txt`,
-  `verification_stats.json`.
+  corpus: main frames, YOLO labels and `markers.json` (committed); 8K
+  renders, per-marker crops, manifests and the remaining sidecar JSONs in
+  the `wip~` sidecar (Unity- and git-ignored).
 - `vision/gym_state_sender.py` — the gym-side `StateServer` client
   (`UnityVisionClient`): pushes `data.qpos` as JSON lines, receives JPEG
   frames. Retiring to a Rust CLI is planned (greyhound `vision.md` V4) —
@@ -201,14 +215,17 @@ adds repo structure around them, never overrides them.
   `StateServer.cs`; the client contract is what `gym_state_sender.py`
   speaks. Any future Rust sender must speak the same wire format.
 - **Artifact naming** in a capture directory: `frame_NNNNNN.jpg` /
-  `.txt` at the directory root (the 1440x1080 camera frames and the
-  YOLO labels - the only artifacts AssetDatabase imports and git
-  commits); every other artifact lives in the `wip~` sidecar child
+  `.txt` and `markers.json` at the directory root (the 1440x1080 camera
+  frames, the YOLO labels, and the class map that makes their class ids
+  interpretable - the only artifacts AssetDatabase imports and git
+  commits; `markers.json` is never gated by the capture's debug-image/doc
+  toggles); every other artifact lives in the `wip~` sidecar child
   (Unity- and git-ignored): `frame_NNNNNN_8k.jpg` (7680x4320),
   `frame_NNNNNN_8k_marker_TTTT.jpg` (per-marker crops, tag zero-padded
-  to 4 digits), `frame_NNNNNN_state.json`, `markers.json`,
+  to 4 digits), `frame_NNNNNN_state.json`,
   `classes.txt`, `verification_stats.json`. Consumers read wip~ first
-  and fall back to the root for corpora captured before the layout.
+  and fall back to the root for corpora captured before the layout;
+  `markers.json` is read root-first with the wip~ fallback.
 
 ## Code conventions (C#, this repo)
 

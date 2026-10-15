@@ -173,13 +173,13 @@ namespace CartPole.Vision.Editor
 
             // The authored marker classes, from markers.json - the
             // missing 8K crops per frame name the dropped markers.
-            // Sidecars live in the wip~ directory Unity ignores;
-            // legacy corpora keep them at the dataset root.
+            // markers.json is a root-level dataset document; legacy
+            // corpora keep it in the wip~ sidecar Unity ignores.
             var markerDefs = new List<MarkerDef>();
-            var markersPath = Path.Combine(directory, "wip~", "markers.json");
+            var markersPath = Path.Combine(directory, "markers.json");
             if (!File.Exists(markersPath))
             {
-                markersPath = Path.Combine(directory, "markers.json");
+                markersPath = Path.Combine(directory, "wip~", "markers.json");
             }
             if (File.Exists(markersPath))
             {

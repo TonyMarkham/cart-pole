@@ -9,15 +9,16 @@ namespace CartPole.Vision
     // Screenshot sidecar for the rig-state pipeline: subscribes to the
     // randomizer's StateApplied event and, on each application, renders
     // the assigned camera, writes a JPEG and a YOLO label derived from
-    // the placed ArUco marker quads. Where the images land is this
-    // component's outputDirectory - the randomizer itself writes
-    // nothing. The camera frames and the labels land in
-    // outputDirectory itself; every other artifact (8K renders, marker
-    // crops, manifests, the marker/class lists) goes to its wip~
-    // sidecar directory - Unity's AssetDatabase skips trailing-tilde
-    // folders entirely, and git ignores them, so the committed corpus
-    // is exactly the camera frames and their labels. Play mode only;
-    // the subscription lives with the component's enable state.
+    // the placed ArUco marker quads. Every play-mode run resolves its
+    // own run directory beneath outputDirectory - the target itself
+    // when empty, a fresh run_<timestamp> child when populated - and
+    // writes there; the randomizer itself writes nothing. The camera
+    // frames, the labels and markers.json land at the run root; every
+    // other artifact (8K renders, marker crops, manifests, classes.txt)
+    // goes to the run's wip~ sidecar directory - Unity's AssetDatabase
+    // skips trailing-tilde folders entirely, and git ignores them, so
+    // the committed corpus is the run root. Play mode only; the
+    // subscription lives with the component's enable state.
     //
     // Label math: each marker quad's four corners are projected through
     // the capture camera (WorldToViewportPoint, a pinhole model - FOV
@@ -56,13 +57,13 @@ namespace CartPole.Vision
         [SerializeField] private string outputDirectory = "Assets/Captures/cart-pole";
 
         // The sidecar directory: everything the capture writes beyond
-        // the 1440x1080 camera frames and the YOLO labels - the 8K
+        // the run root's frames, labels and markers.json - the 8K
         // renders, the marker crops, the per-frame manifests,
-        // markers.json, classes.txt. The trailing "~" makes Unity's
-        // AssetDatabase skip the folder entirely (not imported, no
-        // .meta minted, invisible in the Project browser), and the
-        // repo's .gitignore (wip~/) keeps it out of git.
-        private string WipDirectory => $"{outputDirectory}/wip~";
+        // classes.txt. The trailing "~" makes Unity's AssetDatabase
+        // skip the folder entirely (not imported, no .meta minted,
+        // invisible in the Project browser), and the repo's .gitignore
+        // (wip~/) keeps it out of git.
+        private string WipDirectory => $"{runDirectory}/wip~";
 
         [SerializeField] private int captureWidth = 960;
 
@@ -73,6 +74,29 @@ namespace CartPole.Vision
         // lossy statistics - no PNG mixing. Quality matches the live
         // StateServer loop (EncodeToJPG(90)).
         [SerializeField, Range(1, 100)] private int jpegQuality = 90;
+
+        // Retains the 8K render and its per-marker crops as files. The
+        // crops are the verification basis either way - a label line
+        // survives only when its class's crop decodes to the class's
+        // tag - so verification always runs; with retention off the
+        // crops are detected in memory as they are cut and no image is
+        // written for the 8K pass.
+        [SerializeField] private bool generateDebugImages = true;
+
+        // Writes the run's debug JSON documents: the per-frame
+        // manifests (frame_NNNNNN_state.json) and the run-end
+        // verification_stats.json. Docs off = no file-level
+        // verification receipt - the accounting lives in the Editor
+        // log only. markers.json is NOT docs-gated: it is the
+        // dataset's class map, written to the run root
+        // unconditionally.
+        [SerializeField] private bool generateDebugDocs = true;
+
+        // Per-frame in-memory verification results (stem -> confirmed
+        // class ids), filled at capture time when retention is off -
+        // the run-end verify consumes them instead of crop files.
+        private readonly Dictionary<string, HashSet<int>> inMemoryConfirmations =
+            new Dictionary<string, HashSet<int>>();
 
         private RenderTexture target;
         private Texture2D readback;
@@ -91,6 +115,13 @@ namespace CartPole.Vision
         private Texture2D markerReadback;
         private int frames;
 
+        // The directory this run writes: outputDirectory itself when
+        // the target is empty, a fresh run_<timestamp> child of it when
+        // populated - resolved once per play session in OnEnable, so
+        // runs are physically separated in code and no write of one
+        // run can touch another's.
+        private string runDirectory;
+
         private void OnEnable()
         {
             if (randomizer == null || captureCamera == null)
@@ -103,12 +134,37 @@ namespace CartPole.Vision
                 ? new System.Random()
                 : new System.Random(jitterSeed);
             Directory.CreateDirectory(outputDirectory);
-            Directory.CreateDirectory(WipDirectory);
+            // Every play-mode run is one self-contained corpus: an
+            // empty target is used flat (the landed layout), a
+            // populated one gets a fresh timestamped child - run
+            // separation is code-enforced, so nothing can overwrite or
+            // strand another run's frames and no manual
+            // fresh-directory step exists.
+            runDirectory = outputDirectory;
+            if (Directory.GetFiles(outputDirectory, "frame_*.jpg").Length > 0 ||
+                File.Exists($"{outputDirectory}/markers.json"))
+            {
+                var stamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
+                runDirectory = $"{outputDirectory}/run_{stamp}";
+                for (var suffix = 2; Directory.Exists(runDirectory); suffix++)
+                {
+                    runDirectory = $"{outputDirectory}/run_{stamp}_{suffix}";
+                }
+            }
+            Directory.CreateDirectory(runDirectory);
+            // The wip~ sidecar is created only when something will be
+            // written into it: both toggles off leave the run directory
+            // with nothing but frames, labels and markers.json (the
+            // class map is root-level and mandatory, never debug).
+            if (generateDebugImages || generateDebugDocs)
+            {
+                Directory.CreateDirectory(WipDirectory);
+            }
             target = new RenderTexture(captureWidth, captureHeight, 24);
             readback = new Texture2D(captureWidth, captureHeight, TextureFormat.RGB24, false);
             randomizer.StateApplied += OnStateApplied;
             randomizer.RunCompleted += OnRunCompleted;
-            Debug.Log($"[RigStateCapture] saving to {outputDirectory}");
+            Debug.Log($"[RigStateCapture] saving to {runDirectory}");
         }
 
         private void OnDisable()
@@ -120,7 +176,7 @@ namespace CartPole.Vision
             }
             if (frames > 0)
             {
-                Debug.Log($"[RigStateCapture] wrote {frames} frames to {outputDirectory}");
+                Debug.Log($"[RigStateCapture] wrote {frames} frames to {runDirectory}");
             }
             if (target != null)
             {
@@ -141,12 +197,13 @@ namespace CartPole.Vision
             Capture();
         }
 
-        // Run over: the verification runs in-process - every retained
-        // crop (frame_NNNNNN_8k_marker_TTTT.jpg, in wip~) goes through
-        // the native ghcv detector, and a label line survives only when
-        // its class's crop decodes to exactly that class's marker. The
-        // verifier never wipes: zero confirmations refuse the rewrite
-        // and keep the labels as written.
+        // Run over: the verification runs in-process - every crop goes
+        // through the native ghcv detector, and a label line survives
+        // only when its class's crop decodes to exactly that class's
+        // marker. Retained crops are read from wip~; non-retained ones
+        // were detected at capture time and arrive as in-memory
+        // confirmations. The verifier never wipes: zero confirmations
+        // refuse the rewrite and keep the labels as written.
         private void OnRunCompleted()
         {
 #if UNITY_EDITOR
@@ -176,7 +233,9 @@ namespace CartPole.Vision
                     classIndex++;
                 }
             }
-            var result = ArUcoVerifier.Verify(outputDirectory, entries);
+            var result = ArUcoVerifier.Verify(
+                runDirectory, entries, inMemoryConfirmations,
+                generateDebugDocs);
             Debug.Log(
                 "[RigStateCapture] verification stats: " +
                 $"{result.framesScanned} frames scanned, {result.labelsConfirmed} " +
@@ -184,7 +243,9 @@ namespace CartPole.Vision
                 (result.WriteRefused
                     ? " - zero confirmations, labels kept as written"
                     : " - labels rewritten") +
-                " - saved to verification_stats.json");
+                (generateDebugDocs
+                    ? " - saved to verification_stats.json"
+                    : " - no stats file (debug docs off)"));
 #endif
         }
 
@@ -232,8 +293,14 @@ namespace CartPole.Vision
                 });
                 classIndex++;
             }
+            // markers.json is a mandatory dataset document, not debug
+            // output: it is the class map that makes the labels'
+            // class ids interpretable (and the dataset yaml's source),
+            // so it lives at the run root - imported and committed
+            // beside the frames and labels it describes - and no
+            // toggle gates it.
             File.WriteAllText(
-                $"{WipDirectory}/markers.json",
+                $"{runDirectory}/markers.json",
                 JsonUtility.ToJson(list, true));
         }
 
@@ -297,9 +364,12 @@ namespace CartPole.Vision
             readback.ReadPixels(new Rect(0, 0, captureWidth, captureHeight), 0, 0);
             RenderTexture.active = previousActive;
             readback.Apply();
-            File.WriteAllBytes($"{outputDirectory}/{name}.jpg",
+            File.WriteAllBytes($"{runDirectory}/{name}.jpg",
                 readback.EncodeToJPG(jpegQuality));
-            WriteManifest(name);
+            if (generateDebugDocs)
+            {
+                WriteManifest(name);
+            }
             CaptureMarker8K(name);
             frames++;
             if (boundsWasVisible && boundsRenderer != null)
@@ -347,8 +417,8 @@ namespace CartPole.Vision
 
         // An 8K (7680x4320, 16:9) render of the scene through a camera
         // sharing the capture camera's transform and FOV - the same view
-        // at nearly 3x the pixel density, so the markers are large
-        // enough for OpenCV to scan reliably.
+        // at 4-5.3x the linear pixel density (21.3x the pixels), so the
+        // markers are large enough for OpenCV to scan reliably.
         private const int Marker8KWidth = 7680;
         private const int Marker8KHeight = 4320;
 
@@ -374,14 +444,17 @@ namespace CartPole.Vision
                 new Rect(0, 0, Marker8KWidth, Marker8KHeight), 0, 0);
             markerReadback.Apply();
             RenderTexture.active = previousActive;
-            File.WriteAllBytes(
-                $"{WipDirectory}/{name}_8k.jpg",
-                markerReadback.EncodeToJPG(jpegQuality));
+            if (generateDebugImages)
+            {
+                File.WriteAllBytes(
+                    $"{WipDirectory}/{name}_8k.jpg",
+                    markerReadback.EncodeToJPG(jpegQuality));
+            }
 
-            // Retain a crop of every marker: the pixel rectangle comes
-            // from the exact projected quad corners - no detection
-            // involved, so every marker in every frame gets its crop
-            // file.
+            // A crop of every marker: the pixel rectangle comes from
+            // the exact projected quad corners - no detection involved
+            // in the cutting. The crop is the verify basis retained or
+            // not: written as a file, or detected in memory below.
             var toLocal = markerCamera.transform.worldToLocalMatrix;
             foreach (var marker in markers)
             {
@@ -422,10 +495,33 @@ namespace CartPole.Vision
                 var crop = new Texture2D(cw, ch, TextureFormat.RGB24, false);
                 crop.SetPixels(block);
                 crop.Apply();
-                File.WriteAllBytes(
-                    $"{WipDirectory}/{name}_8k_marker_{tagId:0000}.jpg",
-                    crop.EncodeToJPG(jpegQuality));
+                var jpeg = crop.EncodeToJPG(jpegQuality);
                 DestroyImmediate(crop);
+                if (generateDebugImages)
+                {
+                    File.WriteAllBytes(
+                        $"{WipDirectory}/{name}_8k_marker_{tagId:0000}.jpg",
+                        jpeg);
+                }
+                else
+                {
+                    // Detection now, on the encoded bytes - the
+                    // in-memory basis is byte-identical to what a
+                    // retained crop file would hold; nothing is kept.
+                    if (ArUcoVerifier.CropConfirms(
+                            jpeg,
+                            tagId,
+                            $"{name}_8k_marker_{tagId:0000}.jpg"))
+                    {
+                        if (!inMemoryConfirmations.TryGetValue(
+                                name, out var confirmed))
+                        {
+                            confirmed = new HashSet<int>();
+                            inMemoryConfirmations[name] = confirmed;
+                        }
+                        confirmed.Add(classId);
+                    }
+                }
             }
         }
 
@@ -543,7 +639,15 @@ namespace CartPole.Vision
             {
                 builder.AppendLine(pair.Value);
             }
-            File.WriteAllText($"{WipDirectory}/classes.txt", builder.ToString());
+            // classes.txt follows the wip~ directory, not the docs
+            // gate: the docs bool's spec is the three JSONs, this file
+            // predates them. Written whenever the sidecar exists -
+            // never recreated for it alone (a both-off run has no wip~
+            // and no classes.txt).
+            if (Directory.Exists(WipDirectory))
+            {
+                File.WriteAllText($"{WipDirectory}/classes.txt", builder.ToString());
+            }
         }
 
         // Jitters the capture position around its authored base: a random
@@ -664,7 +768,7 @@ namespace CartPole.Vision
                 builder.Append(Clamp01(bounds.size.y).ToString("0.000000"));
                 builder.Append('\n');
             }
-            File.WriteAllText($"{outputDirectory}/{name}.txt", builder.ToString());
+            File.WriteAllText($"{runDirectory}/{name}.txt", builder.ToString());
         }
 
         // Projects the marker quad's four corners through the camera and

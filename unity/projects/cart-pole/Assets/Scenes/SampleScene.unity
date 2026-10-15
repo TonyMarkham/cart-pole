@@ -702,14 +702,16 @@ MonoBehaviour:
   randomizer: {fileID: 1058543414}
   captureCamera: {fileID: 330585545}
   markerManager: {fileID: 1058543411}
-  positionJitter: 0.5
-  jitterSeed: 0
+  positionJitter: 0.15
+  jitterSeed: 2011
   minCameraHeight: 0.05
-  robotBounds: {fileID: 0}
-  outputDirectory: Assets/Captures/cart-pole
+  robotBounds: {fileID: 860351549}
+  outputDirectory: D:\git\cart-pole\datasets\cart-pole
   captureWidth: 1440
   captureHeight: 1080
   jpegQuality: 90
+  generateDebugImages: 0
+  generateDebugDocs: 0
 --- !u!114 &1058543414
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -741,15 +743,12 @@ MonoBehaviour:
   minLightIntensity: 2
   maxLightIntensity: 4
   frontLightRange: 90
-  states: 50
-  interval: 0.5
+  states: 1000
+  interval: 0.25
   cartRange: 0.45
   poleSpan: 3
-  seed: 0
-  forcedSituations:
-  - {fileID: 11400000, guid: 435cf8e03dbf4556fbbd21a5902cd803, type: 2}
-  - {fileID: 11400000, guid: 99e6ebf37541fa543bf7275cd63c942f, type: 2}
-  - {fileID: 11400000, guid: ab48461c93dc2dd438c96eded6d976da, type: 2}
+  seed: 1011
+  forcedSituations: []
 --- !u!1 &1090045406 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: -3307206622709248564, guid: db4039a097603222aa79557805afca4e, type: 3}
