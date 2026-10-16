@@ -65,6 +65,34 @@ adds repo structure around them, never overrides them.
   are written so the reader can verify claims by hand and never have to
   ask what a value means. A question from the user is a defect report —
   fix the artifact at every copy, not just the conversation.
+- **Explanations are purpose-first.** When explaining something you
+  built — a script, a pipeline, a tool — the FIRST sentence states the
+  problem it solves in the user's terms. Concept in one sentence, then
+  the shape (reads X, writes Y), then specifics (paths, fields, edge
+  cases). Never mechanics-first: leading with folder paths and field
+  counts while the *reason the thing exists* goes unstated is noise,
+  and it cost three escalations before the convert_proposals.py
+  explanation finally led with "real frames have no geometry, so
+  labels can only come from guess-then-correct." That sentence should
+  have been the first response, not the fourth. (2026-10-16)
+- **Corrections get weighed before they get answered.** When the user
+  corrects you, the default assumption is that the correction is
+  right — weigh it genuinely first. The session record is that the
+  weighing almost always confirmed the correction. If, and only if,
+  real facts conflict, state the conflict ONCE, briefly, as
+  information — never as a defense in force, never bundled with new
+  content, never as a default stance that the correction was wrong.
+  Treating a steering input as a debate opening is the failure mode.
+  The correct response to a correction: apply it, confirm it in one
+  line, stop. (2026-10-16)
+- **A file with an outstanding issue is frozen.** While any question,
+  correction, or unresolved discussion about a file's content is
+  open, that file gets NO edits — not even "helpful" ones. Edits made
+  against guessed or unconfirmed state are how a doc ends up declaring
+  "landed" conclusions the user never reached (observed: marking a
+  still-running training run as early-stopped). The freeze lifts when
+  the user resolves the issue or explicitly requests the change; a
+  "fix this" instruction IS the resolution. (2026-10-16)
 - **Comments state the invariant, the hand-checkable rule, or the
   rationale** — never recite what the adjacent code already says.
 - Preserve existing user changes. Do not commit, stage, or discard changes
