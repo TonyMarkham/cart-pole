@@ -10,6 +10,9 @@
 # Python
 __pycache__/
 *.pyc
+.venv/
+datasets/
+runs/
 
 # Capture sidecars (8K renders, marker crops, manifests, verification
 # stats): the wip~ name also keeps them out of Unity's AssetDatabase
