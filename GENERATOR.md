@@ -69,10 +69,13 @@ numbered docs once implemented.
 
 - **Play mode only.** Editor-mode generation is rejected — it makes
   crap data. Play mode "worked well"; it stays the trigger.
-- **Synchronous per state:** render → 8K pass → marker discovery →
-  label write all complete before the next state is drawn. No
-  interval, no coroutine pause — the legacy hard wait between states
-  is gone.
+- **Per-state pipeline, async-paced:** render → 8K pass → marker
+  discovery → label write all complete before the next state is
+  drawn — each state is one synchronous main-thread chunk. Between
+  states the run awaits (`Task.Yield`), so the player loop and the
+  editor UI keep running and the process never reads as
+  unresponsive. No timed interval, no coroutine — the legacy hard
+  wait between states is gone.
 - One run iterates `m_Sets` in list order; each set writes its own
   `run_<set>_<timestamp>` folder (the set's SO name, for record
   keeping) under that set's `OutputDirectory`.

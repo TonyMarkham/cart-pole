@@ -39,6 +39,16 @@ namespace Simulation.CartPole.SyntheticDataGen
         // The desk for this draw: a random entry from the pool, spawned
         // with the SO's placement modifiers (the pivot sits at the
         // tabletop's front edge), replacing the previous instance.
+        // The set's run is over: the desk goes with it. The next set's
+        // randomizer knows nothing of this instance - without this,
+        // every set boundary would orphan one active desk into the
+        // scene, and every later set would render with all previous
+        // sets' desks stacked in the background.
+        internal void Shutdown()
+        {
+            RemoveDesk();
+        }
+
         private void ApplyDesk()
         {
             if (!set.RandomizeDesks)
@@ -71,12 +81,22 @@ namespace Simulation.CartPole.SyntheticDataGen
             deskInstance.name = $"Desk_{desk.label}";
         }
 
+        // The spawned desk, if any, removed. Deactivated first, then
+        // Destroy: the run's awaits can execute several state chunks
+        // between player-loop frames (an unfocused editor throttles
+        // the loop but still pumps the synchronization context), so a
+        // frame can render before the deferred destruction takes
+        // effect - and would show the previous desk alongside the new
+        // one. Deactivation is immediate, so no frame ever renders
+        // the corpse; the actual destruction follows at frame end,
+        // as the runtime API intends.
         private void RemoveDesk()
         {
             if (deskInstance == null)
             {
                 return;
             }
+            deskInstance.SetActive(false);
             Object.Destroy(deskInstance);
             deskInstance = null;
         }

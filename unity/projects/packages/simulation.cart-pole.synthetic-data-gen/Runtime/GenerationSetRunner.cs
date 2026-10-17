@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 
 using Unity.Mathematics;
 
@@ -7,15 +8,17 @@ using UnityEngine;
 
 namespace Simulation.CartPole.SyntheticDataGen
 {
-    // One set's synchronous run: draw states until the set's state
-    // count is captured. Each draw applies the environment (desk,
-    // skybox, light - absolute ranges), drives the rig through the
-    // drawn state (rig-local ranges), places the camera at the drawn
-    // absolute pose, compensates the frustum, renders the greyscale
-    // capture frame, runs the 8K verification gate, and writes the
-    // gated artifacts - all before the next draw. A draw whose
-    // frustum compensation exceeds the set's Max Z is not captured
-    // and does not count toward States.
+    // One set's run: draw states until the set's state count is
+    // captured. Each state is a synchronous main-thread chunk - apply
+    // the environment (desk, skybox, light - absolute ranges), drive
+    // the rig through the drawn state (rig-local ranges), place the
+    // camera at the drawn absolute pose, compensate the frustum,
+    // render the greyscale capture frame, run the 8K verification
+    // gate, and write the gated artifacts - all before the next draw.
+    // Between states the run awaits, so the player loop and the editor
+    // UI keep running: the process never reads as unresponsive. A draw
+    // whose frustum compensation exceeds the set's Max Z is not
+    // captured and does not count toward States.
     internal sealed class GenerationSetRunner
     {
         // The wholesale-failure breaker: this many consecutive frames
@@ -66,8 +69,9 @@ namespace Simulation.CartPole.SyntheticDataGen
             this.cameraBaseZ = cameraBaseZ;
         }
 
-        internal void Run()
+        internal async Task RunAsync()
         {
+            var stopwatch = System.Diagnostics.Stopwatch.StartNew();
             random = new System.Random(set.Seed);
             writer = new DatasetWriter(set.OutputDirectory, set.name);
             writer.WriteMarkersJson(rig);
@@ -124,14 +128,23 @@ namespace Simulation.CartPole.SyntheticDataGen
                         $"all-empty dataset (partial run at {writer.RunDirectory})");
                     break;
                 }
+
+                // One editor frame between states: the await resumes on
+                // the main thread through Unity's synchronization
+                // context, so rendering, input and the editor UI run
+                // here - the per-state pipeline above is never
+                // interleaved with anything else.
+                await Task.Yield();
             }
             gate.Dispose();
+            environment.Shutdown();
             captureTarget.Release();
             Object.Destroy(captureTarget);
             Object.Destroy(captureReadback);
             Debug.Log(
                 $"[GenerationSetRunner] '{set.name}': {writer.Frames} frames, " +
-                $"{discarded} draws discarded on the Max Z cap");
+                $"{discarded} draws discarded on the Max Z cap, " +
+                $"elapsed {stopwatch.Elapsed:hh\\:mm\\:ss}");
         }
 
         // One draw through the whole pipeline; false means the draw was

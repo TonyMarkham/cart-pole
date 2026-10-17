@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Greyhound.Step;
 using Simulation.CartPole.SyntheticDataGen;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace CartPole.Vision
 {

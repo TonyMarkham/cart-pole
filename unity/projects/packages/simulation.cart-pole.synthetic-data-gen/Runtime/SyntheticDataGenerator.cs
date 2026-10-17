@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Unity.Mathematics;
 using UnityEngine;
@@ -45,11 +46,14 @@ namespace Simulation.CartPole.SyntheticDataGen
         // the rig for its STEP asset details, finds the assembly's
         // instance in the active scene itself, and hands the instance to
         // the rig - the rig never searches scene elements. With the
-        // markers applied it runs every assigned set synchronously -
-        // play mode only (editor-mode generation is rejected: it makes
-        // crap data), one set after another, each writing its own
-        // run_<timestamp> folder under its output directory.
-        private void Start()
+        // markers applied it runs every assigned set - play mode only
+        // (editor-mode generation is rejected: it makes crap data), one
+        // set after another, each writing its own
+        // run_<set>_<timestamp> folder under its output directory. The
+        // run is async: each state is a synchronous main-thread chunk,
+        // and the awaits between states hand the player loop back to
+        // the editor.
+        private async void Start()
         {
             if (!Application.isPlaying)
             {
@@ -86,30 +90,39 @@ namespace Simulation.CartPole.SyntheticDataGen
             // height) absolutely and keeps the authored Z, which the
             // frustum fit then compensates along the view axis.
             var cameraBaseZ = camera.transform.position.z;
-            foreach (var set in m_Sets)
+            try
             {
-                if (set == null)
+                foreach (var set in m_Sets)
                 {
-                    continue;
+                    if (set == null)
+                    {
+                        continue;
+                    }
+                    var runner = new GenerationSetRunner(
+                        set,
+                        m_Rig,
+                        instance.gameObject,
+                        camera,
+                        m_DirectionalLight,
+                        m_RobotBounds,
+                        m_KeepBoundsInFrustrum,
+                        cameraBaseZ);
+                    await runner.RunAsync();
                 }
-                var runner = new GenerationSetRunner(
-                    set,
-                    m_Rig,
-                    instance.gameObject,
-                    camera,
-                    m_DirectionalLight,
-                    m_RobotBounds,
-                    m_KeepBoundsInFrustrum,
-                    cameraBaseZ);
-                runner.Run();
+            }
+            catch (Exception exception)
+            {
+                // An async void entry point: an unhandled exception
+                // here would kill the run silently to the player loop.
+                Debug.LogException(exception);
             }
 
 #if UNITY_EDITOR
             // The run is the whole play session: once every set's data is
             // written, play mode exits itself. ExitPlaymode is the
             // editor's own API for the switch; deferred through
-            // delayCall so the exit lands after this script call stack
-            // returns to the editor.
+            // delayCall so the exit lands after this call stack returns
+            // to the editor.
             UnityEditor.EditorApplication.delayCall += () =>
                 UnityEditor.EditorApplication.ExitPlaymode();
 #endif
