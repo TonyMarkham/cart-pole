@@ -183,6 +183,12 @@
         "com.unity.modules.imgui": "1.0.0"
       }
     },
+    "simulation.cart-pole.synthetic-data-gen": {
+      "version": "file:../../packages/simulation.cart-pole.synthetic-data-gen",
+      "depth": 0,
+      "source": "local",
+      "dependencies": {}
+    },
     "com.unity.modules.accessibility": {
       "version": "1.0.0",
       "depth": 0,

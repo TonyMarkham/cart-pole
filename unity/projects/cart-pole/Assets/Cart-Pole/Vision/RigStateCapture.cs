@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using Simulation.CartPole.SyntheticDataGen;
 using UnityEngine;
 
 namespace CartPole.Vision

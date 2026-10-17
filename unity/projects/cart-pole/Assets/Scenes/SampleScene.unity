@@ -481,6 +481,67 @@ MonoBehaviour:
   m_ShadowLayerMask: 1
   m_RenderingLayers: 1
   m_ShadowRenderingLayers: 1
+--- !u!1 &423944274
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 423944277}
+  - component: {fileID: 423944275}
+  m_Layer: 0
+  m_Name: SyntheticDataGenerator
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &423944275
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 423944274}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ec6accedf5b75bd4d9f7eb3fb6bd198a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Simulation.CartPole.SyntheticDataGen.Runtime::Simulation.CartPole.SyntheticDataGen.SyntheticDataGenerator
+  m_Rig: {fileID: 11400000, guid: 719e7b1fdddd2ec6382007133fae387e, type: 2}
+  m_Camera: {fileID: 330585545}
+  m_DirectionalLight: {fileID: 410087040}
+  m_RobotBounds: {fileID: 860351549}
+  m_KeepBoundsInFrustrum: 1
+  m_Sets:
+  - {fileID: 11400000, guid: 742a8c62a6951604d8fa0be40c3eda7c, type: 2}
+  - {fileID: 11400000, guid: 5c9fdd1f933734048a05dbcb9a461ce6, type: 2}
+  - {fileID: 11400000, guid: 405663f8f04f5a343bedc3cb9702f8fd, type: 2}
+  - {fileID: 11400000, guid: e5c84f2b42f24e44bafe20598673773d, type: 2}
+  - {fileID: 11400000, guid: 904b60fc2ce06fd4a87d5039e57e5131, type: 2}
+  - {fileID: 11400000, guid: ea588603fbcfc924b907bccb05a77fa4, type: 2}
+  - {fileID: 11400000, guid: 3ffaebde1bc3f104f98b051aca5c01b0, type: 2}
+  - {fileID: 11400000, guid: 6b97b4aeb3be03f44bd9ecd85e803586, type: 2}
+  - {fileID: 11400000, guid: 262699dd21079cc4c80f612aebaac1f8, type: 2}
+  - {fileID: 11400000, guid: d02842b007c67814ca6482d7d92be70b, type: 2}
+  - {fileID: 11400000, guid: 10fc5d16771af4b409903619a31c9c20, type: 2}
+--- !u!4 &423944277
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 423944274}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &832575517
 GameObject:
   m_ObjectHideFlags: 0
@@ -630,137 +691,19 @@ Transform:
   m_GameObject: {fileID: 860351548}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0.08, z: 0}
-  m_LocalScale: {x: 2.2, y: 1.2, z: 0.3}
+  m_LocalPosition: {x: 0, y: 0.08, z: -0.136}
+  m_LocalScale: {x: 2.2, y: 1, z: 0.01}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1058543410
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1058543412}
-  - component: {fileID: 1058543411}
-  - component: {fileID: 1058543414}
-  - component: {fileID: 1058543413}
-  m_Layer: 0
-  m_Name: MarkerManager
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &1058543411
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1058543410}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b18e9c8002ae2d37eb5d0811eda83258, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::CartPole.Vision.MarkerManager
-  robot: {fileID: 1090045406}
-  rig: {fileID: 11400000, guid: 719e7b1fdddd2ec6382007133fae387e, type: 2}
-  disableAnchorRenderers: 1
-  disableAnchorColliders: 1
-  applyOnStart: 1
---- !u!4 &1058543412
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1058543410}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1058543413
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1058543410}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: afedf996e6f02af10a5d1dd7f4faa46c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::CartPole.Vision.RigStateCapture
-  randomizer: {fileID: 1058543414}
-  captureCamera: {fileID: 330585545}
-  markerManager: {fileID: 1058543411}
-  positionJitter: 0.15
-  jitterSeed: 2011
-  minCameraHeight: 0.05
-  robotBounds: {fileID: 860351549}
-  outputDirectory: D:\git\cart-pole\datasets\cart-pole
-  captureWidth: 1440
-  captureHeight: 1080
-  jpegQuality: 90
-  generateDebugImages: 0
-  generateDebugDocs: 0
---- !u!114 &1058543414
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1058543410}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a878745553f7bf93aa60a086fb1a2248, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::CartPole.Vision.RigStateRandomizer
-  markerManager: {fileID: 1058543411}
-  desks:
-  - {fileID: 11400000, guid: 85998a8d900ca98e881c971c290d42f9, type: 2}
-  - {fileID: 11400000, guid: 99d758b8972755d7d89489b1e4861853, type: 2}
-  - {fileID: 11400000, guid: ae800926c503bd1fe9d83db7034295fc, type: 2}
-  - {fileID: 11400000, guid: 687552c19743502dfbc751022127a864, type: 2}
-  randomizeDesks: 1
-  skyboxes:
-  - {fileID: 2100000, guid: e620e519636769ea191d387c910cd30e, type: 2}
-  - {fileID: 2100000, guid: aa692ef708e44a800a86b2a546921c18, type: 2}
-  - {fileID: 2100000, guid: c855ff1a678447cdf94bd9ce23f8832c, type: 2}
-  randomizeSkybox: 1
-  minSkyboxYaw: 0
-  maxSkyboxYaw: 360
-  randomizeLight: 1
-  directionalLight: {fileID: 410087040}
-  minLightIntensity: 2
-  maxLightIntensity: 4
-  frontLightRange: 90
-  states: 1000
-  interval: 0.25
-  cartRange: 0.45
-  poleSpan: 3
-  seed: 1011
-  forcedSituations: []
---- !u!1 &1090045406 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: -3307206622709248564, guid: db4039a097603222aa79557805afca4e, type: 3}
-  m_PrefabInstance: {fileID: 139312804}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
   m_Roots:
+  - {fileID: 423944277}
   - {fileID: 330585546}
   - {fileID: 410087041}
   - {fileID: 832575519}
-  - {fileID: 1058543412}
   - {fileID: 860351552}
   - {fileID: 139312804}

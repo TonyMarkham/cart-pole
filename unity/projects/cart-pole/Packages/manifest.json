@@ -1,6 +1,7 @@
 {
   "dependencies": {
     "com.greyhound.step": "file:../../../../../greyhound-snake/dist/package/com.greyhound.step",
+    "simulation.cart-pole.synthetic-data-gen": "file:../../packages/simulation.cart-pole.synthetic-data-gen",
     "com.greyhound.vision": "file:../../../../../greyhound-snake/dist/package/com.greyhound.vision",
     "com.unity.ai.navigation": "2.0.15",
     "com.unity.collab-proxy": "2.13.6",

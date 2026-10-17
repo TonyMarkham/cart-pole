@@ -1,6 +1,7 @@
 using System.IO;
 
 using UnityEditor;
+using Simulation.CartPole.SyntheticDataGen;
 using UnityEngine;
 
 namespace CartPole.Vision.Editor

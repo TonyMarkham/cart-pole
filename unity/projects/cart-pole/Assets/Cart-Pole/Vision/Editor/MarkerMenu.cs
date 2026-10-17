@@ -19,54 +19,6 @@ namespace CartPole.Vision.Editor
     // public Unity APIs; the factory itself is internal to the package.
     internal static class MarkerMenu
     {
-        private const int MenuPriority = 20;
-
-        [MenuItem("GameObject/Add/Marker", false, MenuPriority)]
-        private static void AddMarker(MenuCommand command)
-        {
-            GameObject part = command.context as GameObject ?? Selection.activeGameObject;
-            if (part == null)
-            {
-                return;
-            }
-            EditorApplication.delayCall += () => AddMarkerInternal(part);
-        }
-
-        [MenuItem("GameObject/Add/Marker", true)]
-        private static bool ValidateMarker()
-        {
-            GameObject part = Selection.activeGameObject;
-            if (part == null)
-            {
-                return false;
-            }
-            if (!TryResolveStepSource(part, out var instanceRoot, out var stepPath))
-            {
-                return false;
-            }
-            if (part == instanceRoot)
-            {
-                return false;   // the assembly root itself
-            }
-            var source = AssetDatabase.LoadAssetAtPath<GameObject>(stepPath);
-            foreach (var manager in Object.FindObjectsByType<CartPole.Vision.MarkerManager>())
-            {
-                if (manager.rig == null || manager.rig.StepAsset != source)
-                {
-                    continue;
-                }
-                foreach (var marker in manager.rig.Markers)
-                {
-                    if (marker != null && marker.anchor.name == part.name)
-                    {
-                        return false;   // this part already carries a marker
-                    }
-                }
-                break;
-            }
-            return true;
-        }
-
         private static void AddMarkerInternal(GameObject part)
         {
             if (!TryResolveStepSource(part, out var instanceRoot, out var stepPath))
@@ -107,7 +59,7 @@ namespace CartPole.Vision.Editor
                 AssetDatabase.CreateFolder("Assets/Cart-Pole", "Markers");
             }
             var assetPath = $"Assets/Cart-Pole/Markers/{part.name}.asset";
-            var marker = ScriptableObject.CreateInstance<CartPole.Vision.MarkerSO>();
+            var marker = ScriptableObject.CreateInstance<Simulation.CartPole.SyntheticDataGen.MarkerSO>();
             marker.label = part.name;
             marker.anchor.indices = PathIndices(part.transform, instanceRoot.transform);
             marker.anchor.name = part.name;
@@ -118,7 +70,7 @@ namespace CartPole.Vision.Editor
             // the SO), so the write goes through its serialized object: the
             // first empty slot, else a grown array.
             var rigSerialized = new SerializedObject(rig);
-            var markers = rigSerialized.FindProperty("markers");
+            var markers = rigSerialized.FindProperty("m_Markers");
             if (markers.arraySize == 0)
             {
                 markers.arraySize = 4;
@@ -171,16 +123,16 @@ namespace CartPole.Vision.Editor
         }
 
         // The rig asset for a STEP assembly: the existing rig whose
-        // stepAsset is the imported assembly asset, else a fresh one
-        // created beside the marker assets. The stepAsset field is
+        // m_StepAsset is the imported assembly asset, else a fresh one
+        // created beside the marker assets. The m_StepAsset field is
         // private on the SO, so the reference is written through the
         // serialized object.
-        private static CartPole.Vision.RigSO FindOrCreateRig(string stepPath)
+        private static Simulation.CartPole.SyntheticDataGen.RigSO FindOrCreateRig(string stepPath)
         {
             var source = AssetDatabase.LoadAssetAtPath<GameObject>(stepPath);
             foreach (var guid in AssetDatabase.FindAssets("t:RigSO"))
             {
-                var candidate = AssetDatabase.LoadAssetAtPath<CartPole.Vision.RigSO>(
+                var candidate = AssetDatabase.LoadAssetAtPath<Simulation.CartPole.SyntheticDataGen.RigSO>(
                     AssetDatabase.GUIDToAssetPath(guid));
                 if (candidate != null && candidate.StepAsset == source)
                 {
@@ -194,9 +146,9 @@ namespace CartPole.Vision.Editor
             var fileName = Path.GetFileNameWithoutExtension(stepPath);
             var assetPath = AssetDatabase.GenerateUniqueAssetPath(
                 $"Assets/Cart-Pole/Rig_{fileName}.asset");
-            var rig = ScriptableObject.CreateInstance<CartPole.Vision.RigSO>();
+            var rig = ScriptableObject.CreateInstance<Simulation.CartPole.SyntheticDataGen.RigSO>();
             var serialized = new SerializedObject(rig);
-            serialized.FindProperty("stepAsset").objectReferenceValue = source;
+            serialized.FindProperty("m_StepAsset").objectReferenceValue = source;
             serialized.ApplyModifiedPropertiesWithoutUndo();
             AssetDatabase.CreateAsset(rig, assetPath);
             return rig;

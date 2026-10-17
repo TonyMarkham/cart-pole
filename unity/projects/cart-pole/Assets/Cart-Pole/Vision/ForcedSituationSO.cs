@@ -1,3 +1,4 @@
+using Simulation.CartPole.SyntheticDataGen;
 using UnityEngine;
 
 namespace CartPole.Vision

@@ -1,0 +1,62 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7d11bda1606478948b74105441095944, type: 3}
+  m_Name: Set-11
+  m_EditorClassIdentifier: Simulation.CartPole.SyntheticDataGen.Runtime::Simulation.CartPole.SyntheticDataGen.GenerationSetSO
+  m_Seed: 1111
+  m_States: 1000
+  m_OutputDirectory: D:/git/cart-pole/datasets/generated
+  m_CameraImageWidth: 1456
+  m_CameraImageHeight: 1088
+  m_RandomizeCameraYaw: 1
+  m_CameraYawRange:
+    x: -5
+    y: 5
+  m_RandomizeCameraPitch: 1
+  m_CameraPitchRange:
+    x: -5
+    y: 5
+  m_RandomizeCameraHeight: 1
+  m_CameraHeightRange:
+    x: 0.125
+    y: 0.375
+  m_RandomizeCameraLateral: 1
+  m_CameraLateralRange:
+    x: -0.125
+    y: 0.125
+  m_MaxZ: 3.5
+  m_Desks:
+  - {fileID: 11400000, guid: 687552c19743502dfbc751022127a864, type: 2}
+  - {fileID: 11400000, guid: ae800926c503bd1fe9d83db7034295fc, type: 2}
+  - {fileID: 11400000, guid: 99d758b8972755d7d89489b1e4861853, type: 2}
+  - {fileID: 11400000, guid: 85998a8d900ca98e881c971c290d42f9, type: 2}
+  m_RandomizeDesks: 1
+  m_Skyboxes:
+  - {fileID: 2100000, guid: e620e519636769ea191d387c910cd30e, type: 2}
+  - {fileID: 2100000, guid: aa692ef708e44a800a86b2a546921c18, type: 2}
+  - {fileID: 2100000, guid: c855ff1a678447cdf94bd9ce23f8832c, type: 2}
+  m_RandomizeSkyboxes: 1
+  m_SkyboxYawRange:
+    x: 0
+    y: 360
+  m_RandomizeLightYaw: 1
+  m_LightYawRange:
+    x: -60
+    y: 60
+  m_RandomizeLightPitch: 1
+  m_LightPitchRange:
+    x: 5
+    y: 85
+  m_RandomizeLightIntensity: 1
+  m_LightIntensityRange:
+    x: 2
+    y: 4

@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Simulation.CartPole.SyntheticDataGen;
 using UnityEngine;
 
 namespace CartPole.Vision

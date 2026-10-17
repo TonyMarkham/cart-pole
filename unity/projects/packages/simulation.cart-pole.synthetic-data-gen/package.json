@@ -1,0 +1,7 @@
+{
+  "name": "simulation.cart-pole.synthetic-data-gen",
+  "version": "0.1.0",
+  "displayName": "Cart-Pole Synthetic Data Gen",
+  "description": "Synthetic dataset generation for the cart-pole rig.",
+  "unity": "6000.7"
+}

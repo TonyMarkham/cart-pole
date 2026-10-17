@@ -1,0 +1,44 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:ue="UnityEditor.UIElements">
+    <ui:VisualElement class="generation-set-form">
+        <ui:Label text="Generation Set" class="section-title" />
+        <ue:PropertyField binding-path="m_Seed" />
+        <ue:PropertyField binding-path="m_States" />
+        <ue:PropertyField binding-path="m_OutputDirectory" />
+        <ui:Label name="output-empty-warning" class="warning" text="output directory is empty — drop an Explorer/Finder directory to set it" />
+        <ui:VisualElement name="output-directory-slot" />
+
+        <ui:Label text="Camera Settings" class="group-title" />
+        <ue:PropertyField binding-path="m_CameraImageWidth" />
+        <ue:PropertyField binding-path="m_CameraImageHeight" />
+        <ue:PropertyField binding-path="m_RandomizeCameraYaw" />
+        <ue:PropertyField binding-path="m_CameraYawRange" />
+        <ue:PropertyField binding-path="m_RandomizeCameraPitch" />
+        <ue:PropertyField binding-path="m_CameraPitchRange" />
+        <ue:PropertyField binding-path="m_RandomizeCameraHeight" />
+        <ue:PropertyField binding-path="m_CameraHeightRange" />
+        <ue:PropertyField binding-path="m_RandomizeCameraLateral" />
+        <ue:PropertyField binding-path="m_CameraLateralRange" />
+        <ue:PropertyField binding-path="m_MaxZ" />
+
+        <ui:Label text="Desks" class="group-title" />
+        <ue:PropertyField binding-path="m_Desks" />
+        <ue:PropertyField binding-path="m_RandomizeDesks" />
+        <ui:Label name="desks-empty-warning" class="warning" text="desk randomization is on but no desks are assigned" />
+
+        <ui:Label text="Sky-boxes" class="group-title" />
+        <ue:PropertyField binding-path="m_Skyboxes" />
+        <ue:PropertyField binding-path="m_RandomizeSkyboxes" />
+        <ue:PropertyField binding-path="m_SkyboxYawRange" />
+        <ui:Label name="skyboxes-empty-warning" class="warning" text="skybox randomization is on but no skyboxes are assigned" />
+
+        <ui:Label text="Lighting" class="group-title" />
+        <ue:PropertyField binding-path="m_RandomizeLightYaw" />
+        <ue:PropertyField binding-path="m_LightYawRange" />
+        <ue:PropertyField binding-path="m_RandomizeLightPitch" />
+        <ue:PropertyField binding-path="m_LightPitchRange" />
+        <ue:PropertyField binding-path="m_RandomizeLightIntensity" />
+        <ue:PropertyField binding-path="m_LightIntensityRange" />
+
+        <ui:Button name="save-button" text="Save" class="save-button" />
+    </ui:VisualElement>
+</ui:UXML>

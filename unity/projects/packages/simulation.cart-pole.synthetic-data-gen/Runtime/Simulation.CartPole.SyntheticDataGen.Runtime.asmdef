@@ -1,0 +1,17 @@
+{
+    "name": "Simulation.CartPole.SyntheticDataGen.Runtime",
+    "rootNamespace": "Simulation.CartPole.SyntheticDataGen",
+    "references": [
+        "com.greyhound.step.runtime",
+        "com.greyhound.vision.runtime"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
