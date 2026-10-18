@@ -1,99 +1,103 @@
-# The Python scripts — what they do
+# 02 — Gate the corpus and write the yaml
 
-Two scripts, both stdlib-only, both run through uv from
-`D:\git\cart-pole\training\`:
+**Path: 2 of 7. Before this: 01-CAPTURE.md. After this: 03-PREPARE.md
+(environment) and 04-COMMANDS.md (training).**
+
+`build_dataset.py` checks every frame/label pair in the corpus and
+writes `datasets/generated/data.yaml` — the file Ultralytics trains
+from. Nothing is copied: the yaml points at the run folders and
+Ultralytics reads them in place.
+
+> ## Step 1 — one-time setup (new machine or fresh clone only)
+>
+> Why: `uv run` requires the project's `.venv`, which does not exist on
+> a fresh clone — and the scripts need the exact locked package
+> versions, or the training environment will not match these docs.
+>
+> 1. Install uv itself:
+>
+>    ```powershell
+>    powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
+>    ```
+>
+> 2. Initialize the environment from the committed lockfile:
+>
+>    ```powershell
+>    cd D:\git\cart-pole\training
+>    uv sync
+>    ```
+>
+>    `uv sync` creates `.venv\` and installs exactly what `uv.lock`
+>    pins — including CUDA torch and ultralytics. First sync downloads
+>    several GB; that is expected. If the resulting torch is `+cpu`
+>    instead of `+cu128`, see 03-PREPARE.md's troubleshooting.
+
+> ## Step 2 — run the gate
+>
+> Why: a training run costs hours — this gate catches broken or
+> mislabeled data in seconds, before that cost is spent. It also writes
+> `datasets/generated/data.yaml`, the file Ultralytics requires to find
+> the data at all.
+>
+> ```powershell
+> uv run python src\build_dataset.py
+> ```
+>
+> (`uv run` resolves the environment from the working directory's
+> `pyproject.toml` — run it from `training\`.)
+
+> ## Step 3 — read the output
+>
+> Why: confirm the counts match what doc 01 recorded — a mismatch means
+> a run folder is partial or missing before training starts.
+>
+> Expected:
+>
+> ```
+> train: 10 runs, 10000 frames
+> val:   1 runs, 1000 frames
+> dataset: 11000 frames, 42769 boxes
+> yaml: D:\git\cart-pole\datasets\generated\data.yaml
+> ```
+>
+> - Empty label files are legal (no markers confirmed in frame) and are
+>   only reported.
+> - The gate is derivable-only: pairing (every image has a label and
+>   vice versa), 5-field grammar, class ids 0–3, coordinates in [0, 1].
+>   The detection-level verification already ran at capture time.
+
+## If the gate refuses
+
+`BUILD REFUSED - N problem(s)` with a file:line list means the corpus
+is damaged. Fix or delete the named files, then rerun. Do not train
+on a refused tree — the check is cheaper than the hours a broken
+dataset wastes.
+
+## Split rule
+
+Whole runs only — frames within a run are near-duplicates and mixing
+a run across buckets inflates val. Default: the newest run is val,
+the rest train. Override:
 
 ```powershell
-uv run python src\build_dataset.py    # corpus -> train/val dataset
-uv run python src\dataset_stats.py    # dataset -> statistics report
+uv run python src\build_dataset.py --val Set-05
 ```
 
-## Data flow
+## The yaml it writes
 
-```
-datasets\cart-pole\            (corpus - READ ONLY, committed, git-clean)
-  pilot-flat frames+labels     (300, the val bucket)
-  run_<timestamp>\ x10         (1000 each, the train bucket)
-        │  build_dataset.py
-        ▼
-training\datasets\cart-pole\   (GENERATED - wiped on every build)
-  images\{train,val}\          hardlinks, <run>_frame_NNNNNN.jpg
-  labels\{train,val}\          hardlinks, <run>_frame_NNNNNN.txt
-  cart-pole.yaml               class map from markers.json
-        │  dataset_stats.py
-        ▼
-console report                 per-class + per-run + width histogram
+```yaml
+train:
+- run_Set-01_...
+val:
+- run_Set-11_...
+names:
+- Left
+- Right
+- Pivot
+- End
+channels: 1
 ```
 
-## build_dataset.py
-
-Assembles the Ultralytics dataset from the capture corpus. Corpus in,
-dataset out; the corpus is never written.
-
-- `discover_runs(corpus)` — finds every capture location: the flat
-  pilot corpus first (300 frames at the corpus root), then the
-  `run_<timestamp>` children in timestamp order (zero-padded names
-  sort chronologically).
-- `gate_run(name, run)` — the quality gate, all derivable from the
-  files (no detection, no Unity):
-  - **pairing** — every `frame_*.jpg` must have a `.txt` and vice
-    versa (set difference both directions);
-  - **parsing** — every label line: 5 fields, class in 0-3,
-    coordinates in [0,1]; each violation becomes a problem message
-    with file:line address; `boxes` counts only fully valid lines;
-  - empty label files are legal (all four markers behind the camera)
-    and only reported.
-- `place(src, dst)` — **hardlinks** the file into the dataset (one
-  copy of the bytes, two names); falls back to `copy2` when the
-  filesystem refuses.
-- `reset_output()` — wipes and recreates `images|labels x train|val`.
-  The output tree is a build artifact, fully regenerable; each build
-  starts clean.
-- `write_yaml()` — builds `cart-pole.yaml` from the corpus's
-  `markers.json`: the class order is the **rig slot order**, read
-  from disk, never retyped.
-- `main()` — gates the whole corpus **before** placing a single file
-  (a corrupt frame aborts the build before the output tree is
-  touched), refuses with exit code 1 and a full problem list, then
-  places everything and writes the yaml. Exit code 0 = built.
-
-Split rule: **by whole run**, never by frame — frames within a run
-are near-duplicates (same pools, same seed pair) and mixing them
-into both buckets would inflate val. The flat pilot is the odd run
-out and lands in **val**; the ten bulk runs land in **train**
-(10,000 / 300).
-
-Every placed filename is prefixed with its run's identity
-(`run_20261015_002542_frame_000000.jpg`) — capture numbering restarts
-per run, so unprefixed names would collide across runs and each run
-would silently overwrite the previous one's files. The prefix also
-makes `dataset_stats.py`'s per-run report possible: the filename
-carries the metadata.
-
-## dataset_stats.py
-
-Reads the built dataset's labels — pure text parsing, no image
-decoding — and reports per bucket:
-
-- file and box counts (train: 10,000 files / 39,585 boxes;
-  val: 300 / 1,191 at build time);
-- boxes per class — the rig slot order table training results get
-  compared against (class 3, End, is the one to watch);
-- boxes per run — free from the filename prefix
-  (`txt.name.split("_frame_")[0]`);
-- box **width in pixels** (normalized width x `IMG_WIDTH` = 1440):
-  min / max / mean and a 4-px-bin histogram. This is the number that
-  justified `imgsz=1440` — see COMMANDS.md.
-
-## Conventions both scripts share
-
-- Paths derive from `Path(__file__).resolve().parents[...]` — the
-  scripts work no matter where they're invoked from, and no absolute
-  path is hardcoded.
-- The gate is **derivable-only**: it checks what the files prove
-  (pairing, class range, coordinate range). The in-Unity detection
-  verification that ran at capture time is intentionally not
-  re-done here.
-- Everything is deterministic given the corpus: same corpus in,
-  same dataset out — which is why `datasets/` is gitignored (see
-  `.gitignore` in this directory).
+`names:` is read from the runs' `markers.json` (rig slot order) — it
+is never retyped. `path:` is omitted; it defaults to the yaml's own
+directory.

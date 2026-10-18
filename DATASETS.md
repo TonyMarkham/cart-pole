@@ -6,7 +6,7 @@ dataset layout — and there are **no exceptions**: every use case below
 writes it, reads it, or converts into it on arrival. The repo and both
 dataset trees hold data in no other shape; nothing consumed as data
 exists outside the structure. This file is a design doc: once
-implemented, it dissolves into the numbered docs (01, 03, 04, 07, 08)
+implemented, it dissolves into the numbered docs (01, 03, 04, 06, 07)
 and is deleted.
 
 ## The principle: one format, everywhere

@@ -1,94 +1,125 @@
-# Training commands — what they do, what to expect
+# Training commands — the walkthrough, step by step
 
-Every command runs from `D:\git\cart-pole\training\` through the uv
-environment (`uv run ...`). Nothing here touches the corpus; training
-reads the built dataset under `datasets/cart-pole/`.
+**Path: 4 of 7 — train the two models and prove them. Steps 1–3
+executed (2026-10-17); landed results recorded in place.** Purpose:
+produce the metrology model (1440) and the deployment model (640),
+and prove the deployment scale is right.
 
-## The base run (native 1440)
+**Every command: `cd D:\git\cart-pole\training` first.** `uv run`
+resolves the Python environment from the working directory's
+`pyproject.toml` — from any other directory it fails or trains in the
+wrong environment (a `+cpu` torch with no CUDA). `data=` and
+`project=` are absolute, so nothing else depends on the cwd.
 
-```powershell
-uv run yolo detect train model=yolo11n.pt data=datasets/cart-pole/cart-pole.yaml imgsz=1440 batch=-1 epochs=200 patience=50 device=0 project=D:/git/cart-pole/training/runs name=cp-1440-base
-```
+The corpus is `datasets/generated/` (11,000 greyscale frames — see
+`01-CAPTURE.md`); the yaml was written by `build_dataset.py`
+(`02-SCRIPTS.md`). Nothing in this file touches the corpus.
 
-Knob by knob:
+> ## Preamble — what training does, and the yaml that runs it
+>
+> Training is a loop, and `datasets/generated/data.yaml` is its only
+> instruction sheet. The yaml (written by `build_dataset.py`,
+> 02-SCRIPTS.md) names the two buckets: `train:` — Set-01…Set-10,
+> 10,000 frames the weights learn from — and `val:` — Set-11's 1,000
+> frames the weights never learn from, plus the class names (Left,
+> Right, Pivot, End) that give every score table its rows.
+>
+> Each epoch is one pass through the training frames, followed by a
+> scoring pass over the val frames — the same per-class table the
+> steps below read. The val scores never touch the weights; they do
+> two jobs instead: `best.pt` is the snapshot that produced the best
+> val table (which is why "best at epoch 324" can differ from the
+> stop at epoch 374), and `patience=50` ends training after 50
+> epochs without a val improvement.
+>
+> The same yaml is reused downstream, unchanged: the export check
+> (05, Step 2) scores the `.onnx` against the same `val:` set and the
+> same names. One split, written once — every tool in the pipeline
+> agrees on what "held out" means; nothing re-decides it.
+>
+> Because Set-11 doubles as the per-epoch judge, a score on it is
+> slightly optimistic: the checkpoint was partly chosen for doing
+> well on exactly those frames. The final arbiter is the real-rig
+> set (06-REAL_LABELING.md).
 
-| Knob | Value | Meaning |
-|---|---|---|
-| `model` | `yolo11n.pt` | Smallest YOLO11, starting from public pretrained weights. The file is **fetched automatically on first use** (~5 MB) — a one-time, expected pause. |
-| `data` | the yaml | Written by `build_dataset.py` from the run's `markers.json`; the class order inside is the rig slot order (0=Left, 1=Right, 2=Pivot, 3=End). |
-| `imgsz` | 1440 | Native camera scale. The dataset's own box-width histogram justified this: boxes are ~22.5–46 px wide at 1440, but only ~10–20 px at 640 — below the detector's stride-8 comfort zone. |
-| `batch` | -1 | Auto-fit the batch size to GPU memory (RTX 3090, 24 GB — should not need manual lowering). |
-| `epochs` | 200 | Upper bound on passes over the dataset. |
-| `patience` | 50 | Early stop when val mAP stops improving for 50 epochs. Early stopping is normal and good. |
-| `device` | 0 | The first CUDA GPU. |
-| `project`/`name` | absolute `training\runs` path / `cp-1440-base` | Output directory `training\runs\cp-1440-base\`. |
+> ## Step 1 — train the 1440 metrology model
+>
+> Why: 1440 is the corpus's native scale, where boxes are largest and
+> boxes tightest — this model is the measuring stick (real-frame
+> proposals, audits) and the accuracy ceiling the 640 deployment model
+> is measured against.
+>
+> ```powershell
+> uv run yolo detect train model=yolo11n.pt data=D:/git/cart-pole/datasets/generated/data.yaml imgsz=1440 batch=-1 epochs=500 patience=50 device=0 project=D:/git/cart-pole/training/runs name=cp2-1440-base
+> ```
+>
+> - `imgsz=1440` — the corpus's box widths (20.5–45.1 px at 1456) need
+>   the resolution; 1456 is not a multiple of 32, so Ultralytics
+>   letterboxes 1456→1440 (a 1% scale change).
+> - `epochs=500` — `patience=50` does the actual stopping.
+>
+> **Landed (2026-10-17):** early-stopped at epoch 374, best at 324,
+> 14.9 h, batch 15. Per-class mAP50-95: all 0.982, Left 0.989,
+> Right 0.955, Pivot 0.993, End 0.990. 2.2 ms inference.
 
-First-run sequence: dataset scan → auto-batch CUDA probe → AMP check →
-per-epoch progress bars. The first epoch also confirms the pipeline end
-to end; the full run takes **hours** (10,000 frames at 1440 px).
+> ## Step 2 — check: does the 1440 model survive 640 inference? (free, minutes)
+>
+> Why: it answers whether a 640 deployment model is worth training at
+> all — for free, in minutes. If the tightness tax were a class
+> failure rather than uniform, the whole 640 plan would change before
+> the 640 training spends a night.
+>
+> ```powershell
+> uv run yolo detect val model=D:/git/cart-pole/training/runs/cp2-1440-base/weights/best.pt data=D:/git/cart-pole/datasets/generated/data.yaml imgsz=640 project=D:/git/cart-pole/training/runs name=cp2-1440-crossres-640
+> ```
+>
+> **Landed:** mAP50 held (0.992) but mAP50-95 fell to 0.872 with a
+> near-uniform per-class tax — pure resolution cost. That gap is what
+> step 3 closes.
 
-### The `project=` trap (hit for real, 2026-10-15)
-
-A **relative** `project=runs` is resolved against Ultralytics' own
-settings (`AppData\Roaming\Ultralytics\settings.json`, created on
-first run), **not** the working directory — the aborted first attempt
-landed at `D:\git\cart-pole\runs\detect\runs\cp-1440-base`: outside
-`training\`, gitignored by nothing, with a doubled `detect\runs\`
-segment. **Always pass `project=` as an absolute path.** Related
-strays from the same session: the AMP check downloads `yolo26n.pt`
-into a `weights\` folder relative to that same root (safe to delete;
-it re-downloads as needed).
-
-AutoBatch note: it chose **batch 13** at 58% GPU memory utilization —
-Ultralytics is conservative by default (60% fraction). That is fine;
-do not chase the remaining VRAM.
-
-## The comparison run (deployment scale, 640)
-
-Same data, one knob changed — this answers once whether the Pi 5 can
-afford native-scale inference or must upscale:
-
-```powershell
-uv run yolo detect train model=yolo11n.pt data=datasets/cart-pole/cart-pole.yaml imgsz=640 batch=-1 epochs=200 patience=50 device=0 project=D:/git/cart-pole/training/runs name=cp-640-base
-```
-
-If the small-end boxes hurt at 640, also try the small-object variant
-`yolo11n-p2.pt` (adds the P2/stride-4 head). At 1440 the standard head
-stack is fine. Compare the two runs' **per-class** final mAP50-95 from
-their `results.csv` — same split, so the comparison is fair by
-construction.
+> ## Step 3 — train the 640 deployment model
+>
+> Why: the Pi's CPU can only afford 640-scale inference, and training
+> at the inference scale recovers most of the letterbox tax (the old
+> corpus: 95%). This produces the model the control loop actually runs.
+>
+> ```powershell
+> uv run yolo detect train model=yolo11n.pt data=D:/git/cart-pole/datasets/generated/data.yaml imgsz=640 batch=-1 epochs=500 patience=50 device=0 project=D:/git/cart-pole/training/runs name=cp2-640-base
+> ```
+>
+> **Landed (2026-10-17):** all 500 epochs, 4.5 h, batch 86. Per-class
+> mAP50-95: all 0.971, Left 0.971, Right 0.949, Pivot 0.983, End 0.982.
+> 0.6 ms inference — 90% of the step-2 gap recovered for 3.7× less
+> compute than step 1. **This is the deployment model.**
+>
+> If small boxes hurt at 640, the small-object variant `yolo11n-p2.pt`
+> (adds the P2/stride-4 head) is the follow-up experiment. At 1440 the
+> standard head stack is fine.
 
 ## Reading the results
 
 All output lands in `training\runs\<name>\`:
 
-- `results.csv` — one row per epoch; the last row is the summary. The
-  columns with `mAP50-95` are the accuracy scores.
-- `weights\best.pt` — the checkpoint to keep and export.
+- `results.csv` — one row per epoch; the last row is the summary.
+- `weights\best.pt` — the checkpoint to keep (val-selected).
 - `weights\last.pt` — the final-epoch checkpoint (not the best one).
-- `confusion_matrix.png` — rows/columns are the four classes plus
-  background; a bright off-diagonal cell names the confusion.
+- `confusion_matrix.png` — bright off-diagonal cells name confusions.
 
 Read the four classes **separately** — an aggregate mAP can hide a
-failing End marker. Pick checkpoints by val scores, never by training
+failing marker. Pick checkpoints by val scores, never by training
 loss.
 
-## Training policy (what was deliberately left alone)
+## Gotchas (all hit for real)
 
-- Frames are trained on **as written** — q90 JPEG statistics are part
-  of the domain; no re-encoding, no PNG copies.
-- Augmentation stays at Ultralytics defaults, which already match this
-  domain: `fliplr=0.5` on (the rig is near-symmetric), `degrees=0`,
-  `perspective=0` (the physical camera never rolls or warps),
-  `copy_paste=0` (the corpus carries boxes, not segmentation masks).
-
-## Export (Phase 5)
-
-```powershell
-uv run yolo export model=D:/git/cart-pole/training/runs/cp-1440-base/weights/best.pt format=onnx imgsz=1440
-```
-
-Produces `best.onnx`. `half=False` (default) is correct for the Pi 5's
-CPU runtime. The Pi-side inference must letterbox preprocessing exactly
-like Ultralytics (scale to fit, pad) — validate the exported model
-against corpus frames in the uv env before it touches the Pi.
+- **`project=` must be absolute.** A relative `project=runs` resolves
+  against Ultralytics' own settings dir — the aborted first attempt
+  landed at `D:\git\cart-pole\runs\detect\runs\cp-1440-base`: outside
+  `training\`, gitignored by nothing.
+- **Do not chase VRAM.** AutoBatch targets 60% utilization on purpose
+  (chose 15 at 1440, 86 at 640).
+- **Frames are trained on as written** — q90 JPEG statistics are part
+  of the domain; no re-encoding, no PNG copies. Augmentation stays at
+  Ultralytics defaults (`fliplr=0.5`; `degrees=0`, `perspective=0`,
+  `copy_paste=0`).
+- The old-corpus results (`cp-1440-base`, `cp-640-base`) are retired
+  records in `05-POST_TRAINING.md` — compare, don't continue.
