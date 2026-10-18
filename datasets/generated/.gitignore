@@ -1,0 +1,4 @@
+# the generated corpus is regenerable by design (seeds + generation
+# sets + the documented pipeline) - nothing in here is preserved
+*
+!.gitignore

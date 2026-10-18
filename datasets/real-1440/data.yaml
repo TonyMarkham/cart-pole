@@ -1,0 +1,10 @@
+train:
+- .
+val:
+- .
+names:
+- Left
+- Right
+- Pivot
+- End
+channels: 1

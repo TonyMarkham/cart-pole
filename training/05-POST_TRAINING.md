@@ -133,11 +133,15 @@ Pi 5 CPU (~15–30 effective GFLOPS):
 
 ---
 
-## Appendix — the old corpus record (retired)
+## Appendix — the old corpus record (retired, deleted)
 
 The old corpus (10,300 frames, 1440×1080, one effective viewpoint,
-deleted with its workflow) produced these numbers. Compare, don't
-continue.
+deleted 2026-10-18 together with both training runs) produced these
+numbers. Compare, don't continue. The corpus is **not regenerable** —
+the old generation sets no longer exist; what survives is the record
+and the lesson: a high val score on a self-similar exam is a vanity
+metric. The failure it produced is documented in 07-REFINING.md's
+premise.
 
 | Class | cp-1440-base | cp-640-base |
 |---|---|---|

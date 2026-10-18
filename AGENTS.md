@@ -1,5 +1,12 @@
 # Project purpose
 
+The purpose of this project is to prove that Unity can reliably be used in a
+robot training workflow:
+
+- As a synthetic Data generation platform
+- As a MuJoCo authoring platform
+- As an integrated part of the MuJoCo Gym training workflow
+
 This repository builds the **cart-pole**: a physical rail-mounted cart with a
 swinging pole, four ArUco markers attached, designed in FreeCAD, imported into
 Unity as a STEP assembly (via the greyhound packages), and rendered there to
