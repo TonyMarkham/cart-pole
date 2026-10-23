@@ -1,0 +1,18 @@
+# Configuration of the physics crate (physics-plan.md). Read at build
+# time (mujoco_dir: what to link) and at run time (everything). Relative
+# paths resolve against this file's folder, the repo root.
+
+# A MuJoCo 3.15.0 release tree: bin\mujoco.dll, lib\mujoco.lib.
+# Here: the sibling greyhound checkout (greyhound mujoco-win.md).
+mujoco_dir = "../greyhound-snake/dist/mujoco/x86_64-windows/3.15.0"
+
+# The MJCF the Unity exporter writes beside the STEP asset the joint set
+# names (stepAssetPath: Assets/Simulation/Robot/asy-cart-pole.step).
+model = "unity/projects/cart-pole/Assets/Simulation/Robot/asy-cart-pole.step~/asy-cart-pole.xml"
+
+# MJCF names, as in the model's <joint name> / actuator name. The
+# joint names are also the wire keys of the player's state message.
+[names]
+cart_joint = "02-Cart.Slider.joint"
+pole_joint = "04-Pole.Hinge.joint"
+actuator   = "03-Cart.Slider.Actuator"

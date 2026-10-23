@@ -13,17 +13,17 @@ MonoBehaviour:
   m_Name: 03-Cart.Slider.Actuator
   m_EditorClassIdentifier: com.greyhound.step.runtime::Greyhound.Step.StepActuator
   root: {fileID: 11400000, guid: 8cadb91f77a9547bb96d92c7e759076c, type: 2}
-  target: {fileID: 11400000, guid: 343dcbb6b7965ec60884e9ab790d3dd8, type: 2}
+  target: {fileID: 11400000, guid: dcb236f48d40df238966c80b9edfea18, type: 2}
   mj:
-    type: 0
+    type: 1
     group: 0
     delay: 0
     ctrllimited: 1
-    ctrlLo: -0.4
-    ctrlHi: 0.4
+    ctrlLo: -0.48
+    ctrlHi: 0.48
     forcelimited: 1
-    forceLo: -157
-    forceHi: 157
+    forceLo: -98
+    forceHi: 98
     lengthrangeLo: 0
     lengthrangeHi: 0
     gear:
@@ -35,9 +35,9 @@ MonoBehaviour:
     - 0
     cranklength: 0
     kp: 8000
-    kv: 0
+    kv: 100
     dampratio: 1
     timeconst: 0
     inheritrange: 0
     damping: 0
-    armature: 0
+    armature: 0.227

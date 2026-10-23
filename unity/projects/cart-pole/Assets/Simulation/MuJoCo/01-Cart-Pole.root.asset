@@ -12,10 +12,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 450089629f9b84a0584113f63fe2ba5e, type: 3}
   m_Name: 01-Cart-Pole.root
   m_EditorClassIdentifier: com.greyhound.step.runtime::Greyhound.Step.StepJointSet
-  stepAssetPath: Assets/asy-cart-pole.step
+  stepAssetPath: Assets/Simulation/Robot/asy-cart-pole.step
   rootMobility: 1
   joints:
   - {fileID: 11400000, guid: dcb236f48d40df238966c80b9edfea18, type: 2}
   - {fileID: 11400000, guid: ee77d7eded69da1d4b33f98c36863e37, type: 2}
   actuators:
   - {fileID: 11400000, guid: 32353997fd48d94fdba0c971c6f6b3b7, type: 2}
+  geoms: []

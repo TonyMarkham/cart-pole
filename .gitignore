@@ -7,6 +7,10 @@
 *.FCBak
 *.FCStd1
 
+# Rust: the workspace build dir (also holds the orchestrator stub's
+# default frame output, target/orchestrator-frames/)
+target/
+
 # Python
 __pycache__/
 *.pyc

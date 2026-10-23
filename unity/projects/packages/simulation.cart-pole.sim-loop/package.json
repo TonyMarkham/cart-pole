@@ -1,0 +1,7 @@
+{
+  "name": "simulation.cart-pole.sim-loop",
+  "version": "0.1.0",
+  "displayName": "Cart-Pole Sim Loop",
+  "description": "The simulated robot loop's Unity side for the cart-pole rig.",
+  "unity": "6000.7"
+}
