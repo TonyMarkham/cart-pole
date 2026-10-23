@@ -67,6 +67,79 @@ All runs from the repo root against `Build/SimulationLoop.exe`.
    frames from randomized camera poses and environments; the loop
    renders 728×544 from one fixed nominal camera. Pass: all four classes
    found where the markers are.
+   **Run 2026-10-22 — fails for End when the pole hangs.** Ultralytics'
+   own predictor (`imgsz` 640, `conf` 0.25, the training env via
+   `uv run --no-sync`), best box per class, with both weights of the
+   only 640 run, `cp2-640-base` (`best.pt` 2026-10-17 20:02, and
+   `best.onnx` exported from it at 20:19), on every loop frame set: the
+   60-frame sweep (`target/physics-sweep/`), the 250-frame position-model
+   sine run (`target/physics-render/`), and the 250-frame velocity sine
+   run (`target/physics-render-vel/`). The two weights agree except at
+   the edge case noted below, so the ONNX export is not the cause.
+   - Left, Right, Pivot: pass. Found in every frame where they are
+     unobscured; where the pole obscures a rail-end marker (sweep frames
+     11–12 Right, 48–49 Left) it is not registered, which is the
+     intended behavior — an obscured marker is deliberately not
+     registered (user, 2026-10-22). Lowest confidence when found 0.908;
+     no frame has more than four boxes. Boxes sit on the markers in the
+     frames inspected (sweep 4, 12, 30).
+   - **End: missed whenever the pole is within 42° of hanging** — a
+     true detector failure: the marker is clearly visible in the missed
+     frames (sweep frame 4). Sweep frames 0–7 and 53–59 (pole 0–42° and
+     318–354°), and all 250 frames of both sine runs (pole within
+     ±0.27 rad). From 48° up it is found (confidence ≥ 0.937). The one
+     difference between the weights: `best.pt` finds End in sweep frame 7
+     (42°) at confidence 0.660, y = 0.857 — right at the lowest End
+     position in the training labels.
+   - **Cause: camera framing, not orientation.** The training labels
+     contain hanging poses (End below Pivot in 4008 of 9000 frames), but
+     no End box lower than y = 0.865 of the frame height (0.9–1.0: none;
+     0.8–0.9: 9%). In the loop's view (camera at (0, 0.25, −2.41), level)
+     the hanging tip sits below that: the last detection is at y = 0.833
+     (48°), the misses begin where the tip passes ≈ 0.86. The model has
+     never seen an End marker that low in a frame.
+   - **Background ruled out (2026-10-22).** The loop scene's skybox was
+     switched from `neon_photostudio_4k` to `story_studio_02_4k` (one of
+     the generator's own skyboxes) and the player rebuilt; the sweep and
+     velocity sine run were re-rendered (`target/story-sweep/`,
+     `target/story-render-vel/`). Same result with both weights: End
+     missed in sweep frames 0–7 and 53–59 (`best.pt` also 52) and in all
+     250 sine frames; Left, Right, Pivot as before. The detections at
+     the edge got weaker, not stronger: End at y = 0.833 (48° / 312°)
+     dropped to confidence 0.829 / 0.470 (`best.onnx`) and 0.281 / missed
+     (`best.pt`), from ≥ 0.937 on neon.
+   - **Mount pose — passes (2026-10-22).** The user moved the loop
+     scene toward the measured real setup (floor to pivot 1080 mm, floor
+     to camera 990 mm, camera to the Pivot marker 2000 mm): rig and
+     `desk_2_sitstand` at y = 1.08, camera at (0, 0.99, −2.41), level;
+     player rebuilt. Re-rendered sweep (`target/mount-sweep/`) and
+     velocity sine run (`target/mount-render-vel/`), both weights:
+     **End found in every frame** (lowest confidence 0.938); all four
+     found in all 250 sine frames and 55 of 60 sweep frames. The five
+     sweep misses are rail-end markers the pole lies across (frames
+     10–12 Right, 49–50 Left), not registered by intent. Detected
+     positions match the lens-model prediction for this pose: frame 0
+     Pivot y 0.3781 (predicted 0.378), rail y 0.4207 (0.421), hanging End
+     y 0.6976 (0.696). The camera now sits below the rig, so the hanging
+     tip lands at 0.70 — inside the trained range. The scene is not yet
+     exactly the measured pose: the Pivot marker sits 0.082 m above and
+     0.132 m in front of the rig root, so the camera is 172 mm below and
+     2278 mm in front of it (measured: 90 mm, 2000 mm).
+   - **Mount pose, heights matched — passes (2026-10-22).** Rig base
+     and desk top at y = 1.000 (the Pivot marker at 1.082), camera at
+     (0, 0.99, −2.41): 92 mm below the Pivot marker (measured 90 mm),
+     still 2278 mm in front of it (measured 2000 mm). Re-rendered
+     (`target/mount2-sweep/`, `target/mount2-render-vel/`), both
+     weights: End found in every frame (lowest confidence 0.928); all
+     four in all 250 sine frames and 56 of 60 sweep frames, the misses
+     again rail-end markers the pole lies across (frames 10–12 Right, 49
+     Left). Frame 0 positions match the prediction: Pivot y 0.4349
+     (predicted 0.435), rail y 0.4759 (0.476), hanging End y 0.7544
+     (0.753) — and the lowest End in the 146 real frames is 0.756.
+   - Not decided: whether the fix is the loop's camera pose (itself a
+     placeholder for the real mount, *Placeholders*) or the generator's
+     camera ranges and a retrain. The check script and per-frame CSVs
+     are scratch files, not committed.
 3. **Timing:** per-frame round trip and sustained frames per second in
    the stub, to compare with the Pi's frame interval T (`loop-plan.md`).
    Proposed as a separate session ("Add frame timing to the orchestrator

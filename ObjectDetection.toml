@@ -1,8 +1,13 @@
 # Configuration of the object-detection crate (detector-plan.md).
 # Relative paths resolve against this file's folder.
 
-# The trained detector (gitignored; produced by training/).
+# The trained detector (gitignored; produced by training/), float ONNX,
+# run by tract on the CPU: the default build (the loop on the PC).
 model = "training/runs/cp2-640-base/weights/best.onnx"
+
+# The same weights exported int8 for the Coral Edge TPU (Ultralytics
+# format=edgetpu; gitignored): the build with the edgetpu feature (the Pi).
+edgetpu_model = "training/runs/cp2-640-base/weights/best_full_integer_quant_edgetpu.tflite"
 
 # The model's square input size, pixels (its metadata imgsz).
 input_size = 640
@@ -16,3 +21,7 @@ confidence = 0.25
 
 # Class order = slot order = the model's class ids (its metadata names).
 classes = ["Left", "Right", "Pivot", "End"]
+
+# CPU threads inference runs on (the Pi 5 has 4 cores): tract's pool, or
+# TFLite's for the ops the Edge TPU does not run. 1 = no pool.
+threads = 4

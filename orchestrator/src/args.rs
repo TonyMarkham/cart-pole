@@ -69,11 +69,21 @@ pub struct Args {
     #[arg(long, requires = "physics")]
     pub no_render: bool,
 
-    /// Physics mode: run each returned frame through the detector
-    /// (ObjectDetection.toml, beside physics.toml) and append its four
-    /// slots and confidences to the frame's states.csv row.
-    #[arg(long, requires = "physics", conflicts_with = "no_render")]
-    pub detect: bool,
+    /// Physics mode: launch the synthetic Orin (orin-plan.md) with this
+    /// command — program and arguments, e.g. `--orin uv run --project
+    /// orin python orin/synthetic_orin.py --config ObjectDetection.toml
+    /// --engine <file>` — appending `--orchestrator ws://<listen> --out
+    /// <out>`. It connects after the player; every frame is forwarded to
+    /// it with its simulated capture time, and MuJoCo steps only after
+    /// its reply. Must come last: every argument after it is the command.
+    #[arg(
+        long,
+        num_args = 1..,
+        allow_hyphen_values = true,
+        requires = "physics",
+        conflicts_with = "no_render"
+    )]
+    pub orin: Option<Vec<String>>,
 
     /// Directory the returned frames (and states.csv) are written into.
     #[arg(long, default_value = "target/orchestrator-frames")]

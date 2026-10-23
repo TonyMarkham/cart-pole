@@ -6,13 +6,21 @@ the **4-slot marker frame** — where each of the four markers is, or that
 it was not detected. This plan builds that step as a Rust library crate,
 `object-detection`, that runs the trained `best.onnx` on a JPEG and
 returns the slots; one source serves the loop (`virtual`, called by the
-orchestrator) and the Pi (`live`), so it must build on the Pi 5, where
-the repo is cloned and compiled for production. Its parameters live in
-`ObjectDetection.toml` at the repo root.
+orchestrator) and the Pi (`live`), so it must build on the robot's
+computer, where the repo is cloned and compiled for production. Its
+parameters live in `ObjectDetection.toml` at the repo root.
 
-Status (2026-10-22): **steps 1–6 done, Done-when 1–3 met** (see
-*Results*; uncommitted). R1/R2 approved by the user. Step 7 (the build
-on the Pi) is the user's, on the Pi.
+Status (2026-10-23): **steps 1–7 done, Done-when 1–4 met on the
+Raspberry Pi 5** (see *Results*). **The target is now the Jetson Orin
+Nano Super** (user, 2026-10-23, after the measurements in *Results*):
+TensorRT FP16 on its GPU detects in 8–10 ms per frame at float
+accuracy, against 80–125 ms for the best Pi 5 options. **Detection on
+the robot runs in Python** (user, 2026-10-23): OpenCV pre-processing +
+TensorRT, 11.9–14.5 ms per frame against the Rust POC's 18.7–19.1 ms
+in the same session. That Python path exists only as the scratch test
+(`trt_detect.py`). The crate keeps its engines (tract on the CPU,
+which the loop on the PC uses; the `edgetpu` Coral engine,
+uncommitted).
 
 ## Done when
 
@@ -255,9 +263,93 @@ any retraining.
   ~190–230 ms per frame in release on this PC's CPU (single model, not
   a contract) and ~2.1 s in a debug build, so loop runs with `--detect`
   use `--release`.
-- **Step 7 fact.** `tract-linalg` compiles its hand-written ARM kernels
-  with `cc` at build time, so the Pi needs a C compiler beside the Rust
-  toolchain. Not yet built on the Pi.
+- **Step 7 — Done-when 4 met** (robo-pi: Raspberry Pi 5 Model B, 4
+  cores, Ubuntu 26.04 aarch64, rustc 1.99.1, gcc). In a clone at
+  `8fb7d420`, `cargo build --release -p object-detection --example
+  reference_check` built in 6 min. `tract-linalg` compiles its ARM
+  kernels with `cc`, so the Pi needs gcc beside the Rust toolchain.
+  `reference_check` on `mount2-render-vel` (250 frames): the same
+  agreement as on the PC (0.078 / 0.236 px, 0.0006), **mean detect
+  486 ms** — about 2 frames per second, tract on one thread.
+- **Speed (PC, 2026-10-22, scratch POC, not the crate).** onnxruntime
+  1.26 on the CPU with the same model and pre-processing, matching the
+  reference on all 310 frames: 65 ms inference on 1 thread, 22 ms on 4,
+  against tract's ~192 ms on 1 thread. tract is ~3× slower per thread
+  here and runs single-threaded (its `multithread-mm` feature is off).
+- **tract on 4 threads** (user-approved `tract-linalg` 0.23.9 with
+  `multithread-mm`; `threads = 4` in `ObjectDetection.toml`;
+  uncommitted, applied on the Pi as a patch): same agreement on
+  `mount2-render-vel`; mean detect PC 188 → 112 ms, **Pi 486 → 377 ms**
+  (1.3×, about 2.7 frames per second).
+- **Coral USB Edge TPU on the Pi** (scratch POC, 2026-10-23, not the
+  crate): `best.pt` exported in WSL with Ultralytics 8.4.177
+  `format=edgetpu` (int8, calibrated on the 1,000 `run_Set-11` frames;
+  Edge TPU compiler 16.0). The compiler maps 134 of 479 ops: YOLO11's
+  attention block (`BATCH_MATMUL`, `SOFTMAX`) ends the one subgraph
+  the Edge TPU can take, so the rest (174 of 209 convolutions) runs on
+  the Pi's CPU. On the Pi (community `libedgetpu1-std`
+  16.0tf2.19.1, `ai-edge-litert` 1.3.0, 4 CPU threads, Coral on USB
+  3): **82.5 ms per frame (12 fps)** on `mount2-render-vel`; every
+  decision the same as the reference, but centers within 4.3 px x /
+  3.1 px y and confidences within 0.031 — outside Done-when 2's float
+  tolerances. The output tensor is int8 with one scale for every row
+  (0.00418): a box coordinate moves in steps of 0.00418 × 640 /
+  0.879 ≈ 3.0 frame px.
+- **The crate on the Coral** (user decisions 2026-10-23: link Ubuntu's
+  `libtensorflow-lite-dev` 2.14.1 on the Pi; the PC keeps tract on the
+  float model). Feature `edgetpu`: TFLite C API + `libedgetpu.so.1`,
+  hand-written FFI (`edgetpu_ffi.rs`), engine `edgetpu_engine.rs`;
+  without it `tract_engine.rs` as before. `ObjectDetection.toml` gains
+  `edgetpu_model`. On the Pi, `cargo build --release -p
+  object-detection --features edgetpu` links and loads the Coral
+  (TFLite 2.14.1 with the TF 2.19.1-built driver works);
+  `reference_check` on `mount2-render-vel`: every decision the same,
+  centers within 4.3 / 3.6 px, confidences within 0.025 (940 of 1,000
+  slots outside the float tolerances, exit 1 by design), **mean detect
+  112 ms** — slower than the Python POC's 82.5 ms.
+- **Where the edgetpu build's time goes** (Pi, 250 frames, scratch
+  stage timer): JPEG decode 2.2 ms, RGB→luma 1.0, letterbox + resize
+  2.8, quantize 0.4, dequantize 0.1 — about 6.5 ms of Rust work; the
+  rest is TFLite's invoke (Coral plus the CPU ops it could not map):
+  ~125 ms at 1 thread, ~113 at 2, ~115 at 3 and 4. The gap to the
+  Python POC (LiteRT 1.3.0, ~80 ms including its numpy conversions) is
+  in the invoke, i.e. Ubuntu's TFLite 2.14.1 runs the same CPU ops
+  slower; why is not measured.
+- **NCNN on the Pi's CPU** (scratch POC, 2026-10-23): `best.pt`
+  exported in WSL with Ultralytics 8.4.177 `format=ncnn` (PNNX
+  20260526, FP32 weights); run with `ncnn` 1.0.20261020 in Python,
+  Vulkan off as Ultralytics' backend sets it. On `mount2-render-vel`:
+  every decision the same, centers within 0.30 / 0.43 px, confidences
+  within 0.0025 — inside Done-when 2's float tolerances. Time per frame
+  (decode + letterbox ~2.2 ms included): 4 threads 103–126 ms over six
+  runs (run-to-run spread, the default and an explicit 4 the same; Pi
+  at 50–58 °C), 2 threads 116, 1 thread 147. Ultralytics' published
+  Pi 5 NCNN figures (YOLO26n 67 ms, YOLO11n 88 ms, inference only)
+  are faster than measured here.
+- **Jetson Orin Nano Super, TensorRT** (scratch POC, 2026-10-23;
+  robo-orin: L4T R36.5.2, JetPack 6.2.3 — CUDA 12.6, TensorRT 10.3 —
+  power mode 25W, GPU at 918 MHz, 49–51 °C). Engines built from the
+  float `best.onnx` with `trtexec`: GPU compute 4.43 ms (FP16) and
+  7.75 ms (FP32) per frame. End to end in Python (OpenCV decode +
+  letterbox 2.4–4.0 ms, copy, run, copy back) over `mount2-render-vel`:
+  **FP16 8.4–10.4 ms (96–120 fps)**, FP32 13.2–16.2 ms (62–76 fps),
+  over 3 and 2 runs (the first runs slower while the clocks ramp up).
+  Every decision the same as the reference; centers within 0.08 /
+  0.27 px (FP16) and 0.08 / 0.29 px (FP32), confidences within
+  0.0011 / 0.0007 — inside Done-when 2's float tolerances.
+- **Rust on the Orin** (scratch POC `rust-trt`, 2026-10-23): the
+  crate's `Grey::decode` + `Letterbox` (commit `8fb7d420`), TensorRT
+  through a C++ shim (`enqueueV3`, pageable copies), the D3 slot rule.
+  Same engines and frames: **FP16 18.7–19.1 ms (52–53 fps)**, FP32
+  28.2–28.3 ms; decode 5.0–5.2, letterbox 3.5–3.7, copy + infer
+  10.0–10.3, slot rule 0.08; every decision the same, centers within
+  0.08 / 0.26 px. Python in the same session: 11.9–14.5 ms (decode +
+  letterbox with OpenCV 3.5–3.9, copy + infer 8.5–10.5). The gap is the
+  CPU pre-processing (8.6 ms Rust vs ~3.7 ms OpenCV). Clocks at 25W:
+  CPU max 1.344 GHz (`schedutil`); GPU max 918 MHz but the governor
+  (`nvhost_podgov`) held it at 408–510 MHz during both runs (GPU load
+  ~45–77%), against `trtexec`'s saturated 4.43 ms — so per-frame
+  inference here is clock-bound, not engine-bound.
 
 ## References
 

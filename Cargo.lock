@@ -776,6 +776,7 @@ dependencies = [
  "image",
  "serde",
  "toml",
+ "tract-linalg",
  "tract-onnx",
 ]
 
@@ -798,7 +799,6 @@ dependencies = [
  "anyhow",
  "clap",
  "futures-util",
- "object-detection",
  "physics",
  "serde",
  "serde_json",
@@ -1423,6 +1423,7 @@ dependencies = [
  "minijinja",
  "num-traits",
  "pastey",
+ "rayon",
  "tract-data",
  "walkdir",
 ]

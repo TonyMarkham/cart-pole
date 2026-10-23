@@ -28,6 +28,9 @@ serde_json        = { version = "1.0.154" }
 tokio             = { version = "1.54.1", features = ["fs", "macros", "net", "process", "rt-multi-thread", "time"] }
 tokio-tungstenite = { version = "0.30.0" }
 toml              = { version = "1.1.8" }
+# Only for its multithread-mm feature: tract-onnx runs on one thread
+# without it.
+tract-linalg      = { version = "0.23.9", features = ["multithread-mm"] }
 # Pure-Rust ONNX inference: builds for the Pi 5 with nothing to install
 # there (detector-plan.md R1).
 tract-onnx        = { version = "0.23.9" }

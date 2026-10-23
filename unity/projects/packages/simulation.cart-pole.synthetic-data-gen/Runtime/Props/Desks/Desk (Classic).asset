@@ -14,6 +14,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::CartPole.Vision.DeskSO
   label: Classic
   prefab: {fileID: 919132149155446097, guid: 201682e4ed2cfcf15bd5c94853ecc5ad, type: 3}
-  position: {x: 0, y: 0, z: -0.08}
+  position: {x: 0, y: 1, z: -0.08}
   localEuler: {x: 0, y: 0, z: 0}
   scale: {x: 1, y: 1, z: 1}

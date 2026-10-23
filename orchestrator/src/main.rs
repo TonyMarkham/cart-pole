@@ -2,15 +2,19 @@ mod args;
 mod control;
 mod joint_qpos;
 mod jpeg_info;
+mod orin_message;
+mod orin_reply;
 mod state_message;
 mod sweep;
 
-use crate::{args::Args, control::Control, joint_qpos::JointQpos, jpeg_info::JpegInfo, state_message::StateMessage};
+use crate::{
+    args::Args, control::Control, joint_qpos::JointQpos, jpeg_info::JpegInfo, orin_message::OrinMessage,
+    orin_reply::OrinReply, state_message::StateMessage,
+};
 
 use anyhow::{Context, Result, anyhow, bail};
 use clap::Parser;
 use futures_util::{SinkExt, StreamExt};
-use object_detection::{Detector, DetectorConfig, MarkerFrame, SLOTS};
 use physics::{Names, Physics, PhysicsConfig, Pose};
 use std::{
     fs::File,
@@ -28,9 +32,9 @@ use tokio_tungstenite::{WebSocketStream, accept_async, tungstenite::Message};
 const FRAME_WIDTH: u16 = 728;
 const FRAME_HEIGHT: u16 = 544;
 
-// How long a launched player gets to quit on its own after the socket
-// closes before it is killed.
-const PLAYER_EXIT_GRACE: Duration = Duration::from_secs(5);
+// How long a launched client (player, synthetic Orin) gets to quit on its
+// own after its socket closes before it is killed.
+const CLIENT_EXIT_GRACE: Duration = Duration::from_secs(5);
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -44,7 +48,7 @@ async fn main() -> Result<()> {
     let mut source = Source::new(&args, &config)?;
 
     if args.no_render {
-        return run(None, &args, &config.names, &mut source).await;
+        return run(None, None, &args, &config.names, &mut source).await;
     }
 
     let listener = TcpListener::bind(args.listen)
@@ -61,16 +65,39 @@ async fn main() -> Result<()> {
         }
     };
 
-    let stream = accept(&listener, child.as_mut(), Duration::from_secs(args.connect_timeout)).await?;
+    let connect_timeout = Duration::from_secs(args.connect_timeout);
+    let stream = accept(&listener, child.as_mut(), "player", connect_timeout).await?;
     let mut ws = accept_async(stream).await.context("WebSocket handshake")?;
     println!("player connected");
 
-    let result = run(Some(&mut ws), &args, &config.names, &mut source).await;
-    // Closing tells the player the run is over; a failed close only
-    // means the player is already gone.
+    // The synthetic Orin is launched only after the player has connected,
+    // so the order of connections tells the two clients apart.
+    let mut orin = match &args.orin {
+        Some(command) => {
+            let mut orin_child = launch_orin(command, &url, &args.out)?;
+            let stream = accept(&listener, Some(&mut orin_child), "synthetic Orin", connect_timeout).await?;
+            let orin_ws = accept_async(stream).await.context("synthetic Orin WebSocket handshake")?;
+            println!("synthetic Orin connected");
+            Some((orin_child, orin_ws))
+        }
+        None => None,
+    };
+
+    let orin_ws = orin.as_mut().map(|(_, orin_ws)| orin_ws);
+    let result = run(Some(&mut ws), orin_ws, &args, &config.names, &mut source).await;
+    // Closing tells each client the run is over; a failed close only
+    // means that client is already gone.
+    if let Some((orin_child, mut orin_ws)) = orin {
+        let _ = orin_ws.close(None).await;
+        // The server ends the TCP connection (RFC 6455 7.1.1); the Orin's
+        // client waits for that, up to its 10 s close timeout, before it
+        // exits, so the socket is dropped before the exit is awaited.
+        drop(orin_ws);
+        stop(orin_child, "synthetic Orin").await?;
+    }
     let _ = ws.close(None).await;
     if let Some(child) = child {
-        stop(child).await?;
+        stop(child, "player").await?;
     }
     result
 }
@@ -87,15 +114,6 @@ struct Simulation {
     control: Control,
     steps_per_frame: u32,
     csv: BufWriter<File>,
-    detection: Option<Box<Detection>>,
-}
-
-// --detect: the detector and what it found over the run.
-struct Detection {
-    detector: Detector,
-    frames: usize,
-    found: [usize; SLOTS],
-    seconds: f64,
 }
 
 // One frame's state at its capture. Physics mode adds the simulated time
@@ -125,34 +143,10 @@ impl Source {
         physics.reset(start)?;
         let steps_per_frame = steps_per_frame(args.frame_interval_ms, physics.timestep())?;
 
-        // The detector's config sits beside physics.toml, at the repo
-        // root, whatever the current directory.
-        let detection = match args.detect {
-            false => None,
-            true => {
-                let folder = config
-                    .path
-                    .parent()
-                    .ok_or_else(|| anyhow!("{} has no parent", config.path.display()))?;
-                let detector = Detector::load(DetectorConfig::load(&folder.join("ObjectDetection.toml"))?)?;
-                Some(Box::new(Detection { detector, frames: 0, found: [0; SLOTS], seconds: 0.0 }))
-            }
-        };
-
         let path = args.out.join("states.csv");
         let file = File::create(&path).with_context(|| format!("creating {}", path.display()))?;
         let mut csv = BufWriter::new(file);
-        write!(csv, "id,time,ctrl,cart,pole")?;
-        if let Some(detection) = &detection {
-            let classes: Vec<String> = detection.detector.config().classes.iter().map(|c| c.to_lowercase()).collect();
-            for class in &classes {
-                write!(csv, ",{class}_x,{class}_y")?;
-            }
-            for class in &classes {
-                write!(csv, ",{class}_conf")?;
-            }
-        }
-        writeln!(csv)?;
+        writeln!(csv, "id,time,ctrl,cart,pole")?;
         println!(
             "physics: model {}\n         start cart {:+.3} m pole {:.3} rad, control {:?}, {} ms = {steps_per_frame} steps per frame -> {}",
             config.model.display(),
@@ -162,7 +156,7 @@ impl Source {
             args.frame_interval_ms,
             path.display()
         );
-        Ok(Source::Physics(Simulation { physics, control: args.control, steps_per_frame, csv, detection }))
+        Ok(Source::Physics(Simulation { physics, control: args.control, steps_per_frame, csv }))
     }
 
     fn len(&self, frames: u32) -> Result<u32> {
@@ -188,59 +182,16 @@ impl Source {
         }
     }
 
-    // With --detect: frame `id`'s marker frame, printed with the time the
-    // detection took. None without --detect.
-    fn detect(&mut self, id: u32, jpeg: &[u8]) -> Result<Option<MarkerFrame>> {
-        let Source::Physics(Simulation { detection: Some(detection), .. }) = self else {
-            return Ok(None);
-        };
-        let started = Instant::now();
-        let marker_frame = detection
-            .detector
-            .detect(jpeg, usize::from(FRAME_WIDTH), usize::from(FRAME_HEIGHT))
-            .with_context(|| format!("detecting frame {id}"))?;
-        let seconds = started.elapsed().as_secs_f64();
-        detection.frames += 1;
-        detection.seconds += seconds;
-        let mut line = format!("detect {id:06}  {:.0} ms", seconds * 1000.0);
-        for (slot, name) in detection.detector.config().classes.iter().enumerate() {
-            let (x, y) = marker_frame.slots[slot];
-            line += &format!("  {name} {x:+.3} {y:+.3} ({:.2})", marker_frame.confidences[slot]);
-            if marker_frame.detected(slot) {
-                detection.found[slot] += 1;
-            }
-        }
-        println!("{line}");
-        Ok(Some(marker_frame))
-    }
-
-    // After frame `id` is rendered: log the truth (and, with --detect,
-    // what the detector saw), apply the command, and step to the next
-    // capture (D = 0: the command takes effect at the capture it was
-    // decided at).
-    fn advance(&mut self, id: u32, capture: &Capture, seen: Option<&MarkerFrame>) -> Result<()> {
+    // After frame `id` is rendered: log the truth, apply the command, and
+    // step to the next capture (D = 0: the command takes effect at the
+    // capture it was decided at).
+    fn advance(&mut self, id: u32, capture: &Capture) -> Result<()> {
         let (Source::Physics(sim), Some((time, ctrl))) = (self, capture.time_and_ctrl) else {
             return Ok(());
         };
         // `{}` writes a float as the shortest text that reads back to the
         // same number, so identical runs give identical files.
-        write!(sim.csv, "{id},{time},{ctrl},{},{}", capture.pose.cart, capture.pose.pole)?;
-        if sim.detection.is_some() {
-            match seen {
-                Some(marker_frame) => {
-                    for (x, y) in marker_frame.slots {
-                        write!(sim.csv, ",{x},{y}")?;
-                    }
-                    for conf in marker_frame.confidences {
-                        write!(sim.csv, ",{conf}")?;
-                    }
-                }
-                // A frame that broke the contract was not detected; its
-                // fields stay empty (never -1, which means "not found").
-                None => write!(sim.csv, "{}", ",".repeat(3 * SLOTS))?,
-            }
-        }
-        writeln!(sim.csv)?;
+        writeln!(sim.csv, "{id},{time},{ctrl},{},{}", capture.pose.cart, capture.pose.pole)?;
         sim.physics.set_ctrl(ctrl)?;
         sim.physics.step(sim.steps_per_frame);
         Ok(())
@@ -252,17 +203,6 @@ impl Source {
             Source::Poses(_) => Ok(0),
             Source::Physics(sim) => {
                 sim.csv.flush().context("writing states.csv")?;
-                if let Some(detection) = &sim.detection {
-                    let mut line = format!(
-                        "detected in {} frames (mean {:.0} ms):",
-                        detection.frames,
-                        detection.seconds * 1000.0 / detection.frames.max(1) as f64
-                    );
-                    for (name, found) in detection.detector.config().classes.iter().zip(detection.found) {
-                        line += &format!("  {name} {found}");
-                    }
-                    println!("{line}");
-                }
                 Ok(sim.physics.warnings())
             }
         }
@@ -292,14 +232,30 @@ fn launch(player: &Path, url: &str) -> Result<Child> {
         .with_context(|| format!("launching {}", player.display()))
 }
 
-// Waits for the first connection; a launched player that exits before
+// The synthetic Orin: the given program and arguments, plus its address
+// and the run's folder (orin-plan.md R4); kill_on_drop as for the player.
+fn launch_orin(command: &[String], url: &str, out: &Path) -> Result<Child> {
+    let (program, rest) = command.split_first().ok_or_else(|| anyhow!("--orin needs a command"))?;
+    println!("launching synthetic Orin: {} --orchestrator {url} --out {}", command.join(" "), out.display());
+    Command::new(program)
+        .args(rest)
+        .arg("--orchestrator")
+        .arg(url)
+        .arg("--out")
+        .arg(out)
+        .kill_on_drop(true)
+        .spawn()
+        .with_context(|| format!("launching {program}"))
+}
+
+// Waits for the next connection; a launched client that exits before
 // connecting fails the wait at once instead of after the timeout.
-async fn accept(listener: &TcpListener, child: Option<&mut Child>, timeout: Duration) -> Result<TcpStream> {
+async fn accept(listener: &TcpListener, child: Option<&mut Child>, who: &str, timeout: Duration) -> Result<TcpStream> {
     let wait = async {
         match child {
             Some(child) => tokio::select! {
                 accepted = listener.accept() => Ok(accepted?.0),
-                status = child.wait() => Err(anyhow!("player exited before connecting: {status:?}")),
+                status = child.wait() => Err(anyhow!("{who} exited before connecting: {status:?}")),
             },
             None => Ok(listener.accept().await?.0),
         }
@@ -312,9 +268,13 @@ async fn accept(listener: &TcpListener, child: Option<&mut Child>, timeout: Dura
 // Lockstep: take one state, send it, wait for its one frame, check and
 // save it, then advance. Every frame is checked; the run fails at the
 // end if any broke the size contract or MuJoCo warned (P3). Without a
-// socket (--no-render) only the states are produced.
+// socket (--no-render) only the states are produced. With the synthetic
+// Orin, each frame that met the contract is forwarded to it and MuJoCo
+// steps only after its reply (O4); one run is one episode, so the reset
+// goes out once, before frame 0.
 async fn run(
     mut ws: Option<&mut WebSocketStream<TcpStream>>,
+    mut orin: Option<&mut WebSocketStream<TcpStream>>,
     args: &Args,
     names: &Names,
     source: &mut Source,
@@ -322,6 +282,12 @@ async fn run(
     let reply_timeout = Duration::from_secs(args.reply_timeout);
     let count = source.len(args.frames)?;
     let mut broken = 0usize;
+    if let Some(orin) = orin.as_deref_mut() {
+        let reset = OrinMessage::Reset { frame_interval: f64::from(args.frame_interval_ms) / 1000.0 };
+        orin.send(Message::text(serde_json::to_string(&reset)?))
+            .await
+            .context("sending reset to the synthetic Orin")?;
+    }
     for id in 0..count {
         let capture = source.capture(usize::try_from(id)?)?;
         let pose = capture.pose;
@@ -335,15 +301,21 @@ async fn run(
             state = format!("t {time:.3} s  ctrl {ctrl:+.3} m/s  {state}");
         }
 
-        let mut seen = None;
         match ws.as_deref_mut() {
             Some(ws) => match render(ws, id, pose, names, reply_timeout, &args.out, &state).await? {
-                Some(jpeg) => seen = source.detect(id, &jpeg)?,
+                Some(jpeg) => {
+                    if let Some(orin) = orin.as_deref_mut() {
+                        let (time, _) = capture
+                            .time_and_ctrl
+                            .ok_or_else(|| anyhow!("--orin needs physics mode's capture time"))?;
+                        forward(orin, id, time, &jpeg, reply_timeout).await?;
+                    }
+                }
                 None => broken += 1,
             },
             None => println!("state {id:06}  {state}"),
         }
-        source.advance(id, &capture, seen.as_ref())?;
+        source.advance(id, &capture)?;
     }
 
     let warnings = source.finish()?;
@@ -428,14 +400,57 @@ async fn next_frame(ws: &mut WebSocketStream<TcpStream>, timeout: Duration) -> R
     }
 }
 
-// The player quits on its own when the socket closes; it is killed only
-// if it is still running after the grace period.
-async fn stop(mut child: Child) -> Result<()> {
-    match tokio::time::timeout(PLAYER_EXIT_GRACE, child.wait()).await {
-        Ok(status) => println!("player exited: {}", status?),
+// Sends one frame to the synthetic Orin — its id and simulated capture
+// time (O2), then the JPEG — and waits for its one reply. A reply for
+// another frame, or an error reply (O3), fails the run.
+async fn forward(
+    orin: &mut WebSocketStream<TcpStream>,
+    id: u32,
+    time: f64,
+    jpeg: &[u8],
+    timeout: Duration,
+) -> Result<()> {
+    let started = Instant::now();
+    let header = OrinMessage::Frame { id, time };
+    orin.send(Message::text(serde_json::to_string(&header)?))
+        .await
+        .with_context(|| format!("sending frame {id}'s header to the synthetic Orin"))?;
+    orin.send(Message::binary(jpeg.to_vec()))
+        .await
+        .with_context(|| format!("sending frame {id} to the synthetic Orin"))?;
+    let reply = loop {
+        let message = tokio::time::timeout(timeout, orin.next())
+            .await
+            .map_err(|_| anyhow!("no reply from the synthetic Orin for frame {id} within {} s", timeout.as_secs()))?
+            .ok_or_else(|| anyhow!("synthetic Orin disconnected"))??;
+        match message {
+            Message::Text(text) => {
+                break serde_json::from_str::<OrinReply>(text.as_str())
+                    .with_context(|| format!("synthetic Orin reply {:?}", text.as_str()))?;
+            }
+            Message::Binary(_) => bail!("synthetic Orin sent binary data for frame {id}, expected its reply"),
+            Message::Close(frame) => bail!("synthetic Orin closed the socket: {frame:?}"),
+            _ => {}
+        }
+    };
+    if reply.id != id {
+        bail!("synthetic Orin replied for frame {}, expected {id}", reply.id);
+    }
+    if let Some(error) = reply.error {
+        bail!("synthetic Orin rejected frame {id}: {error}");
+    }
+    println!("orin  {id:06}  ack {:.1} ms", started.elapsed().as_secs_f64() * 1000.0);
+    Ok(())
+}
+
+// A launched client quits on its own when its socket closes; it is killed
+// only if it is still running after the grace period.
+async fn stop(mut child: Child, who: &str) -> Result<()> {
+    match tokio::time::timeout(CLIENT_EXIT_GRACE, child.wait()).await {
+        Ok(status) => println!("{who} exited: {}", status?),
         Err(_) => {
-            child.kill().await.context("killing the player")?;
-            println!("player killed after {} s", PLAYER_EXIT_GRACE.as_secs());
+            child.kill().await.with_context(|| format!("killing the {who}"))?;
+            println!("{who} killed after {} s", CLIENT_EXIT_GRACE.as_secs());
         }
     }
     Ok(())

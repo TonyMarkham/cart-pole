@@ -21,7 +21,21 @@ below names what is landed today; everything else is to be built.
 - **Live and virtual are one source.** The Pi's code and the Arduino's
   firmware are each one Rust source built two ways: `live` for the
   hardware, `virtual` for the loop. Only the edges (where frames come
-  from, where commands go) differ.
+  from, where commands go) differ. **Exception: object detection on the
+  robot runs in Python** (user, 2026-10-23) — on the Orin, Python with
+  OpenCV pre-processing and TensorRT ran 11.9–14.5 ms per frame against
+  18.7–19.1 ms for the Rust POC in the same session
+  (`detector-plan.md`, *Results*).
+- **The robot's computer is a Jetson Orin Nano Super** (user,
+  2026-10-23), replacing the Raspberry Pi 5: its GPU runs the detector
+  in 8–10 ms per frame with TensorRT FP16 against 80–125 ms for the best
+  Pi 5 options (`detector-plan.md`, *Results*). "The Pi" in this plan
+  and the leg plans names that computer's role (the robot side of the
+  loop), not the board. Its code is built on the device: the repo is
+  cloned there and compiled (user, 2026-10-22, for the Pi; unchanged
+  for the Orin). Requirement: every dependency of the robot-side code
+  builds there (aarch64 Linux, JetPack 6.2.3: CUDA 12.6, TensorRT
+  10.3).
 - **The robot sees only pixels.** The Pi side receives rendered frames
   and nothing else. The true joint state (`qpos`) goes only to the
   orchestrator, for logs and the reward.
@@ -152,7 +166,11 @@ What exists today, per part:
 3. **Unity player** — a standalone build of the renderer at 728×544
    greyscale, q90.
 4. **Pi code, `live` + `virtual`** — JPEG decode, detector inference
-   and slot filling, the 6-frame window, the policy slot.
+   and slot filling, the 6-frame window, the policy slot. Detection on
+   the robot is Python (*Principles*, exception). The object
+   detection crate's parameters are configured outside source code, in
+   `ObjectDetection.toml` at the repo root (user, 2026-10-22), as
+   `physics.toml` configures the physics crate.
 5. **Firmware, `live` + `virtual`** — command accumulation, clamp,
    and the `virtual` output layer producing `ctrl`.
 
