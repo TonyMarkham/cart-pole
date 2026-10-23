@@ -112,14 +112,15 @@ adds repo structure around them, never overrides them.
   **outside this repo**: from `Packages/`, `../../../../../greyhound-snake`
   is the sibling checkout `D:\git\greyhound-snake`, whose `dist/package/`
   is what the editor actually loads.
-- `submodules/greyhound-snake` (pinned in `.gitmodules`/gitlink) is the
-  versioned reference, not the copy Unity loads. The sibling checkout can
-  be ahead of the pin; check both before claiming which greyhound version
-  anything runs against.
+- The Rust side resolves to the same sibling checkout: `physics.toml`'s
+  `mujoco_dir` is `../greyhound-snake/dist/mujoco/…` from the repo root.
+- There is no greyhound submodule (dropped 2026-10-22: nothing built
+  from it, and the `dist/` everything loads is gitignored in greyhound).
+  The greyhound version anything runs against is whatever the sibling
+  checkout has checked out — read its branch and commit before claiming
+  a version.
 - Work inside the greyhound repo — including its `package/` vs `dist/`
-  staging rules — is governed by that repo's own `AGENTS.md`. After
-  greyhound changes are validated there, this repo's side is: update the
-  submodule pointer when the user says so.
+  staging rules — is governed by that repo's own `AGENTS.md`.
 - **Restart the Unity Editor completely after replacing any native
   library** the step package ships: Unity maps native plugins once per
   Editor process. (`freecad/EXPORT.md` Troubleshooting records the full
@@ -197,8 +198,6 @@ adds repo structure around them, never overrides them.
   (`UnityVisionClient`): pushes `data.qpos` as JSON lines, receives JPEG
   frames. Retiring to a Rust CLI is planned (greyhound `vision.md` V4) —
   plan, not landed.
-- `submodules/greyhound-snake` — the greyhound repo pin; see the
-  consumption section above.
 
 ## Verified contracts
 

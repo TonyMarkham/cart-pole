@@ -195,8 +195,7 @@ with `cargo run -q -p orchestrator -- …`; physics-only output under
 - **MuJoCo 3.15.0 for Windows** is extracted at
   `D:\git\greyhound-snake\dist\mujoco\x86_64-windows\3.15.0` — the
   sibling greyhound checkout, the same one the Unity manifest's `file:`
-  entries resolve to. `dist/` is gitignored there, and the
-  `submodules/greyhound-snake` pin has no `dist/`. Contents used here:
+  entries resolve to. `dist/` is gitignored there. Contents used here:
   `bin\mujoco.dll`, `lib\mujoco.lib` (import library),
   `include\mujoco\*.h`. Its imports are the four Visual C++ runtime DLLs
   plus Windows system DLLs (greyhound `mujoco-win.md`).
