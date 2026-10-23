@@ -69,6 +69,12 @@ pub struct Args {
     #[arg(long, requires = "physics")]
     pub no_render: bool,
 
+    /// Physics mode: run each returned frame through the detector
+    /// (ObjectDetection.toml, beside physics.toml) and append its four
+    /// slots and confidences to the frame's states.csv row.
+    #[arg(long, requires = "physics", conflicts_with = "no_render")]
+    pub detect: bool,
+
     /// Directory the returned frames (and states.csv) are written into.
     #[arg(long, default_value = "target/orchestrator-frames")]
     pub out: PathBuf,

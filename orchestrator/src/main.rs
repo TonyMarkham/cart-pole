@@ -10,12 +10,13 @@ use crate::{args::Args, control::Control, joint_qpos::JointQpos, jpeg_info::Jpeg
 use anyhow::{Context, Result, anyhow, bail};
 use clap::Parser;
 use futures_util::{SinkExt, StreamExt};
+use object_detection::{Detector, DetectorConfig, MarkerFrame, SLOTS};
 use physics::{Names, Physics, PhysicsConfig, Pose};
 use std::{
     fs::File,
     io::{BufWriter, Write},
     path::Path,
-    time::Duration,
+    time::{Duration, Instant},
 };
 use tokio::{
     net::{TcpListener, TcpStream},
@@ -86,6 +87,15 @@ struct Simulation {
     control: Control,
     steps_per_frame: u32,
     csv: BufWriter<File>,
+    detection: Option<Box<Detection>>,
+}
+
+// --detect: the detector and what it found over the run.
+struct Detection {
+    detector: Detector,
+    frames: usize,
+    found: [usize; SLOTS],
+    seconds: f64,
 }
 
 // One frame's state at its capture. Physics mode adds the simulated time
@@ -115,10 +125,34 @@ impl Source {
         physics.reset(start)?;
         let steps_per_frame = steps_per_frame(args.frame_interval_ms, physics.timestep())?;
 
+        // The detector's config sits beside physics.toml, at the repo
+        // root, whatever the current directory.
+        let detection = match args.detect {
+            false => None,
+            true => {
+                let folder = config
+                    .path
+                    .parent()
+                    .ok_or_else(|| anyhow!("{} has no parent", config.path.display()))?;
+                let detector = Detector::load(DetectorConfig::load(&folder.join("ObjectDetection.toml"))?)?;
+                Some(Box::new(Detection { detector, frames: 0, found: [0; SLOTS], seconds: 0.0 }))
+            }
+        };
+
         let path = args.out.join("states.csv");
         let file = File::create(&path).with_context(|| format!("creating {}", path.display()))?;
         let mut csv = BufWriter::new(file);
-        writeln!(csv, "id,time,ctrl,cart,pole")?;
+        write!(csv, "id,time,ctrl,cart,pole")?;
+        if let Some(detection) = &detection {
+            let classes: Vec<String> = detection.detector.config().classes.iter().map(|c| c.to_lowercase()).collect();
+            for class in &classes {
+                write!(csv, ",{class}_x,{class}_y")?;
+            }
+            for class in &classes {
+                write!(csv, ",{class}_conf")?;
+            }
+        }
+        writeln!(csv)?;
         println!(
             "physics: model {}\n         start cart {:+.3} m pole {:.3} rad, control {:?}, {} ms = {steps_per_frame} steps per frame -> {}",
             config.model.display(),
@@ -128,7 +162,7 @@ impl Source {
             args.frame_interval_ms,
             path.display()
         );
-        Ok(Source::Physics(Simulation { physics, control: args.control, steps_per_frame, csv }))
+        Ok(Source::Physics(Simulation { physics, control: args.control, steps_per_frame, csv, detection }))
     }
 
     fn len(&self, frames: u32) -> Result<u32> {
@@ -154,16 +188,59 @@ impl Source {
         }
     }
 
-    // After frame `id` is rendered: log the truth, apply the command,
-    // and step to the next capture (D = 0: the command takes effect at
-    // the capture it was decided at).
-    fn advance(&mut self, id: u32, capture: &Capture) -> Result<()> {
+    // With --detect: frame `id`'s marker frame, printed with the time the
+    // detection took. None without --detect.
+    fn detect(&mut self, id: u32, jpeg: &[u8]) -> Result<Option<MarkerFrame>> {
+        let Source::Physics(Simulation { detection: Some(detection), .. }) = self else {
+            return Ok(None);
+        };
+        let started = Instant::now();
+        let marker_frame = detection
+            .detector
+            .detect(jpeg, usize::from(FRAME_WIDTH), usize::from(FRAME_HEIGHT))
+            .with_context(|| format!("detecting frame {id}"))?;
+        let seconds = started.elapsed().as_secs_f64();
+        detection.frames += 1;
+        detection.seconds += seconds;
+        let mut line = format!("detect {id:06}  {:.0} ms", seconds * 1000.0);
+        for (slot, name) in detection.detector.config().classes.iter().enumerate() {
+            let (x, y) = marker_frame.slots[slot];
+            line += &format!("  {name} {x:+.3} {y:+.3} ({:.2})", marker_frame.confidences[slot]);
+            if marker_frame.detected(slot) {
+                detection.found[slot] += 1;
+            }
+        }
+        println!("{line}");
+        Ok(Some(marker_frame))
+    }
+
+    // After frame `id` is rendered: log the truth (and, with --detect,
+    // what the detector saw), apply the command, and step to the next
+    // capture (D = 0: the command takes effect at the capture it was
+    // decided at).
+    fn advance(&mut self, id: u32, capture: &Capture, seen: Option<&MarkerFrame>) -> Result<()> {
         let (Source::Physics(sim), Some((time, ctrl))) = (self, capture.time_and_ctrl) else {
             return Ok(());
         };
-        // `{}` writes an f64 as the shortest text that reads back to the
+        // `{}` writes a float as the shortest text that reads back to the
         // same number, so identical runs give identical files.
-        writeln!(sim.csv, "{id},{time},{ctrl},{},{}", capture.pose.cart, capture.pose.pole)?;
+        write!(sim.csv, "{id},{time},{ctrl},{},{}", capture.pose.cart, capture.pose.pole)?;
+        if sim.detection.is_some() {
+            match seen {
+                Some(marker_frame) => {
+                    for (x, y) in marker_frame.slots {
+                        write!(sim.csv, ",{x},{y}")?;
+                    }
+                    for conf in marker_frame.confidences {
+                        write!(sim.csv, ",{conf}")?;
+                    }
+                }
+                // A frame that broke the contract was not detected; its
+                // fields stay empty (never -1, which means "not found").
+                None => write!(sim.csv, "{}", ",".repeat(3 * SLOTS))?,
+            }
+        }
+        writeln!(sim.csv)?;
         sim.physics.set_ctrl(ctrl)?;
         sim.physics.step(sim.steps_per_frame);
         Ok(())
@@ -175,6 +252,17 @@ impl Source {
             Source::Poses(_) => Ok(0),
             Source::Physics(sim) => {
                 sim.csv.flush().context("writing states.csv")?;
+                if let Some(detection) = &sim.detection {
+                    let mut line = format!(
+                        "detected in {} frames (mean {:.0} ms):",
+                        detection.frames,
+                        detection.seconds * 1000.0 / detection.frames.max(1) as f64
+                    );
+                    for (name, found) in detection.detector.config().classes.iter().zip(detection.found) {
+                        line += &format!("  {name} {found}");
+                    }
+                    println!("{line}");
+                }
                 Ok(sim.physics.warnings())
             }
         }
@@ -247,15 +335,15 @@ async fn run(
             state = format!("t {time:.3} s  ctrl {ctrl:+.3} m/s  {state}");
         }
 
+        let mut seen = None;
         match ws.as_deref_mut() {
-            Some(ws) => {
-                if !render(ws, id, pose, names, reply_timeout, &args.out, &state).await? {
-                    broken += 1;
-                }
-            }
+            Some(ws) => match render(ws, id, pose, names, reply_timeout, &args.out, &state).await? {
+                Some(jpeg) => seen = source.detect(id, &jpeg)?,
+                None => broken += 1,
+            },
             None => println!("state {id:06}  {state}"),
         }
-        source.advance(id, &capture)?;
+        source.advance(id, &capture, seen.as_ref())?;
     }
 
     let warnings = source.finish()?;
@@ -273,7 +361,7 @@ async fn run(
 }
 
 // Sends one state, saves the frame that comes back, and prints its
-// header. Returns whether the frame met the 728×544 JPEG contract.
+// header. Returns the frame when it met the 728×544 JPEG contract.
 async fn render(
     ws: &mut WebSocketStream<TcpStream>,
     id: u32,
@@ -282,7 +370,7 @@ async fn render(
     reply_timeout: Duration,
     out: &Path,
     state: &str,
-) -> Result<bool> {
+) -> Result<Option<Vec<u8>>> {
     let message = StateMessage {
         id,
         joints: vec![
@@ -313,11 +401,11 @@ async fn render(
                 jpeg.len(),
                 if ok { "" } else { "  <- expected 728x544" }
             );
-            Ok(ok)
+            Ok(ok.then_some(jpeg))
         }
         None => {
             println!("frame {id:06}  not a JPEG ({} bytes)  {state}", jpeg.len());
-            Ok(false)
+            Ok(None)
         }
     }
 }
