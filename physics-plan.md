@@ -167,7 +167,7 @@ with `cargo run -q -p orchestrator -- …`; physics-only output under
 ## Facts this plan builds on
 
 - **The model** `unity/projects/cart-pole/Assets/Simulation/Robot/asy-cart-pole.step~/asy-cart-pole.xml`
-  (exported 2026-10-22 20:57; the exporter writes beside the STEP asset
+  (exported 2026-10-23 10:08; the exporter writes beside the STEP asset
   the joint set's `stepAssetPath` names, now
   `Assets/Simulation/Robot/asy-cart-pole.step`):
   - exactly two `<joint>` elements: slide `02-Cart.Slider.joint` (XML
@@ -175,10 +175,9 @@ with `cargo run -q -p orchestrator -- …`; physics-only output under
     and, nested deeper, hinge `04-Pole.Hinge.joint` (line 1176;
     `axis="0 -1 0"`, `limited="false"`, `frictionloss="0.02"`);
   - one actuator, `<velocity name="03-Cart.Slider.Actuator">` on the
-    slide: `ctrlrange="-0.48 0.48"` with `ctrllimited="true"`,
+    slide: `ctrlrange="-0.68 0.68"` with `ctrllimited="true"`,
     `forcerange="-98 98"`, `kv="100"`, `armature="0.227"`, `delay="0"`
-    (values derived from the 23HS32-4004S datasheet at 2.5 A and the
-    48T GT2 pulley, 2026-10-22);
+    (each value's derivation: *The actuator's values*, below);
   - no `<option>` element, so MuJoCo's default timestep (2 ms) and
     integrator (Euler) apply;
   - `<compiler angle="radian" meshdir="meshes">`; the `meshes/` folder
@@ -244,6 +243,68 @@ with `cargo run -q -p orchestrator -- …`; physics-only output under
 - **Toolchain:** `stable-x86_64-pc-windows-msvc`, cargo/rustc 1.99.0. No
   `clang` on `PATH` and no `LIBCLANG_PATH`, so `bindgen` is not usable
   without installing something.
+
+## The actuator's values
+
+`03-Cart.Slider.Actuator` stands in for the stepper, the DRV8825 driver
+and the belt: the firmware turns the command into a step-pulse rate,
+which the motor follows, so the model is a speed servo on the slide. Its
+values live in the Unity asset
+`Assets/Simulation/MuJoCo/03-Cart.Slider.Actuator.asset` and reach the
+MJCF only through a re-export. Each one below follows from the inputs by
+hand.
+
+**Inputs:**
+
+| Input | Value | Source |
+|---|---|---|
+| Motor | 23HS32-4004S: 1.8° (200 full steps/rev), 4.0 A rated, 2.4 N·m holding torque, 0.9 Ω and 3.4 mH per phase | third-party listings (2026-10-23); StepperOnline's own page refused the fetch, so unconfirmed against the maker |
+| Phase current | 2.5 A, assumed | the DRV8825's maximum output current; the real setting is to be measured |
+| Supply | 24 V DC | user, 2026-10-23 |
+| Pulley | 48T GT2, 2 mm pitch: 96 mm per turn, pitch radius r = 96 / 2π = 15.28 mm | the CAD part `pully-gt2-48t-6w-8b` |
+| Moving mass | 0.909 kg (cart 0.507 + pole 0.402) | the MJCF's `<inertial mass>` values (*Facts*) |
+
+**Values:**
+
+- **`ctrlrange` ±0.68 m/s** — the motor's estimated corner speed, the
+  speed where the winding inductance stops the current from reaching
+  its setting within one step, so torque falls off above it. Full-step
+  rate ≈ V ÷ (2·L·I) = 24 ÷ (2 × 0.0034 × 2.5) ≈ 1,410 steps/s = 7.06
+  rev/s; × 96 mm = 0.68 m/s. An estimate, not a measurement (2026-10-23).
+  It replaces 0.48 m/s, the motor's only rated speed (300 RPM = 5 rev/s
+  × 96 mm).
+- **`forcerange` ±98 N** — the torque at the set current, at the belt.
+  Holding torque scaled by current: 2.4 × 2.5 / 4.0 = 1.5 N·m; ÷ r =
+  1.5 / 0.01528 = 98 N. This is low-speed torque: a stepper's torque
+  falls off above the corner speed, which a constant `forcerange`
+  cannot follow, so near ±0.68 m/s the model is stronger than the
+  motor.
+- **`armature` 0.227 kg** — the rotor's inertia felt at the cart:
+  J ÷ r². Back-computed, J = 0.227 × 0.01528² = 5.3 × 10⁻⁵ kg·m²
+  (530 g·cm²); the datasheet figure it came from is not recorded here.
+  It adds to the moving mass: m_eff = 0.909 + 0.227 = 1.136 kg.
+- **`kv` 100 N·s/m** — how hard the servo pushes per m/s of speed
+  error: force = kv · (ctrl − q̇). It is a modelling choice, not a motor
+  constant, and why 100 was picked is not recorded. What it gives,
+  checkable by hand: the speed follows a command with time constant
+  τ = m_eff / kv = 1.136 / 100 ≈ 11 ms; a steady speed falls short by
+  frictionloss / kv = 0.05 / 100 = 0.0005 m/s; the force reaches the
+  98 N clamp only at a speed error above 98 / 100 = 0.98 m/s. A real
+  stepper below its corner speed follows its pulse rate with no speed
+  error at all, so a large kv is the closer model.
+- **`gear` 1** — the actuator drives the slide directly, so `ctrl` is
+  in m/s and the force in N at the cart; the pulley's ratio is already
+  folded into `forcerange` and `armature`.
+- **`ctrllimited`, `forcelimited` true** — MuJoCo clamps the command to
+  `ctrlrange` and the force to `forcerange`, so a command beyond the
+  motor's range cannot reach the physics.
+- **`damping` 0** — the slide's friction is the joint's `frictionloss`
+  (0.05 N), not the actuator's.
+- **`delay` 0** — the command delay D belongs to the orchestrator's
+  scheduling (`loop-plan.md`, *Timing*), not to the actuator.
+- **`kp`, `dampratio`, `timeconst`, `cranklength`, `lengthrange`,
+  `inheritrange`** — stored in the asset but not used by a
+  `<velocity>` actuator.
 
 ## Settled decisions
 
@@ -416,7 +477,7 @@ Recommendations (choices, with the reason):
    - `set_ctrl(ctrl)`: rejects a non-finite value; writes `ctrl` in the
      actuator's units — for the cart's `<velocity>` actuator, target cart
      speed in m/s. Out-of-range values are clamped by MuJoCo itself
-     (`ctrllimited="true"`, ±0.48 m/s); keeping the command inside the
+     (`ctrllimited="true"`, ±0.68 m/s); keeping the command inside the
      motor's speed range is the firmware's job in a later leg
      (`loop-plan.md`).
    - `step(n)`: `n` × `mj_step`.
@@ -454,7 +515,10 @@ Recommendations (choices, with the reason):
      `step(T / timestep)`. The command is held for the whole interval
      and takes effect at the capture: D = 0. The real D scheduling
      belongs to the orchestrator plan.
-   - `states.csv` in `--out`: header `id,time,ctrl,cart,pole`, values
+   - `states.csv` in `--out`: header `id,time,ctrl,cart,pole` (since
+     the firmware leg, `id,time,ctrl,cart,pole,command`: `command` is
+     the pulse-rate packet the scripted `ctrl` speed becomes,
+     `loop-plan.md` part 5), values
      written with Rust's `{}` for `f64` (shortest text that reads back
      to the same number), so files compare byte for byte (Done-when 4).
    - After the last frame: exit code 1 if any frame broke the 728×544
@@ -513,11 +577,10 @@ its exporter.
 - **The scripted controls** (`speed:0.2`, `speed:0.6`, `sine:0.4,4`,
   start `0,1.0`) are test values for bring-up stages 1–2
   (`loop-plan.md`), not training settings.
-- **The actuator's values** (±0.48 m/s, ±98 N, `kv` 100, `armature`
-  0.227 kg) are derived from the 23HS32-4004S datasheet at an assumed
-  2.5 A phase current and the motor's only rated speed (300 RPM); the
-  real top speed and the DRV8825's actual current setting are to be
-  measured.
+- **The actuator's values** (±0.68 m/s, ±98 N, `kv` 100, `armature`
+  0.227 kg; derivations in *The actuator's values*) rest on an assumed
+  2.5 A phase current and an estimated corner speed; the real top speed
+  and the DRV8825's actual current setting are to be measured.
 
 ## Consequence for `loop-plan.md`
 

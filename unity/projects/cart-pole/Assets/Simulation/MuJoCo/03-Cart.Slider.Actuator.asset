@@ -19,8 +19,8 @@ MonoBehaviour:
     group: 0
     delay: 0
     ctrllimited: 1
-    ctrlLo: -0.48
-    ctrlHi: 0.48
+    ctrlLo: -0.68
+    ctrlHi: 0.68
     forcelimited: 1
     forceLo: -98
     forceHi: 98

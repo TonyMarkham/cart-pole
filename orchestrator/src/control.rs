@@ -1,10 +1,11 @@
 use std::{f64::consts::TAU, str::FromStr};
 
 /// The scripted cart command for physics mode — a stand-in for the
-/// policy and virtual Arduino (bring-up stages 1–2, `loop-plan.md`). The
-/// value is the actuator's `ctrl`: for the cart's `<velocity>` actuator,
-/// a target cart speed in m/s, sign = direction. MuJoCo clamps it to the
-/// model's `ctrlrange`.
+/// policy (bring-up stages 1–2, `loop-plan.md`). The value is a target
+/// cart speed in m/s, sign = direction; the orchestrator sends it to the
+/// synthetic Arduino as the Orin's packet would carry it, in pulses/s
+/// (speed ÷ meters per pulse, rounded), and the firmware clamps it to the
+/// motor's top rate.
 #[derive(Debug, Clone, Copy)]
 pub enum Control {
     /// `zero`: command no motion (speed 0).

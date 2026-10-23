@@ -382,6 +382,10 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1c66915cc5391097de7a2b0b972e8505aa33c0df401fd3a6811dbdb32881ba48"
 
 [[package]]
+name = "firmware"
+version = "0.1.0"
+
+[[package]]
 name = "float-ord"
 version = "0.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -798,6 +802,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "clap",
+ "firmware",
  "futures-util",
  "physics",
  "serde",

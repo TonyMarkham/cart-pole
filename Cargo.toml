@@ -1,5 +1,6 @@
 [workspace]
 members           = [
+    "firmware",
     "object-detection",
     "orchestrator",
     "physics"
@@ -21,6 +22,7 @@ clap              = { version = "4.6.7", features = ["derive"] }
 futures-util      = { version = "0.3.34" }
 # JPEG decoder only (detector-plan.md R2).
 image             = { version = "0.25.10", default-features = false, features = ["jpeg"] }
+firmware          = { path = "firmware" }
 object-detection  = { path = "object-detection" }
 physics           = { path = "physics" }
 serde             = { version = "1.0.229", features = ["derive"] }

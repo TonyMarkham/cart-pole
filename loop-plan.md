@@ -50,8 +50,8 @@ below names what is landed today; everything else is to be built.
 | 1 | **Physics** — MuJoCo + the exported MJCF | actuator control value `ctrl` | true joint positions `qpos` | the physical rig |
 | 2 | **Renderer** — Unity player + `StateServer` | joint positions | 728×544 greyscale JPEG, q90 | Pi GS camera, frame reduced to 728×544 greyscale |
 | 3 | **Detector** — virtual Pi | JPEG | 4-slot marker frame | same code on the Pi |
-| 4 | **Policy** — virtual Pi | the last 6 marker frames, each with its age | one signed float | same code on the Pi |
-| 5 | **Virtual Arduino** — firmware, `virtual` build | signed float | `ctrl` in meters | the Arduino + stepper + belt |
+| 4 | **Policy** — virtual Pi | the last 6 marker frames, each with its age | signed step-pulse rate | same code on the Pi |
+| 5 | **Virtual Arduino** — firmware, `synthetic` build | signed step-pulse rate | step signal (pulses per physics step), which the orchestrator turns into `ctrl` in m/s | the Arduino + stepper + belt |
 
 What exists today, per part:
 
@@ -80,8 +80,13 @@ What exists today, per part:
   `datasets/generated`, `channels: 1` greyscale, `imgsz` 640;
   2026-10-17). No Rust host exists.
 - **4 Policy** — nothing; this is what training produces.
-- **5 Virtual Arduino** — nothing yet; a one-source `live`/`virtual`
-  Rust firmware was confirmed feasible by the user.
+- **5 Virtual Arduino** — the `firmware` crate (2026-10-23,
+  uncommitted): a `no_std`, integer-only core (command decode, step
+  generator: top-rate clamp, fraction carry, travel envelope) and its
+  `synthetic` feature, `SyntheticArduino`, linked into the orchestrator
+  like the physics crate. Its constants are `firmware::RIG` (one source
+  for both builds; the board has no config file). The board's `live`
+  edge (radio, step pin, timer) is not written.
 
 ## Contracts between the parts
 
@@ -100,19 +105,31 @@ What exists today, per part:
   older negative). 6 × (1 + 8) = **54 floats**. Ages are relative so the
   input never depends on absolute clock values, and the policy sees the
   real spacing when frames are uneven.
-- **Command (4 → 5):** one signed float; sign = direction, magnitude =
-  amount.
-- **Actuator value (5 → 1):** the firmware turns commands into whole
-  microsteps (fractional remainder carried, clamped to the travel
-  envelope). The `virtual` build's output layer — and only it — converts
-  the running microstep total to `ctrl` in meters: total × (meters per
-  microstep). Meters per microstep = belt travel per pulley revolution
-  ÷ (motor full steps per revolution × driver microstep setting). The
-  belt travel is 96 mm: the CAD pulley `pully-gt2-48t-6w-8b` has 48
-  teeth at GT2's 2 mm pitch. The motor's steps per revolution and the
-  driver's microstep setting are to be confirmed (see *Placeholders*).
-  The `live` build emits step pulses instead. `ctrl` stays within the
-  MJCF's ±0.4 m `ctrlrange`.
+- **Command (4 → 5):** a signed **step-pulse rate** — sign = direction,
+  magnitude = the target pulses per unit time the firmware emits to the
+  stepper driver; never a distance or position offset (user,
+  2026-10-23). The packet is **4 bytes, one `i32`, little-endian, in
+  pulses per second**, fixed length, no id (user, 2026-10-23). Why 4:
+  at 1/32 microstepping (the DRV8825's finest) the ±0.68 m/s
+  `ctrlrange` is 0.68 / 0.096 × 200 × 32 ≈ 45,200 pulses/s, past an
+  `i16`'s 32,767; an `i32` never limits the microstep setting or the
+  speed. One pulse per second is 0.015 mm/s at 1/32, finer than the
+  slowest motion a balance needs.
+- **Actuator value (5 → 1):** the firmware clamps the commanded rate to
+  the motor's top rate and emits whole step pulses at it (fractional
+  remainder carried, so pulses = ∫ rate dt within one pulse), never past
+  the travel envelope. The `live` build sends them to the driver's step
+  pin; the `synthetic` build returns them per tick as the step signal.
+  The orchestrator ticks it once per physics step and sets MuJoCo's
+  `<velocity>` actuator to that step's pulse rate as a cart speed:
+  `ctrl` = pulses × meters per pulse ÷ step duration (m/s). Meters per
+  pulse = belt travel per pulley revolution ÷ (motor full steps per
+  revolution × driver microstep setting): 96 mm ÷ (200 × 32) = 15 µm at
+  `RIG`. The belt travel is 96 mm: the CAD pulley
+  `pully-gt2-48t-6w-8b` has 48 teeth at GT2's 2 mm pitch. The microstep
+  setting (32 in `RIG`) is a placeholder (see *Placeholders*). The MJCF's
+  `ctrlrange` (±0.68 m/s) matches the firmware's top rate, 45,333
+  pulses/s × 15 µm.
 - **Truth (1 → 0):** `qpos` to the orchestrator only — logs and reward.
 
 ## Timing
@@ -142,9 +159,10 @@ What exists today, per part:
 2. **Renderer** sets cart and pole from `qpos` → 728×544 greyscale JPEG.
 3. **Detector** → 4-slot marker frame.
 4. **Policy** takes the last 6 marker frames with their ages → signed
-   float.
-5. **Virtual Arduino** → microsteps → `ctrl`, which becomes the pending
-   command, effective D after frame n's capture.
+   step-pulse rate.
+5. **Virtual Arduino** takes the rate as the pending command, effective
+   D after frame n's capture; each physics step its step signal becomes
+   `ctrl`.
 6. **Orchestrator** logs `qpos` (and the reward when training), checks
    for episode end, then starts tick n+1 or resets.
 
@@ -171,8 +189,11 @@ What exists today, per part:
    detection crate's parameters are configured outside source code, in
    `ObjectDetection.toml` at the repo root (user, 2026-10-22), as
    `physics.toml` configures the physics crate.
-5. **Firmware, `live` + `virtual`** — command accumulation, clamp,
-   and the `virtual` output layer producing `ctrl`.
+5. **Firmware, `live` + `synthetic`** — command decode, top-rate clamp,
+   step generation inside the travel envelope; the `synthetic` edge
+   returns the step signal the orchestrator turns into `ctrl`. The
+   `synthetic` side exists (`firmware/`, part 5 above); `live` is to be
+   written.
 
 ## Bring-up — what fills the policy slot
 
@@ -202,8 +223,10 @@ and the reward.
   real frames will not look like the training frames.
 - **GPU vs CPU inference** — the same ONNX model on the 3090 and on the
   Pi can differ slightly; compare once.
-- **Meters per microstep** — the NEMA-23's full steps per revolution and
-  the driver's microstep setting, for the firmware's `virtual` output.
+- **Meters per microstep** — the driver's microstep setting
+  (`firmware::RIG.microsteps` = 32, the DRV8825's finest, until chosen);
+  the motor's 200 full steps per revolution are from third-party
+  23HS32-4004S listings.
 
 ## Later — scaling (only after the simple loop works)
 

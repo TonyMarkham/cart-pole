@@ -43,10 +43,14 @@ Status (2026-10-23): **steps 1–6 done, Done-when 1–4 met on this PC**
   the orchestrator sends one text message `{"id", "joints"}` and the
   player answers with one binary message, the 728×544 greyscale JPEG —
   lockstep, one reply per request, in order. In physics mode the
-  orchestrator then logs `id,time,ctrl,cart,pole` to `states.csv` and
-  steps MuJoCo `--frame-interval-ms` (default 20, a placeholder for T)
-  of simulated time. `--detect` runs the Rust `object-detection` crate
-  (tract, CPU) on each frame in-process.
+  orchestrator then logs `id,time,ctrl,cart,pole,command` to
+  `states.csv` — `ctrl` the scripted speed (m/s), `command` the
+  pulse-rate packet it becomes — and steps MuJoCo `--frame-interval-ms`
+  (default 20, a placeholder for T) of simulated time, with the
+  synthetic Arduino (`firmware` crate, `loop-plan.md` part 5) turning
+  the command into each 2 ms step's `ctrl`. (When this plan was
+  written, `--detect` ran the Rust `object-detection` crate on each
+  frame in-process; step 6 removed it.)
 - **The marker frame** (`loop-plan.md`): 4 slots in class order (0 Left,
   1 Right, 2 Pivot, 3 End), each the box center `(x, y)` normalized to
   [0, 1] of the frame, or `(−1, −1)` when not detected.

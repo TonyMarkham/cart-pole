@@ -15,6 +15,7 @@ use crate::{
 use anyhow::{Context, Result, anyhow, bail};
 use clap::Parser;
 use futures_util::{SinkExt, StreamExt};
+use firmware::{Config, RIG, SyntheticArduino, encode_command};
 use physics::{Names, Physics, PhysicsConfig, Pose};
 use std::{
     fs::File,
@@ -114,6 +115,11 @@ struct Simulation {
     control: Control,
     steps_per_frame: u32,
     csv: BufWriter<File>,
+    // The cart's firmware between the command and MuJoCo (loop-plan.md
+    // part 5), ticked once per physics step.
+    arduino: SyntheticArduino,
+    step_micros: u32,
+    meters_per_pulse: f64,
 }
 
 // One frame's state at its capture. Physics mode adds the simulated time
@@ -142,11 +148,16 @@ impl Source {
         let mut physics = Physics::load(config)?;
         physics.reset(start)?;
         let steps_per_frame = steps_per_frame(args.frame_interval_ms, physics.timestep())?;
+        let step_micros = step_micros(physics.timestep())?;
+        let meters_per_pulse = meters_per_pulse(&RIG);
+        // The firmware starts where the episode puts the cart; the rig's
+        // board homes instead.
+        let arduino = SyntheticArduino::new(RIG, (start.cart / meters_per_pulse).round() as i32);
 
         let path = args.out.join("states.csv");
         let file = File::create(&path).with_context(|| format!("creating {}", path.display()))?;
         let mut csv = BufWriter::new(file);
-        writeln!(csv, "id,time,ctrl,cart,pole")?;
+        writeln!(csv, "id,time,ctrl,cart,pole,command")?;
         println!(
             "physics: model {}\n         start cart {:+.3} m pole {:.3} rad, control {:?}, {} ms = {steps_per_frame} steps per frame -> {}",
             config.model.display(),
@@ -156,7 +167,15 @@ impl Source {
             args.frame_interval_ms,
             path.display()
         );
-        Ok(Source::Physics(Simulation { physics, control: args.control, steps_per_frame, csv }))
+        Ok(Source::Physics(Simulation {
+            physics,
+            control: args.control,
+            steps_per_frame,
+            csv,
+            arduino,
+            step_micros,
+            meters_per_pulse,
+        }))
     }
 
     fn len(&self, frames: u32) -> Result<u32> {
@@ -185,15 +204,29 @@ impl Source {
     // After frame `id` is rendered: log the truth, apply the command, and
     // step to the next capture (D = 0: the command takes effect at the
     // capture it was decided at).
+    //
+    // The scripted speed stands in for the Orin's command: it is sent to
+    // the firmware as the packet the Orin would send (pulses/s, rounded),
+    // and each physics step MuJoCo's ctrl is the step signal the firmware
+    // emitted in that step, as a speed: pulses × meters per pulse ÷ the
+    // step's duration.
     fn advance(&mut self, id: u32, capture: &Capture) -> Result<()> {
-        let (Source::Physics(sim), Some((time, ctrl))) = (self, capture.time_and_ctrl) else {
+        let (Source::Physics(sim), Some((time, speed))) = (self, capture.time_and_ctrl) else {
             return Ok(());
         };
+        // `as` saturates, so an absurd speed becomes the i32 limit, which
+        // the firmware clamps to the motor's top rate.
+        let command = (speed / sim.meters_per_pulse).round() as i32;
         // `{}` writes a float as the shortest text that reads back to the
         // same number, so identical runs give identical files.
-        writeln!(sim.csv, "{id},{time},{ctrl},{},{}", capture.pose.cart, capture.pose.pole)?;
-        sim.physics.set_ctrl(ctrl)?;
-        sim.physics.step(sim.steps_per_frame);
+        writeln!(sim.csv, "{id},{time},{speed},{},{},{command}", capture.pose.cart, capture.pose.pole)?;
+        sim.arduino.receive(encode_command(command));
+        for _ in 0..sim.steps_per_frame {
+            let signal = sim.arduino.tick(sim.step_micros);
+            let ctrl = f64::from(signal.pulses) * sim.meters_per_pulse / (f64::from(signal.micros) / 1e6);
+            sim.physics.set_ctrl(ctrl)?;
+            sim.physics.step(1);
+        }
         Ok(())
     }
 
@@ -218,6 +251,22 @@ fn steps_per_frame(interval_ms: u32, timestep: f64) -> Result<u32> {
         bail!("--frame-interval-ms {interval_ms} is not a whole number of {timestep} s physics steps");
     }
     Ok(steps as u32)
+}
+
+// The firmware ticks in whole microseconds; MuJoCo's 2 ms step is 2,000.
+fn step_micros(timestep: f64) -> Result<u32> {
+    let micros = timestep * 1e6;
+    let whole = micros.round();
+    if whole < 1.0 || (micros - whole).abs() > 1e-6 || whole > f64::from(u32::MAX) {
+        bail!("the physics timestep {timestep} s is not a whole number of microseconds");
+    }
+    Ok(whole as u32)
+}
+
+// One step pulse's cart travel: belt travel per revolution ÷ pulses per
+// revolution (RIG: 96,000 µm / 6,400 = 15 µm).
+fn meters_per_pulse(config: &Config) -> f64 {
+    f64::from(config.belt_um_per_rev) / 1e6 / f64::from(config.pulses_per_rev())
 }
 
 // kill_on_drop: an early error return drops the handle, and the player

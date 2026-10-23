@@ -1429,6 +1429,6 @@
     </body>
   </worldbody>
   <actuator>
-    <velocity name="03-Cart.Slider.Actuator" group="0" delay="0" ctrllimited="true" forcelimited="true" ctrlrange="-0.48 0.48" forcerange="-98 98" gear="1 0 0 0 0 0" joint="02-Cart.Slider.joint" kv="100" damping="0" armature="0.227" />
+    <velocity name="03-Cart.Slider.Actuator" group="0" delay="0" ctrllimited="true" forcelimited="true" ctrlrange="-0.68 0.68" forcerange="-98 98" gear="1 0 0 0 0 0" joint="02-Cart.Slider.joint" kv="100" damping="0" armature="0.227" />
   </actuator>
 </mujoco>
