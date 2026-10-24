@@ -32,7 +32,9 @@ save, with the SAC settings it was saved with; [train] total_steps and
 save_every are read again, so a run can be extended by raising total_steps.
 
 usage (from the repo root):
-  uv run --project trainer python trainer/src/train.py [--settings FILE] [--resume RUN_FOLDER]
+  uv run --project trainer python trainer/src/train.py [--settings FILE] [--resume [RUN_FOLDER]]
+--resume alone continues the most recent run in [train] runs_dir that has
+a save.
 """
 
 import argparse
@@ -53,6 +55,8 @@ from launch import RunFailed
 from loop_env import make
 from settings import DEFAULT_PATH, SEED_LIMIT, Settings
 from train_settings import TrainSettings
+
+LATEST = Path("<latest>")  # --resume with no folder
 
 COLUMNS = ["episode", "seed", "steps", "length", "ended", "reward", "pole_max", "pole_mean", "wall_s"]
 
@@ -150,6 +154,15 @@ def clock(seconds: float) -> str:
     return f"{minutes // 60}h{minutes % 60:02d}m"
 
 
+def latest_run(runs_dir: Path) -> Path:
+    """The most recent run folder with a save. Folders are named
+    <date>_<time>, so the names sort in time order."""
+    saved = sorted(f for f in runs_dir.iterdir() if (f / "latest.zip").is_file()) if runs_dir.is_dir() else []
+    if not saved:
+        raise SystemExit(f"train: no run in {runs_dir} has a save to resume from")
+    return saved[-1]
+
+
 def finished_episodes(folder: Path) -> int:
     path = folder / "episodes.csv"
     if not path.is_file():
@@ -162,7 +175,8 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     parser.add_argument("--settings", type=Path, default=DEFAULT_PATH,
                         help="the trainer's settings.toml (default: trainer/settings.toml)")
-    parser.add_argument("--resume", type=Path, help="a run folder to continue from its last save")
+    parser.add_argument("--resume", type=Path, nargs="?", const=LATEST,
+                        help="a run folder to continue from its last save; alone, the most recent run")
     args = parser.parse_args()
 
     settings = Settings.load(args.settings.resolve())
@@ -170,7 +184,7 @@ def main() -> int:
     train = TrainSettings.load(settings.gym)
 
     if args.resume is not None:
-        folder = args.resume.resolve()
+        folder = latest_run(train.train.runs_dir) if args.resume == LATEST else args.resume.resolve()
         if not (folder / "latest.zip").is_file():
             raise SystemExit(f"train: {folder} has no latest.zip to resume from")
     else:

@@ -254,7 +254,8 @@ Both runs give the same fit; the figures are the wider run's.
      steps the model and replay buffer (`latest.zip`,
      `latest_buffer.pkl`, about 450 MB) plus a snapshot
      `model_<steps>.zip`. A failed or stopped run resumes with `--resume
-     <run folder>`. Episode k runs with seed settings.toml's seed + k.
+     <run folder>`, or `--resume` alone for the most recent run with a
+     save. Episode k runs with seed settings.toml's seed + k.
      Tested with throwaway settings (episodes of 150, saves every 200):
      400 steps, two episodes, saves at 200 and 400; then resumed to 600,
      the episode count and the seeds carried on. Ctrl+C during the first
