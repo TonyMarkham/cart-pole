@@ -36,7 +36,11 @@ survives and failed frames count afresh (R6); then it replies
 `{"type": "reset"}` (R7). The frame socket and Unity stay connected; ids
 keep counting across the run, so `frame_NNNNNN.jpg` and
 `observations.jsonl` stay unique. *Check:* after a reset with seed S, the
-pool's pre-warm ages match a fresh launch with `--seed S`. Not started.
+pool's pre-warm ages match a fresh launch with `--seed S`. **Done
+(2026-10-24):** in the orchestrator's reset check (`orchestrator-plan.md`
+step 8), the first pool after a reset to seed 7 has the same ages, 0,
+−10.267, −19.323, −31.879, −40.386, −52.138 ms, and the same no-detection
+entries as a fresh seed-7 launch's first pool.
 
 **The planned loop is `synthetic-loop-dia.md`** (2026-10-23), the
 source of truth: it supersedes the decisions marked *Superseded* below.

@@ -1,5 +1,36 @@
-use crate::{cart_velocity, latency::Latency, meters_per_pulse};
+use crate::{
+    cart_velocity,
+    latency::Latency,
+    meters_per_pulse,
+    trainer_link::{Next, parse_answer},
+};
 use arduino::{Direction, Drv8825Signals, RIG};
+
+// The answer (synthetic-loop-dia.md, Contracts, 18): continue with the
+// command, reset with the next episode's seed, or stop.
+#[test]
+fn the_answer_is_continue_reset_or_stop() {
+    let a = parse_answer(r#"{"command": -26667, "next": "continue"}"#).unwrap();
+    assert_eq!((a.command, a.next, a.seed), (-26_667, Next::Continue, None));
+    let a = parse_answer(r#"{"command": 0, "next": "reset", "seed": 18446744073709551615}"#).unwrap();
+    assert_eq!((a.next, a.seed), (Next::Reset, Some(u64::MAX)));
+    let a = parse_answer(r#"{"command": 0, "next": "stop"}"#).unwrap();
+    assert_eq!(a.next, Next::Stop);
+}
+
+#[test]
+fn a_bad_answer_is_refused() {
+    for line in [
+        r#"{"command": 0, "next": "reset"}"#,                // a reset needs a seed
+        r#"{"command": 0, "next": "continue", "seed": 1}"#, // only a reset carries one
+        r#"{"command": 0, "next": "pause"}"#,
+        r#"{"command": 0, "continue": true}"#, // the old answer
+        r#"{"command": 0, "next": "reset", "seed": -1}"#,
+        r#"{"command": 2147483648, "next": "continue"}"#,
+    ] {
+        assert!(parse_answer(line).is_err(), "{line} was accepted");
+    }
+}
 
 // SplitMix64's published outputs for seed 0 (the reference
 // implementation's first values; e.g. Vigna's splitmix64.c), so the

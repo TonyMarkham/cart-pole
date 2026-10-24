@@ -16,8 +16,8 @@ use crate::{
     latency::Latency,
     orin_reply::{OrinReply, POOL_ENTRIES, PoolRow},
     pose_message::PoseMessage,
-    registered::Registered,
-    trainer_link::TrainerLink,
+    registered::{Registered, ResetMessage},
+    trainer_link::{Next, TrainerLink},
 };
 
 use anyhow::{Context, Result, anyhow, bail};
@@ -119,6 +119,12 @@ struct Simulation {
     meters_per_pulse: f64,
     names: Names,
     latency: Latency,
+    // The start pose every episode begins at (2, and R2 at each reset).
+    start: Pose,
+    // The latency band, ms, kept for reseeding at a reset (R4).
+    band: (f64, f64),
+    // 0 for the run's first episode, one more at each reset (R1).
+    episode: u32,
 }
 
 // One observation's capture state: simulated time and the pose (9–10,
@@ -155,7 +161,7 @@ impl Simulation {
         let path = args.out.join("states.csv");
         let file = File::create(&path).with_context(|| format!("creating {}", path.display()))?;
         let mut csv = BufWriter::new(file);
-        writeln!(csv, "id,time,cart,pole,left_x,left_y,right_x,right_y,pivot_x,pivot_y,end_x,end_y")?;
+        writeln!(csv, "episode,id,time,cart,pole,left_x,left_y,right_x,right_y,pivot_x,pivot_y,end_x,end_y")?;
         let driver = match args.no_render {
             true => format!("--control {:?}", args.control),
             false => "the trainer's commands".to_string(),
@@ -178,7 +184,21 @@ impl Simulation {
             meters_per_pulse,
             names: config.names,
             latency: Latency::new(args.seed, args.rnd_delay_min, args.rnd_delay_max)?,
+            start,
+            band: (args.rnd_delay_min, args.rnd_delay_max),
+            episode: 0,
         })
+    }
+
+    // R1–R4 (synthetic-loop-dia.md, Reset in place): the next episode, back
+    // at the start pose, t = 0, ctrl 0, with the latency draws reseeded from
+    // its seed, so it repeats a fresh run with that seed. The synthetic
+    // Arduino holds only RIG, so it has nothing to reset (R3).
+    fn reset(&mut self, seed: u64) -> Result<()> {
+        self.physics.reset(self.start)?;
+        self.latency = Latency::new(seed, self.band.0, self.band.1)?;
+        self.episode += 1;
+        Ok(())
     }
 
     fn capture(&self) -> Capture {
@@ -216,7 +236,7 @@ impl Simulation {
     }
 
     // The truth log's row for one observation (synthetic-loop-dia.md,
-    // Truth log): its capture time and true pose, beside what the Orin
+    // Truth log): its episode, capture time and true pose, beside what the Orin
     // observed in that frame, the pool's newest entry — empty without the
     // Orin (--no-render). `{}` writes a float as the shortest text that
     // reads back to the same number, so identical runs give identical
@@ -226,7 +246,11 @@ impl Simulation {
             Some(row) => row[1..].iter().map(|v| v.to_string()).collect::<Vec<_>>().join(","),
             None => ",".repeat(7),
         };
-        writeln!(self.csv, "{id},{},{},{},{observed}", capture.time, capture.pose.cart, capture.pose.pole)?;
+        writeln!(
+            self.csv,
+            "{},{id},{},{},{},{observed}",
+            self.episode, capture.time, capture.pose.cart, capture.pose.pole
+        )?;
         Ok(())
     }
 
@@ -385,7 +409,9 @@ async fn wait_registered(
 // the Orin works (15–16); wait there for the reply (the freeze, 14); then
 // send the pool to the trainer and wait, still frozen, for its answer
 // (17–18); on continue, set its command at the arrival step, which is the
-// next capture (19–21); on stop, end the loop for the shutdown (22). The
+// next capture (19–21); on reset, put the run back at the start in place
+// (R1–R7) and go round from the new episode's first capture; on stop, end
+// the loop for the shutdown (22). The
 // run fails when the Orin reports failed or if MuJoCo warned (P3).
 // Without the Orin (--no-render) there is no pool and no trainer: the same
 // clock runs --frames states on the scripted --control.
@@ -439,12 +465,26 @@ async fn run(
                     n[8],
                     asked.elapsed().as_secs_f64() * 1000.0
                 );
-                if !answer.keep_going {
-                    eprintln!("{line}  stop");
-                    eprintln!("the trainer stopped the run after {} observations -> {}", id + 1, args.out.display());
-                    break;
+                match (answer.next, answer.seed) {
+                    (Next::Continue, _) => answer.command,
+                    (Next::Stop, _) => {
+                        eprintln!("{line}  stop");
+                        eprintln!("the trainer stopped the run after {} observations -> {}", id + 1, args.out.display());
+                        break;
+                    }
+                    // R1–R7: the run goes back to the start in place; the
+                    // loop goes round from the new episode's first capture,
+                    // with ids counting on across the run.
+                    (Next::Reset, seed) => {
+                        let seed = seed.ok_or_else(|| anyhow!("a reset without a seed reached the run"))?;
+                        sim.reset(seed)?;
+                        reset_orin(orin, seed, reply_timeout).await?;
+                        eprintln!("{line}  reset: episode {}, seed {seed}", sim.episode);
+                        capture = sim.capture();
+                        id += 1;
+                        continue;
+                    }
                 }
-                answer.command
             }
             None => {
                 sim.log(id, &capture, None)?;
@@ -516,6 +556,34 @@ async fn receive_pool(orin: &mut WebSocketStream<TcpStream>, id: u32, timeout: D
         bail!("the run failed: 3 of pool {id}'s 6 entries are failed frames");
     }
     Ok(reply.pool)
+}
+
+// R5–R7: tell the Orin to pre-warm its pool afresh from the seed, and wait
+// for its {"type": "reset"}, so the next pose meets the new episode's pool.
+async fn reset_orin(orin: &mut WebSocketStream<TcpStream>, seed: u64, timeout: Duration) -> Result<()> {
+    let message = ResetMessage { kind: "reset", seed };
+    orin.send(Message::text(serde_json::to_string(&message)?))
+        .await
+        .context("sending the reset to the synthetic Orin")?;
+    loop {
+        let message = tokio::time::timeout(timeout, orin.next())
+            .await
+            .map_err(|_| anyhow!("no reset reply from the synthetic Orin within {} s", timeout.as_secs()))?
+            .ok_or_else(|| anyhow!("synthetic Orin disconnected during the reset"))??;
+        match message {
+            Message::Text(text) => {
+                let reply = serde_json::from_str::<Registered>(text.as_str())
+                    .with_context(|| format!("synthetic Orin reset reply {:?}", text.as_str()))?;
+                if reply.kind != "reset" {
+                    bail!("synthetic Orin sent {:?}, expected its reset reply", text.as_str());
+                }
+                return Ok(());
+            }
+            Message::Binary(_) => bail!("synthetic Orin sent binary data, expected its reset reply"),
+            Message::Close(frame) => bail!("synthetic Orin closed the socket during the reset: {frame:?}"),
+            _ => {}
+        }
+    }
 }
 
 // A launched process quits on its own when its socket closes; it is

@@ -20,6 +20,9 @@ Messages, control socket (orchestrator):
 - out text   {"type": "registered"}                  once, when Unity has
                                                      connected (8)
 - in  text   {"id": n, "time": t, "joints": [...]}   the capture state (11)
+- in  text   {"type": "reset", "seed": S}            between episodes (R5):
+                                                     pre-warm afresh from S
+- out text   {"type": "reset"}                       the pool is ready (R7)
 - out text   {"id": n, "pool": [[age_ms, x0, y0, ... x3, y3] x6],
               "failed": bool}                        exactly one per pose,
                                                      in order (14): the
@@ -44,7 +47,10 @@ Rules:
   first, so the same seed and band give the same pool. The band is the
   trainer's settings.toml rnd_delay_min and rnd_delay_max, passed on by
   the orchestrator (4). Every frame, the first included, is then one append:
-  frame 0's ages are 0, -d1, ..., -(d1+...+d5).
+  frame 0's ages are 0, -d1, ..., -(d1+...+d5). A reset pre-warms the
+  pool the same way from its seed (Reset in place), so an episode after a
+  reset sees the pool a fresh launch with that seed would. Frame ids count
+  on across the run's episodes, so frame files and log lines stay unique.
 - A failed frame (synthetic-loop-dia.md, the note at 13; O3): Unity's
   JPEG does not decode or is not 728x544. Its entry is (-1, -1) x4, the
   error is logged, and it does not fail the run on its own; when 3 of the
@@ -119,6 +125,19 @@ def pre_warm(seed: int, gap_ms: tuple[float, float]) -> collections.deque[Entry]
     return window
 
 
+def reset(message: dict, band: tuple[float, float]) -> collections.deque[Entry]:
+    """R6 (synthetic-loop-dia.md, Reset in place): the pool pre-warmed afresh
+    from the reset's seed, exactly as at launch, so no entry of the last
+    episode survives and failed frames count afresh."""
+    seed = message.get("seed")
+    if isinstance(seed, bool) or not isinstance(seed, int) or not 0 <= seed < 2**64:
+        raise RuntimeError(f"a reset's seed is a whole number, 0 to 2**64 - 1, got {message!r}")
+    window = pre_warm(seed, band)
+    ages_ms = ", ".join(f"{entry.time * 1000:.3f}" for entry in reversed(window))
+    print(f"synthetic orin: reset, pre-warmed from seed {seed}, ages {ages_ms} ms", flush=True)
+    return window
+
+
 def listen_address(text: str) -> tuple[str, int]:
     """host:port, as --frames-listen takes it."""
     host, separator, port = text.rpartition(":")
@@ -180,6 +199,10 @@ def main() -> None:
                 if isinstance(message, bytes):
                     raise RuntimeError("binary message on the control socket, expected a pose")
                 pose = json.loads(message)
+                if pose.get("type") == "reset":
+                    window = reset(pose, band)
+                    ws.send(json.dumps({"type": "reset"}))
+                    continue
                 frame_id, capture = int(pose["id"]), float(pose["time"])
                 camera.send(json.dumps({"id": frame_id, "joints": pose["joints"]}))
                 jpeg = camera.recv()

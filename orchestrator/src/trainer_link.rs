@@ -13,15 +13,39 @@ struct PoolMessage<'a> {
     pool: &'a [PoolRow],
 }
 
-/// 18: the trainer's answer, one stdin line. serde rejects a command that
-/// is not an integer or does not fit an i32, so a bad answer fails the run
-/// here instead of reaching the synthetic Arduino.
+/// What the trainer wants after this pool (18): go on with the command,
+/// reset the run in place for the next episode (synthetic-loop-dia.md,
+/// *Reset in place*), or stop the run.
+#[derive(Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
+#[serde(rename_all = "lowercase")]
+pub enum Next {
+    Continue,
+    Reset,
+    Stop,
+}
+
+/// 18: the trainer's answer, one stdin line: `{"command": c, "next":
+/// "continue" | "reset" | "stop"}`, plus `"seed": S` on a reset only.
+/// serde rejects a command that is not an integer or does not fit an i32,
+/// and a seed outside a u64, so a bad answer fails the run here instead of
+/// reaching the synthetic Arduino.
 #[derive(Deserialize, Debug)]
 #[serde(deny_unknown_fields)]
 pub struct Answer {
     pub command: i32,
-    #[serde(rename = "continue")]
-    pub keep_going: bool,
+    pub next: Next,
+    pub seed: Option<u64>,
+}
+
+impl Answer {
+    /// A reset carries the next episode's seed, and nothing else does.
+    fn check(self) -> Result<Answer> {
+        match (self.next, self.seed) {
+            (Next::Reset, None) => bail!("a reset needs the next episode's seed"),
+            (Next::Continue | Next::Stop, Some(_)) => bail!("only a reset carries a seed"),
+            _ => Ok(self),
+        }
+    }
 }
 
 /// The trainer link (synthetic-loop-dia.md, *Trainer link*): the
@@ -53,7 +77,10 @@ impl TrainerLink {
         if read == 0 {
             bail!("the trainer closed the link before answering pool {id}");
         }
-        serde_json::from_str::<Answer>(self.line.trim_end())
-            .map_err(|error| anyhow!("the trainer's answer to pool {id}, {:?}: {error}", self.line.trim_end()))
+        parse_answer(self.line.trim_end()).map_err(|error| anyhow!("the trainer's answer to pool {id}, {:?}: {error}", self.line.trim_end()))
     }
+}
+
+pub fn parse_answer(line: &str) -> Result<Answer> {
+    serde_json::from_str::<Answer>(line)?.check()
 }

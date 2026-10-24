@@ -268,8 +268,13 @@ Both runs give the same fit; the figures are the wider run's.
      (2026-10-24): the console showed only those lines.
 5. **Reset in place** (T6, T8, T5a). *Check:* Done-when 5: a training
    run's episodes after the first are resets, with one launch of
-   everything, and `episodes.csv`'s seeds carry on as before. Not
-   started; follows the orchestrator's and the Orin's reset.
+   everything, and `episodes.csv`'s seeds carry on as before. **Done
+   (2026-10-24):** `output.py`'s `Answer` is go / reset(seed) / stop;
+   `LoopEnv.reset()` launches the run the first time and answers reset
+   after that. The short training test (throwaway settings, episodes of
+   150): one launch, two resets, episodes on seeds 0 and 1 with rewards
+   74.469 and 73.101, the same as the earlier test where each episode was
+   a fresh run; each episode took 7.0 and 7.8 s against 9.6 and 10.4 s.
 
 ## Not in this plan
 

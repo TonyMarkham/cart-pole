@@ -18,7 +18,7 @@ import os
 import subprocess
 from pathlib import Path
 
-from output import Answer
+from output import STOP, Answer
 from pool import Pool
 from settings import Settings
 
@@ -107,7 +107,7 @@ class Run:
         assert self.process.stdin is not None and not self.stopped
         self.process.stdin.write(answer.line())
         self.process.stdin.flush()
-        self.stopped = not answer.keep_going
+        self.stopped = answer.next == STOP
 
     def finish(self) -> int:
         """After the stop: the run shuts down (22-25) and closes stdout;

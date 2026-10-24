@@ -1,15 +1,20 @@
-"""The synthetic loop as a Gymnasium environment: one run per episode.
+"""The synthetic loop as a Gymnasium environment: one run holding many
+episodes.
 
 A learning algorithm needs the loop behind the interface it already speaks,
 a Gymnasium Env, so the trainer's environment wraps the run
 (synthetic-loop-dia.md, The trainer's environment; trainer-plan.md T8):
 
-- reset() starts a run (1) and returns pool 0 (17);
+- the first reset() starts the run (1), with the episode's seed as --seed,
+  and returns its first pool (17);
 - step(a) answers the pending pool with continue and the command (18), and
   returns the next pool (17);
-- reset() or close() while a run is open answers the pending pool with
-  stop and waits for the run to close (26); a run that fails raises
-  RunFailed, which ends training.
+- every later reset() answers the pending pool with reset and the
+  episode's seed, which puts the run back at the start in place, without
+  relaunching the orchestrator, the Orin or the player (synthetic-loop-dia.md,
+  Reset in place), and returns the new episode's first pool;
+- close() answers the pending pool with stop and waits for the run to close
+  (26); a run that fails raises RunFailed, which ends training.
 
 The observation is the pool, 6 x 9 floats: per entry, newest first, its age
 in ms (0, then negative) and the 4 markers' (x, y), (-1, -1) where not
@@ -23,9 +28,10 @@ scores the penalty and terminates the episode. TimeLimit truncates it
 after gym.toml [env] max_episode_steps (trainer-plan.md T8a).
 The pool reset() returns is not scored (trainer-plan.md T3).
 
-Seeding: reset(seed=s) runs the orchestrator with --seed s; reset() without
-a seed uses settings.toml's seed, so every such episode repeats the same
-latency draws.
+Seeding: reset(seed=s) runs the episode with seed s, as --seed for the
+first and in the reset after that; an episode after a reset repeats a fresh
+run with that seed. reset() without a seed uses settings.toml's seed, so
+every such episode repeats the same latency draws.
 
 The physics repeats per seed but the frames jitter (synthetic-loop-dia.md,
 Determinism), so the environment is registered nondeterministic.
@@ -91,15 +97,18 @@ class LoopEnv(gym.Env):
 
     def reset(self, *, seed: int | None = None, options: dict | None = None):
         super().reset(seed=seed)
-        self._close_run()
-        self.run = Run(self.settings, seed, self.log)
-        return observation(self._next_pool()), {"id": 0}
+        if self.run is None:
+            self.run = Run(self.settings, seed, self.log)
+        else:
+            self.run.answer(Answer.reset(self.settings.seed if seed is None else seed))
+        pool = self._next_pool()
+        return observation(pool), {"id": self.run.observations - 1}
 
     def step(self, action):
         if self.run is None:
             raise gym.error.ResetNeeded("step() before reset(), or after the run failed")
         rate = command(action)
-        self.run.answer(Answer(rate, keep_going=True))
+        self.run.answer(Answer.go(rate))
         pool = self._next_pool()
         scored = score(pool, self.gym_settings.reward, self.gym_settings.end_crash)
         info = {
@@ -131,7 +140,7 @@ class LoopEnv(gym.Env):
         run, self.run = self.run, None
         try:
             if not run.stopped:
-                run.answer(Answer(0, keep_going=False))
+                run.answer(Answer.stop())
             run.finish()
         finally:
             run.kill()

@@ -243,8 +243,16 @@ in the diagram first:
    is found in every frame; the user accepted that jitter (2026-10-24).
 8. **Reset in place** (O11, O6, O7). *Check:* Done-when 7: a run of
    two episodes, the second after a reset with seed S, against a fresh
-   run with seed S. Not started; not before the training run that is
-   going now ends, since every episode of it relaunches `orchestrator.exe`.
+   run with seed S. **Done (2026-10-24):** the answer is `{"command",
+   "next", "seed"}` (`trainer_link.rs`, tests
+   `the_answer_is_continue_reset_or_stop` and `a_bad_answer_is_refused`);
+   a reset resets MuJoCo to the start, reseeds the latency draws, sends
+   the Orin `{"type": "reset", "seed": S}` and waits for its reply, and
+   `states.csv` has the `episode` column. A run of 150 steps on seed 5
+   then a reset to seed 7 and 150 more, against a fresh seed-7 run with
+   the same commands: the reset episode's 151 rows match the fresh run's
+   time, cart and pole exactly, starting at t = 0, cart 0, pole 0, with
+   ids 151–301 against 0–150; one launch of the Orin and the player.
 
 ## Placeholders
 

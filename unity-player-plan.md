@@ -29,7 +29,9 @@ per run and its window stays open between episodes, where it can be
 placed and watched. It takes no part in a reset: it stays connected and
 renders whatever pose comes next, the start pose included. Nothing in the
 player changes for it; what is to check is that it stays connected across
-a reset. Not started.
+a reset. **Done (2026-10-24):** in the orchestrator's reset check and a
+short training run (two resets), one player served every episode and
+exited 0 at the end.
 
 **The planned loop is `synthetic-loop-dia.md`** (2026-10-23), the
 source of truth: it supersedes the decisions marked *Superseded* below.
