@@ -235,8 +235,8 @@ when their bounds are known (`VecNormalize` for PPO and A2C).
   0 for the newest entry, then negative milliseconds (*Contracts*). Its
   bounds are known, which is the case SB3 says to normalize.
 - **The action (the command, 18):** an `i32` in pulses/s, clamped by the
-  synthetic Arduino to ±45,333 (±0.68 m/s). A continuous policy in
-  [−1, 1] scaled by 45,333 and rounded keeps the contract, at 15 µm/s per
+  synthetic Arduino to ±56,666 (±0.85 m/s at the rig's 30 V). A
+  continuous policy in [−1, 1] scaled by 56,666 and rounded keeps the contract, at 15 µm/s per
   pulse/s of resolution. A `Discrete` set of speeds is the other shape.
 
 ## Vector environments

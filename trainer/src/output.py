@@ -6,7 +6,7 @@ fails here instead of reaching the synthetic Arduino.
 
 The answer (trainer-plan.md T5): the command, an i32 whose sign is the
 direction and magnitude the pulses per second, plus continue or stop. The
-synthetic Arduino clamps the rate to +-45,333 pulses/s, so the trainer only
+synthetic Arduino clamps the rate to +-56,666 pulses/s, so the trainer only
 has to keep it an i32. On the trainer link it travels as one JSON line on
 the orchestrator's stdin, {"command": c, "continue": true|false}
 (synthetic-loop-dia.md, Contracts); on to the Arduino the command alone

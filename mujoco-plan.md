@@ -279,24 +279,26 @@ hand.
 |---|---|---|
 | Motor | 23HS32-4004S: 1.8° (200 full steps/rev), 4.0 A rated, 2.4 N·m holding torque, 0.9 Ω and 3.4 mH per phase | third-party listings (2026-10-23); StepperOnline's own page refused the fetch, so unconfirmed against the maker |
 | Phase current | 2.5 A, assumed | the DRV8825's maximum output current; the real setting is to be measured |
-| Supply | 24 V DC | user, 2026-10-23 |
+| Supply | 30 V DC, the bench supply (24 V first planned) | user, 2026-10-24 |
 | Pulley | 48T GT2, 2 mm pitch: 96 mm per turn, pitch radius r = 96 / 2π = 15.28 mm | the CAD part `pully-gt2-48t-6w-8b` |
 | Moving mass | 0.909 kg (cart 0.507 + pole 0.402) | the MJCF's `<inertial mass>` values (*Facts*) |
 
 **Values:**
 
-- **`ctrlrange` ±0.68 m/s** — the motor's estimated corner speed, the
+- **`ctrlrange` ±0.85 m/s** — the motor's estimated corner speed, the
   speed where the winding inductance stops the current from reaching
   its setting within one step, so torque falls off above it. Full-step
-  rate ≈ V ÷ (2·L·I) = 24 ÷ (2 × 0.0034 × 2.5) ≈ 1,410 steps/s = 7.06
-  rev/s; × 96 mm = 0.68 m/s. An estimate, not a measurement (2026-10-23).
+  rate ≈ V ÷ (2·L·I) = 30 ÷ (2 × 0.0034 × 2.5) ≈ 1,765 steps/s = 8.82
+  rev/s; × 96 mm = 0.847 m/s, set as 0.85 in the StepJointSet and the
+  exported MJCF (user, 2026-10-24). An estimate, not a measurement; at
+  the 24 V first planned it was 0.68 m/s (2026-10-23).
   It replaces 0.48 m/s, the motor's only rated speed (300 RPM = 5 rev/s
   × 96 mm).
 - **`forcerange` ±98 N** — the torque at the set current, at the belt.
   Holding torque scaled by current: 2.4 × 2.5 / 4.0 = 1.5 N·m; ÷ r =
   1.5 / 0.01528 = 98 N. This is low-speed torque: a stepper's torque
   falls off above the corner speed, which a constant `forcerange`
-  cannot follow, so near ±0.68 m/s the model is stronger than the
+  cannot follow, so near ±0.85 m/s the model is stronger than the
   motor.
 - **`armature` 0.227 kg** — the rotor's inertia felt at the cart:
   J ÷ r². Back-computed, J = 0.227 × 0.01528² = 5.3 × 10⁻⁵ kg·m²
@@ -629,7 +631,7 @@ its exporter.
 - **The scripted controls** (`speed:0.2`, `speed:0.6`, `sine:0.4,4`,
   start `0,1.0`) are test values for bring-up stages 1–2
   (`trainer-plan.md`, *Bring-up*), not training settings.
-- **The actuator's values** (±0.68 m/s, ±98 N, `kv` 100, `armature`
+- **The actuator's values** (±0.85 m/s, ±98 N, `kv` 100, `armature`
   0.227 kg; derivations in *The actuator's values*) rest on an assumed
   2.5 A phase current and an estimated corner speed; the real top speed
   and the DRV8825's actual current setting are to be measured.

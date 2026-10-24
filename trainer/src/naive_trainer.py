@@ -9,7 +9,7 @@ Arduino -> cart speed -> MuJoCo -> render) and moves the markers across the
 frame, so the run's truth log can be fitted to what the trainer sees
 (observation_fit.py).
 
-The action at step n is a = (peak / 45,333) x cos(2 pi n / period), so the
+The action at step n is a = (peak / 56,666) x cos(2 pi n / period), so the
 command is peak x cos(2 pi n / period) pulses/s; n, the step count, is the
 only clock the trainer has. A cosine speed moves the cart in a sine centred
 on its start; a sine speed would drift to one side. peak and period are

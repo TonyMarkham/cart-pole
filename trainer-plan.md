@@ -55,13 +55,14 @@ messages.
 - **T4 — the end crash.** The Pivot marker out of bounds is a training
   failure: penalty, and stop this run. The bounds must sit inside the
   slide's ends by more than the cart can travel between a capture and
-  the stop taking effect, at most 0.68 m/s × 16 ms ≈ 11 mm. Set (user,
-  2026-10-24, in `gym.toml`): Pivot x 0.26181 to 0.72784, the measured
-  slide ends less 11 mm (*What the trainer sees*); a crash scores −10
+  the stop taking effect, at most 0.85 m/s × 16 ms ≈ 13.6 mm (the rig's
+  30 V top speed). Set (user, 2026-10-24, in `gym.toml`): Pivot x
+  0.26325 to 0.72639, the measured slide ends less 13.6 mm (*What the
+  trainer sees*); a crash scores −10
   and terminates the episode, whose `reset()` stops the run.
 - **T5 — the answer (18).** The command — an `i32`, sign = direction,
   magnitude = pulses per second (the synthetic Arduino clamps it to
-  ±45,333) — and continue or stop.
+  ±56,666) — and continue or stop.
 - **T5a — the link (17, 18, 26)** (the diagram's *Trainer link*): the
   orchestrator's stdin and stdout, which the trainer holds as pipes
   because it launched the orchestrator (1). Per observation it reads one
@@ -83,7 +84,7 @@ messages.
   returns pool 0; `step(a)` answers with continue and returns the next
   pool; `reset()` or `close()` on an open run answers stop and waits for
   it to close; a failed run raises. Observation: the pool, 6 × 9.
-  Action: a ∈ [−1, 1], command = round(a × 45,333). Until the reward,
+  Action: a ∈ [−1, 1], command = round(a × 56,666). Until the reward,
   the end crash and the time limit are decided: reward 0, no
   termination, truncation at a placeholder length (`TimeLimit`).
 
@@ -137,7 +138,7 @@ the diagram first:
    2's back-and-forth.
    **Done-when 2 done (2026-10-24):** the naive trainer is a scripted
    agent on the environment (T8): at step n its action is (peak /
-   45,333) × cos(2π n / period), a command of peak × cos(2π n / period)
+   56,666) × cos(2π n / period), a command of peak × cos(2π n / period)
    pulses/s, for one episode of `max_episode_steps`. All of it is in
    `gym.toml` (`[sweep]` peak and period, `[env]` max_episode_steps):
    26,667 pulses/s (0.4 m/s), period 320 (about 4 s), 640 steps. The run
@@ -158,8 +159,9 @@ Both runs give the same fit; the figures are the wider run's.
   0.49 mm; a quadratic fits no better, so the map is a straight line.
   Pivot y stays within 0.3 px.
 - **The slide's ends in marker terms:** ±0.45 m is pivot_x 0.25604 to
-  0.73361; the end-crash margin inside them, ±0.4391 m (11 mm in), is
-  pivot_x 0.26181 to 0.72784. These are 0.05 m past the measured range,
+  0.73361; the end-crash margin inside them, ±0.4364 m (13.6 mm in, at
+  the 30 V top speed), is pivot_x 0.26325 to 0.72639 (at 24 V, 11 mm:
+  0.26181 to 0.72784). These are 0.05 m past the measured range,
   extrapolated along a line that holds to 0.5 mm over ±0.40 m.
 - **Pole from the Pivot-to-End direction:** with the image angle
   atan2((end_x − pivot_x) × 728, (end_y − pivot_y) × 544), 0 for End
@@ -205,6 +207,12 @@ Both runs give the same fit; the figures are the wider run's.
    - `env_check`'s random actions: two episodes of 640 steps, rewards
      317.9 and 297.6 (about 0.48 a step: the cart stays near the middle,
      the pole hangs); `check_env` passed.
+   - On the rig's 30 V numbers (0.85 m/s, 56,666 pulses/s, bounds Pivot
+     x 0.26325 to 0.72639): the sweep at peak 54,000, period 320, which
+     swings about ±0.52 m, crashed at step 54 as predicted. The true cart
+     was +0.4395 m, 3 mm past the 0.4364 m bound and 10.5 mm short of
+     the slide's end; Pivot x 0.72810; commands reached 0.81 m/s; the run
+     stopped and closed with exit 0.
 4. **Learning**, once the method is in the diagram. *Check:* Done-when
    4.
 

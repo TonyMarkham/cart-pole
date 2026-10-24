@@ -12,7 +12,7 @@ import tomllib
 from dataclasses import dataclass
 from pathlib import Path
 
-MAX_RATE = 45_333  # pulses/s: arduino::RIG's top rate (synthetic-loop-dia.md, Numbers)
+MAX_RATE = 56_666  # pulses/s: arduino::RIG's top rate (synthetic-loop-dia.md, Numbers)
 
 
 @dataclass(frozen=True)

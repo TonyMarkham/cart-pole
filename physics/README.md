@@ -33,7 +33,7 @@ cart slide, one pole hinge and one actuator.
 | `PhysicsConfig { model, names }` | What to load: the MJCF path, and the names of the cart joint, pole joint and actuator in it. The caller fills it; the orchestrator takes all four from its command line, which the trainer fills from its `settings.toml` `[mjcf]`. |
 | `Physics::load(&config)` | Loads the MJCF, runs the load checks (below), measures the timestep, prints one summary line. |
 | `reset(Pose)` | Back to t = 0 at the given pose, at rest (`qvel` and `ctrl` zeroed), derived quantities recomputed. |
-| `set_ctrl(f64)` | The cart actuator's `ctrl`. For the cart-pole's `<velocity>` actuator this is the target cart speed in m/s, sign = direction. MuJoCo clamps it to the MJCF's `ctrlrange` (±0.68 m/s). Rejects NaN and infinity. |
+| `set_ctrl(f64)` | The cart actuator's `ctrl`. For the cart-pole's `<velocity>` actuator this is the target cart speed in m/s, sign = direction. MuJoCo clamps it to the MJCF's `ctrlrange` (±0.85 m/s). Rejects NaN and infinity. |
 | `step(n)` | Advances simulated time by `n` physics steps. |
 | `time()` | Simulated time in seconds (`data.time`). |
 | `pose()` | The two joints' `qpos` as a `Pose`. |

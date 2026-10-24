@@ -99,7 +99,7 @@ sequenceDiagram
         T-->>O: stdin line {"command":c,"continue":true|false}<br/>c: the command (i32, sign = direction, magnitude = pulses/s)<br/>MuJoCo stays frozen at the arrival step until it is in
         alt continue
             O->>A: receive(the command: i32 LE pulses/s), the only thing it is sent
-            Note over A: rate clamped to ±45,333 pulses/s<br/>no clock in the loop, so no pulse count:<br/>the ±30,000-pulse travel limit cannot act here<br/>(the end crash is the trainer's training failure)
+            Note over A: rate clamped to ±56,666 pulses/s<br/>no clock in the loop, so no pulse count:<br/>the ±30,000-pulse travel limit cannot act here<br/>(the end crash is the trainer's training failure)
             A-->>O: DRV8825 signals: DIR (from the sign), STEP rate (from the magnitude)
             Note over O: cart velocity = STEP rate × 15 µm, m/s, signed by DIR
             O->>M: set_ctrl(the new cart velocity) at the arrival step
@@ -162,7 +162,7 @@ and the command (18) and returns the next pool (17); a `reset()` or
 for the run to close (26), and `reset()` then starts the next run. A run
 that fails (26, code 1) raises, which ends training. The observation is
 the pool, 6 × 9 floats; the action is one value a ∈ [−1, 1], and the
-command is a × 45,333 (the top rate), rounded to the `i32`. The reward is
+command is a × 56,666 (the top rate), rounded to the `i32`. The reward is
 graded (below), and the end crash terminates the episode. The time limit
 is not decided yet: until it is, a placeholder length truncates the
 episode.
@@ -182,7 +182,7 @@ weighted sum, so the cart part teaches even while the pole hangs. The
 values (user, 2026-10-24, all in the trainer's `gym.toml`): weights 1.0
 for the pole and 0.5 for the cart, so a step scores 0.5 hanging in the
 middle and 1.5 upright in the middle; the end-crash bounds are Pivot x
-0.26181 to 0.72784, the slide's ends less the 11 mm margin, measured; the
+0.26325 to 0.72639, the slide's ends less the 13.6 mm margin, measured; the
 end crash scores −10 and terminates the episode. Each step is scored from
 the newest pool entry with both Pivot and End detected, and scores 0 when
 no entry has them.
@@ -209,17 +209,19 @@ most 0.04 px (2026-10-24), and so do `states.csv`'s observed columns and
 `observations.jsonl` (which also logs `detect_ms`, a wall-clock time).
 
 Numbers: `arduino::RIG` (200 steps × 32 microsteps, 96 mm per pulley turn:
-15 µm per pulse, ±30,000 pulses of travel, 45,333 pulses/s top rate). The
+15 µm per pulse, ±30,000 pulses of travel, 56,666 pulses/s top rate,
+0.85 m/s, the motor's estimated corner speed on the rig's 30 V supply,
+user 2026-10-24, `mujoco-plan.md`). The
 travel limit acts only on the board, whose timer counts the pulses it
 sends; the synthetic Arduino receives only the i32, so in the loop the
 MJCF slide's ±0.45 m range is what stops the cart. The end crash is
 therefore a training failure, judged by the trainer from the pool: the
 Pivot marker out of bounds means penalty, and stop this run. The bounds
-are not set yet; they must sit inside the slide's ends by more than the
+(*The reward is graded*) sit inside the slide's ends by more than the
 cart can travel between a capture and the stop taking effect, at most
-0.68 m/s (45,333 pulses/s × 15 µm) × 16 ms (the longest gap to the
-arrival step at 8–15 ms) ≈ 11 mm, or the simulated cart reaches the slide's end
-first. The real board finds its centre by homing: left to the limit
+0.85 m/s (56,666 pulses/s × 15 µm) × 16 ms (the longest gap to the
+arrival step at 8–15 ms) ≈ 13.6 mm, or the simulated cart reaches the
+slide's end first. The real board finds its centre by homing: left to the limit
 switch, right to the limit switch, then back half the pulses between the
 two hits. The synthetic run instead always starts with the cart at 50% of
 the rail, a guarantee, so the Arduino is never told a start position. The
@@ -275,12 +277,12 @@ yet (`orchestrator-plan.md`, *Placeholders*).
 - **The command (18, 19):** one `i32`, in pulses per second; sign =
   direction, never a distance or position offset. To the Arduino (19) it
   travels as 4 bytes, little-endian; fixed length, no id. Why an `i32`: at 1/32 microstepping the
-  top rate is 0.68 m/s ÷ 15 µm = 45,333 pulses/s, past an `i16`'s
+  top rate is 0.85 m/s ÷ 15 µm = 56,666 pulses/s, past an `i16`'s
   32,767; an `i32` never limits the microstep setting or the speed. One
   pulse per second is 0.015 mm/s, finer than the slowest motion a
   balance needs.
 - **The cart speed (20, 21):** meters per pulse = belt travel per
   pulley turn ÷ (full steps per turn × microsteps) = 96 mm ÷ (200 × 32)
   = 15 µm. The 96 mm is the CAD pulley `pully-gt2-48t-6w-8b`: 48 teeth
-  at GT2's 2 mm pitch. The MJCF's `ctrlrange` (±0.68 m/s) matches the
-  top rate, 45,333 pulses/s × 15 µm.
+  at GT2's 2 mm pitch. The MJCF's `ctrlrange` (±0.85 m/s) matches the
+  top rate, 56,666 pulses/s × 15 µm.

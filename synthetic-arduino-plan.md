@@ -18,8 +18,8 @@ messages.
 2. **The signals are right** (19–20): a command of `+r` gives DIR for
    the positive direction and STEP rate `r`; `−r` gives the other DIR
    and the same rate; 0 gives STEP rate 0.
-3. **The clamp holds:** any command beyond ±45,333 pulses/s gives STEP
-   rate 45,333, with DIR from its sign.
+3. **The clamp holds:** any command beyond ±56,666 pulses/s gives STEP
+   rate 56,666, with DIR from its sign.
 4. **The cart speed matches:** the orchestrator's ctrl is STEP rate ×
    15 µm, in m/s, signed by DIR.
 
@@ -32,7 +32,7 @@ messages.
   i32 LE pulses/s)`, once per observation at the arrival step; sign =
   direction, magnitude = pulses per second.
 - **A3 — the clamp.** The rate is clamped to the rig's top rate,
-  ±45,333 pulses/s.
+  ±56,666 pulses/s (0.85 m/s at the rig's 30 V).
 - **A4 — the DRV8825 signals (20).** DIR from the sign, STEP rate from
   the magnitude, returned to the orchestrator.
 - **A5 — no pulse count in the loop.** There is no clock in the loop, so
@@ -47,7 +47,8 @@ messages.
 **The numbers** (`arduino::RIG`, as the diagram gives them): 200 full
 steps × 32 microsteps per turn and 96 mm of belt per pulley turn, so
 15 µm per pulse; ±30,000 pulses of travel (±0.45 m); a top rate of
-45,333 pulses/s (0.68 m/s).
+56,666 pulses/s (0.85 m/s, the motor's estimated corner speed at 30 V,
+`mujoco-plan.md`; 45,333 at the 24 V first planned).
 
 ## Not decided by the diagram
 
@@ -78,13 +79,13 @@ diagram first:
    synthetic Arduino holds nothing but `RIG`: no tick, no pulse count
    (A5). Tests `synthetic_receive_returns_dir_and_step_rate` and
    `synthetic_receive_clamps_to_the_top_rate`: ±26,667 give opposite
-   DIRs and rate 26,667; 0 gives rate 0; 45,334, `i32::MAX` and
-   `i32::MIN` give 45,333.
+   DIRs and rate 26,667; 0 gives rate 0; 56,667, `i32::MAX` and
+   `i32::MIN` give 56,666 (45,334 and 45,333 at 24 V).
 3. **The orchestrator's conversion** (`orchestrator-plan.md`, O8).
    *Check:* Done-when 4. **Done (2026-10-24):** test
    `cart_velocity_is_step_rate_times_15_um_signed_by_dir`
-   (`orchestrator/src/tests.rs`: 26,667 → ±0.400005 m/s, 45,333 →
-   0.679995 m/s), and the runs in `orchestrator-plan.md` step 5.
+   (`orchestrator/src/tests.rs`: 26,667 → ±0.400005 m/s, 56,666 →
+   0.84999 m/s), and the runs in `orchestrator-plan.md` step 5.
 
 ## Not in this plan
 

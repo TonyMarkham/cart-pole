@@ -53,7 +53,7 @@ fn the_same_seed_gives_the_same_draws() {
 }
 
 // synthetic-arduino-plan.md Done-when 4: ctrl = STEP rate × 15 µm, m/s,
-// signed by DIR. 26,667 × 15 µm = 0.400005; 45,333 × 15 µm = 0.679995.
+// signed by DIR. 26,667 × 15 µm = 0.400005; 56,666 × 15 µm = 0.84999.
 #[test]
 fn cart_velocity_is_step_rate_times_15_um_signed_by_dir() {
     let m = meters_per_pulse(&RIG);
@@ -61,6 +61,6 @@ fn cart_velocity_is_step_rate_times_15_um_signed_by_dir() {
     let velocity = |dir, step_rate| cart_velocity(Drv8825Signals { dir, step_rate }, m);
     assert!((velocity(Direction::Positive, 26_667) - 0.400_005).abs() < 1e-12);
     assert!((velocity(Direction::Negative, 26_667) + 0.400_005).abs() < 1e-12);
-    assert!((velocity(Direction::Negative, 45_333) + 0.679_995).abs() < 1e-12);
+    assert!((velocity(Direction::Negative, 56_666) + 0.849_99).abs() < 1e-12);
     assert_eq!(velocity(Direction::Positive, 0), 0.0);
 }

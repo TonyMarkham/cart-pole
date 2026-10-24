@@ -244,7 +244,7 @@ fn meters_per_pulse(config: &Config) -> f64 {
 }
 
 // 21: cart velocity = STEP rate × meters per pulse, m/s, signed by DIR
-// (RIG's top rate: 45,333 × 15 µm = 0.679995 m/s, inside ctrlrange).
+// (RIG's top rate: 56,666 × 15 µm = 0.84999 m/s, inside ctrlrange).
 fn cart_velocity(signals: Drv8825Signals, meters_per_pulse: f64) -> f64 {
     let speed = f64::from(signals.step_rate) * meters_per_pulse;
     match signals.dir {

@@ -26,12 +26,13 @@ cart_weight = 0.5
 [end_crash]
 # The Pivot marker's x outside [pivot_x_min, pivot_x_max] is the end crash
 # (trainer-plan.md T4): the step scores `penalty` and the episode
-# terminates. The bounds are the slide's ends, +-0.45 m, less the 11 mm
-# the cart can travel before a stop acts (0.68 m/s x 16 ms), measured as
+# terminates. The bounds are the slide's ends, +-0.45 m, less the 13.6 mm
+# the cart can travel before a stop acts (0.85 m/s x 16 ms, the rig's 30 V
+# top speed), measured as
 # cart = 1.88452 x pivot_x - 0.93250 m (trainer-plan.md, What the trainer
 # sees).
-pivot_x_min = 0.26181
-pivot_x_max = 0.72784
+pivot_x_min = 0.26325
+pivot_x_max = 0.72639
 penalty = -10.0
 
 [sweep]
@@ -41,8 +42,8 @@ penalty = -10.0
 # peak x 15 um x period x 12.57 ms / 2 pi either side; keep it inside the
 # slide's +-0.45 m.
 
-# Pulses/s, at most 45,333 (the top rate). 26,667 is 0.4 m/s.
-peak = 42000
+# Pulses/s, at most 56,666 (the top rate). 26,667 is 0.4 m/s.
+peak = 54000
 
 # Steps per back-and-forth: 320 is about 4.0 s, a swing of about +-0.26 m
 # at the peak above. (500 gave -0.41 .. +0.40 m.)

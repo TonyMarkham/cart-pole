@@ -21,18 +21,19 @@ pub struct Config {
 /// The rig (synthetic-arduino-plan.md, mujoco-plan.md *The actuator's values*):
 /// 23HS32-4004S (1.8°), DRV8825, 48T GT2 pulley, 900 mm usable rail.
 /// `microsteps` is a placeholder until the driver's setting is chosen
-/// (1/32 is the DRV8825's finest); `max_speed_um_per_s` is the 24 V
-/// corner-speed estimate, the MJCF's `ctrlrange`.
+/// (1/32 is the DRV8825's finest); `max_speed_um_per_s` is the
+/// corner-speed estimate on the rig's 30 V supply (user, 2026-10-24),
+/// the MJCF's `ctrlrange`.
 ///
 /// At these values: 6,400 pulses per revolution, 15 µm per pulse
 /// (96,000 / 6,400), ±30,000 pulses of travel (450,000 / 15), and a top
-/// rate of 45,333 pulses/s (680,000 / 15, rounded down).
+/// rate of 56,666 pulses/s (850,000 / 15, rounded down).
 pub const RIG: Config = Config {
     full_steps_per_rev: 200,
     microsteps: 32,
     belt_um_per_rev: 96_000,
     travel_um: 450_000,
-    max_speed_um_per_s: 680_000,
+    max_speed_um_per_s: 850_000,
 };
 
 impl Config {

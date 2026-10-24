@@ -1,6 +1,6 @@
 //! Every expected value here is worked out by hand from `RIG`: 6,400
 //! pulses per revolution, 15 µm per pulse, ±30,000 pulses of travel,
-//! 45,333 pulses/s top rate. 2,000 µs is MuJoCo's 2 ms physics step.
+//! 56,666 pulses/s top rate. 2,000 µs is MuJoCo's 2 ms physics step.
 
 use crate::{RIG, Stepper, decode_command, encode_command};
 
@@ -10,14 +10,14 @@ const STEP_US: u32 = 2_000;
 fn rig_derived_values() {
     assert_eq!(RIG.pulses_per_rev(), 6_400); // 200 × 32
     assert_eq!(RIG.travel_pulses(), 30_000); // 450,000 µm × 6,400 / 96,000
-    assert_eq!(RIG.max_rate(), 45_333); // 680,000 × 6,400 / 96,000 = 45,333.3
+    assert_eq!(RIG.max_rate(), 56_666); // 850,000 × 6,400 / 96,000 = 56,666.7
 }
 
 #[test]
 fn packet_is_i32_little_endian() {
     assert_eq!(decode_command([0x10, 0x27, 0x00, 0x00]), 10_000); // 0x2710
     assert_eq!(decode_command([0xF0, 0xD8, 0xFF, 0xFF]), -10_000);
-    assert_eq!(decode_command(encode_command(-45_333)), -45_333);
+    assert_eq!(decode_command(encode_command(-56_666)), -56_666);
 }
 
 #[test]
@@ -56,11 +56,11 @@ fn reverse_rate_moves_back() {
 fn rate_is_clamped_to_the_top_rate() {
     let mut s = Stepper::new(RIG, 0);
     s.command(100_000);
-    assert_eq!(s.rate(), 45_333);
+    assert_eq!(s.rate(), 56_666);
     s.command(i32::MIN);
-    assert_eq!(s.rate(), -45_333);
-    // 45,333 × 1 s = 45,333 pulses, but the envelope stops it at 30,000.
-    s.command(45_333);
+    assert_eq!(s.rate(), -56_666);
+    // 56,666 × 1 s = 56,666 pulses, but the envelope stops it at 30,000.
+    s.command(56_666);
     assert_eq!(s.advance(1_000_000), 30_000);
 }
 
@@ -125,12 +125,12 @@ fn synthetic_receive_returns_dir_and_step_rate() {
 #[test]
 fn synthetic_receive_clamps_to_the_top_rate() {
     use crate::{Direction, Drv8825Signals, SyntheticArduino};
-    // Done-when 3: past ±45,333 pulses/s the STEP rate is 45,333, DIR
+    // Done-when 3: past ±56,666 pulses/s the STEP rate is 56,666, DIR
     // from the sign; i32::MIN has no positive i32 twin, the clamp's edge.
     let a = SyntheticArduino::new(RIG);
     let signals = |rate| a.receive(encode_command(rate));
-    assert_eq!(signals(45_334), Drv8825Signals { dir: Direction::Positive, step_rate: 45_333 });
-    assert_eq!(signals(i32::MAX), Drv8825Signals { dir: Direction::Positive, step_rate: 45_333 });
-    assert_eq!(signals(i32::MIN), Drv8825Signals { dir: Direction::Negative, step_rate: 45_333 });
-    assert_eq!(signals(-45_333), Drv8825Signals { dir: Direction::Negative, step_rate: 45_333 });
+    assert_eq!(signals(56_667), Drv8825Signals { dir: Direction::Positive, step_rate: 56_666 });
+    assert_eq!(signals(i32::MAX), Drv8825Signals { dir: Direction::Positive, step_rate: 56_666 });
+    assert_eq!(signals(i32::MIN), Drv8825Signals { dir: Direction::Negative, step_rate: 56_666 });
+    assert_eq!(signals(-56_666), Drv8825Signals { dir: Direction::Negative, step_rate: 56_666 });
 }

@@ -8,7 +8,7 @@ decisions need:
 
 - cart (m) from the Pivot marker's x: a straight-line fit, and the Pivot x
   at the slide's ends (+-0.45 m) and at the end-crash margin inside them
-  (0.68 m/s x 16 ms = 11 mm, synthetic-loop-dia.md, Numbers);
+  (0.85 m/s x 16 ms = 13.6 mm, synthetic-loop-dia.md, Numbers);
 - pole (rad) from the Pivot-to-End direction in the image: the angle of
   (end - pivot) in pixels (x right, y down; 0 = End straight below Pivot,
   the hanging pole), fitted as pole = k x angle + c.
@@ -33,7 +33,7 @@ import numpy as np
 from pool import FRAME_HEIGHT as HEIGHT
 from pool import FRAME_WIDTH as WIDTH
 SLIDE_END_M = 0.45  # the MJCF slide's range, +-m
-MARGIN_M = 0.68 * 0.016  # the cart's travel in the longest gap at top speed
+MARGIN_M = 0.85 * 0.016  # the cart's travel in the longest gap at top speed
 
 REPO = Path(__file__).resolve().parents[2]
 

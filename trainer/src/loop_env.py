@@ -13,7 +13,7 @@ a Gymnasium Env, so the trainer's environment wraps the run
 
 The observation is the pool, 6 x 9 floats: per entry, newest first, its age
 in ms (0, then negative) and the 4 markers' (x, y), (-1, -1) where not
-detected. The action is one value a in [-1, 1]; the command is a x 45,333,
+detected. The action is one value a in [-1, 1]; the command is a x 56,666,
 the synthetic Arduino's top rate, rounded to the i32. Beyond [-1, 1] the
 action is clipped, so the command never asks past the top rate.
 
