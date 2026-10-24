@@ -31,6 +31,8 @@ The physics repeats per seed but the frames jitter (synthetic-loop-dia.md,
 Determinism), so the environment is registered nondeterministic.
 """
 
+from pathlib import Path
+
 import gymnasium as gym
 import numpy as np
 from gymnasium import spaces
@@ -77,9 +79,12 @@ def command(action) -> int:
 class LoopEnv(gym.Env):
     metadata = {"render_modes": []}
 
-    def __init__(self, settings: Settings | None = None, gym_settings: GymSettings | None = None) -> None:
+    def __init__(
+        self, settings: Settings | None = None, gym_settings: GymSettings | None = None, log: Path | None = None
+    ) -> None:
         self.settings = settings if settings is not None else Settings.load()
         self.gym_settings = gym_settings if gym_settings is not None else GymSettings.load(self.settings.gym)
+        self.log = log  # each run's log is appended here, else it goes to the console (launch.py)
         self.observation_space = observation_space(self.settings.rnd_delay_max)
         self.action_space = spaces.Box(-1.0, 1.0, shape=(1,), dtype=np.float32)
         self.run: Run | None = None
@@ -87,7 +92,7 @@ class LoopEnv(gym.Env):
     def reset(self, *, seed: int | None = None, options: dict | None = None):
         super().reset(seed=seed)
         self._close_run()
-        self.run = Run(self.settings, seed)
+        self.run = Run(self.settings, seed, self.log)
         return observation(self._next_pool()), {"id": 0}
 
     def step(self, action):
@@ -132,7 +137,7 @@ class LoopEnv(gym.Env):
             run.kill()
 
 
-def make(settings: Settings | None = None, gym_settings: GymSettings | None = None) -> gym.Env:
+def make(settings: Settings | None = None, gym_settings: GymSettings | None = None, log: Path | None = None) -> gym.Env:
     """The environment through gymnasium.make, so it carries its spec: the
     TimeLimit (gym.toml's episode length) and nondeterministic."""
     settings = settings if settings is not None else Settings.load()
@@ -144,4 +149,4 @@ def make(settings: Settings | None = None, gym_settings: GymSettings | None = No
             nondeterministic=True,
             max_episode_steps=gym_settings.max_episode_steps,
         )
-    return gym.make(ENV_ID, settings=settings, gym_settings=gym_settings)
+    return gym.make(ENV_ID, settings=settings, gym_settings=gym_settings, log=log)

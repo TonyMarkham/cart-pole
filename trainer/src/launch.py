@@ -7,7 +7,8 @@ starts the orchestrator, with the command its settings.toml names
 The trainer link (synthetic-loop-dia.md, Trainer link) is the orchestrator's
 stdin and stdout, held here as pipes: per observation one stdout line, the
 pool (17), and one stdin line back, the answer (18). The orchestrator's log
-is on its stderr, which stays the trainer's console. The run's end is the
+is on its stderr: the trainer's console, or, given a log file, appended
+there, so a long training run's console holds only its summaries. The run's end is the
 orchestrator's exit: stdout closes, then exit code 0 (closed) or 1 (failed:
 training ends).
 """
@@ -15,6 +16,7 @@ training ends).
 import json
 import os
 import subprocess
+from pathlib import Path
 
 from output import Answer
 from pool import Pool
@@ -64,26 +66,38 @@ class Run:
     outlives the trainer that started it.
     """
 
-    def __init__(self, settings: Settings, seed: int | None = None) -> None:
+    def __init__(self, settings: Settings, seed: int | None = None, log: Path | None = None) -> None:
         command = settings.command(seed)
-        print(f"trainer: launching {' '.join(command)}", flush=True)
+        self.log = log
+        self.log_file = open(log, "a", encoding="utf-8") if log is not None else None
+        launching = f"trainer: launching {' '.join(command)}"
+        if self.log_file is not None:
+            self.log_file.write(launching + "\n")
+            self.log_file.flush()
+        else:
+            print(launching, flush=True)
         self.process = subprocess.Popen(
             command,
             cwd=settings.orchestrator_cwd,
             env=orchestrator_environment(),
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
+            stderr=self.log_file,
             encoding="utf-8",
         )
         self.observations = 0  # pools read so far; the next one's id
         self.stopped = False
+
+    def failed(self, what: str) -> RunFailed:
+        where = f" (the run's log: {self.log})" if self.log is not None else ""
+        return RunFailed(what + where)
 
     def next_pool(self) -> Pool:
         """Pool n (17). The run ending instead means it failed."""
         assert self.process.stdout is not None and not self.stopped
         line = self.process.stdout.readline()
         if not line:
-            raise RunFailed(f"the run ended before pool {self.observations}: exit code {self.process.wait()}")
+            raise self.failed(f"the run ended before pool {self.observations}: exit code {self.process.wait()}")
         pool = read_pool(line, self.observations)
         self.observations += 1
         return pool
@@ -104,10 +118,12 @@ class Run:
             raise ValueError(f"output arrived after the stop: {extra!r}")
         code = self.process.wait()
         if code != CLOSED:
-            raise RunFailed(f"the run did not close after the stop: exit code {code}")
+            raise self.failed(f"the run did not close after the stop: exit code {code}")
         return code
 
     def kill(self) -> None:
         if self.process.poll() is None:
             self.process.kill()
             self.process.wait()
+        if self.log_file is not None:
+            self.log_file.close()

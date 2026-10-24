@@ -16,6 +16,9 @@ Each training run gets a folder, gym.toml's [train] runs_dir /
   save (each written beside, then swapped in, so a crash mid-save keeps the
   previous one);
 - model_<steps>.zip, a model snapshot at every save;
+- loop.log, every run's own output (the orchestrator's line per
+  observation, the Unity player's and the Orin's), so the console holds
+  only one line per episode and one per save;
 - episodes.csv, one row per finished episode: its seed, the run's steps so
   far, its length, how it ended (time limit or end crash), its total reward,
   and the pole part of the reward (0 hanging, 1 upright, reward.py) at its
@@ -91,12 +94,14 @@ def save(model: SAC, folder: Path, snapshot: bool) -> None:
 class Progress(BaseCallback):
     """Logs each finished episode and saves every save_every steps."""
 
-    def __init__(self, folder: Path, save_every: int, total_steps: int, first_episode: int) -> None:
+    def __init__(self, folder: Path, save_every: int, total_steps: int, first_episode: int, first_step: int) -> None:
         super().__init__()
         self.folder = folder
         self.save_every = save_every
         self.total_steps = total_steps
         self.episode = first_episode
+        self.first_step = first_step  # where this session began, for its time left
+        self.session_started = time.perf_counter()
         self.saved_at = None  # the step of the last save, so the run's end does not repeat it
         self.file = open(folder / "episodes.csv", "a", newline="", encoding="utf-8")
         self.rows = csv.writer(self.file)
@@ -122,9 +127,13 @@ class Progress(BaseCallback):
                 f"{self.reward:.3f}", f"{self.pole_max:.4f}", f"{self.pole_sum / self.length:.4f}", f"{wall:.1f}",
             ])
             self.file.flush()
-            print(f"train: episode {self.episode}, step {self.num_timesteps}/{self.total_steps}: "
-                  f"{self.length} steps, {ended}, reward {self.reward:.1f}, "
-                  f"pole max {self.pole_max:.3f}, mean {self.pole_sum / self.length:.3f}", flush=True)
+            elapsed = time.perf_counter() - self.session_started
+            done = self.num_timesteps - self.first_step
+            left = elapsed / done * (self.total_steps - self.num_timesteps)
+            print(f"train: episode {self.episode:4d}  step {self.num_timesteps:7,d}/{self.total_steps:,d}  "
+                  f"{self.length:4d} steps  {ended:<10}  reward {self.reward:7.1f}  "
+                  f"pole max {self.pole_max:.3f} mean {self.pole_sum / self.length:.3f}  "
+                  f"elapsed {clock(elapsed)}  left {clock(left)}", flush=True)
             self.episode += 1
             self.start_episode()
         if self.num_timesteps % self.save_every == 0:
@@ -134,6 +143,11 @@ class Progress(BaseCallback):
 
     def _on_training_end(self) -> None:
         self.file.close()
+
+
+def clock(seconds: float) -> str:
+    minutes = round(seconds / 60)
+    return f"{minutes // 60}h{minutes % 60:02d}m"
 
 
 def finished_episodes(folder: Path) -> int:
@@ -165,7 +179,7 @@ def main() -> int:
         shutil.copyfile(args.settings, folder / "settings.toml")
         shutil.copyfile(settings.gym, folder / "gym.toml")
     episode = finished_episodes(folder)
-    env = SeedEachEpisode(make(settings, gym_settings), settings.seed, episode)
+    env = SeedEachEpisode(make(settings, gym_settings, log=folder / "loop.log"), settings.seed, episode)
 
     if args.resume is not None:
         model = SAC.load(folder / "latest.zip", env=env, device=train.sac.device)
@@ -181,7 +195,7 @@ def main() -> int:
         print(f"train: already at step {model.num_timesteps} of {train.train.total_steps}", flush=True)
         env.close()
         return 0
-    progress = Progress(folder, train.train.save_every, train.train.total_steps, episode)
+    progress = Progress(folder, train.train.save_every, train.train.total_steps, episode, model.num_timesteps)
     code = 0
     try:
         model.learn(total_timesteps=remaining, callback=progress, reset_num_timesteps=args.resume is None)
