@@ -21,6 +21,12 @@ from output import Answer
 from pool import Pool
 from settings import Settings
 
+CLOSED, FAILED = 0, 1  # the orchestrator's exit codes (26)
+
+
+class RunFailed(RuntimeError):
+    """The run failed (26): training ends."""
+
 
 class Trainer(Protocol):
     def answer(self, pool: Pool) -> Answer: ...
@@ -53,39 +59,79 @@ def read_pool(line: str, expected_id: int) -> Pool:
     return Pool.from_rows(message["pool"])
 
 
-def run_orchestrator(settings: Settings, trainer: Trainer) -> int:
-    """Runs one run to its end and returns the orchestrator's exit code.
+class Run:
+    """One run, from the launch (1) to the exit (26).
 
-    Each pool is answered by `trainer`; after a stop the orchestrator shuts
-    the run down and closes stdout, so no further pool may arrive. If the
-    trainer stops first (an error, Ctrl+C), the orchestrator is stopped
-    too: no run outlives the trainer that started it.
+    The link alternates: `next_pool()` reads pool n, `answer()` sends the
+    answer to it, and so on. After a stop, `finish()` waits for the run to
+    close. A run that ends without a stop, or with exit code 1, raises
+    RunFailed. If anything else goes wrong, `kill()` makes sure no run
+    outlives the trainer that started it.
     """
-    print(f"trainer: launching {' '.join(settings.orchestrator_command)}", flush=True)
-    process = subprocess.Popen(
-        settings.orchestrator_command,
-        cwd=settings.orchestrator_cwd,
-        env=orchestrator_environment(),
-        stdin=subprocess.PIPE,
-        stdout=subprocess.PIPE,
-        encoding="utf-8",
-    )
-    assert process.stdin is not None and process.stdout is not None
+
+    def __init__(self, settings: Settings, seed: int | None = None) -> None:
+        command = settings.command(seed)
+        print(f"trainer: launching {' '.join(command)}", flush=True)
+        self.process = subprocess.Popen(
+            command,
+            cwd=settings.orchestrator_cwd,
+            env=orchestrator_environment(),
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            encoding="utf-8",
+        )
+        self.observations = 0  # pools read so far; the next one's id
+        self.stopped = False
+
+    def next_pool(self) -> Pool:
+        """Pool n (17). The run ending instead means it failed."""
+        assert self.process.stdout is not None and not self.stopped
+        line = self.process.stdout.readline()
+        if not line:
+            raise RunFailed(f"the run ended before pool {self.observations}: exit code {self.process.wait()}")
+        pool = read_pool(line, self.observations)
+        self.observations += 1
+        return pool
+
+    def answer(self, answer: Answer) -> None:
+        """The answer to the last pool (18)."""
+        assert self.process.stdin is not None and not self.stopped
+        self.process.stdin.write(answer.line())
+        self.process.stdin.flush()
+        self.stopped = not answer.keep_going
+
+    def finish(self) -> int:
+        """After the stop: the run shuts down (22-25) and closes stdout;
+        no further pool may arrive. Returns the exit code (26)."""
+        assert self.process.stdout is not None and self.stopped
+        extra = self.process.stdout.read()
+        if extra:
+            raise ValueError(f"output arrived after the stop: {extra!r}")
+        code = self.process.wait()
+        if code != CLOSED:
+            raise RunFailed(f"the run did not close after the stop: exit code {code}")
+        return code
+
+    def kill(self) -> None:
+        if self.process.poll() is None:
+            self.process.kill()
+            self.process.wait()
+
+
+def run_orchestrator(settings: Settings, trainer: Trainer) -> int:
+    """Runs one run to its end with `trainer` answering every pool and
+    returns the orchestrator's exit code: 0 closed, 1 failed."""
+    run = Run(settings)
     try:
-        stopped = False
-        observations = 0
-        for line in process.stdout:
-            if stopped:
-                raise ValueError(f"a pool arrived after the stop: {line!r}")
-            answer = trainer.answer(read_pool(line, observations))
-            observations += 1
-            process.stdin.write(answer.line())
-            process.stdin.flush()
-            stopped = not answer.keep_going
-        code = process.wait()
-        print(f"trainer: {observations} pools answered, stop sent: {stopped}", flush=True)
+        while not run.stopped:
+            try:
+                pool = run.next_pool()
+            except RunFailed:
+                print(f"trainer: {run.observations} pools answered, then the run failed", flush=True)
+                return run.process.wait()
+            run.answer(trainer.answer(pool))
+        code = run.finish()
+        print(f"trainer: {run.observations} pools answered, the last with stop", flush=True)
         return code
     finally:
-        if process.poll() is None:
-            process.kill()
-            process.wait()
+        run.kill()

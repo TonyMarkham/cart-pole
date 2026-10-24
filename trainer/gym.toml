@@ -1,0 +1,12 @@
+# The trainer's Gymnasium settings (trainer-plan.md T8). The run itself -
+# the orchestrator's command, the seed, the latency band, the MJCF - is in
+# settings.toml, beside this file.
+
+[env]
+# The trainer's Gymnasium environment, one run per episode
+# (synthetic-loop-dia.md, The trainer's environment).
+
+# Observations per episode before Gymnasium's TimeLimit truncates it. A
+# placeholder: the time limit is not decided yet (trainer-plan.md, Not
+# decided by the diagram). 250 observations is about 3 s of simulated time.
+max_episode_steps = 250

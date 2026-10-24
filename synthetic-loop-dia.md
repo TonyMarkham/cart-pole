@@ -153,6 +153,20 @@ stays frozen at the arrival step, so the trainer's speed, like the Orin's,
 stays out of simulated time. The run's end (26) is the orchestrator's
 exit: stdout closes, and the exit code says closed (0) or failed (1).
 
+**The trainer's environment** (user, 2026-10-24): the trainer reaches the
+loop through a Gymnasium `Env`, one run per episode
+(`gymnasium-research.md`). `reset()` starts a run (1) and returns its
+first pool (17, n = 0); `step(a)` answers the pending pool with continue
+and the command (18) and returns the next pool (17); a `reset()` or
+`close()` while a run is open answers the pending pool with stop, waits
+for the run to close (26), and `reset()` then starts the next run. A run
+that fails (26, code 1) raises, which ends training. The observation is
+the pool, 6 × 9 floats; the action is one value a ∈ [−1, 1], and the
+command is a × 45,333 (the top rate), rounded to the `i32`. The reward,
+the end crash and the time limit are not decided yet; until they are,
+the reward is 0, nothing terminates, and a placeholder length truncates
+the episode.
+
 **The initial pool.** At startup, before any frame exists, the Orin
 pre-warms the pool: six entries with no detection (−1, −1) at cumulative
 times before the first capture (t = 0), each gap a fresh draw dₖ of
@@ -195,9 +209,12 @@ written by the exporter from the rig's StepJointSet, never left to MuJoCo's
 defaults: the timestep is both the physics step and the grid the latency
 rounds to, and `implicitfast` is MuJoCo's recommended integrator for the
 cart's `<velocity>` servo. The Orin latency's range, 8–15 ms today
-(`rnd_delay_min`, `rnd_delay_max`), is actual object-detection inference time over 250 test images,
-a placeholder for D = detection + policy + WiFi, to be measured on the
-Orin (`orchestrator-plan.md`, *Placeholders*).
+(`rnd_delay_min`, `rnd_delay_max`), is the detection time measured on
+the Orin Nano Super over 250 frames (2026-10-23, `detector-plan.md`
+*Results*: TensorRT FP16 8.4–10.4 ms, the whole Python path with
+decoding 11.9–14.5 ms). It stands for D = detection + policy + WiFi:
+the policy's inference and the WiFi hop to the Arduino are not measured
+yet (`orchestrator-plan.md`, *Placeholders*).
 
 **Contracts** — what the messages carry, in full:
 

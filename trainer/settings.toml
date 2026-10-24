@@ -1,5 +1,12 @@
 # The trainer's settings (trainer-plan.md).
 
+[trainer]
+# The trainer's own settings: none of them reach the orchestrator.
+
+# The Gymnasium environment's settings (trainer-plan.md T8), relative to
+# this file.
+gym = "gym.toml"
+
 [orchestrator]
 # The trainer starts each run by launching the orchestrator with this
 # command (synthetic-loop-dia.md, 1): the program, then its arguments, one
@@ -35,7 +42,8 @@ seed = 0
 # (synthetic-loop-dia.md), passed as --rnd-delay-min and --rnd-delay-max:
 # the orchestrator draws each observation's latency from it, and hands it
 # to the synthetic Orin (4) for the pool's pre-warm gaps. 8-15 ms is the
-# measured detection time, a placeholder for detection + policy + WiFi
+# detection time measured on the Orin (detector-plan.md, Results); the
+# policy's inference and the WiFi hop are not in it yet
 # (orchestrator-plan.md, Placeholders). Milliseconds, 0 <= min <= max.
 rnd_delay_min = 8
 rnd_delay_max = 15

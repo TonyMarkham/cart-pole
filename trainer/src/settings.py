@@ -4,7 +4,8 @@ The trainer starts each run by launching the orchestrator
 (synthetic-loop-dia.md, 1), so the command that launches it is the setting
 it cannot run without; [mjcf] names the model that run loads (2). Relative
 paths resolve against the file's folder, so the trainer runs the same from
-any working directory.
+any working directory. [trainer] holds the trainer's own settings: `gym`
+names the file of the Gymnasium environment's settings (gym_settings.py).
 """
 
 import tomllib
@@ -13,6 +14,8 @@ from pathlib import Path
 
 # trainer/settings.toml, beside pyproject.toml.
 DEFAULT_PATH = Path(__file__).resolve().parent.parent / "settings.toml"
+
+SEED_LIMIT = 2**64  # the orchestrator reads the seed as a u64
 
 
 @dataclass(frozen=True)
@@ -33,7 +36,8 @@ class Mjcf:
 
 @dataclass(frozen=True)
 class Settings:
-    orchestrator_command: list[str]  # the program (absolute), the ports and seed, the [mjcf] arguments, then the rest
+    program: Path  # the orchestrator binary (absolute)
+    arguments: list[str]  # the command's arguments after the program, as written
     orchestrator_cwd: Path  # the folder the command runs in
     orin_port: int  # the control socket, 127.0.0.1
     unity_port: int  # the frame socket, 127.0.0.1
@@ -41,6 +45,23 @@ class Settings:
     rnd_delay_min: float  # the Orin latency's band, ms: RND(min, max)
     rnd_delay_max: float
     mjcf: Mjcf
+    gym: Path  # [trainer] gym: the Gymnasium settings file (absolute)
+
+    def command(self, seed: int | None = None) -> list[str]:
+        """The orchestrator's launch command for one run, with `seed` in
+        place of the settings' seed when one is given."""
+        seed = self.seed if seed is None else seed
+        if isinstance(seed, bool) or not isinstance(seed, int) or not 0 <= seed < SEED_LIMIT:
+            raise ValueError(f"a run's seed is a whole number, 0 to 2**64 - 1, got {seed!r}")
+        inserted = [
+            "--orin-port", str(self.orin_port),
+            "--unity-port", str(self.unity_port),
+            "--seed", str(seed),
+            "--rnd-delay-min", str(self.rnd_delay_min),
+            "--rnd-delay-max", str(self.rnd_delay_max),
+        ]
+        # The inserted arguments go first: --orin takes every argument after it.
+        return [str(self.program), *inserted, *self.mjcf.arguments(), *self.arguments]
 
     @staticmethod
     def load(path: Path = DEFAULT_PATH) -> "Settings":
@@ -66,8 +87,7 @@ class Settings:
         if orin_port == unity_port:
             raise ValueError(f"{path}: orin_port and unity_port are both {orin_port}; each socket needs its own port")
         seed = orchestrator["seed"]
-        # The orchestrator reads it as a u64.
-        if not isinstance(seed, int) or isinstance(seed, bool) or not 0 <= seed < 2**64:
+        if not isinstance(seed, int) or isinstance(seed, bool) or not 0 <= seed < SEED_LIMIT:
             raise ValueError(f"{path}: orchestrator.seed is a whole number, 0 to 2**64 - 1, got {seed!r}")
         rnd_delay_min = milliseconds(path, orchestrator, "rnd_delay_min")
         rnd_delay_max = milliseconds(path, orchestrator, "rnd_delay_max")
@@ -82,16 +102,12 @@ class Settings:
         )
         if not mjcf.model.is_file():
             raise ValueError(f"{path}: mjcf.model is not a file: {mjcf.model}")
-        inserted = [
-            "--orin-port", str(orin_port),
-            "--unity-port", str(unity_port),
-            "--seed", str(seed),
-            "--rnd-delay-min", str(rnd_delay_min),
-            "--rnd-delay-max", str(rnd_delay_max),
-        ]
+        gym = (path.parent / raw["trainer"]["gym"]).resolve()
+        if not gym.is_file():
+            raise ValueError(f"{path}: trainer.gym is not a file: {gym}")
         return Settings(
-            # The inserted arguments go first: --orin takes every argument after it.
-            orchestrator_command=[str(program), *inserted, *mjcf.arguments(), *command[1:]],
+            program=program,
+            arguments=command[1:],
             orchestrator_cwd=cwd,
             orin_port=orin_port,
             unity_port=unity_port,
@@ -99,6 +115,7 @@ class Settings:
             rnd_delay_min=rnd_delay_min,
             rnd_delay_max=rnd_delay_max,
             mjcf=mjcf,
+            gym=gym,
         )
 
 

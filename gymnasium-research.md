@@ -24,6 +24,18 @@ fact against the diagram, not decisions.
 
 The trainer's `uv` project requires Python ≥ 3.12, inside both ranges.
 
+**What Gymnasium is:** a Python library, not a program or a service.
+There is no binary to run and nothing to connect to: the trainer imports
+it, and the environment is a Python class in the trainer's own process.
+Its core depends only on `numpy`, `cloudpickle`, `typing-extensions` and
+`farama-notifications`, and its `pyproject.toml` builds no compiled
+extension. The compiled parts are optional extras for its bundled
+reference environments (`mujoco`, `box2d`, `atari`, …), which a custom
+environment like ours does not need. Gymnasium supplies the `Env`
+interface, the spaces, the wrappers, the vector environments and
+`check_env`; the learning algorithms come from another library, such as
+SB3, which depends on PyTorch.
+
 Release changes that matter here:
 
 - **1.0:** `VectorEnv` no longer inherits from `Env`; vector autoreset
@@ -63,6 +75,21 @@ should not use it. Each returned observation must lie in
 entry_point=..., max_episode_steps=...)`, then `gymnasium.make(id,
 **kwargs)` (kwargs go to the constructor) or `gymnasium.make_vec(id,
 num_envs=...)`.
+
+**There is no Gymnasium config file.** An environment is configured in
+code: `register()` builds an `EnvSpec` with the fields `id`,
+`entry_point`, `reward_threshold`, `nondeterministic`,
+`max_episode_steps`, `order_enforce`, `disable_env_checker`, `kwargs`,
+`additional_wrappers` and `vector_entry_point`. The spec can be written
+out and read back as JSON (`EnvSpec.to_json()`,
+`EnvSpec.from_json(text)`), but only when nothing in it is a callable
+(the entry point given as a `"module:Class"` string) and `kwargs` is
+JSON-serializable. That is a serialization, not a file format people
+write by hand. SB3 takes its hyperparameters in code too. The nearest
+convention is RL Baselines3 Zoo's, a separate training tool: one YAML
+file per algorithm (`hyperparameters/ppo.yml`), keyed by environment id,
+with keys such as `policy`, `n_envs`, `n_timesteps`, `learning_rate`,
+`normalize`, `env_wrapper` and `env_kwargs`.
 
 ## Who owns the clock
 
@@ -285,12 +312,15 @@ observes marker positions in camera frames, with their ages and a
 
 - Gymnasium on PyPI — https://pypi.org/project/gymnasium/
 - Gymnasium release notes — https://github.com/Farama-Foundation/Gymnasium/releases
+- Gymnasium `pyproject.toml` (dependencies, extras) — https://github.com/Farama-Foundation/Gymnasium/blob/main/pyproject.toml
 - `Env` API — https://gymnasium.farama.org/api/env/
 - Creating a custom environment — https://gymnasium.farama.org/introduction/create_custom_env/
 - Handling time limits — https://gymnasium.farama.org/tutorials/gymnasium_basics/handling_time_limits/
 - Fundamental spaces — https://gymnasium.farama.org/api/spaces/fundamental/
 - `Box` source — https://github.com/Farama-Foundation/Gymnasium/blob/main/gymnasium/spaces/box.py
 - `check_env` source — https://github.com/Farama-Foundation/Gymnasium/blob/main/gymnasium/utils/env_checker.py
+- `EnvSpec` and `register` source — https://github.com/Farama-Foundation/Gymnasium/blob/main/gymnasium/envs/registration.py
+- RL Baselines3 Zoo configuration — https://rl-baselines3-zoo.readthedocs.io/en/master/guide/config.html
 - Misc wrappers — https://gymnasium.farama.org/api/wrappers/misc_wrappers/
 - Vector API — https://gymnasium.farama.org/api/vector/
 - Vector autoreset modes — https://farama.org/Vector-Autoreset-Mode

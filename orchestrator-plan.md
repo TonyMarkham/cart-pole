@@ -233,9 +233,11 @@ in the diagram first:
 ## Placeholders
 
 - **The Orin's latency** — RND(8, 15) ms today (the trainer's
-  `rnd_delay_min`, `rnd_delay_max`), the Orin's measured detection
-  time over 250 test images, stands in for D = detection + policy +
-  WiFi, to be measured on the Orin.
+  `rnd_delay_min`, `rnd_delay_max`): the detection time measured on the
+  Orin over 250 frames (2026-10-23, `detector-plan.md` *Results*: FP16
+  8.4–10.4 ms, the Python path 11.9–14.5 ms). It stands for D =
+  detection + policy + WiFi; the policy's inference and the WiFi hop to
+  the Arduino are still to be measured.
 
 ## Not in this plan
 

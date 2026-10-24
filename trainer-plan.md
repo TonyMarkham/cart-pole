@@ -62,6 +62,14 @@ messages.
   the trainer itself carries on and starts the next run (1). A run that
   failed ends training.
 - **T7 — nothing in the control loop touches training.**
+- **T8 — a Gymnasium `Env`, one run per episode** (the diagram's
+  *Trainer's environment*; user, 2026-10-24). `reset()` starts a run and
+  returns pool 0; `step(a)` answers with continue and returns the next
+  pool; `reset()` or `close()` on an open run answers stop and waits for
+  it to close; a failed run raises. Observation: the pool, 6 × 9.
+  Action: a ∈ [−1, 1], command = round(a × 45,333). Until the reward,
+  the end crash and the time limit are decided: reward 0, no
+  termination, truncation at a placeholder length (`TimeLimit`).
 
 ## Bring-up — what the trainer returns first
 
@@ -83,9 +91,8 @@ look.
 These are needed to build the trainer; per `AGENTS.md`, each lands in
 the diagram first:
 
-- **The learning method and its tooling** (the diagram's *Scoring lag*
-  uses a Gymnasium step only as an analogy; `gymnasium-research.md`
-  holds the research for this decision).
+- **The learning method** (`gymnasium-research.md` holds the research
+  for this decision). Its tooling is settled: a Gymnasium `Env` (T8).
 - **The reward**, and the end conditions besides the end crash, such as
   a time limit.
 - **The end crash's bounds** — not set.
@@ -118,7 +125,24 @@ the diagram first:
    command, 6,667 pulses/s for 60 observations, moved the cart at
    0.0995 m/s, and the Pivot marker's slot moved with it; the slow
    back-and-forth and its comparison with `states.csv` are not done.
-2. **Runs back to back** (T6). *Check:* Done-when 3.
+2. **Runs back to back** (T6), through the environment (T8): each
+   `reset()` closes the open run and starts the next. *Check:* Done-when
+   3, and Gymnasium's `check_env` passes on the environment. **In part
+   (2026-10-24):** `gymnasium` 1.4.0 is the trainer's one dependency
+   (`uv add`, user's permission). `loop_env.py` is the environment
+   (`LoopEnv`, registered nondeterministic with `TimeLimit` at
+   `gym.toml`'s `[env] max_episode_steps`, 250 for now; `gym.toml`
+   holds the environment's settings, apart from `settings.toml`'s run
+   settings, user 2026-10-24); `launch.py`'s `Run` is one
+   run, from launch to exit, which the naive trainer drives too.
+   `env_check.py` drove two episodes of random actions, each truncated
+   after 250 steps; each `reset()` stopped the open run, which closed
+   with exit 0, and started the next. Then `check_env` passed, with no
+   warnings, over 11 more run starts (seeds 0, 123 and 456 among them),
+   every one closed cleanly. The naive trainer still runs: 250 pools,
+   closed, the same latencies as before. Not yet run: a failed run
+   through the environment (RunFailed), and Done-when 3's "training
+   ends" path.
 3. **Scoring and the end crash** (T3, T4), once the reward and the
    bounds are in the diagram.
 4. **Learning**, once the method is in the diagram. *Check:* Done-when

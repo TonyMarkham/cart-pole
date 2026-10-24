@@ -23,6 +23,14 @@ frames, and the trainer receives only the marker pool. The older
 StateServer TCP bridge (`StateServer.cs` + `vision/gym_state_sender.py`)
 is not part of that loop.
 
+**Not a toy** (user, 2026-10-24). Every part stands in for the real rig
+and keeps its real limits: the MJCF comes from the rig's CAD, the command
+is the stepper's pulse rate, and the policy sees only what the robot will
+see — detected markers, with the detector's delay — never the
+simulator's true state. Gymnasium's own `CartPole-v1` and
+`InvertedPendulum-v5` are reference tasks only (`gymnasium-research.md`):
+never the task, and never a shortcut around the loop.
+
 The repo owns the **dataset semantics**: desk/skybox/light randomization,
 the automated generation sets, capture, YOLO label writing, the
 StateServer bridge, and the gym-side client. It consumes the **greyhound-snake** packages for
@@ -48,6 +56,17 @@ adds repo structure around them, never overrides them.
   alternative, or re-open it in later answers. The only acceptable
   objection is one sentence showing a contradiction with an established
   constraint or a verified fact.
+- **An exact direction is applied as given** (user, 2026-10-24). When the
+  user specifies the edit itself — the text, the file, the place — make
+  that edit. If it has a consequence, state it once, plainly, in the
+  user's terms ("as placed, the Orin receives `--gym` and exits at
+  launch"), and then make the direction work, or ask. Never substitute a
+  different design, and never undo the user's edit. Worked failure: asked
+  to put `"--gym", "gym.toml"` in `settings.toml`'s `command`, the agent
+  added a top-level key instead, then a trainer flag, then removed the
+  user's line, three times instead of making the line work; the
+  objection behind all three ("the array is the orchestrator's argv")
+  was never said clearly.
 - **Answer what was asked.** Direct answer first, scoped to the file,
   config, or system the user named. No adjacent tours, no burying the
   answer under "for completeness" coverage of nearby topics.
@@ -85,7 +104,9 @@ adds repo structure around them, never overrides them.
   permission (a standing directive). No Python on the dataset-verify path —
   the Python checker retired; verification runs in-process through the
   `com.greyhound.vision` package's native shim. Remaining Python lives
-  in four places, each for a stated reason: `freecad/tools/step-mass.py`
+  in five places, each for a stated reason: `trainer/` (the RL trainer,
+  a `uv` project around Gymnasium, the learning tooling, user
+  2026-10-24, `trainer-plan.md`), `freecad/tools/step-mass.py`
   (FreeCAD's scripting API is Python-only), `vision/gym_state_sender.py`
   (the gym-side client), `orin/` (the synthetic Orin, a `uv` project:
   detection on the robot is Python, user 2026-10-23, because OpenCV +
