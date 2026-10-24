@@ -10,14 +10,22 @@ robot training workflow:
 This repository builds the **cart-pole**: a physical rail-mounted cart with a
 swinging pole, four ArUco markers attached, designed in FreeCAD, imported into
 Unity as a STEP assembly (via the greyhound packages), and rendered there to
-generate labeled synthetic-vision datasets. The trained detector (YOLO-class,
-ONNX) later runs on a Raspberry Pi 5 with a global-shutter camera against the
-real rig; the gym/MuJoCo training loop drives the rendered assembly through a
-TCP bridge and receives the rendered frames back.
+generate labeled synthetic-vision datasets. The trained detector
+(YOLO11n, `cp2-640-base`; see *The trained detector*) later runs on a
+Jetson Orin Nano Super (replacing the Raspberry Pi 5, user 2026-10-23:
+TensorRT FP16 built from the ONNX export, `loop-plan.md`) with the Pi
+global-shutter camera (IMX296) against the real rig. The balance policy
+trains in the **synthetic loop** (`synthetic-loop-dia.md`, the source of
+truth for the loop plans): the Rust orchestrator steps MuJoCo
+in-process, the synthetic Orin triggers the standalone Unity player
+(`SimulationLoop.exe`) over WebSocket and detects the markers in its
+frames, and the trainer receives only the marker pool. The older
+StateServer TCP bridge (`StateServer.cs` + `vision/gym_state_sender.py`)
+is not part of that loop.
 
 The repo owns the **dataset semantics**: desk/skybox/light randomization,
-forced situations, capture, YOLO label writing, the StateServer bridge, and
-the gym-side client. It consumes the **greyhound-snake** packages for
+the automated generation sets, capture, YOLO label writing, the
+StateServer bridge, and the gym-side client. It consumes the **greyhound-snake** packages for
 everything below that: STEP import, mass properties, MJCF export, and the
 native OpenCV ArUco detection the dataset verification now runs on.
 
@@ -65,9 +73,13 @@ adds repo structure around them, never overrides them.
   permission (a standing directive). No Python on the dataset-verify path —
   the Python checker retired; verification runs in-process through the
   `com.greyhound.vision` package's native shim. Remaining Python lives
-  where its machine is owned and the tool is interactive: `freecad/tools/
-  step-mass.py` (FreeCAD's scripting API is Python-only) and
-  `vision/gym_state_sender.py` (the gym-side client).
+  in four places, each for a stated reason: `freecad/tools/step-mass.py`
+  (FreeCAD's scripting API is Python-only), `vision/gym_state_sender.py`
+  (the gym-side client), `orin/` (the synthetic Orin, a `uv` project:
+  detection on the robot is Python, user 2026-10-23, because OpenCV +
+  TensorRT beat the Rust POC on the Orin, `detector-plan.md` *Results*),
+  and `training/` (the detector training, a `uv` project around
+  Ultralytics).
 - **The user understands before anything lands.** Code, comments, and docs
   are written so the reader can verify claims by hand and never have to
   ask what a value means. A question from the user is a defect report —
@@ -151,7 +163,10 @@ adds repo structure around them, never overrides them.
 - `markers/` — the four printed markers as SVG + PNG pairs
   (`marker_0376/0596/0920/0937`), aruco-cli output with the quiet zone
   baked in. These are the physical prints; the Unity-side copies live
-  under `Assets/Cart-Pole/markers/`.
+  under `Assets/Simulation/Markers/`: `svg/` and `Textures/` (the same
+  SVG and PNG per tag), `Materials/` and `prefabs/` (one per tag), and
+  the four `MarkerSO` assets `Left`, `Right`, `Pivot`, `End` (verified
+  by file list and script GUID, 2026-10-23).
 - `freecad/` — the mechanical source of truth: `cad/` (FCStd parts and
   assemblies), `step/` (exported STEP, currently `asy-cart-pole.step`),
   `tools/step-mass.py` (the mass/density patcher — FreeCAD exports no
@@ -165,76 +180,138 @@ adds repo structure around them, never overrides them.
   namespace `CartPole.Vision`. One type per file, `.meta` files are
   Unity-minted — never hand-author one, never move or rename tracked
   assets outside the editor without moving the `.meta` with them.
-- `unity/projects/cart-pole/Assets/Cart-Pole/Vision/` — the dataset and
-  bridge scripts: marker authoring (`MarkerSO`, `RigSO`, `MarkerManager`
-  + its menus/editors, `MarkerMaterialSet`), joint driving (`JointDriver`),
-  dataset generation (`RigStateRandomizer`, `RigStateCapture`, `RobotBounds`,
-  `DeskSO`, `ForcedSituationSO` + editor windows/menus, `HdriSetup`),
-  the bridge (`StateServer`, `SnapshotCapture`), and the dataset verify
-  step (`ArUcoVerifier` + its entry/frame-result/stats types -
-  project-side by decision: dataset semantics live here; the greyhound
-  package keeps only the `Ghcv` detection bridge and the OpenCV payload
-  provisioner). Inventory verified by file list; roles by the files'
-  own headers.
+- `unity/projects/cart-pole/Assets/Cart-Pole/Vision/` — the project-side
+  dataset and bridge scripts: joint driving (`JointDriver`), dataset
+  generation (`RigStateRandomizer`, `RigStateCapture`,
+  `ForcedSituationSO`), the bridge (`StateServer`, `SnapshotCapture`),
+  and the dataset verify step (`ArUcoVerifier` + its
+  entry/frame-result/stats types - project-side by decision: dataset
+  semantics live here; the greyhound package keeps only the `Ghcv`
+  detection bridge and the OpenCV payload provisioner). `Editor/` holds
+  `DatasetGeneratorWindow`, `CaptureViewer`, `CaptureReportWindow`,
+  `ForcedSituationEditor`, `MarkerMenu`, `DeskMenu`, `HdriSetup` and
+  `StaleSelectionCleaner`. Marker authoring (`MarkerSO`, `RigSO`,
+  `MarkerManager`), `RobotBounds` and `DeskSO` have moved into the
+  `simulation.cart-pole.synthetic-data-gen` package's `Runtime/`;
+  `MarkerMaterialSet` no longer exists. Inventory verified by file list
+  (2026-10-23); roles by the files' own headers.
 - **The Executive desk is excluded by decision** (2026-10-14):
-  `Assets/Cart-Pole/Props/Desks/Desk (Executive).asset` is deliberately not
-  wired into the randomizer's `desks` list — the desk would poison the
-  dataset. The 4-of-5 wiring is the intended state, not an omission: do not
-  re-propose wiring it, and do not "fix" its `label: Classic` field (moot
-  while unwired).
-- **The capture's debug toggles are off by decision** (2026-10-14):
-  `RigStateCapture.generateDebugImages` and `generateDebugDocs` stay off for
-  every run, iteration and training alike. Verification is unaffected — the
-  crops are cut and detected in memory on the encoded JPEG bytes either way.
-  The file-level receipt (`verification_stats.json`) and the per-frame
-  manifests are deliberately forgone. Do not re-propose flipping either
-  toggle on, including for pilot/training runs, and treat the plans' and
-  audit's instructions to the contrary as superseded.
-- `unity/projects/cart-pole/Assets/Captures/cart-pole/` — the capture
-  corpus: main frames, YOLO labels and `markers.json` (committed); 8K
-  renders, per-marker crops, manifests and the remaining sidecar JSONs in
-  the `wip~` sidecar (Unity- and git-ignored).
+  `Desk (Executive).asset` (in the `synthetic-data-gen` package,
+  `Runtime/Props/Desks/`) is deliberately not wired into any generation
+  set's `m_Desks` list (`Assets/Simulation/GenerationSets/Set-*.asset`) —
+  the desk would poison the dataset. All 13 sets list the other four
+  (Classic, Panelend, Standard, Writing) and none lists Executive
+  (verified by GUID, 2026-10-23). The 4-of-5 wiring is the intended
+  state, not an omission: do not re-propose wiring it, and do not "fix"
+  its `label: Classic` field (moot while unwired).
+- **Dataset generation is automated** in the `synthetic-data-gen`
+  package: `SyntheticDataGenerator` (wired in `SampleScene`) runs the
+  generation sets through `GenerationSetRunner`, `LabelProjector`,
+  `VerificationGate` and `DatasetWriter`. It replaced the
+  `RigStateRandomizer` + `RigStateCapture` pair (its own header), and
+  `RigStateCapture` is referenced by no scene, prefab or asset (verified
+  by GUID, 2026-10-23). The old capture's debug-toggle decision
+  (2026-10-14: `generateDebugImages` and `generateDebugDocs` stay off)
+  applies only to that unwired component; the automated generator has no
+  such toggles, and its verification runs in memory and writes no
+  instrument files.
+- `datasets/` — the dataset trees, in the one format `DATASETS.md`
+  defines (Ultralytics' layout: `images/` and `labels/` paired by stem,
+  a `data.yaml` at the tree root): `generated/` (the synthetic corpus,
+  one `run_Set-NN_<timestamp>/` folder per generation-set run),
+  `real-1440/` and `real-640/` (real-rig frames), and `calibration/`.
+  Only the real and calibration trees' `data.yaml` files and the
+  `.gitignore`s are committed; every image and label is ignored, and the
+  generated corpus is regenerable by design (its `.gitignore` says so).
+  Verified by `git ls-files datasets` (2026-10-23).
 - `vision/gym_state_sender.py` — the gym-side `StateServer` client
   (`UnityVisionClient`): pushes `data.qpos` as JSON lines, receives JPEG
   frames. Retiring to a Rust CLI is planned (greyhound `vision.md` V4) —
   plan, not landed.
+- `unity/projects/packages/` — the project's own UPM packages, `file:`
+  entries in the Unity manifest: `simulation.cart-pole.synthetic-data-gen`
+  (the automated dataset generator, the generation sets' runtime, the
+  marker and desk SOs) and `simulation.cart-pole.sim-loop`
+  (`SimulationLoopController`, the standalone player's renderer for the
+  synthetic loop, `unity-player-plan.md`).
+- **The Rust workspace** (`Cargo.toml` at the repo root; `aruco/`
+  excluded) — the synthetic loop's parts, each with its plan:
+  `orchestrator/` (the loop's driver; it began as the Unity leg's stub),
+  `physics/` (MuJoCo in-process, configured by `physics.toml`,
+  `physics-plan.md`), `firmware/` (the Arduino firmware, one source for
+  the rig and the loop's synthetic Arduino, `loop-plan.md` part 5), and
+  `object-detection/` (the Rust detector crate, configured by
+  `ObjectDetection.toml`, `detector-plan.md`; superseded on the robot
+  and in the loop by the Python synthetic Orin). Roles by the crates'
+  own header comments and the plans.
+- `orin/` — the synthetic Orin, a `uv` project: Python + TensorRT
+  detection, the 6-entry pool, the WebSocket client (`orin-plan.md`).
+- `training/` — the detector training, a `uv` project: the numbered
+  docs `01`–`07` and appendices, `src/` (`build_dataset.py`,
+  `convert_proposals.py`, `dataset_stats.py`), and `runs/` (gitignored;
+  see *The trained detector*).
+- `weights/yolo26n.pt` — tracked (commit `9297d40a`, "Train object
+  detection"); no doc names its use.
+- **Plans and design docs at the root** — `synthetic-loop-dia.md` (the
+  planned sequence of one run, the source of truth for the loop plans),
+  `loop-plan.md` (the master loop plan) and its leg plans
+  `physics-plan.md`, `unity-player-plan.md`, `detector-plan.md`,
+  `orin-plan.md`; `DATASETS.md` (the one dataset format) and
+  `GENERATOR.md` (the generator's binding directives, which win over
+  `DATASETS.md` where they conflict); `training-plan.md`,
+  `training-plan-noob.md` and `training-plan-audit.md` (the YOLO training
+  plan, its beginner's version, and its audit). Plans state intent, not
+  current state (*Working with the user*).
+
+## The trained detector
+
+The YOLO detector is trained (2026-10-17): two YOLO11n runs on
+`datasets/generated/data.yaml` (up to 500 epochs, patience 50), in
+`training/runs/` (gitignored), each keeping its val-selected checkpoint
+at `weights/best.pt`. Best mAP50-95 read from each run's `results.csv`
+(2026-10-23):
+
+- **`training/runs/cp2-640-base/`** — the **deployment model**, imgsz
+  640, the one the robot runs. Best mAP50-95 0.971 at epoch 494 of 500.
+  Beside `best.pt`: `best.onnx` (exported 2026-10-17) and
+  `best_fp16.engine` (TensorRT FP16 for this PC's 3090, built
+  2026-10-23, `orin-plan.md`).
+- **`training/runs/cp2-1440-base/`** — the **metrology model**, imgsz
+  1440, for proposals and audits on the 3090. Best mAP50-95 0.982 at
+  epoch 324 (early-stopped at 374).
+
+The roles and per-class figures are in `training/05-POST_TRAINING.md`
+(Steps 3–4).
 
 ## Verified contracts
 
 - **Class ids are rig slot order** (the `MarkerManager`/`RigSO` marker
   entry order, index = YOLO class): 0 = Left (tag 376), 1 = Right (596),
-  2 = Pivot (920), 3 = End (937). The mapping lands in `markers.json`
-  per dataset, written by `RigStateCapture` from the rig's Marker SOs.
+  2 = Pivot (920), 3 = End (937). The mapping lands in `markers.json`,
+  written once at each run's root by `DatasetWriter` from the rig's
+  marker order.
 - **YOLO labels**: `class x_center y_center w h`, normalized, top-left
-  origin (y flipped from Unity's bottom-up viewport). One `.txt` beside
-  each `frame_NNNNNN.jpg`.
-- **The never-wipe rule**: the verify step writes only confirmed lines
-  and refuses the rewrite when confirmations are zero (a label box
-  survives only when its class's retained 8K crop —
-  `frame_NNNNNN_8k_marker_TTTT.jpg` — decodes to exactly that class's
-  tag). Basis decision 2026-10-14: a frame-level trial on the
-  1440x1080 image alone confirmed 66/80 against the crops' 80/80 and
-  was reverted — the 8K render and the crops stay. The motivating
-  failure: the retired Python checker confirmed 0/80 and rewrote every
-  label to empty. Never reintroduce a write path that can empty a
-  label file. A missing crop means no YOLO data for that marker in
-  that frame: the capture writes no crop when the marker's quad is
-  behind the camera, and the verify drops the box rather than keeping
-  an unverified one (a wholesale absence - no crops at all - trips the
-  never-wipe refusal instead).
-- **Forced situations are captures, not modifiers**: a run captures
-  forced situations first (list order = capture order, frames 0..M-1),
-  then the states - total captures = M + N. A forced situation is
-  applied verbatim: cart, pole, camera pose when useCameraPosition,
-  and the authored desk, skybox (+ yaw), and light (+ intensity) when
-  those use* flags are set; a false flag leaves that element at the
-  scene's pristine state, deterministic only because forced states run
-  before any random one mutates it. The proof lives in the artifacts:
-  forced frames' manifests carry the SO's label in `situation`,
-  random frames carry "".
+  origin (y flipped from Unity's bottom-up viewport). One
+  `labels/frame_NNNNNN.txt` per `images/frame_NNNNNN.jpg`, paired by
+  stem (`DATASETS.md`).
+- **The never-wipe rule, write-once form** (`VerificationGate`,
+  `DatasetWriter`): per captured frame an 8K greyscale render
+  (7680x4320) through a telephoto twin of the capture camera is cut into
+  per-marker crops in memory, and a label box survives only when its
+  class's crop decodes to exactly that class's tag. Each label file is
+  written once, with only the confirmed lines, so no rewrite exists; an
+  empty label file is legitimate - the gate confirmed nothing, a
+  background frame. No crop file is ever written. Basis decision
+  2026-10-14: a frame-level trial on the 1440x1080 image alone confirmed
+  66/80 against the crops' 80/80 and was reverted — the 8K render and
+  the crops stay. The motivating failure: the retired Python checker
+  confirmed 0/80 and rewrote every label to empty; the write-once form
+  has no rewrite path at all.
+- **Forced situations** (`ForcedSituationSO`) belong to the old
+  `RigStateCapture` pipeline; the automated generator has none.
 - **The label projection must run with the camera in its render
-  configuration** (RigStateCapture projects while the capture RT is
-  attached, before the target restore). The capture camera is a
+  configuration** (`LabelProjector`'s rule: project while the camera is
+  in the configuration that rendered the image). The capture camera is a
   physical camera (Pi GS sensor gate 4.968x3.726 mm, 6 mm lens), and a
   gate fit makes the vertical projection target-aspect-dependent:
   projecting after the restore skews every label in the Game view's
@@ -242,24 +319,22 @@ adds repo structure around them, never overrides them.
   tags off up to 128 px at the bottom edge, x correct because the gate
   fit anchors the horizontal half-tangent). The same trap applies to
   any code projecting through a physical camera whose target is
-  swapped; the 8K marker camera is immune (its RT is never detached).
+  swapped.
 - **StateServer protocol**: one JSON object per line in (`id`, `joints[]`
   of `name`/`qpos`, optional rig payload); response = 4-byte
   little-endian length header + JPEG bytes. The server side is
   `StateServer.cs`; the client contract is what `gym_state_sender.py`
-  speaks. Any future Rust sender must speak the same wire format.
-- **Artifact naming** in a capture directory: `frame_NNNNNN.jpg` /
-  `.txt` and `markers.json` at the directory root (the 1440x1080 camera
-  frames, the YOLO labels, and the class map that makes their class ids
-  interpretable - the only artifacts AssetDatabase imports and git
-  commits; `markers.json` is never gated by the capture's debug-image/doc
-  toggles); every other artifact lives in the `wip~` sidecar child
-  (Unity- and git-ignored): `frame_NNNNNN_8k.jpg` (7680x4320),
-  `frame_NNNNNN_8k_marker_TTTT.jpg` (per-marker crops, tag zero-padded
-  to 4 digits), `frame_NNNNNN_state.json`,
-  `classes.txt`, `verification_stats.json`. Consumers read wip~ first
-  and fall back to the root for corpora captured before the layout;
-  `markers.json` is read root-first with the wip~ fallback.
+  speaks. The synthetic loop does not use it: the Unity player speaks
+  WebSocket messages instead (`unity-player-plan.md`, *Settled
+  decisions*; `synthetic-loop-dia.md`).
+- **Artifact naming** in a generated run (`DatasetWriter`): one
+  `run_<set>_<timestamp>/` folder per set run under the set's output
+  directory, holding `images/frame_NNNNNN.jpg`,
+  `labels/frame_NNNNNN.txt` and `markers.json` at its root (checked
+  against `datasets/generated/run_Set-01_20261022_193157/`). There is no
+  `wip~` sidecar and no 8K, crop, state or stats file: the instruments
+  are in-memory steps. Corpora captured by the old `RigStateCapture`
+  used a root + `wip~` layout.
 
 ## Code conventions (C#, this repo)
 
