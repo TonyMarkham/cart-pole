@@ -56,6 +56,13 @@ adds repo structure around them, never overrides them.
   alternative, or re-open it in later answers. The only acceptable
   objection is one sentence showing a contradiction with an established
   constraint or a verified fact.
+- **Tunable values live in a toml, never in code** (user, 2026-10-24).
+  Any value someone might change between runs — a rate, a period, a
+  count, a length, a port, a seed, a path — goes in a toml the code
+  reads (the trainer's `settings.toml`, or a file it names, like
+  `[trainer] gym`), so variants can sit side by side. Only fixed facts
+  copied from a contract stay as named constants in code, each citing
+  its source (the frame size, the rig's top rate, the 2 ms grid).
 - **An exact direction is applied as given** (user, 2026-10-24). When the
   user specifies the edit itself — the text, the file, the place — make
   that edit. If it has a consequence, state it once, plainly, in the

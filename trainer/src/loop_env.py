@@ -17,9 +17,11 @@ detected. The action is one value a in [-1, 1]; the command is a x 45,333,
 the synthetic Arduino's top rate, rounded to the i32. Beyond [-1, 1] the
 action is clipped, so the command never asks past the top rate.
 
-Placeholders until the diagram decides them (trainer-plan.md, Not decided):
-the reward is 0, nothing terminates (no end crash yet), and the episode is
-truncated by TimeLimit after gym.toml [env] max_episode_steps.
+Each step's reward is the graded score of the pool it returns (reward.py,
+gym.toml [reward]); the Pivot marker past gym.toml's [end_crash] bounds
+scores the penalty and terminates the episode. The time limit is still a
+placeholder: TimeLimit truncates after gym.toml [env] max_episode_steps.
+The pool reset() returns is not scored (trainer-plan.md T3).
 
 Seeding: reset(seed=s) runs the orchestrator with --seed s; reset() without
 a seed uses settings.toml's seed, so every such episode repeats the same
@@ -33,17 +35,15 @@ import gymnasium as gym
 import numpy as np
 from gymnasium import spaces
 
-from gym_settings import GymSettings
+from gym_settings import MAX_RATE, GymSettings
 from launch import Run, RunFailed
 from output import Answer
 from pool import ENTRIES, FLOATS, MARKERS, Pool
+from reward import score
 from settings import Settings
 
 ENV_ID = "cart-pole/SyntheticLoop-v0"
 
-# arduino::RIG's top rate, pulses/s (synthetic-loop-dia.md, Numbers):
-# 0.68 m/s / 15 um, rounded down.
-MAX_RATE = 45_333
 
 # Steps the grid adds to a latency at most: the arrival step is the first
 # 2 ms step later than capture + latency.
@@ -77,8 +77,9 @@ def command(action) -> int:
 class LoopEnv(gym.Env):
     metadata = {"render_modes": []}
 
-    def __init__(self, settings: Settings | None = None) -> None:
+    def __init__(self, settings: Settings | None = None, gym_settings: GymSettings | None = None) -> None:
         self.settings = settings if settings is not None else Settings.load()
+        self.gym_settings = gym_settings if gym_settings is not None else GymSettings.load(self.settings.gym)
         self.observation_space = observation_space(self.settings.rnd_delay_max)
         self.action_space = spaces.Box(-1.0, 1.0, shape=(1,), dtype=np.float32)
         self.run: Run | None = None
@@ -95,8 +96,15 @@ class LoopEnv(gym.Env):
         rate = command(action)
         self.run.answer(Answer(rate, keep_going=True))
         pool = self._next_pool()
-        info = {"id": self.run.observations - 1, "command": rate}
-        return observation(pool), 0.0, False, False, info
+        scored = score(pool, self.gym_settings.reward, self.gym_settings.end_crash)
+        info = {
+            "id": self.run.observations - 1,
+            "command": rate,
+            "pole": scored.pole,
+            "cart": scored.cart,
+            "crashed": scored.crashed,
+        }
+        return observation(pool), scored.reward, scored.crashed, False, info
 
     def close(self) -> None:
         self._close_run()
@@ -136,4 +144,4 @@ def make(settings: Settings | None = None, gym_settings: GymSettings | None = No
             nondeterministic=True,
             max_episode_steps=gym_settings.max_episode_steps,
         )
-    return gym.make(ENV_ID, settings=settings)
+    return gym.make(ENV_ID, settings=settings, gym_settings=gym_settings)

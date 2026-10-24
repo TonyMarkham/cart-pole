@@ -63,7 +63,7 @@ sequenceDiagram
     end
 
     T->>O: start the run: launch the orchestrator with the command in trainer/settings.toml<br/>its stdin and stdout, the trainer's pipes, are the trainer link (17, 18)
-    Note over M,O: Start: load the MJCF (path and names from the trainer's settings.toml [mjcf]),<br/>reset to --start (at rest, cart at 50% of the rail, t = 0)
+    Note over M,O: Start: load the MJCF (path and names from the trainer's settings.toml [mjcf]),<br/>reset to the start: at rest, cart at 50% of the rail, the pole hanging (θ = 0), t = 0
     O->>M: load + reset(start pose)
     O->>A: new(RIG): the cart starts at 50% of the rail, guaranteed (stands in for homing)
     O->>N: launch --orchestrator ws://… --frames-listen ADDR --out DIR --seed S<br/>--rnd-delay-min MIN --rnd-delay-max MAX<br/>(the trainer's settings.toml [orchestrator] seed, rnd_delay_min, rnd_delay_max)
@@ -162,10 +162,30 @@ and the command (18) and returns the next pool (17); a `reset()` or
 for the run to close (26), and `reset()` then starts the next run. A run
 that fails (26, code 1) raises, which ends training. The observation is
 the pool, 6 × 9 floats; the action is one value a ∈ [−1, 1], and the
-command is a × 45,333 (the top rate), rounded to the `i32`. The reward,
-the end crash and the time limit are not decided yet; until they are,
-the reward is 0, nothing terminates, and a placeholder length truncates
-the episode.
+command is a × 45,333 (the top rate), rounded to the `i32`. The reward is
+graded (below), and the end crash terminates the episode. The time limit
+is not decided yet: until it is, a placeholder length truncates the
+episode.
+
+**The reward is graded** (user, 2026-10-24), from the pool alone, in two
+parts: the pole, low hanging down and rising to high upright, so every
+gain in height pays on the way up from the hanging start; and the cart,
+low with the Pivot marker close to a support (an end of the slide) and
+high in the middle. Both are read from the markers: the pole's angle is
+the Pivot-to-End direction in the image, and the cart's place is the
+Pivot marker's x (`trainer-plan.md`, *What the trainer sees*). The shapes
+and their sum (user, 2026-10-24): the pole part is (1 − cos θ) / 2, θ the
+image angle, 0 hanging and 1 upright; the cart part is 1 − u², u the Pivot
+marker's offset from the middle of the end-crash bounds as a fraction of
+their half-span, 1 in the middle and 0 at a bound; the reward is their
+weighted sum, so the cart part teaches even while the pole hangs. The
+values (user, 2026-10-24, all in the trainer's `gym.toml`): weights 1.0
+for the pole and 0.5 for the cart, so a step scores 0.5 hanging in the
+middle and 1.5 upright in the middle; the end-crash bounds are Pivot x
+0.26181 to 0.72784, the slide's ends less the 11 mm margin, measured; the
+end crash scores −10 and terminates the episode. Each step is scored from
+the newest pool entry with both Pivot and End detected, and scores 0 when
+no entry has them.
 
 **The initial pool.** At startup, before any frame exists, the Orin
 pre-warms the pool: six entries with no detection (−1, −1) at cumulative
@@ -203,6 +223,9 @@ first. The real board finds its centre by homing: left to the limit
 switch, right to the limit switch, then back half the pulses between the
 two hits. The synthetic run instead always starts with the cart at 50% of
 the rail, a guarantee, so the Arduino is never told a start position. The
+pole starts hanging at rest, θ = 0 (user, 2026-10-24), as a pole at rest on
+the rig does; upright is θ = π, so the policy must swing the pole up
+before it can balance it. The
 2 ms step is the MJCF's timestep, and the loop's fixed deltatime. The MJCF
 states it, as `<option timestep="0.002" integrator="implicitfast"/>`,
 written by the exporter from the rig's StepJointSet, never left to MuJoCo's

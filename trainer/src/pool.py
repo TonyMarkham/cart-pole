@@ -23,6 +23,10 @@ NOT_DETECTED = (-1.0, -1.0)
 
 FLOATS = ENTRIES * (1 + MARKERS * 2)  # 54
 
+# The frame the markers are normalized to, px (synthetic-loop-dia.md,
+# Contracts): a difference in x or y times these is a difference in pixels.
+FRAME_WIDTH, FRAME_HEIGHT = 728, 544
+
 
 @dataclass(frozen=True)
 class Entry:

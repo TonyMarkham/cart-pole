@@ -15,7 +15,6 @@ training ends).
 import json
 import os
 import subprocess
-from typing import Protocol
 
 from output import Answer
 from pool import Pool
@@ -26,10 +25,6 @@ CLOSED, FAILED = 0, 1  # the orchestrator's exit codes (26)
 
 class RunFailed(RuntimeError):
     """The run failed (26): training ends."""
-
-
-class Trainer(Protocol):
-    def answer(self, pool: Pool) -> Answer: ...
 
 
 def orchestrator_environment() -> dict[str, str]:
@@ -116,22 +111,3 @@ class Run:
         if self.process.poll() is None:
             self.process.kill()
             self.process.wait()
-
-
-def run_orchestrator(settings: Settings, trainer: Trainer) -> int:
-    """Runs one run to its end with `trainer` answering every pool and
-    returns the orchestrator's exit code: 0 closed, 1 failed."""
-    run = Run(settings)
-    try:
-        while not run.stopped:
-            try:
-                pool = run.next_pool()
-            except RunFailed:
-                print(f"trainer: {run.observations} pools answered, then the run failed", flush=True)
-                return run.process.wait()
-            run.answer(trainer.answer(pool))
-        code = run.finish()
-        print(f"trainer: {run.observations} pools answered, the last with stop", flush=True)
-        return code
-    finally:
-        run.kill()

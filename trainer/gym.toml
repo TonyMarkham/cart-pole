@@ -6,7 +6,44 @@
 # The trainer's Gymnasium environment, one run per episode
 # (synthetic-loop-dia.md, The trainer's environment).
 
-# Observations per episode before Gymnasium's TimeLimit truncates it. A
+# Steps per episode before Gymnasium's TimeLimit truncates it. A
 # placeholder: the time limit is not decided yet (trainer-plan.md, Not
-# decided by the diagram). 250 observations is about 3 s of simulated time.
-max_episode_steps = 250
+# decided by the diagram). 640 steps is about 8 s of simulated time at the
+# mean gap of 12.57 ms (an 8-15 ms band), two of the sweep's periods below.
+max_episode_steps = 640
+
+[reward]
+# The graded reward (synthetic-loop-dia.md, The reward is graded;
+# trainer-plan.md T3a), per step, from the newest pool entry with both
+# Pivot and End detected (0 when none has both):
+#   pole_weight x (1 - cos theta) / 2  +  cart_weight x (1 - u^2)
+# theta: the Pivot-to-End image angle, 0 hanging, pi upright; u: the
+# Pivot marker's x offset from the middle of [end_crash], over its
+# half-span, 0 in the middle and +-1 at a bound.
+pole_weight = 1.0
+cart_weight = 0.5
+
+[end_crash]
+# The Pivot marker's x outside [pivot_x_min, pivot_x_max] is the end crash
+# (trainer-plan.md T4): the step scores `penalty` and the episode
+# terminates. The bounds are the slide's ends, +-0.45 m, less the 11 mm
+# the cart can travel before a stop acts (0.68 m/s x 16 ms), measured as
+# cart = 1.88452 x pivot_x - 0.93250 m (trainer-plan.md, What the trainer
+# sees).
+pivot_x_min = 0.26181
+pivot_x_max = 0.72784
+penalty = -10.0
+
+[sweep]
+# The naive trainer's scripted action (naive_trainer.py, bring-up stage 2):
+# a slow back-and-forth, peak x cos(2 pi n / period) pulses/s at step n. A
+# cosine speed moves the cart in a sine centred on its start, about
+# peak x 15 um x period x 12.57 ms / 2 pi either side; keep it inside the
+# slide's +-0.45 m.
+
+# Pulses/s, at most 45,333 (the top rate). 26,667 is 0.4 m/s.
+peak = 42000
+
+# Steps per back-and-forth: 320 is about 4.0 s, a swing of about +-0.26 m
+# at the peak above. (500 gave -0.41 .. +0.40 m.)
+period = 320

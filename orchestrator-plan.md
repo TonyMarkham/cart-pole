@@ -47,9 +47,9 @@ code is `orchestrator/src/`; the trainer launches it with
 - **O2 — the start (1–10).** The trainer starts the run by launching the
   orchestrator, with the command in `trainer/settings.toml` (1). Then:
   load the MJCF the command names, with its joint and actuator names
-  (the trainer's `[mjcf]`), and reset to `--start` (the pole's angle
-  alone: the cart has no start value), at rest, with the
-  cart at 50% of the rail and
+  (the trainer's `[mjcf]`), and reset to the start: at rest, the pole
+  hanging, θ = 0 (user, 2026-10-24; `--start`'s default, which the
+  trainer does not pass), the cart at 50% of the rail and
   t = 0 (2); create the synthetic Arduino with `RIG` (3); launch the
   synthetic Orin with `--orchestrator ws://… --frames-listen ADDR --out
   DIR --seed S` (4) and wait for its control connection (5); launch the
@@ -155,9 +155,6 @@ code is `orchestrator/src/`; the trainer launches it with
 These are needed to build the orchestrator; per `AGENTS.md`, each lands
 in the diagram first:
 
-- **Where `--start` comes from** for a run: the trainer, or the
-  orchestrator's own command line. (`--seed` is settled: the trainer's
-  `settings.toml`, *Configuration*.)
 - **Timeouts** — for the Orin's and the player's connections and for
   the Orin's reply.
 

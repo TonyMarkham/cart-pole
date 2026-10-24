@@ -2,48 +2,61 @@
 
 Before a policy can learn, the loop's plumbing has to be proven, and a
 failure must have one place to look (trainer-plan.md, Bring-up). This
-trainer learns nothing: it answers every pool with one fixed command and
-continue, then stop after a set number of observations (trainer-plan.md,
-Steps 1). Command 0 is bring-up stage 1 - the cart holds still and the pole
-hangs or swings. Its input is pool.py's contract, its output output.py's.
+trainer learns nothing: it is a scripted agent on the trainer's Gymnasium
+environment (loop_env.py), one episode, driving bring-up stage 2's slow
+back-and-forth. That proves the command path (action -> i32 -> synthetic
+Arduino -> cart speed -> MuJoCo -> render) and moves the markers across the
+frame, so the run's truth log can be fitted to what the trainer sees
+(observation_fit.py).
 
-Run as a script, it runs one run (1-26): it launches the orchestrator with
-trainer/settings.toml's command, answers each pool over the trainer link
-(17, 18), and reports how the run ended (26).
-
-Not here yet, waiting on the diagram (trainer-plan.md, Not decided):
-scoring, since the reward and the end crash's bounds are not set.
+The action at step n is a = (peak / 45,333) x cos(2 pi n / period), so the
+command is peak x cos(2 pi n / period) pulses/s; n, the step count, is the
+only clock the trainer has. A cosine speed moves the cart in a sine centred
+on its start; a sine speed would drift to one side. peak and period are
+gym.toml's [sweep], and the episode ends at its [env] max_episode_steps
+(TimeLimit), when the run is stopped and closed (22-26).
 
 usage (from the repo root): uv run --project trainer python trainer/src/naive_trainer.py
 """
 
+import math
 import sys
 
-from launch import run_orchestrator
-from output import Answer
-from pool import Pool
+import numpy as np
+
+from gym_settings import MAX_RATE, GymSettings
+from launch import RunFailed
+from loop_env import make
 from settings import Settings
 
 
-class NaiveTrainer:
-    def __init__(self, command: int = 0, observations: int = 250) -> None:
-        if observations < 1:
-            raise ValueError(f"a run takes at least 1 observation, got {observations}")
-        self.command = command
-        self.observations = observations  # the answer to this many-th pool is stop
-        self.seen = 0
-
-    def answer(self, pool: Pool) -> Answer:
-        self.seen += 1
-        return Answer(self.command, keep_going=self.seen < self.observations)
-
-
 def main() -> int:
-    code = run_orchestrator(Settings.load(), NaiveTrainer())
-    # 26: the orchestrator's exit code is how the run ended.
-    ending = {0: "the run closed", 1: "the run failed: training ends"}.get(code, "unexpected exit code")
-    print(f"trainer: the orchestrator exited with code {code}: {ending}", flush=True)
-    return code
+    settings = Settings.load()
+    gym_settings = GymSettings.load(settings.gym)
+    sweep = gym_settings.sweep
+    if sweep is None:
+        raise ValueError(f"{settings.gym} has no [sweep]: the naive trainer's action")
+    print(f"trainer: sweep from {settings.gym}: peak {sweep.peak} pulses/s, period {sweep.period}, "
+          f"{gym_settings.max_episode_steps} steps", flush=True)
+    env = make(settings, gym_settings)
+    try:
+        env.reset()
+        steps, total, truncated, terminated = 0, 0.0, False, False
+        while not (truncated or terminated):
+            a = sweep.peak / MAX_RATE * math.cos(2 * math.pi * steps / sweep.period)
+            _, reward, terminated, truncated, info = env.step(np.array([a], dtype=np.float32))
+            steps += 1
+            total += reward
+        env.close()  # the stop (18), then the run closes (26), or RunFailed
+    except RunFailed as error:
+        print(f"trainer: the run failed: training ends ({error})", flush=True)
+        return 1
+    finally:
+        env.close()
+    ending = "the end crash" if terminated else "the time limit"
+    print(f"trainer: {steps} steps, ended by {ending}, reward {total:.3f} "
+          f"(mean {total / steps:.4f} a step), then the run closed", flush=True)
+    return 0
 
 
 if __name__ == "__main__":

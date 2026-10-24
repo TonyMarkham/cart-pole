@@ -5,7 +5,7 @@ The trainer starts each run by launching the orchestrator
 it cannot run without; [mjcf] names the model that run loads (2). Relative
 paths resolve against the file's folder, so the trainer runs the same from
 any working directory. [trainer] holds the trainer's own settings: `gym`
-names the file of the Gymnasium environment's settings (gym_settings.py).
+names the file of the Gymnasium settings (gym_settings.py).
 """
 
 import tomllib
@@ -102,9 +102,7 @@ class Settings:
         )
         if not mjcf.model.is_file():
             raise ValueError(f"{path}: mjcf.model is not a file: {mjcf.model}")
-        gym = (path.parent / raw["trainer"]["gym"]).resolve()
-        if not gym.is_file():
-            raise ValueError(f"{path}: trainer.gym is not a file: {gym}")
+        gym = trainer_file(path, raw, "gym")
         return Settings(
             program=program,
             arguments=command[1:],
@@ -117,6 +115,14 @@ class Settings:
             mjcf=mjcf,
             gym=gym,
         )
+
+
+def trainer_file(path: Path, raw: dict, key: str) -> Path:
+    """A file [trainer] names, relative to settings.toml."""
+    file = (path.parent / raw["trainer"][key]).resolve()
+    if not file.is_file():
+        raise ValueError(f"{path}: trainer.{key} is not a file: {file}")
+    return file
 
 
 def port(path: Path, table: dict, key: str) -> int:
