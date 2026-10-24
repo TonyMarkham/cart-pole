@@ -66,9 +66,11 @@ period = 320
 # Steps in the whole run, every training instance's counting. With one
 # instance a step with learning takes about 46 ms of wall time (measured,
 # 2026-10-24), so 200,000 is about 2.6 h; four instances took 1 h 25 min
-# for 200,000 (the first run, trainer-observations.md). 400,000 lets that
-# run resume for 200,000 more on the slow-pole reward.
-total_steps = 400000
+# for 200,000 (the first run, trainer-observations.md); six, since the
+# players draw only when asked, about 35 min (estimated). A run that has
+# reached total_steps resumes only once this is raised: train.py reads it
+# again on every resume. 600,000 lets the first run go on from 400,000.
+total_steps = 600000
 
 # Every save_every steps the run saves the model and its replay buffer
 # (latest.zip, latest_buffer.pkl), so a failed or stopped run resumes

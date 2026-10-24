@@ -736,6 +736,8 @@ With read-only scratch scripts, run by `uv run --project trainer`:
 `[train] total_steps` is 400,000 and the run has reached it, so a plain
 `--resume` now only says it is already done. Raise `total_steps` in
 `trainer/gym.toml` first: `train.py` reads it again on every resume.
+(Raised to 600,000 on 2026-10-24: see *Continuing a run: raise
+total_steps first*, below.)
 
 ## Change 2: the players draw only when asked (2026-10-24)
 
@@ -915,3 +917,34 @@ the hour is not known: a training run would have to show it.
 layers of 256, at a batch of 256, is slow. Its cause hasn't been measured.
 If an update cost a few ms, the same hour would hold several times the
 updates at any instance count.
+
+## Continuing a run: raise `total_steps` first
+
+**Every resume, the same two steps:**
+
+1. **Raise `[train] total_steps` in `trainer/gym.toml`** past the step the
+   run has reached. It is the run's finish line, counted over the whole
+   run, every instance's steps together, not the steps of one session. A
+   run that has reached it resumes, prints `train: already at step <n> of
+   <total_steps>`, and stops. `train.py` reads the value again on every
+   resume, so raising it is all a longer run needs.
+2. **Then, from the repo root:**
+
+   ```
+   uv run --project trainer python trainer/src/train.py --resume
+   ```
+
+   It continues the most recent run in `trainer/runs/` that has a save.
+
+**Where things stand (2026-10-24):** run 1
+(`trainer/runs/20261024_041436`) is at step 400,004, and `total_steps`
+is now 600,000. So the next `--resume` runs about 200,000 more steps:
+about 35 minutes on 6 instances, an estimate from the speed test. It
+writes that session's frames and true states to `loop_from_400004/`.
+The buffer was saved with 6 instances and the reward hasn't changed, so
+nothing is regrouped, and the rescore changes nothing. No episode ends
+are dropped either: the ones that had lost their last pool went at the
+last resume, and every step stored since holds its own.
+
+For the session after that, raise it again: to 800,000, for another
+200,000.
