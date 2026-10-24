@@ -1,15 +1,19 @@
 mod args;
 mod control;
 mod joint_qpos;
+mod latency;
 mod orin_reply;
 mod pose_message;
 mod registered;
+#[cfg(test)]
+mod tests;
 
 use crate::{
     args::Args,
     control::Control,
     joint_qpos::JointQpos,
-    orin_reply::{OrinReply, POOL_ENTRIES},
+    latency::Latency,
+    orin_reply::{OrinReply, POOL_ENTRIES, PoolRow},
     pose_message::PoseMessage,
     registered::Registered,
 };
@@ -56,7 +60,7 @@ async fn main() -> Result<()> {
         bail!("--orin-port and --unity-port are both {}; each socket needs its own port", args.orin_port);
     }
     let command = args.orin.as_deref().ok_or_else(|| anyhow!("--orin is required unless --no-render"))?;
-    let seed = args.seed.ok_or_else(|| anyhow!("--orin needs --seed (the Orin's pre-warm gaps)"))?;
+    let seed = args.seed;
     let connect_timeout = Duration::from_secs(args.connect_timeout);
 
     // 4–5: the synthetic Orin first. It pre-warms its pool from the seed,
@@ -105,21 +109,20 @@ async fn main() -> Result<()> {
 struct Simulation {
     physics: Physics,
     control: Control,
-    steps_per_frame: u32,
     csv: BufWriter<File>,
     // Ticked once per physics step.
     arduino: SyntheticArduino,
     step_micros: u32,
     meters_per_pulse: f64,
     names: Names,
+    latency: Latency,
 }
 
-// One observation's state at its capture: simulated time, the pose, and
-// the command set at this capture, held until the next one.
+// One observation's capture state: simulated time and the pose (9–10,
+// then each arrival step's).
 struct Capture {
     time: f64,
     pose: Pose,
-    ctrl: f64,
 }
 
 impl Simulation {
@@ -139,7 +142,6 @@ impl Simulation {
         };
         let mut physics = Physics::load(&config)?;
         physics.reset(start)?;
-        let steps_per_frame = steps_per_frame(args.frame_interval_ms, physics.timestep())?;
         let step_micros = step_micros(physics.timestep())?;
         let meters_per_pulse = meters_per_pulse(&RIG);
         // Created with RIG alone (3): the synthetic Arduino starts at the
@@ -151,54 +153,38 @@ impl Simulation {
         let mut csv = BufWriter::new(file);
         writeln!(csv, "id,time,ctrl,cart,pole,command")?;
         println!(
-            "physics: model {}\n         start cart {:+.3} m pole {:.3} rad, control {:?}, {} ms = {steps_per_frame} steps per frame -> {}",
+            "physics: model {}\n         start cart {:+.3} m pole {:.3} rad, control {:?}, seed {} -> {}",
             config.model.display(),
             start.cart,
             start.pole,
             args.control,
-            args.frame_interval_ms,
+            args.seed,
             path.display()
         );
         Ok(Simulation {
             physics,
             control: args.control,
-            steps_per_frame,
             csv,
             arduino,
             step_micros,
             meters_per_pulse,
             names: config.names,
+            latency: Latency::new(args.seed),
         })
     }
 
-    // 9–10, and each arrival step after: the capture state.
     fn capture(&self) -> Capture {
-        let time = self.physics.time();
-        Capture { time, pose: self.physics.pose(), ctrl: self.control.at(time) }
+        Capture { time: self.physics.time(), pose: self.physics.pose() }
     }
 
-    // After observation `id`: log the truth, apply the command, and step
-    // to the next capture (D = 0: the command takes effect at the capture
-    // it was decided at).
-    //
-    // The scripted speed stands in for the trainer's command: it is sent
-    // to the firmware as the packet the trainer would send (pulses/s,
-    // rounded), and each physics step MuJoCo's ctrl is the step signal the
+    // 15–16: MuJoCo steps on the old command, one fixed deltatime at a
+    // time, until a step's time is later than the arrival time: that step
+    // is the arrival step, where it then waits (the freeze) for the
+    // Orin's reply. Each step, MuJoCo's ctrl is the step signal the
     // firmware emitted in that step, as a speed: pulses × meters per pulse
     // ÷ the step's duration.
-    fn advance(&mut self, id: u32, capture: &Capture) -> Result<()> {
-        // `as` saturates, so an absurd speed becomes the i32 limit, which
-        // the firmware clamps to the motor's top rate.
-        let command = (capture.ctrl / self.meters_per_pulse).round() as i32;
-        // `{}` writes a float as the shortest text that reads back to the
-        // same number, so identical runs give identical files.
-        writeln!(
-            self.csv,
-            "{id},{},{},{},{},{command}",
-            capture.time, capture.ctrl, capture.pose.cart, capture.pose.pole
-        )?;
-        self.arduino.receive(encode_command(command));
-        for _ in 0..self.steps_per_frame {
+    fn step_to(&mut self, arrival: f64) -> Result<()> {
+        while self.physics.time() <= arrival {
             let signal = self.arduino.tick(self.step_micros);
             let ctrl = f64::from(signal.pulses) * self.meters_per_pulse / (f64::from(signal.micros) / 1e6);
             self.physics.set_ctrl(ctrl)?;
@@ -207,22 +193,37 @@ impl Simulation {
         Ok(())
     }
 
+    // 19–21, at the arrival step: the new command. The scripted speed at
+    // this step stands in for the trainer's answer; it reaches the
+    // firmware as the packet the trainer will send (pulses/s, rounded).
+    // Returns the speed and the command.
+    fn command(&mut self) -> (f64, i32) {
+        let speed = self.control.at(self.physics.time());
+        // `as` saturates, so an absurd speed becomes the i32 limit, which
+        // the firmware clamps to the motor's top rate.
+        let command = (speed / self.meters_per_pulse).round() as i32;
+        self.arduino.receive(encode_command(command));
+        (speed, command)
+    }
+
+    // The truth log's row for one observation: its capture time and true
+    // pose, and the command set at its arrival step. `{}` writes a float
+    // as the shortest text that reads back to the same number, so
+    // identical runs give identical files.
+    fn log(&mut self, id: u32, capture: &Capture, speed: f64, command: i32) -> Result<()> {
+        writeln!(
+            self.csv,
+            "{id},{},{speed},{},{},{command}",
+            capture.time, capture.pose.cart, capture.pose.pole
+        )?;
+        Ok(())
+    }
+
     // MuJoCo warnings seen during the run.
     fn finish(&mut self) -> Result<usize> {
         self.csv.flush().context("writing states.csv")?;
         Ok(self.physics.warnings())
     }
-}
-
-// P4: the frame interval is a whole number of physics steps; anything
-// else is rejected rather than rounded.
-fn steps_per_frame(interval_ms: u32, timestep: f64) -> Result<u32> {
-    let ratio = f64::from(interval_ms) / 1000.0 / timestep;
-    let steps = ratio.round();
-    if steps < 1.0 || (ratio - steps).abs() > 1e-6 || steps > f64::from(u32::MAX) {
-        bail!("--frame-interval-ms {interval_ms} is not a whole number of {timestep} s physics steps");
-    }
-    Ok(steps as u32)
 }
 
 // The firmware ticks in whole microseconds; MuJoCo's 2 ms step is 2,000.
@@ -349,27 +350,58 @@ async fn wait_registered(
         .map_err(|_| anyhow!("Unity did not register with the synthetic Orin within {} s", timeout.as_secs()))?
 }
 
-// Lockstep: take the capture state, send it to the Orin, wait for its one
-// reply, then advance. The run fails when the Orin reports failed (3
-// failed frames in the pool) or if MuJoCo warned (P3). Without the Orin (--no-render) only the states are
-// produced.
+// One observation per pass (synthetic-loop-dia.md, the loop): at the
+// capture, draw the Orin's latency and cache the arrival time; send the
+// pose (11); step MuJoCo on the old command up to the arrival step while
+// the Orin works (15–16); wait there for the reply (the freeze, 14); then
+// set the new command at the arrival step, which is the next capture. The
+// run fails when the Orin reports failed or if MuJoCo warned (P3).
+// Without the Orin (--no-render), the same clock runs with no
+// observations.
 async fn run(mut orin: Option<&mut WebSocketStream<TcpStream>>, args: &Args, sim: &mut Simulation) -> Result<()> {
     let reply_timeout = Duration::from_secs(args.reply_timeout);
+    let mut capture = sim.capture();
     for id in 0..args.frames {
-        let capture = sim.capture();
-        let state = format!(
-            "t {:.3} s  ctrl {:+.3} m/s  cart {:+.3} m  pole {:.3} rad ({:.1}°)",
+        let started = Instant::now();
+        let latency_ms = sim.latency.next_ms();
+        let arrival = capture.time + latency_ms / 1000.0;
+        if let Some(orin) = orin.as_deref_mut() {
+            send_pose(orin, id, &capture, &sim.names).await?;
+        }
+        sim.step_to(arrival)?;
+        let newest = match orin.as_deref_mut() {
+            Some(orin) => Some(receive_pool(orin, id, reply_timeout).await?),
+            None => None,
+        };
+        let (speed, command) = sim.command();
+        sim.log(id, &capture, speed, command)?;
+
+        let next = sim.capture();
+        let mut line = format!(
+            "observation {id:06}  t {:.3} s  latency {latency_ms:.3} ms, arrival step t {:.3} s (gap {:.0} ms)  cart {:+.3} m  pole {:.3} rad ({:.1}°)  ctrl {speed:+.3} m/s",
             capture.time,
-            capture.ctrl,
+            next.time,
+            (next.time - capture.time) * 1000.0,
             capture.pose.cart,
             capture.pose.pole,
             capture.pose.pole.to_degrees()
         );
-        match orin.as_deref_mut() {
-            Some(orin) => observe(orin, id, &capture, &sim.names, reply_timeout, &state).await?,
-            None => println!("state {id:06}  {state}"),
+        if let Some(newest) = newest {
+            line += &format!(
+                "  orin {:.1} ms  newest L({:.3}, {:.3}) R({:.3}, {:.3}) P({:.3}, {:.3}) E({:.3}, {:.3})",
+                started.elapsed().as_secs_f64() * 1000.0,
+                newest[1],
+                newest[2],
+                newest[3],
+                newest[4],
+                newest[5],
+                newest[6],
+                newest[7],
+                newest[8]
+            );
         }
-        sim.advance(id, &capture)?;
+        println!("{line}");
+        capture = next;
     }
 
     let warnings = sim.finish()?;
@@ -383,18 +415,8 @@ async fn run(mut orin: Option<&mut WebSocketStream<TcpStream>>, args: &Args, sim
     Ok(())
 }
 
-// 11 and 14: sends one capture state to the synthetic Orin and waits for
-// its one reply, the pool. A reply for another id, a pool of the wrong
-// shape, or failed ends the run.
-async fn observe(
-    orin: &mut WebSocketStream<TcpStream>,
-    id: u32,
-    capture: &Capture,
-    names: &Names,
-    timeout: Duration,
-    state: &str,
-) -> Result<()> {
-    let started = Instant::now();
+// 11: one capture state to the synthetic Orin.
+async fn send_pose(orin: &mut WebSocketStream<TcpStream>, id: u32, capture: &Capture, names: &Names) -> Result<()> {
     let message = PoseMessage {
         id,
         time: capture.time,
@@ -405,7 +427,12 @@ async fn observe(
     };
     orin.send(Message::text(serde_json::to_string(&message)?))
         .await
-        .with_context(|| format!("sending pose {id} to the synthetic Orin"))?;
+        .with_context(|| format!("sending pose {id} to the synthetic Orin"))
+}
+
+// 14: the Orin's one reply, the pool; returns its newest entry. A reply
+// for another id, a pool of the wrong shape, or failed ends the run.
+async fn receive_pool(orin: &mut WebSocketStream<TcpStream>, id: u32, timeout: Duration) -> Result<PoolRow> {
     let reply = loop {
         let message = tokio::time::timeout(timeout, orin.next())
             .await
@@ -433,25 +460,12 @@ async fn observe(
     if ages[0] != 0.0 || ages.windows(2).any(|pair| pair[1] >= pair[0]) {
         bail!("pool {id} ages {ages:?} are not 0 then strictly older, newest first");
     }
-    let newest = reply.pool[0];
-    println!(
-        "observation {id:06}  {state}  orin {:.1} ms  newest L({:.3}, {:.3}) R({:.3}, {:.3}) P({:.3}, {:.3}) E({:.3}, {:.3})",
-        started.elapsed().as_secs_f64() * 1000.0,
-        newest[1],
-        newest[2],
-        newest[3],
-        newest[4],
-        newest[5],
-        newest[6],
-        newest[7],
-        newest[8]
-    );
     // The break after 14: 3 failed frames in the pool fail the run, and
     // training ends (26).
     if reply.failed {
         bail!("the run failed: 3 of pool {id}'s 6 entries are failed frames");
     }
-    Ok(())
+    Ok(reply.pool[0])
 }
 
 // A launched process quits on its own when its socket closes; it is

@@ -39,12 +39,12 @@ pub struct Args {
     #[arg(long, default_value_t = 9001)]
     pub unity_port: u16,
 
-    /// The run's seed (synthetic-loop-dia.md, 4), required with --orin:
-    /// passed to the synthetic Orin for its pool's pre-warm gaps, and
-    /// the source of the latency draws. The trainer passes its
-    /// settings.toml [orchestrator] seed.
+    /// The run's seed (synthetic-loop-dia.md, 4): the source of the
+    /// latency draws (SplitMix64), and passed to the synthetic Orin for its
+    /// pool's pre-warm gaps. The trainer passes its settings.toml
+    /// [orchestrator] seed.
     #[arg(long)]
-    pub seed: Option<u64>,
+    pub seed: u64,
 
     /// The built Unity player to launch with
     /// `-orin ws://127.0.0.1:<unity-port>` (6).
@@ -82,12 +82,6 @@ pub struct Args {
     /// (synthetic-loop-dia.md, 2), so it has no start value.
     #[arg(long, default_value_t = 0.0, allow_hyphen_values = true)]
     pub start: f64,
-
-    /// Simulated time between observations, in milliseconds; a whole
-    /// number of physics steps. A placeholder that orchestrator-plan.md
-    /// replaces with the arrival step.
-    #[arg(long, default_value_t = 20)]
-    pub frame_interval_ms: u32,
 
     /// No Orin, no player, no socket — physics and states.csv only.
     #[arg(long)]

@@ -106,6 +106,13 @@ diagram's messages.
 - **The run's seed** is the trainer's `[orchestrator]` `seed` (user,
   2026-10-23), passed as `--seed` and on to the Orin as `--seed` (4): it
   seeds the Orin's pre-warm gaps and the orchestrator's latency draws.
+- **The latency generator is SplitMix64, written in the orchestrator**
+  (user, 2026-10-24): no dependency, a published algorithm with known
+  test outputs, and a stream that never changes unless the code does.
+  Seeded with `--seed`; each draw is one 64-bit output, its top 53 bits
+  as u ∈ [0, 1), latency = 8 + 7u ms. The Orin's pre-warm generator is
+  its own (Python's `random`), seeded the same way: each must repeat
+  itself, not match the other.
 - **A value given on the command line wins.** Where a setting has both a
   command-line argument and a config value, the config's value is
   ignored.
@@ -123,8 +130,6 @@ in the diagram first:
 - **Where `--start` comes from** for a run: the trainer, or the
   orchestrator's own command line. (`--seed` is settled: the trainer's
   `settings.toml`, *Configuration*.)
-- **The latency generator** — which seeded generator, given that the
-  Orin draws its pre-warm gaps from the same seed in its own process.
 - **Timeouts** — for the Orin's and the player's connections and for
   the Orin's reply.
 
