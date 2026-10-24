@@ -271,10 +271,9 @@ adds repo structure around them, never overrides them.
   `synthetic-orin-plan.md`, `unity-player-plan.md`; `detector-plan.md`
   (the Rust detector crate the synthetic Orin superseded); `DATASETS.md` (the one dataset format) and
   `GENERATOR.md` (the generator's binding directives, which win over
-  `DATASETS.md` where they conflict); `training-plan.md`,
-  `training-plan-noob.md` and `training-plan-audit.md` (the YOLO training
-  plan, its beginner's version, and its audit). Plans state intent, not
-  current state (*Working with the user*).
+  `DATASETS.md` where they conflict); `training-plan.md` (the YOLO
+  training plan). Plans state intent, not current state (*Working with
+  the user*).
 
 ## The trained detector
 
