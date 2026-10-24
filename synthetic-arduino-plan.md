@@ -87,6 +87,17 @@ diagram first:
    (`orchestrator/src/tests.rs`: 26,667 → ±0.400005 m/s, 56,666 →
    0.84999 m/s), and the runs in `orchestrator-plan.md` step 5.
 
+## The board and the top rate
+
+The board is an Arduino UNO R4 WiFi (user, 2026-10-24). Whether it, the
+DRV8825 and the motor can make the 30 V top rate of 56,666 pulses/s, with
+every calculation and source: `rig-drive-research.md`. In short, the
+driver takes up to 250,000 pulses/s and the board's GPT timer makes each
+pulse from 847 ticks of 48 MHz in hardware; the user's `unor4-hal` needs
+a runtime rate change and a pulse count to drive STEP; the motor's 0.85
+m/s is still to be measured on the rig. The microstep setting is fixed,
+never switched while the motor runs.
+
 ## Not in this plan
 
 The board's own edge: the radio, the step pin, its timer and pulse

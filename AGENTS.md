@@ -308,8 +308,11 @@ adds repo structure around them, never overrides them.
   `DATASETS.md` where they conflict); `training-plan.md` (the YOLO
   training plan); `gymnasium-research.md` (research, not a plan: what
   Gymnasium 1.4 and Stable-Baselines3 2.9 require of an environment,
-  read against the loop, for the trainer's open decisions). Plans state
-  intent, not current state (*Working with the user*).
+  read against the loop, for the trainer's open decisions);
+  `rig-drive-research.md` (research, not a plan: whether the UNO R4
+  WiFi, the DRV8825 and the stepper can make the top speed, with every
+  calculation and source). Plans state intent, not current state
+  (*Working with the user*).
 
 ## The trained detector
 
@@ -360,7 +363,7 @@ The roles and per-class figures are in `training/05-POST_TRAINING.md`
   | MuJoCo | the physical rig |
   | Unity player | the Pi GS camera (IMX296), its frame reduced to 728×544 greyscale |
   | Synthetic Orin | the Orin: detection, and in production the policy |
-  | Synthetic Arduino | the Arduino, the DRV8825, the stepper and the belt |
+  | Synthetic Arduino | the Arduino (an UNO R4 WiFi, user 2026-10-24), the DRV8825, the stepper and the belt |
   | Trainer | none — training happens only in the synthetic loop |
 
 - **The camera on the Orin** (user, 2026-10-23): the Pi Global Shutter
