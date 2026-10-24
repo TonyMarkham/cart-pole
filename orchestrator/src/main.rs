@@ -151,7 +151,7 @@ impl Simulation {
         let path = args.out.join("states.csv");
         let file = File::create(&path).with_context(|| format!("creating {}", path.display()))?;
         let mut csv = BufWriter::new(file);
-        writeln!(csv, "id,time,ctrl,cart,pole,command")?;
+        writeln!(csv, "id,time,cart,pole,left_x,left_y,right_x,right_y,pivot_x,pivot_y,end_x,end_y")?;
         println!(
             "physics: model {}\n         start cart {:+.3} m pole {:.3} rad, control {:?}, seed {} -> {}",
             config.model.display(),
@@ -196,26 +196,28 @@ impl Simulation {
     // 19–21, at the arrival step: the new command. The scripted speed at
     // this step stands in for the trainer's answer; it reaches the
     // firmware as the packet the trainer will send (pulses/s, rounded).
-    // Returns the speed and the command.
-    fn command(&mut self) -> (f64, i32) {
+    // Returns the speed.
+    fn command(&mut self) -> f64 {
         let speed = self.control.at(self.physics.time());
         // `as` saturates, so an absurd speed becomes the i32 limit, which
         // the firmware clamps to the motor's top rate.
         let command = (speed / self.meters_per_pulse).round() as i32;
         self.arduino.receive(encode_command(command));
-        (speed, command)
+        speed
     }
 
-    // The truth log's row for one observation: its capture time and true
-    // pose, and the command set at its arrival step. `{}` writes a float
-    // as the shortest text that reads back to the same number, so
-    // identical runs give identical files.
-    fn log(&mut self, id: u32, capture: &Capture, speed: f64, command: i32) -> Result<()> {
-        writeln!(
-            self.csv,
-            "{id},{},{speed},{},{},{command}",
-            capture.time, capture.pose.cart, capture.pose.pole
-        )?;
+    // The truth log's row for one observation (synthetic-loop-dia.md,
+    // Truth log): its capture time and true pose, beside what the Orin
+    // observed in that frame, the pool's newest entry — empty without the
+    // Orin (--no-render). `{}` writes a float as the shortest text that
+    // reads back to the same number, so identical runs give identical
+    // files.
+    fn log(&mut self, id: u32, capture: &Capture, newest: Option<&PoolRow>) -> Result<()> {
+        let observed = match newest {
+            Some(row) => row[1..].iter().map(|v| v.to_string()).collect::<Vec<_>>().join(","),
+            None => ",".repeat(7),
+        };
+        writeln!(self.csv, "{id},{},{},{},{observed}", capture.time, capture.pose.cart, capture.pose.pole)?;
         Ok(())
     }
 
@@ -373,8 +375,9 @@ async fn run(mut orin: Option<&mut WebSocketStream<TcpStream>>, args: &Args, sim
             Some(orin) => Some(receive_pool(orin, id, reply_timeout).await?),
             None => None,
         };
-        let (speed, command) = sim.command();
-        sim.log(id, &capture, speed, command)?;
+        // The truth log (the note before 17), then the new command (19–21).
+        sim.log(id, &capture, newest.as_ref())?;
+        let speed = sim.command();
 
         let next = sim.capture();
         let mut line = format!(

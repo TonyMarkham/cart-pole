@@ -123,7 +123,10 @@ it and end training. Pre-warm entries are no detection, not failed frames.
 
 **Truth log.** `states.csv` pairs MuJoCo's real values at each capture
 with what the Orin observed in that frame, one row per observation, for
-evaluation after training. The trainer never sees it, so nothing in the
+evaluation after training. Columns: `id,time,cart,pole,left_x,left_y,
+right_x,right_y,pivot_x,pivot_y,end_x,end_y` — the capture time (s), the
+true cart (m) and pole (rad) at capture, and the pool's newest entry,
+(−1, −1) where not detected. It joins `observations.jsonl` on `id`. The trainer never sees it, so nothing in the
 control loop touches training. An early stop by the orchestrator on a
 truth-versus-observation threshold is not in the loop yet.
 

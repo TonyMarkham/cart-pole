@@ -65,8 +65,9 @@ diagram's messages.
   (22); the run fails and training ends.
 - **O6 — the truth log.** One `states.csv` row per observation: id n,
   capture time t, the true cart (m) and pole (rad) at capture, and the
-  4 observed `(x, y)` of the pool's newest entry. The trainer never sees
-  it.
+  4 observed `(x, y)` of the pool's newest entry, under the diagram's
+  header (*Truth log*). The trainer never sees it. With `--no-render`
+  there is no observation, so the eight observed fields are empty.
 - **O7 — the trainer gets the pool, and nothing else (17).** It answers
   with the command (an `i32`, sign = direction, magnitude = pulses/s)
   and continue/stop (18).
