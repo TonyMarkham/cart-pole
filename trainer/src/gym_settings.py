@@ -17,10 +17,12 @@ MAX_RATE = 56_666  # pulses/s: arduino::RIG's top rate (synthetic-loop-dia.md, N
 
 @dataclass(frozen=True)
 class Reward:
-    """[reward]: pole_weight x (1 - cos theta) / 2 + cart_weight x (1 - u^2)."""
+    """[reward]: pole_weight x (1 - cos theta) / 2 x exp(-(omega / pole_speed)^2)
+    + cart_weight x (1 - u^2)."""
 
     pole_weight: float
     cart_weight: float
+    pole_speed: float  # rad/s, > 0: the pole's speed at which its height pays 1/e
 
 
 @dataclass(frozen=True)
@@ -55,7 +57,10 @@ class GymSettings:
         reward = Reward(
             pole_weight=number(path, raw["reward"], "reward.pole_weight"),
             cart_weight=number(path, raw["reward"], "reward.cart_weight"),
+            pole_speed=number(path, raw["reward"], "reward.pole_speed"),
         )
+        if reward.pole_speed <= 0:
+            raise ValueError(f"{path}: reward.pole_speed is > 0 rad/s, got {reward.pole_speed}")
         end_crash = EndCrash(
             pivot_x_min=number(path, raw["end_crash"], "end_crash.pivot_x_min"),
             pivot_x_max=number(path, raw["end_crash"], "end_crash.pivot_x_max"),

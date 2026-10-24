@@ -81,10 +81,12 @@ class Run:
     """
 
     def __init__(
-        self, settings: Settings, seed: int | None = None, log: Path | None = None, instances: int | None = None
+        self, settings: Settings, seed: int | None = None, log: Path | None = None, instances: int | None = None,
+        out: Path | None = None,
     ) -> None:
         self.instances = settings.instances if instances is None else instances
-        command = settings.command(seed, self.instances)
+        # out: the run's --out folder, in place of settings.toml's.
+        command = settings.command(seed, self.instances, out)
         self.log = log
         self.log_file = open(log, "a", encoding="utf-8") if log is not None else None
         launching = f"trainer: launching {' '.join(command)}"

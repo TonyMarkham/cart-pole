@@ -54,7 +54,12 @@ messages.
   part 1 − u², u = the Pivot marker's offset from the middle of the
   end-crash bounds over their half-span; reward = their weighted sum.
   Values, in `gym.toml`: weights pole 1.0, cart 0.5; scored from the
-  newest entry with Pivot and End, 0 if none has both.
+  newest entry with Pivot and End, 0 if none has both. **The pole pays
+  only when it is slow** (the diagram's section of that name; user,
+  2026-10-24): the pole part is (1 − cos θ) / 2 × exp(−(ω / ω₀)²), ω the
+  change in θ between the newest two entries with Pivot and End over the
+  gap between their ages, ω₀ = `[reward] pole_speed` (4 rad/s); fewer
+  than two such entries, the pole part is 0.
 - **T4 — the end crash.** The Pivot marker out of bounds is a training
   failure: penalty, and end this episode. The bounds must sit inside the
   slide's ends by more than the cart can travel between a capture and
@@ -285,11 +290,54 @@ Both runs give the same fit; the figures are the wider run's.
    gains `instance`, and saves land each time the step count crosses a
    multiple of `save_every`. `LoopEnv` (the naive trainer, `env_check`)
    always runs one instance. A resume with a different `instances` is
-   refused (the replay buffer holds one column per instance). Tested with
+   refused (the replay buffer holds one column per instance; since step
+   7, regrouped instead). Tested with
    throwaway settings, 4 instances, episodes of 150, saves every 200: 1,200
    steps, 8 episodes on seeds 0–7, one launch; a resume to 1,800, episodes
    8–11; a resume with `instances = 1` refused. With 4 instances, one SAC
    update follows every 4 samples unless `[sac] gradient_steps` is −1.
+7. **The pole pays only when it is slow** (T3a; the diagram's section of
+   that name; user, 2026-10-24, after the first 200,000-step run spun the
+   pole, `trainer-observations.md`). **Done (2026-10-24):** `reward.py`
+   scales the pole's height by exp(−(ω / `pole_speed`)²), ω from the
+   newest two entries with Pivot and End; `gym.toml`'s `[reward]
+   pole_speed` is 4.0. A resume (`train.py --resume`) rescores the replay
+   buffer with the current `[reward]` from each stored step's next
+   observation (the pool its reward was read from), checks every stored
+   crash against the current `[end_crash]`, and copies the settings it
+   resumes with into the run's folder as `settings_from_<steps>.toml` and
+   `gym_from_<steps>.toml`; `[train] total_steps` went to 400,000 so the
+   first run can resume for 200,000 more. Found while checking: an
+   episode's last pool (SB3's terminal observation) was a view that the
+   next episode's first pool overwrote; `vec_env.py` now copies it.
+   Rewards were never affected, only what SAC saw as the pool after an
+   episode's last step. In buffers saved before the fix those steps (an
+   episode end whose next pool is the following step's first) cannot be
+   rescored, and a resume drops them. A resume with a different
+   `instances` (user, 2026-10-24: 6 now) regroups the buffer into the new
+   number of columns, superseding step 6's refusal: every stored step is
+   self-contained, and SAC samples a row and a column at random. Checked:
+   - the first run's buffer (199,996 steps), rescored in memory with the
+     old reward, gives the stored rewards back to within 1.8 × 10⁻⁷ on
+     all 199,813 steps but its 183 episode ends, which are all detected as
+     lost; with the new reward the mean falls from 0.720 to 0.480 a step
+     (over the spin's last 100,000 steps, from 0.932 to 0.503, the cart
+     part alone); regrouped for 6 it keeps 199,812, and a second rescore
+     of the regrouped buffer changes nothing. Its 71 crashes were all
+     among the lost, so it keeps no −10 step;
+   - a new short run (throwaway settings, 4 instances, episodes of 150):
+     1,200 steps, a resume to 1,800 that rescored 1,196 steps with no
+     change (0.495 a step before and after), every episode end holding its
+     own last pool and every reward reproduced to within 6 × 10⁻⁸; then a
+     resume with 6 instances to 2,400 and one with 4 to 3,000 (episodes
+     12–15), each regrouping the buffer, rescoring with no change, and
+     closing with no process left on the loop's ports.
+8. **A training run keeps its loop output** (the diagram's *Training
+   instances*; user, 2026-10-24, after those test runs replaced the first
+   run's `target/trainer-run`). `train.py` launches the orchestrator with
+   `--out <run folder>/loop_from_<steps>`, `<steps>` the steps already
+   taken, in place of `settings.toml`'s `--out` (`Settings.command(out=)`
+   replaces the orchestrator's own `--out`, the one before `--orin`).
 
 ## Not in this plan
 

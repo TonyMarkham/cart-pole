@@ -63,7 +63,14 @@ This sequence shows one instance; the group works as follows.
 - **Each instance is the sequence above, on its own.** Its own MuJoCo
   clock, latency draws, Orin, player and episodes; nothing passes between
   instances. Its folder is the run's `--out` / `instance_k/` (its
-  `states.csv`, frames and `observations.jsonl`).
+  `states.csv`, frames and `observations.jsonl`). A training run keeps
+  them (user, 2026-10-24, after the first run's were replaced by the next
+  run's): each launch of the orchestrator by `train.py` gets `--out`
+  `<the training run's folder>/loop_from_<steps>/`, `<steps>` the training
+  steps already taken (0 for a new run), so a resume writes beside the
+  sessions before it and never over them. Settings.toml's `--out` is the
+  folder for runs outside a training run (the naive trainer,
+  `env_check`).
 - **Rounds.** The trainer link carries a list each way. Every instance
   whose pool the trainer has not yet answered is *pending*. The trainer
   answers any pending instances in one line; the orchestrator advances
@@ -280,6 +287,26 @@ middle and 1.5 upright in the middle; the end-crash bounds are Pivot x
 end crash scores −10 and terminates the episode. Each step is scored from
 the newest pool entry with both Pivot and End detected, and scores 0 when
 no entry has them.
+
+**The pole pays only when it is slow** (user, 2026-10-24, on the agent's
+recommendation, after the first 200,000-step run,
+`trainer-observations.md`). That run learned to spin the pole round
+instead of balancing it: about 50 turns an episode, near upright 10% of
+the time, because a spinning pole's (1 − cos θ) / 2 averages 0.5 for
+free. So the pole part is now (1 − cos θ) / 2 × exp(−(ω / ω₀)²): ω is the
+pole's turning speed, the change in θ between the newest two pool
+entries with both Pivot and End, over the gap between their ages; ω₀ is
+`gym.toml`'s `[reward] pole_speed`, 4 rad/s. Measured on that run's last
+episodes, the spinning pole passes upright at a median 20 rad/s, where the
+factor is 1 in 10¹¹, and over a whole spinning episode the pole part
+averages 0.02 instead of 0.475; a pole held up and moving at 2 rad/s
+keeps 0.78 of it. The speed read from the markers matched MuJoCo's within
+0.03 rad/s (median). The factor is 1 for a still pole, so hanging and
+upright still score 0.5 and 1.5 in the middle; the height part still
+leads from hanging (a fast swing earns little, so the reward pays arriving
+at the top slowly). With fewer than two entries holding both markers the
+speed is unknown and the pole part is 0. The cart part, the end crash and
+which entry they are read from are unchanged.
 
 **The policy learns by SAC** (Soft Actor-Critic, Stable-Baselines3's
 `SAC` with its `MlpPolicy`; user, 2026-10-24, on the agent's

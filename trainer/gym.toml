@@ -16,12 +16,21 @@ max_episode_steps = 1500
 # The graded reward (synthetic-loop-dia.md, The reward is graded;
 # trainer-plan.md T3a), per step, from the newest pool entry with both
 # Pivot and End detected (0 when none has both):
-#   pole_weight x (1 - cos theta) / 2  +  cart_weight x (1 - u^2)
-# theta: the Pivot-to-End image angle, 0 hanging, pi upright; u: the
-# Pivot marker's x offset from the middle of [end_crash], over its
-# half-span, 0 in the middle and +-1 at a bound.
+#   pole_weight x (1 - cos theta) / 2 x exp(-(omega / pole_speed)^2)
+#   + cart_weight x (1 - u^2)
+# theta: the Pivot-to-End image angle, 0 hanging, pi upright; omega: the
+# pole's turning speed, rad/s, from the newest two entries with both
+# markers (the pole part is 0 with fewer); u: the Pivot marker's x offset
+# from the middle of [end_crash], over its half-span, 0 in the middle and
+# +-1 at a bound.
 pole_weight = 1.0
 cart_weight = 0.5
+
+# The pole pays only when it is slow (synthetic-loop-dia.md, the section
+# of that name): at pole_speed rad/s its height pays 1/e (0.37), at
+# 2 rad/s 0.78, still 1. The first run's spin passed upright at a median
+# 20 rad/s, where it pays 1 in 10^11 (trainer-observations.md).
+pole_speed = 4.0
 
 [end_crash]
 # The Pivot marker's x outside [pivot_x_min, pivot_x_max] is the end crash
@@ -56,8 +65,10 @@ period = 320
 
 # Steps in the whole run, every training instance's counting. With one
 # instance a step with learning takes about 46 ms of wall time (measured,
-# 2026-10-24), so 200,000 is about 2.6 h.
-total_steps = 200000
+# 2026-10-24), so 200,000 is about 2.6 h; four instances took 1 h 25 min
+# for 200,000 (the first run, trainer-observations.md). 400,000 lets that
+# run resume for 200,000 more on the slow-pole reward.
+total_steps = 400000
 
 # Every save_every steps the run saves the model and its replay buffer
 # (latest.zip, latest_buffer.pkl), so a failed or stopped run resumes

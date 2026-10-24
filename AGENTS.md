@@ -311,8 +311,14 @@ adds repo structure around them, never overrides them.
   read against the loop, for the trainer's open decisions);
   `rig-drive-research.md` (research, not a plan: whether the UNO R4
   WiFi, the DRV8825 and the stepper can make the top speed, with every
-  calculation and source). Plans state intent, not current state
-  (*Working with the user*).
+  calculation and source); `trainer-observations.md` (not a plan: the
+  user's journal of how we learned from the policy learning, user
+  2026-10-24. Each training run gets an entry with its reward, its exact
+  command, the measurements and what they showed, and each change made
+  because of it. The user is new to reinforcement learning and wants the
+  information: explain each idea where it comes up, with the numbers,
+  rather than keeping entries short).
+  Plans state intent, not current state (*Working with the user*).
 
 ## The trained detector
 

@@ -49,10 +49,11 @@ class Settings:
     mjcf: Mjcf
     gym: Path  # [trainer] gym: the Gymnasium settings file (absolute)
 
-    def command(self, seed: int | None = None, instances: int | None = None) -> list[str]:
+    def command(self, seed: int | None = None, instances: int | None = None, out: Path | None = None) -> list[str]:
         """The orchestrator's launch command for one run, with `seed` in
-        place of the settings' seed and `instances` in place of the
-        settings' instances when given."""
+        place of the settings' seed, `instances` in place of the settings'
+        instances and `out` in place of the command's --out folder when
+        given."""
         seed = self.seed if seed is None else seed
         if isinstance(seed, bool) or not isinstance(seed, int) or not 0 <= seed < SEED_LIMIT:
             raise ValueError(f"a run's seed is a whole number, 0 to 2**64 - 1, got {seed!r}")
@@ -65,9 +66,17 @@ class Settings:
             "--rnd-delay-min", str(self.rnd_delay_min),
             "--rnd-delay-max", str(self.rnd_delay_max),
         ]
+        arguments = list(self.arguments)
+        if out is not None:
+            # Only the orchestrator's own --out, before --orin: every
+            # argument after --orin is the Orin's.
+            own = arguments.index("--orin") if "--orin" in arguments else len(arguments)
+            if "--out" not in arguments[:own]:
+                raise ValueError("orchestrator.command has no --out to replace")
+            arguments[arguments.index("--out") + 1] = str(out)
         # The inserted arguments go first: --orin takes every argument after it.
         # --seed is instance 0's first episode; instance k's is seed + k.
-        return [str(self.program), *inserted, *self.mjcf.arguments(), *self.arguments]
+        return [str(self.program), *inserted, *self.mjcf.arguments(), *arguments]
 
     @staticmethod
     def load(path: Path = DEFAULT_PATH) -> "Settings":

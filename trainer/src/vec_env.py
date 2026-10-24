@@ -42,10 +42,13 @@ from settings import SEED_LIMIT, Settings
 
 class LoopVecEnv(VecEnv):
     def __init__(self, settings: Settings, gym_settings: GymSettings, log: Path | None = None,
-                 first_episode: int = 0) -> None:
+                 first_episode: int = 0, out: Path | None = None) -> None:
         self.settings = settings
         self.gym_settings = gym_settings
         self.log = log  # the run's log is appended here, else it goes to the console (launch.py)
+        # The run's --out folder, else settings.toml's; read at the launch,
+        # the first reset().
+        self.out = out
         self.render_mode = None  # VecEnv's constructor reads it through get_attr
         super().__init__(
             settings.instances,
@@ -71,7 +74,7 @@ class LoopVecEnv(VecEnv):
             # Instance k's first episode runs with --seed + k, which is
             # seed_of(first + k).
             first = self.next_episode
-            self.run = Run(self.settings, self.seed_of(first), self.log)
+            self.run = Run(self.settings, self.seed_of(first), self.log, out=self.out)
             for k in range(self.num_envs):
                 self._start_episode(k)
         else:
@@ -119,7 +122,10 @@ class LoopVecEnv(VecEnv):
                 "TimeLimit.truncated": truncated,
             })
             if dones[k]:
-                infos[k]["terminal_observation"] = observations[k]
+                # A copy: observations[k] is overwritten below with the next
+                # episode's first pool, and a view would follow it (runs
+                # before 2026-10-24's fix stored that pool here).
+                infos[k]["terminal_observation"] = observations[k].copy()
                 ended.append(k)
         if ended:
             answers = {}
