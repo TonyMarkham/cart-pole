@@ -62,6 +62,14 @@ class Pool:
         return [v for e in self.entries for v in (e.age_ms, *(c for m in e.markers for c in m))]
 
     @staticmethod
+    def from_rows(rows: list[list[float]]) -> "Pool":
+        """The pool as the link carries it (17): 6 rows, newest first, each
+        [age_ms, x0, y0, ..., x3, y3]."""
+        if len(rows) != ENTRIES or any(len(row) != FLOATS // ENTRIES for row in rows):
+            raise ValueError(f"a pool is {ENTRIES} rows of {FLOATS // ENTRIES} floats, got {rows!r}")
+        return Pool.from_flat([float(v) for row in rows for v in row])
+
+    @staticmethod
     def from_flat(values: list[float]) -> "Pool":
         if len(values) != FLOATS:
             raise ValueError(f"a flat pool is {FLOATS} floats, got {len(values)}")

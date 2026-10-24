@@ -15,8 +15,7 @@ alone, the source of truth. Element numbers below (1–26) are the
 diagram's messages.
 
 Progress (2026-10-24, run on this PC; *Steps* has each check): steps
-1–3, 5 and 7 are done; step 6 in part (a failed run ends with exit code
-1); step 4 is open. The
+1–7 are done. The
 code is `orchestrator/src/`; the trainer launches it with
 `uv run --project trainer python trainer/src/naive_trainer.py`.
 
@@ -78,7 +77,14 @@ code is `orchestrator/src/`; the trainer launches it with
   there is no observation, so the eight observed fields are empty.
 - **O7 — the trainer gets the pool, and nothing else (17).** It answers
   with the command (an `i32`, sign = direction, magnitude = pulses/s)
-  and continue/stop (18).
+  and continue/stop (18). The link is the orchestrator's stdin and
+  stdout (the diagram's *Trainer link*): one stdout line
+  `{"id": n, "pool": [6 rows]}` out, one stdin line
+  `{"command": c, "continue": bool}` in, with MuJoCo frozen at the
+  arrival step until it is in. stdout carries the link alone: the
+  orchestrator's own output, and its children's, goes to stderr. A
+  command that does not fit an `i32`, or a line that is not the answer,
+  fails the run.
 - **O8 — continue (19–21).** The orchestrator hands the command to the
   synthetic Arduino (19), the only thing it is sent, and gets back the
   DRV8825 signals, DIR and STEP rate (20). Cart speed = STEP rate ×
@@ -88,7 +94,9 @@ code is `orchestrator/src/`; the trainer launches it with
 - **O9 — stop and shutdown (22–26).** On the trainer's stop, or a
   failed run: close the control socket (22), the Orin closes the frame
   socket (23), the player and the Orin exit (24–25), and the trainer is
-  told the run closed, or that it failed and training ends (26).
+  told the run closed, or that it failed and training ends (26): the
+  orchestrator exits, closing stdout, with code 0 (closed) or 1
+  (failed).
 - **O10 — determinism.** The latency draws come from `--seed`, the same
   seed the Orin's pre-warm gaps come from; the freeze keeps the
   workstation's speed out of simulated time. The physics repeats bit for
@@ -127,6 +135,11 @@ code is `orchestrator/src/`; the trainer launches it with
 - **A value given on the command line wins.** Where a setting has both a
   command-line argument and a config value, the config's value is
   ignored.
+- **`--no-render` keeps its own stand-ins.** Without the Orin there is
+  no pool, so no trainer link: `--frames` (how many states) and
+  `--control` (a scripted speed) drive a physics-only run, and are
+  refused without `--no-render`, where the trainer's answer drives the
+  run.
 - **The timestep and the integrator belong to the MJCF**, as its
   `<option>`, written by the Unity exporter from the rig's StepJointSet.
   The orchestrator neither sets nor overrides them.
@@ -136,8 +149,6 @@ code is `orchestrator/src/`; the trainer launches it with
 These are needed to build the orchestrator; per `AGENTS.md`, each lands
 in the diagram first:
 
-- **The trainer's link** (17, 18, 26): its transport. The start (1) is
-  settled: the trainer launches the orchestrator.
 - **Where `--start` comes from** for a run: the trainer, or the
   orchestrator's own command line. (`--seed` is settled: the trainer's
   `settings.toml`, *Configuration*.)
@@ -165,7 +176,18 @@ in the diagram first:
    rows join `observations.jsonl` on the id, the capture time and the
    newest entry bit for bit — after turning on `serde_json`'s
    `float_roundtrip`, whose default parse was 1 ulp off in 41 of 60.
-4. **Trainer link** (O7), once its link is in the diagram.
+4. **Trainer link** (O7). *Check:* each pool reaches the trainer and
+   its answer drives the run. **Done (2026-10-24):** `trainer_link.rs`
+   writes each pool as one stdout line and reads the answer from stdin,
+   blocking in place while MuJoCo is frozen at the arrival step; every
+   other line the orchestrator prints is on stderr, and the Orin's and
+   the player's stdout go there too (their stdin is closed). A trainer
+   run with the naive trainer's command 0: all 250 pools answered, the
+   stop on the 250th, the shutdown in order, exit 0; the trainer's turn
+   takes about 0.2 ms. With command 6,667 pulses/s over 60 observations,
+   ctrl is +0.100 m/s and the cart moves at 0.0995 m/s over the last 10.
+   `--frames` and `--control` are refused without `--no-render`
+   (*Configuration*), whose physics-only runs leave stdout empty.
 5. **Command path** (O8). *Check:* a constant command moves the cart at
    STEP rate × 15 µm. **Done (2026-10-24):** at the arrival step the
    command goes to the synthetic Arduino once; its DIR and STEP rate
@@ -177,15 +199,17 @@ in the diagram first:
    and over the last 10 of 60 observations the cart moves at
    ±0.400349 m/s (the velocity servo, `kv` 100, against the swinging
    pole). `speed:5` is clamped to 45,333 pulses/s, ctrl 0.680 m/s. Two
-   seed-3 runs of a sine command give byte-identical `states.csv`. Until
-   the trainer link (step 4), the scripted `--control` speed stands in
-   for the trainer's command, sent as the trainer's packet would be
-   (pulses/s, rounded).
-6. **Endings** (O5, O9). *Check:* Done-when 6. **In part (2026-10-24):**
-   a failed run works — with a stand-in camera sending broken frames,
-   the third failed frame in the pool gives `failed`, the shutdown runs
-   in order and the orchestrator exits 1. The trainer's stop does not
-   exist yet (`--frames` ends the run), and 26 is only the exit code.
+   seed-3 runs of a sine command give byte-identical `states.csv`. Since
+   the trainer link (step 4), the trainer's command drives the cart;
+   the scripted `--control` remains only for `--no-render`.
+6. **Endings** (O5, O9). *Check:* Done-when 6. **Done (2026-10-24)**,
+   each ending checked once: the trainer's stop — the run shuts down in
+   order and the orchestrator exits 0, which the trainer reports as "the
+   run closed" (step 4's run); a failed run — with a stand-in camera
+   sending broken frames, the third failed frame in the pool gives
+   `failed`, the shutdown runs in order and the orchestrator exits 1
+   (checked before the link; the trainer reading that 1 as "the run
+   failed" has not been run).
 7. **Determinism** (O10). *Check:* Done-when 4. **Done (2026-10-24):**
    two trainer runs with seed 0 give identical ids, capture times, true
    cart and pole, and `failed`. The frames differ (53 of 60), by

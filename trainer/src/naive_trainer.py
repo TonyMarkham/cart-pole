@@ -7,13 +7,12 @@ continue, then stop after a set number of observations (trainer-plan.md,
 Steps 1). Command 0 is bring-up stage 1 - the cart holds still and the pole
 hangs or swings. Its input is pool.py's contract, its output output.py's.
 
-Run as a script, it starts one run (1): it launches the orchestrator with
-trainer/settings.toml's command and waits for it to exit.
+Run as a script, it runs one run (1-26): it launches the orchestrator with
+trainer/settings.toml's command, answers each pool over the trainer link
+(17, 18), and reports how the run ended (26).
 
-Not here yet, each waiting on the diagram (trainer-plan.md, Not decided):
-- the link to the orchestrator (17, 18, 26), so no pool reaches answer()
-  yet and the run's end is only the orchestrator's exit code;
-- scoring, since the reward and the end crash's bounds are not set.
+Not here yet, waiting on the diagram (trainer-plan.md, Not decided):
+scoring, since the reward and the end crash's bounds are not set.
 
 usage (from the repo root): uv run --project trainer python trainer/src/naive_trainer.py
 """
@@ -40,8 +39,10 @@ class NaiveTrainer:
 
 
 def main() -> int:
-    code = run_orchestrator(Settings.load())
-    print(f"trainer: the orchestrator exited with code {code}", flush=True)
+    code = run_orchestrator(Settings.load(), NaiveTrainer())
+    # 26: the orchestrator's exit code is how the run ended.
+    ending = {0: "the run closed", 1: "the run failed: training ends"}.get(code, "unexpected exit code")
+    print(f"trainer: the orchestrator exited with code {code}: {ending}", flush=True)
     return code
 
 

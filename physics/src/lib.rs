@@ -125,7 +125,7 @@ impl Physics {
             bail!("{path}: measured timestep {} s is not positive", physics.timestep);
         }
 
-        println!(
+        eprintln!(
             "MuJoCo {}.{}.{}  qpos {qpos_len} ({} {cart}, {} {pole})  ctrl {ctrl_len} ({} {actuator})  timestep {} s",
             version / 1_000_000,
             version / 1000 % 1000,

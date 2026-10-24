@@ -65,16 +65,16 @@ pub struct Args {
     #[arg(long, default_value_t = 10)]
     pub reply_timeout: u64,
 
-    /// Number of observations in the run (until the trainer's stop
-    /// replaces it).
-    #[arg(long, default_value_t = 60)]
+    /// --no-render only: the number of states in a physics-only run. With
+    /// the Orin, the trainer's stop ends the run (18).
+    #[arg(long, default_value_t = 60, requires = "no_render")]
     pub frames: u32,
 
-    /// The cart command, a target cart speed — zero, speed:<m_s>, or
-    /// sine:<amp_m_s>,<period_s> (m/s; seconds of simulated time); a
-    /// stand-in until the trainer's command arrives. sine moves the cart
-    /// ±amp·period/2π m about its start.
-    #[arg(long, default_value = "zero")]
+    /// --no-render only: the cart command, a target cart speed — zero,
+    /// speed:<m_s>, or sine:<amp_m_s>,<period_s> (m/s; seconds of
+    /// simulated time). sine moves the cart ±amp·period/2π m about its
+    /// start. With the Orin, the trainer's command drives the cart (18).
+    #[arg(long, default_value = "zero", requires = "no_render")]
     pub control: Control,
 
     /// The pole's start angle in radians, at rest (0 = hanging,

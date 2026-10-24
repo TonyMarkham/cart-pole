@@ -50,6 +50,14 @@ messages.
 - **T5 — the answer (18).** The command — an `i32`, sign = direction,
   magnitude = pulses per second (the synthetic Arduino clamps it to
   ±45,333) — and continue or stop.
+- **T5a — the link (17, 18, 26)** (the diagram's *Trainer link*): the
+  orchestrator's stdin and stdout, which the trainer holds as pipes
+  because it launched the orchestrator (1). Per observation it reads one
+  stdout line, `{"id": n, "pool": [6 rows]}`, and writes one stdin line,
+  `{"command": c, "continue": bool}`. The run's end (26) is the
+  orchestrator's exit: stdout closes, then exit code 0 (closed) or 1
+  (failed: training ends). The orchestrator's log arrives on stderr, the
+  trainer's console.
 - **T6 — what a stop ends.** Stop ends this run, one episode for now;
   the trainer itself carries on and starts the next run (1). A run that
   failed ends training.
@@ -84,8 +92,6 @@ the diagram first:
 - **The pole's start** for each run (the cart's is guaranteed at 50%).
   The intent so far is near θ = π: at hinge angle 0 the pole hangs, so
   upright is θ = π.
-- **The link to the orchestrator** (17, 18, 26): its transport. The
-  start (1) is settled: the trainer launches the orchestrator.
 - **How the trained policy reaches the Orin** for production.
 
 ## Steps
@@ -97,10 +103,20 @@ the diagram first:
    `target/release/orchestrator.exe` with the command `settings.toml`
    builds (the ports, the seed and `[mjcf]` inserted ahead of `--orin`;
    `launch.py`, without the trainer's `VIRTUAL_ENV`), waits for it and
-   reports its exit code; a run exits 0. `pool.py` and `output.py` check
-   the pool (17) and the answer (18); `NaiveTrainer.answer()` returns the
-   fixed command, then stop. No pool reaches it yet: that waits on the
-   link (*Not decided*), and the run's end is only the exit code (26).
+   reports its exit code. `pool.py` and `output.py` check the pool (17)
+   and the answer (18) and carry their link encodings
+   (`Pool.from_rows`, `Answer.line`); `launch.py` reads each stdout line
+   (anything but a pool message for the next id fails the run), asks the
+   trainer, writes the answer to stdin, and after the stop expects only
+   EOF and the exit code (T5a). `NaiveTrainer.answer()` returns the fixed
+   command, then stop.
+   **Done-when 1 done (2026-10-24):** command 0, 250 observations: every
+   pool answered, the stop on the 250th, the run closed with exit 0,
+   reported as "the run closed". The pole started hanging at rest, so it
+   stayed still rather than swinging. **Done-when 2 in part:** a constant
+   command, 6,667 pulses/s for 60 observations, moved the cart at
+   0.0995 m/s, and the Pivot marker's slot moved with it; the slow
+   back-and-forth and its comparison with `states.csv` are not done.
 2. **Runs back to back** (T6). *Check:* Done-when 3.
 3. **Scoring and the end crash** (T3, T4), once the reward and the
    bounds are in the diagram.

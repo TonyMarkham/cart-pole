@@ -7,6 +7,7 @@ mod pose_message;
 mod registered;
 #[cfg(test)]
 mod tests;
+mod trainer_link;
 
 use crate::{
     args::Args,
@@ -16,6 +17,7 @@ use crate::{
     orin_reply::{OrinReply, POOL_ENTRIES, PoolRow},
     pose_message::PoseMessage,
     registered::Registered,
+    trainer_link::TrainerLink,
 };
 
 use anyhow::{Context, Result, anyhow, bail};
@@ -28,7 +30,7 @@ use std::{
     io::{BufWriter, Write},
     net::{Ipv4Addr, SocketAddr},
     path::Path,
-    process::ExitStatus,
+    process::{ExitStatus, Stdio},
     time::{Duration, Instant},
 };
 use tokio::{
@@ -41,6 +43,8 @@ use tokio_tungstenite::{WebSocketStream, accept_async, tungstenite::Message};
 // own after its socket closes before it is killed.
 const CLIENT_EXIT_GRACE: Duration = Duration::from_secs(5);
 
+// Everything the orchestrator prints goes to stderr (eprintln!): stdout is
+// the trainer link alone (synthetic-loop-dia.md, Trainer link).
 #[tokio::main]
 async fn main() -> Result<()> {
     let args = Args::parse();
@@ -70,7 +74,7 @@ async fn main() -> Result<()> {
     let mut orin_child = launch_orin(command, &orin_url, frames_listen, &args.out, seed)?;
     let stream = accept(&orin_listener, &mut orin_child, "synthetic Orin", connect_timeout).await?;
     let mut orin = accept_async(stream).await.context("synthetic Orin WebSocket handshake")?;
-    println!("synthetic Orin connected");
+    eprintln!("synthetic Orin connected");
 
     // 6: the player, pointed at the Orin's frame socket — or, with
     // --no-launch, editor Play mode connects there itself.
@@ -78,16 +82,16 @@ async fn main() -> Result<()> {
     let mut player = match (&args.player, args.no_launch) {
         (Some(player), false) => Some(launch(player, &frames_url)?),
         _ => {
-            println!("--no-launch: enter Play mode in the editor; it connects to {frames_url}");
+            eprintln!("--no-launch: enter Play mode in the editor; it connects to {frames_url}");
             None
         }
     };
 
     // 7–8: Unity connects to the Orin, and the Orin says so.
     wait_registered(&mut orin, &mut orin_child, player.as_mut(), connect_timeout).await?;
-    println!("Unity has registered with the synthetic Orin");
+    eprintln!("Unity has registered with the synthetic Orin");
 
-    let result = run(Some(&mut orin), &args, &mut sim).await;
+    let result = run(Some((&mut orin, TrainerLink::new())), &args, &mut sim).await;
 
     // 22–25: closing the control socket ends the run for the Orin, which
     // closes the frame socket, so the player quits, then the Orin. A
@@ -152,12 +156,15 @@ impl Simulation {
         let file = File::create(&path).with_context(|| format!("creating {}", path.display()))?;
         let mut csv = BufWriter::new(file);
         writeln!(csv, "id,time,cart,pole,left_x,left_y,right_x,right_y,pivot_x,pivot_y,end_x,end_y")?;
-        println!(
-            "physics: model {}\n         start cart {:+.3} m pole {:.3} rad, control {:?}, seed {} -> {}",
+        let driver = match args.no_render {
+            true => format!("--control {:?}", args.control),
+            false => "the trainer's commands".to_string(),
+        };
+        eprintln!(
+            "physics: model {}\n         start cart {:+.3} m pole {:.3} rad, driven by {driver}, seed {} -> {}",
             config.model.display(),
             start.cart,
             start.pole,
-            args.control,
             args.seed,
             path.display()
         );
@@ -187,16 +194,19 @@ impl Simulation {
         }
     }
 
-    // 19–21, at the arrival step: the new command. The scripted speed at
-    // this step stands in for the trainer's answer; it reaches the
-    // firmware as the packet the trainer will send (pulses/s, rounded).
-    // The firmware's DRV8825 signals become the cart speed, set as ctrl
-    // once, here. Returns that speed.
-    fn command(&mut self) -> Result<f64> {
+    // --no-render's stand-in for the trainer's command: the scripted speed
+    // at this step, as the packet the trainer would send (pulses/s,
+    // rounded). `as` saturates, so an absurd speed becomes the i32 limit,
+    // which the firmware clamps to the motor's top rate.
+    fn scripted_command(&self) -> i32 {
         let speed = self.control.at(self.physics.time());
-        // `as` saturates, so an absurd speed becomes the i32 limit, which
-        // the firmware clamps to the motor's top rate.
-        let command = (speed / self.meters_per_pulse).round() as i32;
+        (speed / self.meters_per_pulse).round() as i32
+    }
+
+    // 19–21, at the arrival step: the new command goes to the firmware,
+    // whose DRV8825 signals become the cart speed, set as ctrl once, here.
+    // Returns that speed.
+    fn command(&mut self, command: i32) -> Result<f64> {
         let signals = self.arduino.receive(encode_command(command));
         let velocity = cart_velocity(signals, self.meters_per_pulse);
         self.physics.set_ctrl(velocity)?;
@@ -245,10 +255,12 @@ fn cart_velocity(signals: Drv8825Signals, meters_per_pulse: f64) -> f64 {
 // error return drops the handle, and the player must not outlive the
 // orchestrator that launched it.
 fn launch(player: &Path, frames_url: &str) -> Result<Child> {
-    println!("launching {} -orin {frames_url}", player.display());
+    eprintln!("launching {} -orin {frames_url}", player.display());
     Command::new(player)
         .arg("-orin")
         .arg(frames_url)
+        .stdin(Stdio::null())
+        .stdout(child_stdout())
         .kill_on_drop(true)
         .spawn()
         .with_context(|| format!("launching {}", player.display()))
@@ -259,7 +271,7 @@ fn launch(player: &Path, frames_url: &str) -> Result<Child> {
 // address, the run's folder and the seed; kill_on_drop as for the player.
 fn launch_orin(command: &[String], url: &str, frames_listen: SocketAddr, out: &Path, seed: u64) -> Result<Child> {
     let (program, rest) = command.split_first().ok_or_else(|| anyhow!("--orin needs a command"))?;
-    println!(
+    eprintln!(
         "launching synthetic Orin: {} --orchestrator {url} --frames-listen {frames_listen} --out {} --seed {seed}",
         command.join(" "),
         out.display()
@@ -274,9 +286,18 @@ fn launch_orin(command: &[String], url: &str, frames_listen: SocketAddr, out: &P
         .arg(out)
         .arg("--seed")
         .arg(seed.to_string())
+        .stdin(Stdio::null())
+        .stdout(child_stdout())
         .kill_on_drop(true)
         .spawn()
         .with_context(|| format!("launching {program}"))
+}
+
+// A child's stdout is the orchestrator's stderr, and its stdin is closed:
+// both of the orchestrator's own pipes are the trainer link, and a child
+// must neither write into it nor read from it.
+fn child_stdout() -> Stdio {
+    Stdio::from(std::io::stderr())
 }
 
 // The loop runs on this workstation, so every socket is on 127.0.0.1.
@@ -286,7 +307,7 @@ async fn bind(port: u16, what: &str) -> Result<(TcpListener, String)> {
         .await
         .with_context(|| format!("binding the {what} on {address}"))?;
     let url = format!("ws://{address}");
-    println!("{what}: listening on {url}");
+    eprintln!("{what}: listening on {url}");
     Ok((listener, url))
 }
 
@@ -353,64 +374,84 @@ async fn wait_registered(
 // capture, draw the Orin's latency and cache the arrival time; send the
 // pose (11); step MuJoCo on the old command up to the arrival step while
 // the Orin works (15–16); wait there for the reply (the freeze, 14); then
-// set the new command at the arrival step, which is the next capture. The
+// send the pool to the trainer and wait, still frozen, for its answer
+// (17–18); on continue, set its command at the arrival step, which is the
+// next capture (19–21); on stop, end the loop for the shutdown (22). The
 // run fails when the Orin reports failed or if MuJoCo warned (P3).
-// Without the Orin (--no-render), the same clock runs with no
-// observations.
-async fn run(mut orin: Option<&mut WebSocketStream<TcpStream>>, args: &Args, sim: &mut Simulation) -> Result<()> {
+// Without the Orin (--no-render) there is no pool and no trainer: the same
+// clock runs --frames states on the scripted --control.
+async fn run(
+    mut observed: Option<(&mut WebSocketStream<TcpStream>, TrainerLink)>,
+    args: &Args,
+    sim: &mut Simulation,
+) -> Result<()> {
     let reply_timeout = Duration::from_secs(args.reply_timeout);
     let mut capture = sim.capture();
-    for id in 0..args.frames {
+    let mut id = 0;
+    loop {
+        if observed.is_none() && id == args.frames {
+            eprintln!("{id} states -> {}", args.out.display());
+            break;
+        }
         let started = Instant::now();
         let latency_ms = sim.latency.next_ms();
         let arrival = capture.time + latency_ms / 1000.0;
-        if let Some(orin) = orin.as_deref_mut() {
+        if let Some((orin, _)) = observed.as_mut() {
             send_pose(orin, id, &capture, &sim.names).await?;
         }
         sim.step_to(arrival);
-        let newest = match orin.as_deref_mut() {
-            Some(orin) => Some(receive_pool(orin, id, reply_timeout).await?),
-            None => None,
-        };
-        // The truth log (the note before 17), then the new command (19–21).
-        sim.log(id, &capture, newest.as_ref())?;
-        let speed = sim.command()?;
-
-        let next = sim.capture();
         let mut line = format!(
-            "observation {id:06}  t {:.3} s  latency {latency_ms:.3} ms, arrival step t {:.3} s (gap {:.0} ms)  cart {:+.3} m  pole {:.3} rad ({:.1}°)  ctrl {speed:+.3} m/s",
+            "observation {id:06}  t {:.3} s  latency {latency_ms:.3} ms, arrival step t {:.3} s (gap {:.0} ms)  cart {:+.3} m  pole {:.3} rad ({:.1}°)",
             capture.time,
-            next.time,
-            (next.time - capture.time) * 1000.0,
+            sim.physics.time(),
+            (sim.physics.time() - capture.time) * 1000.0,
             capture.pose.cart,
             capture.pose.pole,
             capture.pose.pole.to_degrees()
         );
-        if let Some(newest) = newest {
-            line += &format!(
-                "  orin {:.1} ms  newest L({:.3}, {:.3}) R({:.3}, {:.3}) P({:.3}, {:.3}) E({:.3}, {:.3})",
-                started.elapsed().as_secs_f64() * 1000.0,
-                newest[1],
-                newest[2],
-                newest[3],
-                newest[4],
-                newest[5],
-                newest[6],
-                newest[7],
-                newest[8]
-            );
-        }
-        println!("{line}");
-        capture = next;
+        let command = match observed.as_mut() {
+            Some((orin, link)) => {
+                let pool = receive_pool(orin, id, reply_timeout).await?;
+                let orin_ms = started.elapsed().as_secs_f64() * 1000.0;
+                // The truth log (the note before 17).
+                sim.log(id, &capture, Some(&pool[0]))?;
+                let asked = Instant::now();
+                let answer = link.exchange(id, &pool)?;
+                let n = &pool[0];
+                line += &format!(
+                    "  orin {orin_ms:.1} ms  newest L({:.3}, {:.3}) R({:.3}, {:.3}) P({:.3}, {:.3}) E({:.3}, {:.3})  trainer {:.1} ms",
+                    n[1],
+                    n[2],
+                    n[3],
+                    n[4],
+                    n[5],
+                    n[6],
+                    n[7],
+                    n[8],
+                    asked.elapsed().as_secs_f64() * 1000.0
+                );
+                if !answer.keep_going {
+                    eprintln!("{line}  stop");
+                    eprintln!("the trainer stopped the run after {} observations -> {}", id + 1, args.out.display());
+                    break;
+                }
+                answer.command
+            }
+            None => {
+                sim.log(id, &capture, None)?;
+                sim.scripted_command()
+            }
+        };
+        // 19–21: the new command acts from the arrival step, the next capture.
+        let speed = sim.command(command)?;
+        eprintln!("{line}  command {command} pulses/s, ctrl {speed:+.3} m/s");
+        capture = sim.capture();
+        id += 1;
     }
 
     let warnings = sim.finish()?;
     if warnings > 0 {
         bail!("MuJoCo warned {warnings} time(s); the states cannot be trusted");
-    }
-    match orin {
-        Some(_) => println!("all {} observations -> {}", args.frames, args.out.display()),
-        None => println!("{} states -> {}", args.frames, args.out.display()),
     }
     Ok(())
 }
@@ -430,9 +471,9 @@ async fn send_pose(orin: &mut WebSocketStream<TcpStream>, id: u32, capture: &Cap
         .with_context(|| format!("sending pose {id} to the synthetic Orin"))
 }
 
-// 14: the Orin's one reply, the pool; returns its newest entry. A reply
-// for another id, a pool of the wrong shape, or failed ends the run.
-async fn receive_pool(orin: &mut WebSocketStream<TcpStream>, id: u32, timeout: Duration) -> Result<PoolRow> {
+// 14: the Orin's one reply, the pool, newest first. A reply for another
+// id, a pool of the wrong shape, or failed ends the run.
+async fn receive_pool(orin: &mut WebSocketStream<TcpStream>, id: u32, timeout: Duration) -> Result<Vec<PoolRow>> {
     let reply = loop {
         let message = tokio::time::timeout(timeout, orin.next())
             .await
@@ -465,17 +506,17 @@ async fn receive_pool(orin: &mut WebSocketStream<TcpStream>, id: u32, timeout: D
     if reply.failed {
         bail!("the run failed: 3 of pool {id}'s 6 entries are failed frames");
     }
-    Ok(reply.pool[0])
+    Ok(reply.pool)
 }
 
 // A launched process quits on its own when its socket closes; it is
 // killed only if it is still running after the grace period.
 async fn stop(mut child: Child, who: &str) -> Result<()> {
     match tokio::time::timeout(CLIENT_EXIT_GRACE, child.wait()).await {
-        Ok(status) => println!("{who} exited: {}", status?),
+        Ok(status) => eprintln!("{who} exited: {}", status?),
         Err(_) => {
             child.kill().await.with_context(|| format!("killing the {who}"))?;
-            println!("{who} killed after {} s", CLIENT_EXIT_GRACE.as_secs());
+            eprintln!("{who} killed after {} s", CLIENT_EXIT_GRACE.as_secs());
         }
     }
     Ok(())

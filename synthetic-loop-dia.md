@@ -59,7 +59,7 @@ sequenceDiagram
         participant U as Unity player (process, the Orin's camera)
     end
 
-    T->>O: start the run: launch the orchestrator with the command in trainer/settings.toml
+    T->>O: start the run: launch the orchestrator with the command in trainer/settings.toml<br/>its stdin and stdout, the trainer's pipes, are the trainer link (17, 18)
     Note over M,O: Start: load the MJCF (path and names from the trainer's settings.toml [mjcf]),<br/>reset to --start (at rest, cart at 50% of the rail, t = 0)
     O->>M: load + reset(start pose)
     O->>A: new(RIG): the cart starts at 50% of the rail, guaranteed (stands in for homing)
@@ -91,9 +91,9 @@ sequenceDiagram
             Note over O: the run fails: go to the shutdown (22)
         end
         Note over O: states.csv row (the truth log, see Truth log):<br/>id n, capture time t, true cart (m) and pole (rad) at capture,<br/>the 4 observed (x, y) of the pool's newest entry
-        O->>T: the pool, and nothing else
+        O->>T: stdout line {"id":n,"pool":[…6 rows]}: the pool, and nothing else
         Note over T: from the pool alone: reward or penalty for its last command<br/>(this pool is the next state after it), and continue or stop<br/>the Pivot marker out of bounds is the end crash:<br/>a training failure, penalty, and stop this run<br/>nothing to score on the first observation<br/>then ask the policy for the next command
-        T-->>O: the command (i32, sign = direction, magnitude = pulses/s) + continue/stop
+        T-->>O: stdin line {"command":c,"continue":true|false}<br/>c: the command (i32, sign = direction, magnitude = pulses/s)<br/>MuJoCo stays frozen at the arrival step until it is in
         alt continue
             O->>A: receive(the command: i32 LE pulses/s), the only thing it is sent
             Note over A: rate clamped to ±45,333 pulses/s<br/>no clock in the loop, so no pulse count:<br/>the ±30,000-pulse travel limit cannot act here<br/>(the end crash is the trainer's training failure)
@@ -110,7 +110,7 @@ sequenceDiagram
     N->>U: close the frame socket
     U-->>O: exits
     N-->>O: exits
-    O-->>T: closed (the Orin and the player have exited), or the run failed: training ends
+    O-->>T: exits, closing stdout: code 0, closed (the Orin and the player have exited),<br/>or code 1, the run failed: training ends
 ```
 
 **The pool's size.** Three entries are the minimum for the current
@@ -138,6 +138,17 @@ that is also the next capture, and drives the cart only during the
 following steps (15–16). That delay is the real latency of the Orin's
 object detection, the only perception in the loop, and the policy learns it
 as part of the world, as it must on the real rig.
+
+**The trainer link (17, 18, 26)** (user, 2026-10-24): the orchestrator's
+stdin and stdout. The trainer launched the orchestrator (1), so it already
+holds both as pipes: no port, no socket, and each run's link is its own.
+Per observation, one JSON line each way: the pool out on stdout (17), the
+answer in on stdin (18). stdout carries the link and nothing else, so
+everything else the orchestrator prints, and everything its children (the
+Orin, the player) print, goes to stderr. While the trainer works, MuJoCo
+stays frozen at the arrival step, so the trainer's speed, like the Orin's,
+stays out of simulated time. The run's end (26) is the orchestrator's
+exit: stdout closes, and the exit code says closed (0) or failed (1).
 
 **The initial pool.** At startup, before any frame exists, the Orin
 pre-warms the pool: six entries with no detection (−1, −1) at cumulative
@@ -211,10 +222,16 @@ Orin (`orchestrator-plan.md`, *Placeholders*).
   frames. On the wire (14), one text message: `{"id": n, "pool":
   [[age_ms, x0, y0, x1, y1, x2, y2, x3, y3], …6 rows, newest first],
   "failed": false}` — row 0 is this frame, age 0; slot k is class k;
-  `failed` is true when 3 of the pool's 6 entries are failed frames.
-- **The command (18, 19):** 4 bytes, one `i32`, little-endian, in
-  pulses per second; fixed length, no id; sign = direction, never a
-  distance or position offset. Why 4 bytes: at 1/32 microstepping the
+  `failed` is true when 3 of the pool's 6 entries are failed frames. To
+  the trainer (17), one stdout line: `{"id": n, "pool": [...]}`, the same
+  6 rows; no `failed`, since a failed pool goes to the shutdown and never
+  reaches the trainer.
+- **The answer (18):** one stdin line, `{"command": c, "continue":
+  true}` (or `false`, stop): c is the command below, a JSON integer that
+  must fit an `i32`. On a stop the command is not used.
+- **The command (18, 19):** one `i32`, in pulses per second; sign =
+  direction, never a distance or position offset. To the Arduino (19) it
+  travels as 4 bytes, little-endian; fixed length, no id. Why an `i32`: at 1/32 microstepping the
   top rate is 0.68 m/s ÷ 15 µm = 45,333 pulses/s, past an `i16`'s
   32,767; an `i32` never limits the microstep setting or the speed. One
   pulse per second is 0.015 mm/s, finer than the slowest motion a
