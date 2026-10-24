@@ -278,8 +278,10 @@ adds repo structure around them, never overrides them.
   measurements that chose the Orin and Python); `DATASETS.md` (the one dataset format) and
   `GENERATOR.md` (the generator's binding directives, which win over
   `DATASETS.md` where they conflict); `training-plan.md` (the YOLO
-  training plan). Plans state intent, not current state (*Working with
-  the user*).
+  training plan); `gymnasium-research.md` (research, not a plan: what
+  Gymnasium 1.4 and Stable-Baselines3 2.9 require of an environment,
+  read against the loop, for the trainer's open decisions). Plans state
+  intent, not current state (*Working with the user*).
 
 ## The trained detector
 

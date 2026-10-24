@@ -76,7 +76,8 @@ These are needed to build the trainer; per `AGENTS.md`, each lands in
 the diagram first:
 
 - **The learning method and its tooling** (the diagram's *Scoring lag*
-  uses a Gymnasium step only as an analogy).
+  uses a Gymnasium step only as an analogy; `gymnasium-research.md`
+  holds the research for this decision).
 - **The reward**, and the end conditions besides the end crash, such as
   a time limit.
 - **The end crash's bounds** — not set.
