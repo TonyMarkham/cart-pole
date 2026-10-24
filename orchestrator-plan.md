@@ -14,6 +14,12 @@ Status: **plan** (2026-10-23), written from `synthetic-loop-dia.md`
 alone, the source of truth. Element numbers below (1–26) are the
 diagram's messages.
 
+Progress (2026-10-24, run on this PC; *Steps* has each check): steps
+1–3 and 7 are done; step 6 in part (a failed run ends with exit code 1);
+steps 4 and 5 are open. The
+code is `orchestrator/src/`; the trainer launches it with
+`uv run --project trainer python trainer/src/naive_trainer.py`.
+
 ## Done when
 
 1. **The order holds.** A run's log shows the diagram's messages in its
@@ -24,8 +30,10 @@ diagram's messages.
    speed first acts from its arrival step on.
 3. **The freeze holds.** MuJoCo is never stepped past an arrival step
    before the Orin's reply for that observation is in.
-4. **Deterministic.** The same seed and the same trainer commands give
-   byte-identical `states.csv` and `observations.jsonl`.
+4. **Deterministic physics.** The same seed and the same trainer
+   commands give the same ids, capture times, latencies and true cart
+   and pole, bit for bit (the diagram's *Determinism*: the observed
+   values jitter with Unity's SSAO noise, by decision).
 5. **The truth log joins.** `states.csv` has one row per observation and
    joins `observations.jsonl` on the id.
 6. **Both endings work.** The trainer's stop shuts the run down and the
@@ -83,7 +91,9 @@ diagram's messages.
   told the run closed, or that it failed and training ends (26).
 - **O10 — determinism.** The latency draws come from `--seed`, the same
   seed the Orin's pre-warm gaps come from; the freeze keeps the
-  workstation's speed out of simulated time.
+  workstation's speed out of simulated time. The physics repeats bit for
+  bit; the observation jitters with Unity's SSAO noise (the diagram's
+  *Determinism*).
 
 ## Configuration (user, 2026-10-23)
 
@@ -137,15 +147,43 @@ in the diagram first:
 ## Steps
 
 1. **Start** (O1, O2): the start sequence up to the first capture state.
-   *Check:* Done-when 1, start part.
+   *Check:* Done-when 1, start part. **Done (2026-10-24):** a trainer
+   run prints 1–10 in order — the control socket, the Orin launched with
+   `--frames-listen` and `--seed`, its pre-warm and frame socket, its
+   connection, the player launched with `-orin`, "Unity has registered",
+   then the first capture at t = 0.
 2. **Clock and observation** (O3, O4): latency draw, arrival step,
    stepping on the old command, the freeze. *Check:* Done-when 2–3.
-3. **Truth log** (O6). *Check:* Done-when 5.
+   **Done (2026-10-24):** 500 observations give gaps of 10, 12, 14 and
+   16 ms only (146 / 154 / 132 / 67, against 143 / 143 / 143 / 71 for
+   the band), every capture on the 2 ms grid. The freeze holds by
+   construction: `step_to` stops at the arrival step and the reply is
+   awaited before anything steps again. The latency generator
+   (SplitMix64, *Configuration*) matches the algorithm's published
+   outputs for seed 0 (`orchestrator/src/tests.rs`).
+3. **Truth log** (O6). *Check:* Done-when 5. **Done (2026-10-24):** 60
+   rows join `observations.jsonl` on the id, the capture time and the
+   newest entry bit for bit — after turning on `serde_json`'s
+   `float_roundtrip`, whose default parse was 1 ulp off in 41 of 60.
 4. **Trainer link** (O7), once its link is in the diagram.
 5. **Command path** (O8). *Check:* a constant command moves the cart at
-   STEP rate × 15 µm.
-6. **Endings** (O5, O9). *Check:* Done-when 6.
-7. **Determinism** (O10). *Check:* Done-when 4.
+   STEP rate × 15 µm. **Open:** the scripted `--control` speed still
+   stands in for the trainer's command, and the synthetic Arduino is
+   still ticked every step (its pulses as MuJoCo's ctrl), not asked for
+   DIR and STEP rate once (`synthetic-arduino-plan.md` step 2).
+6. **Endings** (O5, O9). *Check:* Done-when 6. **In part (2026-10-24):**
+   a failed run works — with a stand-in camera sending broken frames,
+   the third failed frame in the pool gives `failed`, the shutdown runs
+   in order and the orchestrator exits 1. The trainer's stop does not
+   exist yet (`--frames` ends the run), and 26 is only the exit code.
+7. **Determinism** (O10). *Check:* Done-when 4. **Done (2026-10-24):**
+   two trainer runs with seed 0 give identical ids, capture times, true
+   cart and pole, and `failed`. The frames differ (53 of 60), by
+   decision: the cause is URP's SSAO in Blue Noise mode, whose noise
+   index advances on every render (`SSAOUtils.AdvanceBlueNoiseIndex`),
+   while the loop camera also renders the player's window between
+   triggers. The detections differ by at most 0.04 px, and every marker
+   is found in every frame; the user accepted that jitter (2026-10-24).
 
 ## Placeholders
 

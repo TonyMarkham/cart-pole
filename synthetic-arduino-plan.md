@@ -64,8 +64,16 @@ diagram first:
 
 ## Steps
 
-1. **Creation** (A1). *Check:* Done-when 1.
+1. **Creation** (A1). *Check:* Done-when 1. **Done (2026-10-24):** the
+   crate is `arduino/` (renamed from `firmware/`);
+   `SyntheticArduino::new(RIG)` takes no start position and starts at
+   rest at 0 pulses, the rail's center (test
+   `synthetic_starts_at_rest_at_the_center`, `arduino/src/tests.rs`).
 2. **Receive, clamp, signals** (A2–A4). *Check:* Done-when 2–3.
+   **Open:** `receive` takes the 4-byte `i32` and clamps it, but returns
+   nothing; the orchestrator still calls `tick` every step and reads
+   pulses (A5's "no pulse count" is not met while the step generator
+   runs in the loop).
 3. **The orchestrator's conversion** (`orchestrator-plan.md`, O8).
    *Check:* Done-when 4.
 

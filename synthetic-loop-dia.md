@@ -151,7 +151,14 @@ drops, so frame 0's pool ages are 0, −d₁, −(d₁+d₂), …, −(d₁+…+
 **Determinism.** The orchestrator's latency draws and the Orin's pre-warm
 gaps both come from `--seed`, and the freeze at the arrival step keeps the
 workstation's speed out of the sim, so the same seed and the same trainer
-commands give byte-identical `observations.jsonl` and `states.csv`.
+commands give the same physics: the same ids, capture times, latencies and
+true cart and pole, bit for bit. The observation is not bit-identical, by
+decision (user, 2026-10-24): Unity's SSAO (blue noise) changes its noise
+pattern on every render, and the player renders between triggers, so a
+frame's shading jitters slightly from run to run. The detector found every
+marker in every frame regardless; run to run, the detections differ by at
+most 0.04 px (2026-10-24), and so do `states.csv`'s observed columns and
+`observations.jsonl` (which also logs `detect_ms`, a wall-clock time).
 
 Numbers: `arduino::RIG` (200 steps × 32 microsteps, 96 mm per pulley turn:
 15 µm per pulse, ±30,000 pulses of travel, 45,333 pulses/s top rate). The

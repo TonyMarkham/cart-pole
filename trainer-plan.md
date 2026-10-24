@@ -91,7 +91,15 @@ the diagram first:
 
 1. **A stand-in trainer** that starts a run, takes each pool, and
    returns a fixed command and continue, then stop. *Check:* Done-when
-   1–2.
+   1–2. **In part (2026-10-24):** `trainer/` is a `uv` project (code in
+   `src/`). `naive_trainer.py` starts the run (1): it launches
+   `target/release/orchestrator.exe` with the command `settings.toml`
+   builds (the ports, the seed and `[mjcf]` inserted ahead of `--orin`;
+   `launch.py`, without the trainer's `VIRTUAL_ENV`), waits for it and
+   reports its exit code; a run exits 0. `pool.py` and `output.py` check
+   the pool (17) and the answer (18); `NaiveTrainer.answer()` returns the
+   fixed command, then stop. No pool reaches it yet: that waits on the
+   link (*Not decided*), and the run's end is only the exit code (26).
 2. **Runs back to back** (T6). *Check:* Done-when 3.
 3. **Scoring and the end crash** (T3, T4), once the reward and the
    bounds are in the diagram.

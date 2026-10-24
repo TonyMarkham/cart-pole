@@ -13,6 +13,20 @@ user 2026-10-23) running TensorRT on this PC's RTX 3090.
 Status (2026-10-23): **steps 1–6 done, Done-when 1–4 met on this PC**
 (see *Results*; uncommitted). R1 approved by the user 2026-10-23.
 
+Since (2026-10-24, committed; the *Superseded* notes below say what each
+replaced): the diagram's Orin runs end to end with the real player. Code
+in `orin/src/`, settings in `orin/settings.toml` (was
+`ObjectDetection.toml`). At launch it pre-warms the pool from `--seed`
+(six no-detection entries at seeded RND(8, 15) gaps), opens the frame
+socket at `--frames-listen` (`frame_socket.py`, one camera), connects to
+the orchestrator and, once Unity connects, sends `{"type":
+"registered"}` (4–8). Each pose is forwarded to Unity as the trigger, the
+JPEG saved as `frame_NNNNNN.jpg` and detected, and the reply is the pool,
+newest first with ages in ms, plus `failed` (11–14). A failed frame is
+4 × (−1, −1) with the error logged; the third in the pool fails the run
+(checked with a stand-in camera sending broken frames). On the control
+socket's close it closes the frame socket and exits 0 (22–25).
+
 **The planned loop is `synthetic-loop-dia.md`** (2026-10-23), the
 source of truth: it supersedes the decisions marked *Superseded* below.
 What this plan built and measured (*Results*) stays as the record of the

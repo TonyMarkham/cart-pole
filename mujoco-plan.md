@@ -21,6 +21,18 @@ workspace crate; a repo-root `physics.toml` as its configuration; the
 replacing the `<position>` servo the leg was first built and checked on
 (*Results — position model*, kept as history).
 
+Since (2026-10-24, committed; the *Superseded* notes below have the
+detail): the crate's API is unchanged, its configuration is not.
+`orchestrator.toml` (was `physics.toml`) holds only `mujoco_dir`, read
+by `build.rs`; the MJCF and its three names come from the orchestrator's
+`--model`, `--cart-joint`, `--pole-joint` and `--actuator`, which the
+trainer fills from its `settings.toml` `[mjcf]`. The build copies
+`mujoco.dll` beside the binary, so `target/release/orchestrator.exe`
+runs without cargo. The MJCF states `<option timestep="0.002"
+integrator="implicitfast"/>`, written by the Unity exporter from the
+rig's StepJointSet (greyhound `da107c4`). `physics/README.md` documents
+the crate.
+
 **The planned loop is `synthetic-loop-dia.md`** (2026-10-23), the
 source of truth: it supersedes the decisions marked *Superseded* below.
 What this plan built and measured (*Results*) stays as the record of the

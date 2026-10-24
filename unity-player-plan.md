@@ -14,6 +14,15 @@ player** — Done-when 1–4 pass (*Results* below); 5 (editor Play mode with
 half is done. Nothing is committed (*Next*). Unity compilation, scene
 behavior, and the build are validated by the user in the editor.
 
+Since (2026-10-24, committed): the player is the Orin's camera
+(`synthetic-loop-dia.md` 6–7, 12–13). It takes `-orin ws://…`, the
+synthetic Orin's frame socket, and in the editor `m_EditorOrinUrl`
+(default `ws://127.0.0.1:9001`, a new field so the old port 9000 is not
+carried over). The user compiled it and rebuilt `SimulationLoop.exe`
+(2026-10-23); a trainer run with it registers with the Orin, renders 60
+frames and exits 0 when the Orin closes the socket. Editor Play mode with
+`--no-launch` has still not been run.
+
 **The planned loop is `synthetic-loop-dia.md`** (2026-10-23), the
 source of truth: it supersedes the decisions marked *Superseded* below.
 What this plan built and measured (*Results*) stays as the record of the
