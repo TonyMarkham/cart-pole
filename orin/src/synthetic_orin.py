@@ -7,8 +7,8 @@ window (synthetic-orin-plan.md). Its camera is the Unity player: it serves
 the frame socket Unity connects to, triggers each frame there with the
 pose the orchestrator sends, and gets the JPEG back (synthetic-loop-dia.md,
 4-14). It writes each frame to <out>/frame_NNNNNN.jpg and one observation
-line per frame to <out>/observations.jsonl. The pool reply (14) is still to
-come: the reply is an acknowledgement.
+line per frame to <out>/observations.jsonl, and replies to each pose with
+the pool (14).
 
 The start (synthetic-loop-dia.md): pre-warm the pool, open the frame
 socket (the note at 4); connect to the orchestrator's control socket (5);
@@ -20,12 +20,11 @@ Messages, control socket (orchestrator):
 - out text   {"type": "registered"}                  once, when Unity has
                                                      connected (8)
 - in  text   {"id": n, "time": t, "joints": [...]}   the capture state (11)
-- out text   {"id": n}                               exactly one per pose,
-                                                     in order (14)
-- out text   {"id": n, "error": "..."}               Unity's frame broke the
-                                                     728x544 JPEG contract
-                                                     (O3); the orchestrator
-                                                     fails the run
+- out text   {"id": n, "pool": [[age_ms, x0, y0, ... x3, y3] x6],
+              "failed": bool}                        exactly one per pose,
+                                                     in order (14): the
+                                                     pool newest first;
+                                                     failed ends the run
 Messages, frame socket (Unity):
 - out text   {"id": n, "joints": [...]}              the trigger (12): the
                                                      pose, forwarded as is
@@ -44,14 +43,20 @@ Rules:
   random.Random(--seed).uniform(8, 15), d1 first, so the same seed gives
   the same pool. Every frame, the first included, is then one append:
   frame 0's ages are 0, -d1, ..., -(d1+...+d5).
+- A failed frame (synthetic-loop-dia.md, the note at 13; O3): Unity's
+  JPEG does not decode or is not 728x544. Its entry is (-1, -1) x4, the
+  error is logged, and it does not fail the run on its own; when 3 of the
+  pool's 6 entries are failed frames, the reply says failed and the run
+  fails. Pre-warm entries are no detection, not failed frames.
 - --frames-listen is the frame socket's host:port; the orchestrator tells
   Unity the same address (6).
 
 observations.jsonl, one line per frame:
   {"id", "time", "slots": [[x, y] x4], "confidences": [c x4], "detect_ms",
-   "window": [[age, x0, y0, x1, y1, x2, y2, x3, y3] x6]}
-`window` runs oldest first; `confidences` and `detect_ms` are for checking,
-not part of the marker frame.
+   "pool": [[age_ms, x0, y0, x1, y1, x2, y2, x3, y3] x6], "failed"}
+plus "error" for a failed frame, whose confidences and detect_ms are null.
+`pool` and `failed` are exactly what the reply carries; `confidences` and
+`detect_ms` are for checking, not part of the marker frame.
 
 usage (from the repo root):
   uv run --project orin python orin/src/synthetic_orin.py
@@ -88,11 +93,16 @@ GAP_MS = (8.0, 15.0)
 # A slot with no detection (synthetic-loop-dia.md, Contracts).
 NOT_DETECTED = (-1.0, -1.0)
 
+# Failed frames among the pool's entries that fail the run
+# (synthetic-loop-dia.md, the note at 13).
+FAILED_FRAMES_FAIL_RUN = 3
+
 
 @dataclass(frozen=True)
 class Entry:
     time: float  # capture time, simulated seconds
     slots: list[tuple[float, float]]
+    failed: bool = False  # Unity's frame broke the JPEG contract
 
 
 def pre_warm(seed: int) -> collections.deque[Entry]:
@@ -117,9 +127,14 @@ def listen_address(text: str) -> tuple[str, int]:
     return host, int(port)
 
 
-def window_rows(window: collections.deque) -> list[list[float]]:
+def pool_rows(window: collections.deque[Entry]) -> list[list[float]]:
+    """The pool as the reply carries it: newest first, ages in ms from
+    the newest capture (0, then negative), then x0, y0, ... x3, y3."""
     newest = window[-1].time
-    return [[entry.time - newest, *(v for slot in entry.slots for v in slot)] for entry in window]
+    return [
+        [(entry.time - newest) * 1000, *(v for slot in entry.slots for v in slot)]
+        for entry in reversed(window)
+    ]
 
 
 def main() -> None:
@@ -181,25 +196,33 @@ def observe(
 ) -> None:
     """Detects, appends to the window, logs the line, and replies (14)."""
     started = time.perf_counter()
+    observation: dict = {"id": frame_id, "time": capture}
     try:
         marker_frame = detector.detect(jpeg)
     except FrameError as error:
-        ws.send(json.dumps({"id": frame_id, "error": str(error)}))
-        return
-    detect_ms = (time.perf_counter() - started) * 1000
+        # A failed frame: no detection, the error logged (the note at 13).
+        window.append(Entry(capture, [NOT_DETECTED] * 4, failed=True))
+        observation |= {
+            "slots": [list(NOT_DETECTED)] * 4,
+            "confidences": None,
+            "detect_ms": None,
+            "error": str(error),
+        }
+        print(f"synthetic orin: frame {frame_id} failed: {error}", flush=True)
+    else:
+        detect_ms = (time.perf_counter() - started) * 1000
+        window.append(Entry(capture, marker_frame.slots))
+        observation |= {
+            "slots": [list(slot) for slot in marker_frame.slots],
+            "confidences": marker_frame.confidences,
+            "detect_ms": round(detect_ms, 3),
+        }
 
-    window.append(Entry(capture, marker_frame.slots))
-
-    observation = {
-        "id": frame_id,
-        "time": capture,
-        "slots": [list(slot) for slot in marker_frame.slots],
-        "confidences": marker_frame.confidences,
-        "detect_ms": round(detect_ms, 3),
-        "window": window_rows(window),
-    }
+    pool = pool_rows(window)
+    failed = sum(entry.failed for entry in window) >= FAILED_FRAMES_FAIL_RUN
+    observation |= {"pool": pool, "failed": failed}
     log.write(json.dumps(observation) + "\n")
-    ws.send(json.dumps({"id": frame_id}))
+    ws.send(json.dumps({"id": frame_id, "pool": pool, "failed": failed}))
 
 
 if __name__ == "__main__":

@@ -333,6 +333,19 @@ The roles and per-class figures are in `training/05-POST_TRAINING.md`
   | Synthetic Arduino | the Arduino, the DRV8825, the stepper and the belt |
   | Trainer | none — training happens only in the synthetic loop |
 
+- **The camera on the Orin** (user, 2026-10-23): the Pi Global Shutter
+  Camera (IMX296) is validated on the Orin Nano Super for default colour
+  captures.
+- **Open issue — the camera's greyscale JPEGs on the Orin** (user,
+  2026-10-23): not tested. To find out: what the camera delivers when
+  asked for greyscale (a true single-channel mono/Y format, or colour
+  converted after capture), and the JPEGs that result — channel count,
+  size, quality. Why it matters: the detector trained on, and the loop
+  feeds it, 728×544 q90 frames of BT.601 luma written into three equal
+  RGB channels (`synthetic-loop-dia.md`, *Contracts*, the frame). The
+  Orin decodes to one channel either way, but the real frames must match
+  that image domain.
+
 ## Verified contracts
 
 - **Class ids are rig slot order** (the `MarkerManager`/`RigSO` marker

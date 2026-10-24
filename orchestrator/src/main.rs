@@ -6,7 +6,11 @@ mod pose_message;
 mod registered;
 
 use crate::{
-    args::Args, control::Control, joint_qpos::JointQpos, orin_reply::OrinReply, pose_message::PoseMessage,
+    args::Args,
+    control::Control,
+    joint_qpos::JointQpos,
+    orin_reply::{OrinReply, POOL_ENTRIES},
+    pose_message::PoseMessage,
     registered::Registered,
 };
 
@@ -346,8 +350,8 @@ async fn wait_registered(
 }
 
 // Lockstep: take the capture state, send it to the Orin, wait for its one
-// reply, then advance. The run fails on an error reply (O3) or if MuJoCo
-// warned (P3). Without the Orin (--no-render) only the states are
+// reply, then advance. The run fails when the Orin reports failed (3
+// failed frames in the pool) or if MuJoCo warned (P3). Without the Orin (--no-render) only the states are
 // produced.
 async fn run(mut orin: Option<&mut WebSocketStream<TcpStream>>, args: &Args, sim: &mut Simulation) -> Result<()> {
     let reply_timeout = Duration::from_secs(args.reply_timeout);
@@ -380,8 +384,8 @@ async fn run(mut orin: Option<&mut WebSocketStream<TcpStream>>, args: &Args, sim
 }
 
 // 11 and 14: sends one capture state to the synthetic Orin and waits for
-// its one reply. A reply for another id, or an error reply (O3), fails the
-// run.
+// its one reply, the pool. A reply for another id, a pool of the wrong
+// shape, or failed ends the run.
 async fn observe(
     orin: &mut WebSocketStream<TcpStream>,
     id: u32,
@@ -420,10 +424,33 @@ async fn observe(
     if reply.id != id {
         bail!("synthetic Orin replied for pose {}, expected {id}", reply.id);
     }
-    if let Some(error) = reply.error {
-        bail!("synthetic Orin rejected frame {id}: {error}");
+    // The pool's shape (Contracts): 6 entries, newest first, the newest at
+    // age 0 and every older one strictly older.
+    if reply.pool.len() != POOL_ENTRIES {
+        bail!("pool {id} has {} entries, expected {POOL_ENTRIES}", reply.pool.len());
     }
-    println!("observation {id:06}  {state}  orin {:.1} ms", started.elapsed().as_secs_f64() * 1000.0);
+    let ages: Vec<f64> = reply.pool.iter().map(|row| row[0]).collect();
+    if ages[0] != 0.0 || ages.windows(2).any(|pair| pair[1] >= pair[0]) {
+        bail!("pool {id} ages {ages:?} are not 0 then strictly older, newest first");
+    }
+    let newest = reply.pool[0];
+    println!(
+        "observation {id:06}  {state}  orin {:.1} ms  newest L({:.3}, {:.3}) R({:.3}, {:.3}) P({:.3}, {:.3}) E({:.3}, {:.3})",
+        started.elapsed().as_secs_f64() * 1000.0,
+        newest[1],
+        newest[2],
+        newest[3],
+        newest[4],
+        newest[5],
+        newest[6],
+        newest[7],
+        newest[8]
+    );
+    // The break after 14: 3 failed frames in the pool fail the run, and
+    // training ends (26).
+    if reply.failed {
+        bail!("the run failed: 3 of pool {id}'s 6 entries are failed frames");
+    }
     Ok(())
 }
 

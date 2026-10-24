@@ -182,8 +182,11 @@ Orin (`orchestrator-plan.md`, *Placeholders*).
   names from the trainer's `[mjcf]` as the keys. The orchestrator sends
   `{"id", "time", "joints"}`; the Orin forwards `{"id", "joints"}`
   unchanged, and Unity drives each joint by its name.
-- **The frame (13):** 728×544 greyscale JPEG, quality 90 — exactly half
-  the IMX296's native 1456×1088 (`DATASETS.md`, *Image spec*).
+- **The frame (13):** 728×544 greyscale JPEG, quality 90. Greyscale is
+  the content, not the channel count: Unity's `GreyscaleEncoder` (the
+  dataset generator's own) writes BT.601 luma into all three RGB
+  channels, and the Orin decodes it to one channel. The size is exactly
+  half the IMX296's native 1456×1088 (`DATASETS.md`, *Image spec*).
 - **The marker frame (each pool entry):** 4 slots in class order — 0
   Left (tag 376), 1 Right (596), 2 Pivot (920), 3 End (937), the repo's
   class-id contract. Each slot is the box center `(x, y)`, normalized to
@@ -195,7 +198,10 @@ Orin (`orchestrator-plan.md`, *Placeholders*).
 - **The pool (14, 17):** 6 entries × (1 age + 4 × `(x, y)`) = 54 floats.
   Ages are relative to the current capture so the input never depends on
   absolute clock values, and the policy sees the real spacing between
-  frames.
+  frames. On the wire (14), one text message: `{"id": n, "pool":
+  [[age_ms, x0, y0, x1, y1, x2, y2, x3, y3], …6 rows, newest first],
+  "failed": false}` — row 0 is this frame, age 0; slot k is class k;
+  `failed` is true when 3 of the pool's 6 entries are failed frames.
 - **The command (18, 19):** 4 bytes, one `i32`, little-endian, in
   pulses per second; fixed length, no id; sign = direction, never a
   distance or position offset. Why 4 bytes: at 1/32 microstepping the
