@@ -102,24 +102,35 @@ fn pulses_follow_the_rate_integral_across_a_reversal() {
 
 #[cfg(feature = "synthetic")]
 #[test]
-fn synthetic_tick_returns_the_step_signal() {
-    use crate::{StepSignal, SyntheticArduino};
-    // 26,667 pulses/s (0.4 m/s) × 2 ms = 53.33 pulses: 53, 53, 54 over
-    // three steps, 160 pulses = 26,667 × 0.006 s rounded down.
-    let mut a = SyntheticArduino::new(RIG);
-    a.receive(encode_command(26_667));
-    let pulses: [i32; 3] = core::array::from_fn(|_| a.tick(STEP_US).pulses);
-    assert_eq!(pulses, [53, 53, 54]);
-    assert_eq!(a.tick(STEP_US), StepSignal { pulses: 53, micros: STEP_US });
+fn synthetic_is_created_with_rig_alone() {
+    use crate::SyntheticArduino;
+    // synthetic-arduino-plan.md Done-when 1: no start position is passed.
+    assert_eq!(*SyntheticArduino::new(RIG).config(), RIG);
 }
 
 #[cfg(feature = "synthetic")]
 #[test]
-fn synthetic_starts_at_rest_at_the_center() {
-    use crate::{StepSignal, SyntheticArduino};
-    // synthetic-arduino-plan.md Done-when 1: created with RIG alone, the
-    // cart at 50% of the rail (0 pulses from center), rate 0.
-    let mut a = SyntheticArduino::new(RIG);
-    assert_eq!(a.stepper().position(), 0);
-    assert_eq!(a.tick(STEP_US), StepSignal { pulses: 0, micros: STEP_US });
+fn synthetic_receive_returns_dir_and_step_rate() {
+    use crate::{Direction, Drv8825Signals, SyntheticArduino};
+    // Done-when 2: +r and -r give opposite DIRs and the same STEP rate;
+    // 0 gives STEP rate 0. 26,667 pulses/s is 0.4 m/s at 15 µm a pulse.
+    let a = SyntheticArduino::new(RIG);
+    let signals = |rate| a.receive(encode_command(rate));
+    assert_eq!(signals(26_667), Drv8825Signals { dir: Direction::Positive, step_rate: 26_667 });
+    assert_eq!(signals(-26_667), Drv8825Signals { dir: Direction::Negative, step_rate: 26_667 });
+    assert_eq!(signals(0).step_rate, 0);
+}
+
+#[cfg(feature = "synthetic")]
+#[test]
+fn synthetic_receive_clamps_to_the_top_rate() {
+    use crate::{Direction, Drv8825Signals, SyntheticArduino};
+    // Done-when 3: past ±45,333 pulses/s the STEP rate is 45,333, DIR
+    // from the sign; i32::MIN has no positive i32 twin, the clamp's edge.
+    let a = SyntheticArduino::new(RIG);
+    let signals = |rate| a.receive(encode_command(rate));
+    assert_eq!(signals(45_334), Drv8825Signals { dir: Direction::Positive, step_rate: 45_333 });
+    assert_eq!(signals(i32::MAX), Drv8825Signals { dir: Direction::Positive, step_rate: 45_333 });
+    assert_eq!(signals(i32::MIN), Drv8825Signals { dir: Direction::Negative, step_rate: 45_333 });
+    assert_eq!(signals(-45_333), Drv8825Signals { dir: Direction::Negative, step_rate: 45_333 });
 }

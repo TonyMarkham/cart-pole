@@ -66,16 +66,25 @@ diagram first:
 
 1. **Creation** (A1). *Check:* Done-when 1. **Done (2026-10-24):** the
    crate is `arduino/` (renamed from `firmware/`);
-   `SyntheticArduino::new(RIG)` takes no start position and starts at
-   rest at 0 pulses, the rail's center (test
-   `synthetic_starts_at_rest_at_the_center`, `arduino/src/tests.rs`).
-2. **Receive, clamp, signals** (A2–A4). *Check:* Done-when 2–3.
-   **Open:** `receive` takes the 4-byte `i32` and clamps it, but returns
-   nothing; the orchestrator still calls `tick` every step and reads
-   pulses (A5's "no pulse count" is not met while the step generator
-   runs in the loop).
+   `SyntheticArduino::new(RIG)` takes no start position and holds only
+   `RIG` (test `synthetic_is_created_with_rig_alone`,
+   `arduino/src/tests.rs`).
+2. **Receive, clamp, signals** (A2–A5). *Check:* Done-when 2–3.
+   **Done (2026-10-24):** `receive` decodes the 4-byte `i32`, clamps it
+   with `Config::clamp_rate` (the clamp the board's step generator uses
+   too) and returns `Drv8825Signals { dir, step_rate }`. DIR is named by
+   the direction it moves the cart (`Direction::Positive` /
+   `Negative`), not by a pin level, which is still undecided. The
+   synthetic Arduino holds nothing but `RIG`: no tick, no pulse count
+   (A5). Tests `synthetic_receive_returns_dir_and_step_rate` and
+   `synthetic_receive_clamps_to_the_top_rate`: ±26,667 give opposite
+   DIRs and rate 26,667; 0 gives rate 0; 45,334, `i32::MAX` and
+   `i32::MIN` give 45,333.
 3. **The orchestrator's conversion** (`orchestrator-plan.md`, O8).
-   *Check:* Done-when 4.
+   *Check:* Done-when 4. **Done (2026-10-24):** test
+   `cart_velocity_is_step_rate_times_15_um_signed_by_dir`
+   (`orchestrator/src/tests.rs`: 26,667 → ±0.400005 m/s, 45,333 →
+   0.679995 m/s), and the runs in `orchestrator-plan.md` step 5.
 
 ## Not in this plan
 

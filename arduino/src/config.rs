@@ -52,4 +52,17 @@ impl Config {
     pub const fn max_rate(&self) -> i32 {
         (self.max_speed_um_per_s as u64 * self.pulses_per_rev() as u64 / self.belt_um_per_rev as u64) as i32
     }
+
+    /// A commanded pulse rate clamped to ±`max_rate`, the one clamp the
+    /// board and the synthetic build share.
+    pub const fn clamp_rate(&self, rate: i32) -> i32 {
+        let max = self.max_rate();
+        if rate > max {
+            max
+        } else if rate < -max {
+            -max
+        } else {
+            rate
+        }
+    }
 }

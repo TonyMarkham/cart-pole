@@ -38,8 +38,7 @@ impl Stepper {
     /// Takes one command: the Orin's pulse rate in pulses/s (sign =
     /// direction), as decoded by `decode_command`.
     pub fn command(&mut self, rate: i32) {
-        let max = self.config.max_rate();
-        self.rate = rate.clamp(-max, max);
+        self.rate = self.config.clamp_rate(rate);
     }
 
     /// Advances `micros` µs at the commanded rate and returns the pulses

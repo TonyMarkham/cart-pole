@@ -15,8 +15,8 @@ alone, the source of truth. Element numbers below (1–26) are the
 diagram's messages.
 
 Progress (2026-10-24, run on this PC; *Steps* has each check): steps
-1–3 and 7 are done; step 6 in part (a failed run ends with exit code 1);
-steps 4 and 5 are open. The
+1–3, 5 and 7 are done; step 6 in part (a failed run ends with exit code
+1); step 4 is open. The
 code is `orchestrator/src/`; the trainer launches it with
 `uv run --project trainer python trainer/src/naive_trainer.py`.
 
@@ -167,10 +167,20 @@ in the diagram first:
    `float_roundtrip`, whose default parse was 1 ulp off in 41 of 60.
 4. **Trainer link** (O7), once its link is in the diagram.
 5. **Command path** (O8). *Check:* a constant command moves the cart at
-   STEP rate × 15 µm. **Open:** the scripted `--control` speed still
-   stands in for the trainer's command, and the synthetic Arduino is
-   still ticked every step (its pulses as MuJoCo's ctrl), not asked for
-   DIR and STEP rate once (`synthetic-arduino-plan.md` step 2).
+   STEP rate × 15 µm. **Done (2026-10-24):** at the arrival step the
+   command goes to the synthetic Arduino once; its DIR and STEP rate
+   become the cart velocity, set as MuJoCo's ctrl there and left
+   untouched while MuJoCo steps to the next arrival step (the reset
+   zeroes ctrl, so the cart is at rest until the first arrival step).
+   `--no-render` runs with `--control speed:±0.4`: the cart does not
+   move before t = 0.016 s, the first arrival step; ctrl is ±0.400 m/s,
+   and over the last 10 of 60 observations the cart moves at
+   ±0.400349 m/s (the velocity servo, `kv` 100, against the swinging
+   pole). `speed:5` is clamped to 45,333 pulses/s, ctrl 0.680 m/s. Two
+   seed-3 runs of a sine command give byte-identical `states.csv`. Until
+   the trainer link (step 4), the scripted `--control` speed stands in
+   for the trainer's command, sent as the trainer's packet would be
+   (pulses/s, rounded).
 6. **Endings** (O5, O9). *Check:* Done-when 6. **In part (2026-10-24):**
    a failed run works — with a stand-in camera sending broken frames,
    the third failed frame in the pool gives `failed`, the shutdown runs

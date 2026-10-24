@@ -19,7 +19,7 @@ use crate::{
 };
 
 use anyhow::{Context, Result, anyhow, bail};
-use arduino::{Config, RIG, SyntheticArduino, encode_command};
+use arduino::{Config, Direction, Drv8825Signals, RIG, SyntheticArduino, encode_command};
 use clap::Parser;
 use futures_util::{SinkExt, StreamExt};
 use physics::{Names, Physics, PhysicsConfig, Pose};
@@ -110,9 +110,8 @@ struct Simulation {
     physics: Physics,
     control: Control,
     csv: BufWriter<File>,
-    // Ticked once per physics step.
+    // Sent each new command once, at the arrival step (19).
     arduino: SyntheticArduino,
-    step_micros: u32,
     meters_per_pulse: f64,
     names: Names,
     latency: Latency,
@@ -141,8 +140,9 @@ impl Simulation {
             },
         };
         let mut physics = Physics::load(&config)?;
+        // The reset zeroes ctrl: the cart is at rest until the first
+        // command acts, at the first arrival step.
         physics.reset(start)?;
-        let step_micros = step_micros(physics.timestep())?;
         let meters_per_pulse = meters_per_pulse(&RIG);
         // Created with RIG alone (3): the synthetic Arduino starts at the
         // rail's center too, where MuJoCo's cart was just reset.
@@ -166,7 +166,6 @@ impl Simulation {
             control: args.control,
             csv,
             arduino,
-            step_micros,
             meters_per_pulse,
             names: config.names,
             latency: Latency::new(args.seed),
@@ -180,30 +179,28 @@ impl Simulation {
     // 15–16: MuJoCo steps on the old command, one fixed deltatime at a
     // time, until a step's time is later than the arrival time: that step
     // is the arrival step, where it then waits (the freeze) for the
-    // Orin's reply. Each step, MuJoCo's ctrl is the step signal the
-    // firmware emitted in that step, as a speed: pulses × meters per pulse
-    // ÷ the step's duration.
-    fn step_to(&mut self, arrival: f64) -> Result<()> {
+    // Orin's reply. ctrl is untouched here: the old command's speed holds
+    // until the new one is set at the arrival step.
+    fn step_to(&mut self, arrival: f64) {
         while self.physics.time() <= arrival {
-            let signal = self.arduino.tick(self.step_micros);
-            let ctrl = f64::from(signal.pulses) * self.meters_per_pulse / (f64::from(signal.micros) / 1e6);
-            self.physics.set_ctrl(ctrl)?;
             self.physics.step(1);
         }
-        Ok(())
     }
 
     // 19–21, at the arrival step: the new command. The scripted speed at
     // this step stands in for the trainer's answer; it reaches the
     // firmware as the packet the trainer will send (pulses/s, rounded).
-    // Returns the speed.
-    fn command(&mut self) -> f64 {
+    // The firmware's DRV8825 signals become the cart speed, set as ctrl
+    // once, here. Returns that speed.
+    fn command(&mut self) -> Result<f64> {
         let speed = self.control.at(self.physics.time());
         // `as` saturates, so an absurd speed becomes the i32 limit, which
         // the firmware clamps to the motor's top rate.
         let command = (speed / self.meters_per_pulse).round() as i32;
-        self.arduino.receive(encode_command(command));
-        speed
+        let signals = self.arduino.receive(encode_command(command));
+        let velocity = cart_velocity(signals, self.meters_per_pulse);
+        self.physics.set_ctrl(velocity)?;
+        Ok(velocity)
     }
 
     // The truth log's row for one observation (synthetic-loop-dia.md,
@@ -228,20 +225,20 @@ impl Simulation {
     }
 }
 
-// The firmware ticks in whole microseconds; MuJoCo's 2 ms step is 2,000.
-fn step_micros(timestep: f64) -> Result<u32> {
-    let micros = timestep * 1e6;
-    let whole = micros.round();
-    if whole < 1.0 || (micros - whole).abs() > 1e-6 || whole > f64::from(u32::MAX) {
-        bail!("the physics timestep {timestep} s is not a whole number of microseconds");
-    }
-    Ok(whole as u32)
-}
-
 // One step pulse's cart travel: belt travel per revolution ÷ pulses per
 // revolution (RIG: 96,000 µm / 6,400 = 15 µm).
 fn meters_per_pulse(config: &Config) -> f64 {
     f64::from(config.belt_um_per_rev) / 1e6 / f64::from(config.pulses_per_rev())
+}
+
+// 21: cart velocity = STEP rate × meters per pulse, m/s, signed by DIR
+// (RIG's top rate: 45,333 × 15 µm = 0.679995 m/s, inside ctrlrange).
+fn cart_velocity(signals: Drv8825Signals, meters_per_pulse: f64) -> f64 {
+    let speed = f64::from(signals.step_rate) * meters_per_pulse;
+    match signals.dir {
+        Direction::Positive => speed,
+        Direction::Negative => -speed,
+    }
 }
 
 // 6: the player, told the Orin's frame socket. kill_on_drop: an early
@@ -370,14 +367,14 @@ async fn run(mut orin: Option<&mut WebSocketStream<TcpStream>>, args: &Args, sim
         if let Some(orin) = orin.as_deref_mut() {
             send_pose(orin, id, &capture, &sim.names).await?;
         }
-        sim.step_to(arrival)?;
+        sim.step_to(arrival);
         let newest = match orin.as_deref_mut() {
             Some(orin) => Some(receive_pool(orin, id, reply_timeout).await?),
             None => None,
         };
         // The truth log (the note before 17), then the new command (19–21).
         sim.log(id, &capture, newest.as_ref())?;
-        let speed = sim.command();
+        let speed = sim.command()?;
 
         let next = sim.capture();
         let mut line = format!(
