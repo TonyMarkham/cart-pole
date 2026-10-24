@@ -6,7 +6,7 @@ the observation that follows it, and decide when a run is over. The
 **trainer** is that participant. It holds the policy being trained; in
 production the trained policy runs on the Orin. It starts each run,
 receives only the marker pool, and answers each pool with the next
-command and continue or stop.
+command and continue, reset or stop.
 
 Status: **plan** (2026-10-23), written from `synthetic-loop-dia.md`
 alone, the source of truth. Element numbers below are the diagram's
@@ -24,6 +24,9 @@ messages.
    further run.
 4. **A trained policy balances the pole** — the criterion is not set
    yet.
+5. **Episodes in one run.** Every episode after the first is a reset in
+   place: one launch of the orchestrator, the Orin and the player for the
+   whole training run, and episode k still runs with its own seed.
 
 ## Requirements (from the diagram)
 
@@ -53,37 +56,43 @@ messages.
   Values, in `gym.toml`: weights pole 1.0, cart 0.5; scored from the
   newest entry with Pivot and End, 0 if none has both.
 - **T4 — the end crash.** The Pivot marker out of bounds is a training
-  failure: penalty, and stop this run. The bounds must sit inside the
+  failure: penalty, and end this episode. The bounds must sit inside the
   slide's ends by more than the cart can travel between a capture and
   the stop taking effect, at most 0.85 m/s × 16 ms ≈ 13.6 mm (the rig's
   30 V top speed). Set (user, 2026-10-24, in `gym.toml`): Pivot x
   0.26325 to 0.72639, the measured slide ends less 13.6 mm (*What the
   trainer sees*); a crash scores −10
-  and terminates the episode, whose `reset()` stops the run.
+  and terminates the episode; the next `reset()` resets the run in
+  place (T6).
 - **T5 — the answer (18).** The command — an `i32`, sign = direction,
   magnitude = pulses per second (the synthetic Arduino clamps it to
-  ±56,666) — and continue or stop.
+  ±56,666) — and continue, reset (with the next episode's seed) or stop.
 - **T5a — the link (17, 18, 26)** (the diagram's *Trainer link*): the
   orchestrator's stdin and stdout, which the trainer holds as pipes
   because it launched the orchestrator (1). Per observation it reads one
   stdout line, `{"id": n, "pool": [6 rows]}`, and writes one stdin line,
-  `{"command": c, "continue": bool}`. The run's end (26) is the
+  `{"command": c, "next": "continue" | "reset" | "stop"}`, with
+  `"seed": S` on a reset. The run's end (26) is the
   orchestrator's exit: stdout closes, then exit code 0 (closed) or 1
   (failed: training ends). The orchestrator's log arrives on stderr, the
   trainer's console.
-- **T6 — what a stop ends.** Stop ends this run, one episode for now;
-  the trainer itself carries on and starts the next run (1). A run that
-  failed ends training.
-- **T6a — the start** (user, 2026-10-24): every run starts at rest with
+- **T6 — episodes, reset and stop** (the diagram's *Reset in place*;
+  user, 2026-10-24). One run holds many episodes: the trainer ends an
+  episode by answering reset with the next episode's seed, and the run
+  goes back to the start in place, without relaunching anything. Stop
+  ends the run, at the end of training. A run that failed ends training.
+- **T6a — the start** (user, 2026-10-24): every episode starts at rest with
   the cart at 50% of the rail and the pole hanging, θ = 0, as on the
   rig. Upright is θ = π, so the task is swing-up, then balance, and the
   reward must lead there from hanging.
 - **T7 — nothing in the control loop touches training.**
-- **T8 — a Gymnasium `Env`, one run per episode** (the diagram's
-  *Trainer's environment*; user, 2026-10-24). `reset()` starts a run and
-  returns pool 0; `step(a)` answers with continue and returns the next
-  pool; `reset()` or `close()` on an open run answers stop and waits for
-  it to close; a failed run raises. Observation: the pool, 6 × 9.
+- **T8 — a Gymnasium `Env`, one run holding many episodes** (the
+  diagram's *Trainer's environment*; user, 2026-10-24). The first
+  `reset()` starts the run with the episode's seed as `--seed` and
+  returns its first pool; `step(a)` answers with continue and returns the
+  next pool; every later `reset()` answers reset with the episode's seed
+  and returns the new episode's first pool; `close()` answers stop and
+  waits for the run to close; a failed run raises. Observation: the pool, 6 × 9.
   Action: a ∈ [−1, 1], command = round(a × 56,666). The reward and the
   end crash are T3a and T4; the time limit is T8a.
 - **T8a — the time limit** (the diagram's *The time limit*; user,
@@ -248,12 +257,23 @@ Both runs give the same fit; the figures are the wider run's.
      <run folder>`. Episode k runs with seed settings.toml's seed + k.
      Tested with throwaway settings (episodes of 150, saves every 200):
      400 steps, two episodes, saves at 200 and 400; then resumed to 600,
-     the episode count and the seeds carried on. Not yet tested: Ctrl+C
-     during a run, and the 200,000-step run itself.
+     the episode count and the seeds carried on. Ctrl+C during the first
+     real run (user, 2026-10-24): it saved at step 5,367 and left no run
+     behind. Not yet tested: the 200,000-step run itself.
+     The console (user, 2026-10-24): one line per episode (its steps,
+     how it ended, reward, pole max and mean, elapsed and time left) and
+     one per save; each run's own output goes to `loop.log` in the run's
+     folder. Run through the loop in the user's resumed training run
+     (2026-10-24): the console showed only those lines.
+5. **Reset in place** (T6, T8, T5a). *Check:* Done-when 5: a training
+   run's episodes after the first are resets, with one launch of
+   everything, and `episodes.csv`'s seeds carry on as before. Not
+   started; follows the orchestrator's and the Orin's reset.
 
 ## Not in this plan
 
-More than one episode per run, pooling, the orchestrator
+More than one loop at a time (planned: the diagram's *Training
+instances*, `[orchestrator] instances` 1 to 6, after reset in place), the orchestrator
 (`orchestrator-plan.md`), and running the trained policy on the Orin.
 
 ## References

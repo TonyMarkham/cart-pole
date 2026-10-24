@@ -28,6 +28,16 @@ newest first with ages in ms, plus `failed` (11–14). A failed frame is
 (checked with a stand-in camera sending broken frames). On the control
 socket's close it closes the frame socket and exits 0 (22–25).
 
+**Reset in place** (planned, the diagram's *Reset in place*; user,
+2026-10-24): one run holds many episodes, so the Orin stays up between
+them. On `{"type": "reset", "seed": S}` (R5) it pre-warms the pool afresh
+exactly as at launch, its gaps from S, so no entry of the last episode
+survives and failed frames count afresh (R6); then it replies
+`{"type": "reset"}` (R7). The frame socket and Unity stay connected; ids
+keep counting across the run, so `frame_NNNNNN.jpg` and
+`observations.jsonl` stay unique. *Check:* after a reset with seed S, the
+pool's pre-warm ages match a fresh launch with `--seed S`. Not started.
+
 **The planned loop is `synthetic-loop-dia.md`** (2026-10-23), the
 source of truth: it supersedes the decisions marked *Superseded* below.
 What this plan built and measured (*Results*) stays as the record of the
@@ -167,8 +177,10 @@ is given (`orchestrator-plan.md`, *Later — scaling*).
   Ages carry MuJoCo's floating-point clock, so −0.1 may read
   −0.09999999999998899.
 
-*Superseded (`synthetic-loop-dia.md`):* there is no reset message, since
-the pool is pre-warmed at launch. The orchestrator sends the Orin the
+*Superseded (`synthetic-loop-dia.md`):* the pool is pre-warmed at
+launch, and again at each reset in place, on `{"type": "reset", "seed":
+S}`, answered with `{"type": "reset"}` (*Reset in place*, above); the
+old `frame_interval` reset is gone. The orchestrator sends the Orin the
 pose, `{"id", "time", "joints"}`, and the Orin forwards `{"id",
 "joints"}` to Unity, which returns the JPEG to the Orin. The reply is the
 id and the pool (6 entries, newest first, each keyed by its age in −ms,
@@ -251,8 +263,8 @@ Recommendations (choices, with the reason):
 ## Not in this plan
 
 The policy and its command (the reply's `command` field), the virtual
-Arduino, the delay D, episode end conditions, several episodes per run,
-the real Orin's camera capture, and what becomes of the Rust
+Arduino, the delay D, episode end conditions, more than one loop at a
+time, the real Orin's camera capture, and what becomes of the Rust
 `object-detection` crate (superseded as the loop's and the robot's
 detector; retired, user 2026-10-23, `detector-plan.md`). *Superseded
 (`synthetic-loop-dia.md`):* the reply has no `command` field, because the

@@ -23,6 +23,14 @@ carried over). The user compiled it and rebuilt `SimulationLoop.exe`
 frames and exits 0 when the Orin closes the socket. Editor Play mode with
 `--no-launch` has still not been run.
 
+**Reset in place** (planned, the diagram's *Reset in place*; user,
+2026-10-24): one run holds many episodes, so the player is launched once
+per run and its window stays open between episodes, where it can be
+placed and watched. It takes no part in a reset: it stays connected and
+renders whatever pose comes next, the start pose included. Nothing in the
+player changes for it; what is to check is that it stays connected across
+a reset. Not started.
+
 **The planned loop is `synthetic-loop-dia.md`** (2026-10-23), the
 source of truth: it supersedes the decisions marked *Superseded* below.
 What this plan built and measured (*Results*) stays as the record of the

@@ -19,9 +19,10 @@ the marker pool. Only the pool, the current state, reaches the trainer: the
 trainer generates the reward or penalty and decides continue or stop
 itself, and nothing in the control loop touches training. The trainer
 starts each run by launching the orchestrator, with the command its
-`trainer/settings.toml` names (1). Stop ends this
-run, one episode for now; the trainer itself carries on and starts the
-next run (1). A failed run (3 failed frames in the pool) is different: it
+`trainer/settings.toml` names (1). One run holds many episodes (user,
+2026-10-24): between episodes the trainer answers reset, which puts the
+run back at the start in place, without relaunching the orchestrator, the
+Orin or the player (*Reset in place*); stop ends the run. A failed run (3 failed frames in the pool) is different: it
 ends training, so the trainer is told the run failed (26) and starts no
 further run. Only one message to another process is in flight at any
 moment, and MuJoCo steps in-process while the Orin works, so nothing can
@@ -46,7 +47,23 @@ rounds the latency up to the next step: at 8–15 ms, the gap between two
 captures is 10, 12, 14 or 16 ms. The latency is drawn at random because the policy
 cannot observe it directly: the range is the band it trains in.
 
-Not yet in the loop: more than one episode per run.
+**Training instances** (planned, user, 2026-10-24; built after reset in
+place, *Reset in place*). Data comes faster from several copies of the
+loop at once, so the orchestrator will run a fixed group of **training
+instances**, each a bundle that is always together: one MuJoCo, one
+synthetic Arduino, one synthetic Orin and one Unity player, the Orin's
+pool being that MuJoCo's history and the player that Orin's camera. One
+orchestrator owns the whole group, so one launch starts it, one place
+lays out the windows, and one stop or failure shuts it all down; one
+orchestrator per instance would need something above them doing the
+same. The number of instances is a setting per run, `instances`, 1 to
+6 (user, 2026-10-24), in the trainer's `settings.toml` `[orchestrator]`.
+Instance k (from 0) uses the ports `orin_port + 2k` and `unity_port + 2k`.
+The instances step together, each step waiting for the slowest, and the
+trainer link carries one pool per instance out and one answer per
+instance in, each instance continuing or resetting on its own. This
+sequence shows one instance; the group's details (the link's lines, the
+logs, the window layout) land here before they are built.
 
 ```mermaid
 sequenceDiagram
@@ -75,7 +92,7 @@ sequenceDiagram
     O->>M: time(), pose()
     M-->>O: t, qpos (cart m, pole rad): the first capture state
 
-    loop every observation n, until the trainer says stop
+    loop every observation n (counted across the run's episodes), until the trainer says stop
         Note over O: capture state = MuJoCo's current t, qpos<br/>(the start state, then each arrival step's)<br/>arrival time = t + seeded RND(MIN, MAX) ms, cached
         par the Orin observes
             O->>N: text {"id":n,"time":t,"joints":[cart, pole]}
@@ -95,8 +112,8 @@ sequenceDiagram
         end
         Note over O: states.csv row (the truth log, see Truth log):<br/>id n, capture time t, true cart (m) and pole (rad) at capture,<br/>the 4 observed (x, y) of the pool's newest entry
         O->>T: stdout line {"id":n,"pool":[…6 rows]}: the pool, and nothing else
-        Note over T: from the pool alone: reward or penalty for its last command<br/>(this pool is the next state after it), and continue or stop<br/>the Pivot marker out of bounds is the end crash:<br/>a training failure, penalty, and stop this run<br/>nothing to score on the first observation<br/>then ask the policy for the next command
-        T-->>O: stdin line {"command":c,"continue":true|false}<br/>c: the command (i32, sign = direction, magnitude = pulses/s)<br/>MuJoCo stays frozen at the arrival step until it is in
+        Note over T: from the pool alone: reward or penalty for its last command<br/>(this pool is the next state after it), and continue, reset or stop<br/>the Pivot marker out of bounds is the end crash:<br/>a training failure, penalty, and end this episode<br/>the time limit also ends it: reset for the next, or stop<br/>nothing to score on an episode's first observation<br/>then ask the policy for the next command
+        T-->>O: stdin line {"command":c,"next":"continue"|"reset"|"stop"}<br/>+ "seed":S on a reset, the next episode's seed<br/>c: the command (i32, sign = direction, magnitude = pulses/s)<br/>MuJoCo stays frozen at the arrival step until it is in
         alt continue
             O->>A: receive(the command: i32 LE pulses/s), the only thing it is sent
             Note over A: rate clamped to ±56,666 pulses/s<br/>no clock in the loop, so no pulse count:<br/>the ±30,000-pulse travel limit cannot act here<br/>(the end crash is the trainer's training failure)
@@ -104,6 +121,8 @@ sequenceDiagram
             Note over O: cart velocity = STEP rate × 15 µm, m/s, signed by DIR
             O->>M: set_ctrl(the new cart velocity) at the arrival step
             Note over O: the arrival step is also the next capture: the loop goes round
+        else reset
+            Note over O: the episode ends: Reset in place (R1–R7),<br/>then the loop goes round from the new episode's first capture
         else stop
             Note over O: skip the rest: go to the shutdown (22)
         end
@@ -116,6 +135,43 @@ sequenceDiagram
     O-->>T: exits, closing stdout: code 0, closed (the Orin and the player have exited),<br/>or code 1, the run failed: training ends
 ```
 
+**Reset in place** (user, 2026-10-24). Between episodes the run goes back
+to the start without relaunching anything: the player's window stays
+open, so it can be placed and watched, and an episode pays no launch
+(about 3 s each before). The trainer answers a pending pool with
+`{"next": "reset", "seed": S}`, S the next episode's seed, and the run
+resets:
+
+```mermaid
+sequenceDiagram
+    participant M as MuJoCo (in-process)
+    participant O as Orchestrator
+    participant A as Synthetic Arduino (in-process)
+    participant N as Synthetic Orin
+    participant U as Unity player
+    Note over O: R1: the trainer's reset, with seed S (its command is not used)<br/>the episode count goes up by one
+    O->>M: R2: reset(start pose): at rest, cart at 50% of the rail,<br/>the pole hanging (θ = 0), t = 0, ctrl 0
+    Note over A: R3: nothing to reset: it holds only RIG,<br/>and the 50% start stands in for homing, as at creation (3)
+    Note over O: R4: reseed the latency draws with S
+    O->>N: R5: text {"type":"reset","seed":S}
+    Note over N: R6: pre-warm the pool afresh, its gaps from S (The initial pool):<br/>no entry of the last episode survives, and failed frames count afresh
+    N-->>O: R7: text {"type":"reset"}: the pool is ready
+    Note over U: unchanged: still connected, it renders the next pose it is sent
+```
+
+Then the loop goes round from the new episode's first capture (8): the
+capture state is the start pose at t = 0, and its pool is the episode's
+first, which the trainer does not score. Observation ids keep counting
+across the run's episodes, so the Orin's frame files and every log row
+stay unique; MuJoCo's time restarts at 0. Why the pool is pre-warmed
+again: an entry from the last episode would show the policy a pole the
+physics never had in this one, a jump from the old pose to the start.
+Why S reseeds both the latency draws and the pre-warm: an episode after a
+reset is then the same episode as a fresh run with seed S (*Determinism*),
+whatever came before it. Only one message is in flight at a time, so the
+reset cannot race the loop: the Orin has replied to the last observation
+before the trainer answers it.
+
 **The pool's size.** Three entries are the minimum for the current
 position, speed and acceleration; the other three are redundancy, so three
 valid entries survive when detections drop out to (−1, −1). A frame that
@@ -126,8 +182,10 @@ it and end training. Pre-warm entries are no detection, not failed frames.
 
 **Truth log.** `states.csv` pairs MuJoCo's real values at each capture
 with what the Orin observed in that frame, one row per observation, for
-evaluation after training. Columns: `id,time,cart,pole,left_x,left_y,
-right_x,right_y,pivot_x,pivot_y,end_x,end_y` — the capture time (s), the
+evaluation after training. Columns: `episode,id,time,cart,pole,left_x,left_y,
+right_x,right_y,pivot_x,pivot_y,end_x,end_y` — the episode (0 for the
+run's first, one more at each reset), the capture time (s, from 0 in each
+episode), the
 true cart (m) and pole (rad) at capture, and the pool's newest entry,
 (−1, −1) where not detected. It joins `observations.jsonl` on `id`. The trainer never sees it, so nothing in the
 control loop touches training. An early stop by the orchestrator on a
@@ -146,7 +204,8 @@ as part of the world, as it must on the real rig.
 stdin and stdout. The trainer launched the orchestrator (1), so it already
 holds both as pipes: no port, no socket, and each run's link is its own.
 Per observation, one JSON line each way: the pool out on stdout (17), the
-answer in on stdin (18). stdout carries the link and nothing else, so
+answer in on stdin (18): continue with the command, reset with the next
+episode's seed (*Reset in place*), or stop. stdout carries the link and nothing else, so
 everything else the orchestrator prints, and everything its children (the
 Orin, the player) print, goes to stderr. While the trainer works, MuJoCo
 stays frozen at the arrival step, so the trainer's speed, like the Orin's,
@@ -154,21 +213,22 @@ stays out of simulated time. The run's end (26) is the orchestrator's
 exit: stdout closes, and the exit code says closed (0) or failed (1).
 
 **The trainer's environment** (user, 2026-10-24): the trainer reaches the
-loop through a Gymnasium `Env`, one run per episode
-(`gymnasium-research.md`). `reset()` starts a run (1) and returns its
-first pool (17, n = 0); `step(a)` answers the pending pool with continue
-and the command (18) and returns the next pool (17); a `reset()` or
-`close()` while a run is open answers the pending pool with stop, waits
-for the run to close (26), and `reset()` then starts the next run. A run
-that fails (26, code 1) raises, which ends training. The observation is
+loop through a Gymnasium `Env`, one run holding many episodes
+(`gymnasium-research.md`; user, 2026-10-24). The first `reset()` starts
+the run (1), with the episode's seed as `--seed`, and returns its first
+pool (17); `step(a)` answers the pending pool with continue and the
+command (18) and returns the next pool (17); every later `reset()`
+answers the pending pool with reset and the episode's seed (*Reset in
+place*) and returns the new episode's first pool; `close()` answers it
+with stop and waits for the run to close (26). A run that fails (26,
+code 1) raises, which ends training. The observation is
 the pool, 6 × 9 floats; the action is one value a ∈ [−1, 1], and the
 command is a × 56,666 (the top rate), rounded to the `i32`. The reward is
 graded (below), and the end crash terminates the episode. **The time
 limit** (user, 2026-10-24, on the agent's recommendation): 1,500 steps,
 about 19 s of simulated time at the mean gap of 12.57 ms, then the
 episode is truncated: time to swing up from hanging and then hold the
-pole upright for most of it, with the 3 s relaunch of each run about 4%
-of an episode's wall time. Reference tasks run 10 s (DeepMind's cart-pole
+pole upright for most of it. Reference tasks run 10 s (DeepMind's cart-pole
 swing-up, Gymnasium's `CartPole-v1`) to 40 s (`InvertedPendulum-v5`).
 
 **The reward is graded** (user, 2026-10-24), from the pool alone, in two
@@ -223,12 +283,16 @@ are not rounded to the 2 ms grid, unlike the live gaps; it barely
 matters, since pre-warm entries hold no detection. Every frame, the first
 included, is then one push: the newest entry goes in and the oldest
 drops, so frame 0's pool ages are 0, −d₁, −(d₁+d₂), …, −(d₁+…+d₅).
+A reset pre-warms the pool the same way, its gaps from the reset's seed,
+before the new episode's first frame (*Reset in place*).
 
 **Determinism.** The orchestrator's latency draws and the Orin's pre-warm
 gaps both come from `--seed`, and the freeze at the arrival step keeps the
 workstation's speed out of the sim, so the same seed and the same trainer
 commands give the same physics: the same ids, capture times, latencies and
-true cart and pole, bit for bit. The observation is not bit-identical, by
+true cart and pole, bit for bit. A reset with seed S reseeds both, so an
+episode after a reset repeats a fresh run with seed S, its ids offset by
+the observations before it. The observation is not bit-identical, by
 decision (user, 2026-10-24): Unity's SSAO (blue noise) changes its noise
 pattern on every render, and the player renders between triggers, so a
 frame's shading jitters slightly from run to run. The detector found every
@@ -244,7 +308,7 @@ travel limit acts only on the board, whose timer counts the pulses it
 sends; the synthetic Arduino receives only the i32, so in the loop the
 MJCF slide's ±0.45 m range is what stops the cart. The end crash is
 therefore a training failure, judged by the trainer from the pool: the
-Pivot marker out of bounds means penalty, and stop this run. The bounds
+Pivot marker out of bounds means penalty, and end this episode. The bounds
 (*The reward is graded*) sit inside the slide's ends by more than the
 cart can travel between a capture and the stop taking effect, at most
 0.85 m/s (56,666 pulses/s × 15 µm) × 16 ms (the longest gap to the
@@ -299,9 +363,15 @@ yet (`orchestrator-plan.md`, *Placeholders*).
   the trainer (17), one stdout line: `{"id": n, "pool": [...]}`, the same
   6 rows; no `failed`, since a failed pool goes to the shutdown and never
   reaches the trainer.
-- **The answer (18):** one stdin line, `{"command": c, "continue":
-  true}` (or `false`, stop): c is the command below, a JSON integer that
-  must fit an `i32`. On a stop the command is not used.
+- **The answer (18):** one stdin line, `{"command": c, "next":
+  "continue"}`, `{"command": c, "next": "reset", "seed": S}` or
+  `{"command": c, "next": "stop"}`: c is the command below, a JSON
+  integer that must fit an `i32`, used only on continue; S, on a reset
+  only, is the next episode's seed, a whole number 0 to 2⁶⁴ − 1 like
+  `--seed`.
+- **The reset (R5, R7):** on the control socket, the orchestrator sends
+  `{"type": "reset", "seed": S}` and the Orin replies `{"type": "reset"}`
+  once the pool is pre-warmed again.
 - **The command (18, 19):** one `i32`, in pulses per second; sign =
   direction, never a distance or position offset. To the Arduino (19) it
   travels as 4 bytes, little-endian; fixed length, no id. Why an `i32`: at 1/32 microstepping the

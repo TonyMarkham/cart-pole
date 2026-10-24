@@ -6,7 +6,7 @@ so the loop needs one participant that owns that world and its clock.
 The **orchestrator** is that participant: MuJoCo and the synthetic
 Arduino run inside it, it is the only participant that sends MuJoCo
 anything, and it turns the Orin's processing time into simulated time.
-It takes the trainer's start, command and continue/stop; it gives the
+It takes the trainer's start, command and continue, reset or stop; it gives the
 synthetic Orin the pose to render, the trainer the marker pool, and
 MuJoCo the cart's speed; and it writes the truth log.
 
@@ -38,6 +38,11 @@ code is `orchestrator/src/`; the trainer launches it with
 6. **Both endings work.** The trainer's stop shuts the run down and the
    trainer is told it closed (26); a reply carrying `failed` shuts it
    down and the trainer is told the run failed and training ends (26).
+7. **A reset is a fresh start in place.** After a reset with seed S, the
+   episode's capture times, latencies and true cart and pole match a
+   fresh run with seed S bit for bit, its ids offset by the observations
+   before it; the Orin and the player are launched once for the whole
+   run.
 
 ## Requirements (from the diagram)
 
@@ -71,17 +76,19 @@ code is `orchestrator/src/`; the trainer launches it with
 - **O5 — a failed run.** A reply carrying `failed` (3 failed frames
   among the pool's 6 entries) skips the rest and goes to the shutdown
   (22); the run fails and training ends.
-- **O6 — the truth log.** One `states.csv` row per observation: id n,
-  capture time t, the true cart (m) and pole (rad) at capture, and the
+- **O6 — the truth log.** One `states.csv` row per observation: the
+  episode (0, one more at each reset), id n, capture time t (from 0 in
+  each episode), the true cart (m) and pole (rad) at capture, and the
   4 observed `(x, y)` of the pool's newest entry, under the diagram's
   header (*Truth log*). The trainer never sees it. With `--no-render`
   there is no observation, so the eight observed fields are empty.
 - **O7 — the trainer gets the pool, and nothing else (17).** It answers
   with the command (an `i32`, sign = direction, magnitude = pulses/s)
-  and continue/stop (18). The link is the orchestrator's stdin and
+  and continue, reset or stop (18). The link is the orchestrator's stdin and
   stdout (the diagram's *Trainer link*): one stdout line
   `{"id": n, "pool": [6 rows]}` out, one stdin line
-  `{"command": c, "continue": bool}` in, with MuJoCo frozen at the
+  `{"command": c, "next": "continue" | "reset" | "stop"}` in, with
+  `"seed": S` on a reset only, with MuJoCo frozen at the
   arrival step until it is in. stdout carries the link alone: the
   orchestrator's own output, and its children's, goes to stderr. A
   command that does not fit an `i32`, or a line that is not the answer,
@@ -103,6 +110,14 @@ code is `orchestrator/src/`; the trainer launches it with
   workstation's speed out of simulated time. The physics repeats bit for
   bit; the observation jitters with Unity's SSAO noise (the diagram's
   *Determinism*).
+- **O11 — reset in place (R1–R7)** (the diagram's *Reset in place*;
+  user, 2026-10-24). On the trainer's reset with seed S: count one more
+  episode (R1); reset MuJoCo to the start pose, t = 0, ctrl 0 (R2); the
+  synthetic Arduino needs nothing (R3); reseed the latency draws with S
+  (R4); send the Orin `{"type": "reset", "seed": S}` (R5) and wait for
+  its `{"type": "reset"}` (R7); then take the start state as the next
+  capture (8). Ids keep counting across the run; nothing is launched
+  or closed.
 
 ## Configuration (user, 2026-10-23)
 
@@ -226,6 +241,10 @@ in the diagram first:
    while the loop camera also renders the player's window between
    triggers. The detections differ by at most 0.04 px, and every marker
    is found in every frame; the user accepted that jitter (2026-10-24).
+8. **Reset in place** (O11, O6, O7). *Check:* Done-when 7: a run of
+   two episodes, the second after a reset with seed S, against a fresh
+   run with seed S. Not started; not before the training run that is
+   going now ends, since every episode of it relaunches `orchestrator.exe`.
 
 ## Placeholders
 
@@ -238,7 +257,7 @@ in the diagram first:
 
 ## Not in this plan
 
-More than one episode per run, an early stop on a truth-versus-
+More than one loop at a time, an early stop on a truth-versus-
 observation threshold, pooling (*Later — scaling*), and the trainer
 itself (`trainer-plan.md`).
 
@@ -252,6 +271,13 @@ state between frames and pools freely; MuJoCo and the synthetic Arduino
 hold one run's state; the synthetic Orin keeps the 6-entry pool, so a
 loop must stay pinned to one synthetic Orin, or the pool must move with
 the loop — decided when pooling arrives.
+*Superseded (the diagram's *Training instances*, user, 2026-10-24):* no
+cycling. The orchestrator owns a fixed group of training instances, each
+a bundle of one MuJoCo, one synthetic Arduino, one synthetic Orin and one
+Unity player that stays together, so the Orin's pool never leaves its
+loop. `[orchestrator] instances`, 1 to 6, sets the group's size per run;
+instance k uses ports `orin_port + 2k` and `unity_port + 2k`. Steps for it
+follow reset in place (step 8).
 
 ## References
 
