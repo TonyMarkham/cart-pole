@@ -14,6 +14,11 @@ player** — Done-when 1–4 pass (*Results* below); 5 (editor Play mode with
 half is done. Nothing is committed (*Next*). Unity compilation, scene
 behavior, and the build are validated by the user in the editor.
 
+**The planned loop is `synthetic-loop-dia.md`** (2026-10-23), the
+source of truth: it supersedes the decisions marked *Superseded* below.
+What this plan built and measured (*Results*) stays as the record of the
+leg as it runs today.
+
 ## Done when
 
 1. The stub launches the built player; the player connects to the
@@ -278,12 +283,18 @@ All runs from the repo root against `Build/SimulationLoop.exe`.
 - **The orchestrator launches the player** with its address as a
   startup argument — `-orchestrator ws://<host>:<port>` — and the
   player connects to it. The orchestrator is the WebSocket server; the
-  player is a client.
+  player is a client. *Superseded (`synthetic-loop-dia.md`):* the
+  orchestrator still launches the player, now with `-orin ws://ADDR`;
+  the player connects to the synthetic Orin's frame socket, and the Orin
+  tells the orchestrator once it has registered.
 - **Messages:** orchestrator → player, one **text** message per state:
   `{"id": 7, "joints": [{"name": "02-Cart.Slider.joint", "qpos": 0.05}, {"name": "04-Pole.Hinge.joint", "qpos": 3.14}]}`
   (MJCF joint names; meters / radians). Player → orchestrator, one
   **binary** message per state: the frame's JPEG bytes. One reply per
-  request, in order — lockstep.
+  request, in order — lockstep. *Superseded (`synthetic-loop-dia.md`):*
+  the same two messages pass between the synthetic Orin and the player:
+  the Orin sends `{"id", "joints"}` (the trigger), and the player
+  returns the JPEG to the Orin.
 - **Orchestrator stub** in `orchestrator/` (Rust): launches the player
   (or, with `--no-launch`, waits for editor Play mode to connect),
   sends a scripted sweep or one fixed pose, saves and checks the
@@ -314,7 +325,9 @@ Requirements (the loop is wrong without them):
   orchestrator's address from `-orchestrator`; a player started
   without it logs an error and quits. In the editor, an inspector
   field supplies the address instead (default `ws://127.0.0.1:9000`,
-  the stub's default).
+  the stub's default). *Superseded (`synthetic-loop-dia.md`):* the
+  address it is told is the synthetic Orin's frame socket, given as
+  `-orin`.
 - **Q4 — hinge sign.** The hinge is driven with `-qpos` about
   `mj.axis` (*Facts*); `JointDriver`'s `+qpos` would swing the pole
   the opposite way from MuJoCo.

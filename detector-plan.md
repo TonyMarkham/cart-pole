@@ -22,6 +22,12 @@ in the same session. That Python path exists only as the scratch test
 which the loop on the PC uses; the `edgetpu` Coral engine,
 uncommitted).
 
+**The planned loop is `synthetic-loop-dia.md`** (2026-10-23), the
+source of truth: it supersedes the decisions marked *Superseded* below.
+In it, detection runs in the synthetic Orin (Python + TensorRT,
+`orin-plan.md`), not in this crate called by the orchestrator. What this
+plan built and measured (*Results*) stays as the record.
+
 ## Done when
 
 1. `cargo build -p object-detection` builds with pure-Rust dependencies,
@@ -151,6 +157,10 @@ Requirements (the slots are wrong without them):
 - **D4 — frame checks.** A frame that is not a JPEG, or whose size is
   not the one the slots are normalized to, is an error, not empty slots
   — "not detected" must only ever mean the model found nothing.
+  *Superseded (`synthetic-loop-dia.md`):* in the loop such a frame is a
+  failed frame, its entry 4 × (−1, −1) and the error logged; one does
+  not fail the run, but 3 among the pool's 6 entries fail it and end
+  training.
 
 Recommendations (choices, with the reason):
 
@@ -353,6 +363,8 @@ any retraining.
 
 ## References
 
+- `synthetic-loop-dia.md` — the planned loop, the source of truth for
+  the decisions marked *Superseded*
 - `loop-plan.md` — the marker-frame contract, the build-on-the-Pi
   principle, *Targets* 4
 - `unity-player-plan.md` *Next* 2 — the reference runs and the mount

@@ -4,14 +4,19 @@ The policy has to learn from what the robot's computer will see and
 remember, so the loop needs a stand-in for that computer: a **synthetic
 Orin** that receives each rendered frame, detects the four markers
 exactly as the real Orin will, keeps the last six detections as the
-policy's timestamped input window, and answers the orchestrator the way
-the real Orin answers the Arduino. This plan builds its first part —
-frame in, observation out, window kept — with the policy slot still
-empty. It is a Python process (detection on the robot is Python, user
-2026-10-23) running TensorRT on this PC's RTX 3090.
+policy's input pool, and replies to the orchestrator with that pool,
+which goes on to the trainer, where the policy lives in the synthetic
+loop. This plan builds its first part — frame in, observation out,
+window kept. It is a Python process (detection on the robot is Python,
+user 2026-10-23) running TensorRT on this PC's RTX 3090.
 
 Status (2026-10-23): **steps 1–6 done, Done-when 1–4 met on this PC**
 (see *Results*; uncommitted). R1 approved by the user 2026-10-23.
+
+**The planned loop is `synthetic-loop-dia.md`** (2026-10-23), the
+source of truth: it supersedes the decisions marked *Superseded* below.
+What this plan built and measured (*Results*) stays as the record of the
+leg as it runs today.
 
 ## Done when
 
@@ -31,6 +36,9 @@ Status (2026-10-23): **steps 1–6 done, Done-when 1–4 met on this PC**
    observation filling all six window entries at ages 0, −T, …, −5T,
    and every later observation pushing the oldest entry out, with ages
    = capture time − newest capture time.
+   *Superseded (`synthetic-loop-dia.md`):* the pool is pre-warmed at
+   launch with six entries of no detection (−1, −1) at seeded gaps
+   before t = 0, newest first, ages in −ms.
 4. **Truth and observation join.** `observations.jsonl` and
    `states.csv` join on the frame id, so the detected positions can be
    compared with the true `qpos` frame by frame (bring-up stage 2).
@@ -54,9 +62,10 @@ Status (2026-10-23): **steps 1–6 done, Done-when 1–4 met on this PC**
 - **The marker frame** (`loop-plan.md`): 4 slots in class order (0 Left,
   1 Right, 2 Pivot, 3 End), each the box center `(x, y)` normalized to
   [0, 1] of the frame, or `(−1, −1)` when not detected.
-- **The policy input** (`loop-plan.md`): the last **6** marker frames,
-  each prefixed by its **age** — seconds of simulated time before the
-  newest (newest 0, older negative): 6 × (1 + 8) = 54 floats.
+- **The policy input** (`loop-plan.md`): the pool, the last **6**
+  marker frames, newest first, each keyed by its **age** — milliseconds
+  of simulated time before the current capture (newest 0, older
+  negative): 6 × (1 + 8) = 54 floats.
 - **MuJoCo's clock is the authority** (`loop-plan.md`): every time in
   the loop is simulated time, `data.time`.
 - **The detector this plan reuses** (`detector-plan.md` *Results*,
@@ -80,6 +89,10 @@ Status (2026-10-23): **steps 1–6 done, Done-when 1–4 met on this PC**
   link goes through the orchestrator"). The Unity player is unchanged:
   it still renders and returns the JPEG. The orchestrator attaches the
   frame's simulated capture time when it forwards the frame.
+  *Superseded (`synthetic-loop-dia.md`):* the Orin triggers Unity
+  itself. The orchestrator sends the Orin the pose with its capture time
+  (`{"id", "time", "joints"}`); Unity, launched with `-orin ws://ADDR`,
+  connects to the Orin's frame socket and returns the JPEG to the Orin.
 - **The detector runs TensorRT on the 3090** (user, 2026-10-23): the
   same Python + TensorRT code as the real Orin, with the engine built
   for the 3090.
@@ -89,6 +102,10 @@ Status (2026-10-23): **steps 1–6 done, Done-when 1–4 met on this PC**
   orchestrator is what the real Orin sends out — a command, once a
   policy exists. Until then the reply is an acknowledgement and the
   orchestrator keeps driving the cart with its scripted command.
+  *Superseded (`synthetic-loop-dia.md`):* in production the policy runs
+  on the Orin; in the synthetic loop it lives in the trainer. The Orin's
+  reply is the pool, with no timing and no command, and the orchestrator
+  passes it to the trainer.
 - **The window** is a `collections.deque(maxlen=6)` of marker frames
   (capture time + 4 slots): appending the 7th drops the oldest.
 - **Episode start** (user, 2026-10-23): the first observation of an
@@ -97,6 +114,10 @@ Status (2026-10-23): **steps 1–6 done, Done-when 1–4 met on this PC**
   times are spaced one frame interval apart (capture time, −T, …, −5T)
   so the positions' differences read zero speed and zero acceleration,
   not 0 / 0.
+  *Superseded (`synthetic-loop-dia.md`):* the Orin pre-warms the pool
+  at launch with six entries of no detection (−1, −1), each gap a seeded
+  RND(8, 15) ms draw from `--seed`; every frame, the first included, is
+  then one push.
 - **`--detect` is superseded** by `--orin`: in-process tract detection
   ran ~110 ms per frame on this PC and is no longer the robot's
   detector. It is removed once Done-when 2 passes (step 6), so the loop
@@ -126,6 +147,13 @@ is given (`loop-plan.md` *Later — scaling*).
   Ages carry MuJoCo's floating-point clock, so −0.1 may read
   −0.09999999999998899.
 
+*Superseded (`synthetic-loop-dia.md`):* there is no reset message, since
+the pool is pre-warmed at launch. The orchestrator sends the Orin the
+pose, `{"id", "time", "joints"}`, and the Orin forwards `{"id",
+"joints"}` to Unity, which returns the JPEG to the Orin. The reply is the
+id and the pool (6 entries, newest first, each keyed by its age in −ms,
+4 marker `(x, y)` each), no timing, plus `failed` when the run fails.
+
 ## Requirements and recommendations
 
 Requirements (the observations are wrong without them):
@@ -139,9 +167,16 @@ Requirements (the observations are wrong without them):
 - **O3 — "not detected" only means not detected.** A frame that does
   not decode, or is not 728×544, is an error reported to the
   orchestrator, which fails the run — never empty slots
-  (`detector-plan.md` D4).
+  (`detector-plan.md` D4). *Superseded (`synthetic-loop-dia.md`):* such
+  a frame is a failed frame, its entry 4 × (−1, −1) and the error
+  logged; one does not fail the run, but 3 among the pool's 6 entries
+  fail it and end training.
 - **O4 — lockstep.** One reply per frame, in order; the orchestrator
-  does not step MuJoCo until it has the reply.
+  does not step MuJoCo until it has the reply. *Superseded
+  (`synthetic-loop-dia.md`):* one reply per frame, in order, still
+  holds; MuJoCo steps on the old command up to the arrival step (capture
+  time + the orchestrator's RND(8, 15) ms latency) and is frozen there
+  until the reply is in.
 
 Recommendations (choices, with the reason):
 
@@ -165,7 +200,9 @@ Recommendations (choices, with the reason):
   key so its strict parse keeps passing.
 - **R4 — the orchestrator launches the synthetic Orin** (`--orin
   <command>`), as it launches the player, and passes it `--orchestrator
-  ws://…` and the run's `--out` folder.
+  ws://…` and the run's `--out` folder. `synthetic-loop-dia.md` adds
+  `--frames-listen ADDR` (the frame socket Unity connects to) and
+  `--seed S` (the pre-warm gaps).
 
 ## Steps
 
@@ -192,12 +229,17 @@ The policy and its command (the reply's `command` field), the virtual
 Arduino, the delay D, episode end conditions, several episodes per run,
 the real Orin's camera capture, and what becomes of the Rust
 `object-detection` crate (superseded as the loop's and the robot's
-detector; its removal is a separate decision).
+detector; its removal is a separate decision). *Superseded
+(`synthetic-loop-dia.md`):* the reply has no `command` field, because the
+policy is in the trainer; the delay D is the orchestrator's RND(8, 15) ms
+latency (`loop-plan.md`, *Timing*).
 
 ## Placeholders
 
 - **T = 20 ms** (`--frame-interval-ms`) until the Orin's frame interval
   is measured; the start fill uses whatever T the run uses.
+  *Superseded (`synthetic-loop-dia.md`):* there is no frame interval;
+  each capture goes out at the previous observation's arrival step.
 - **Confidence 0.25** (`ObjectDetection.toml`), as in `detector-plan.md`.
 
 ## Results (2026-10-23, executed on this PC)
@@ -261,6 +303,8 @@ detector; its removal is a separate decision).
 
 ## References
 
+- `synthetic-loop-dia.md` — the planned loop, the source of truth for
+  the decisions marked *Superseded*
 - `loop-plan.md` — parts, the marker frame, the policy input, timing,
   transport
 - `detector-plan.md` — the reference pipeline, D3/D4, *Results* (the

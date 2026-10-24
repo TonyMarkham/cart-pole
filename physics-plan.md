@@ -21,6 +21,11 @@ workspace crate; a repo-root `physics.toml` as its configuration; the
 replacing the `<position>` servo the leg was first built and checked on
 (*Results — position model*, kept as history).
 
+**The planned loop is `synthetic-loop-dia.md`** (2026-10-23), the
+source of truth: it supersedes the decisions marked *Superseded* below.
+What this plan built and measured (*Results*) stays as the record of the
+leg as it runs today.
+
 ## Done when
 
 1. `cargo run -p orchestrator -- --physics --no-render --frames 1`
@@ -394,7 +399,12 @@ Requirements (the leg is wrong without them):
 - **P4 — MuJoCo's clock only.** Simulated time advances only through
   `mj_step`; the frame interval is a whole number of physics steps
   (`loop-plan.md`, *Timing*). An interval that is not a whole multiple
-  of the timestep is rejected, not rounded.
+  of the timestep is rejected, not rounded. *Superseded
+  (`synthetic-loop-dia.md`):* there is no frame interval. Time still
+  advances only through `mj_step`, a fixed 2 ms each; the arrival step
+  is the first step whose time is later than capture time + the Orin's
+  RND(8, 15) ms latency, so the latency is rounded up to the next step
+  by design.
 - **P5 — no panic across FFI.** The log handler is called from C; it
   must not panic (write with `writeln!` to `stderr` and ignore the
   result, not `eprintln!`).
@@ -514,13 +524,20 @@ Recommendations (choices, with the reason):
      code) → append a `states.csv` row → `set_ctrl(control.at(t))` →
      `step(T / timestep)`. The command is held for the whole interval
      and takes effect at the capture: D = 0. The real D scheduling
-     belongs to the orchestrator plan.
+     belongs to the orchestrator plan. *Superseded
+     (`synthetic-loop-dia.md`):* MuJoCo steps every 2 ms on the old
+     command from the capture to the arrival step, frozen there until
+     the Orin's reply is in; the new `ctrl` is set at the arrival step,
+     which is also the next capture.
    - `states.csv` in `--out`: header `id,time,ctrl,cart,pole` (since
      the firmware leg, `id,time,ctrl,cart,pole,command`: `command` is
      the pulse-rate packet the scripted `ctrl` speed becomes,
      `loop-plan.md` part 5), values
      written with Rust's `{}` for `f64` (shortest text that reads back
      to the same number), so files compare byte for byte (Done-when 4).
+     *Superseded (`synthetic-loop-dia.md`, Truth log):* one row per
+     observation — id, capture time, the true cart and pole at capture,
+     and the 4 observed `(x, y)` of the pool's newest entry.
    - After the last frame: exit code 1 if any frame broke the 728×544
      contract (existing) or `warnings() > 0` (P3).
 6. **Physics-only checks** (no Unity): the Done-when 1–4 commands.
@@ -573,7 +590,9 @@ its exporter.
 ## Placeholders
 
 - **T = 20 ms** (`--frame-interval-ms` default) — until the Pi's frame
-  interval is measured (`loop-plan.md`).
+  interval is measured (`loop-plan.md`). *Superseded
+  (`synthetic-loop-dia.md`):* there is no frame interval; each capture
+  goes out at the previous observation's arrival step.
 - **The scripted controls** (`speed:0.2`, `speed:0.6`, `sine:0.4,4`,
   start `0,1.0`) are test values for bring-up stages 1–2
   (`loop-plan.md`), not training settings.
@@ -592,6 +611,8 @@ decision, physics is a library inside the orchestrator. Updated
 
 ## References
 
+- `synthetic-loop-dia.md` — the planned loop, the source of truth for
+  the decisions marked *Superseded*
 - `loop-plan.md` — parts, contracts, timing, bring-up stages
 - `unity-player-plan.md` — the renderer, the message format, the sign
   convention check
