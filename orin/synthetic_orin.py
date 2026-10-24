@@ -4,12 +4,12 @@ The policy has to learn from what the robot will see and remember, so this
 process does what the real Orin does with each camera frame - detect the
 four markers, keep the last six detections as the policy's timestamped
 window - but takes its frames from the orchestrator instead of the camera
-(orin-plan.md). It connects to the orchestrator's WebSocket as a client,
+(synthetic-orin-plan.md). It connects to the orchestrator's WebSocket as a client,
 like the Unity player, and writes one observation line per frame to
 <out>/observations.jsonl. The policy slot is still empty: the reply is an
 acknowledgement.
 
-Messages (orin-plan.md, Messages):
+Messages (synthetic-orin-plan.md, Messages):
 - in  text   {"type": "reset", "frame_interval": T}  episode start, T in s
 - in  text   {"type": "frame", "id": n, "time": t}   then one binary message,
                                                      the JPEG
@@ -55,10 +55,10 @@ from websockets.sync.client import connect
 from detector import Detector, FrameError
 from detector_config import DetectorConfig
 
-# The loop's frame contract (loop-plan.md).
+# The loop's frame contract (synthetic-loop-dia.md, Contracts).
 FRAME_SIZE = (728, 544)
 
-# The policy input's window length (loop-plan.md, Policy input).
+# The policy input's window length (synthetic-loop-dia.md, Contracts).
 WINDOW = 6
 
 

@@ -1,5 +1,5 @@
 """Does the detector compute what Ultralytics' own predictor computes on the
-same model and frames? (orin-plan.md Done-when 1.)
+same model and frames? (synthetic-orin-plan.md Done-when 1.)
 
 Reads a reference CSV written by the training env's predictor run (one row
 per frame: `frame`, then per class `<Name>_conf` - empty when not detected -
@@ -29,7 +29,7 @@ from detector_config import DetectorConfig
 CENTER_PX = 1.0
 CONFIDENCE = 0.01
 
-# The loop's frame contract (loop-plan.md).
+# The loop's frame contract (synthetic-loop-dia.md, Contracts).
 FRAME_SIZE = (728, 544)
 
 

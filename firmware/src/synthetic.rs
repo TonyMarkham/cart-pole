@@ -4,7 +4,7 @@ use crate::{
     stepper::Stepper,
 };
 
-/// The firmware's sim-loop edge (loop-plan.md part 5, the synthetic
+/// The firmware's sim-loop edge (synthetic-arduino-plan.md, the synthetic
 /// build): the same command decode and step generator as the board, with
 /// the radio replaced by `receive` and the step pin and timer replaced by
 /// `tick`, whose return value is the step signal the orchestrator turns

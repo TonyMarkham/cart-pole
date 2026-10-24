@@ -1,4 +1,4 @@
-# Synthetic Orin Plan — the virtual robot computer (parts 3–4 of `loop-plan.md`)
+# Synthetic Orin Plan — the virtual robot computer
 
 The policy has to learn from what the robot's computer will see and
 remember, so the loop needs a stand-in for that computer: a **synthetic
@@ -55,18 +55,18 @@ leg as it runs today.
   `states.csv` — `ctrl` the scripted speed (m/s), `command` the
   pulse-rate packet it becomes — and steps MuJoCo `--frame-interval-ms`
   (default 20, a placeholder for T) of simulated time, with the
-  synthetic Arduino (`firmware` crate, `loop-plan.md` part 5) turning
+  synthetic Arduino (`firmware` crate, `synthetic-arduino-plan.md`) turning
   the command into each 2 ms step's `ctrl`. (When this plan was
   written, `--detect` ran the Rust `object-detection` crate on each
   frame in-process; step 6 removed it.)
-- **The marker frame** (`loop-plan.md`): 4 slots in class order (0 Left,
+- **The marker frame** (`synthetic-loop-dia.md`, *Contracts*): 4 slots in class order (0 Left,
   1 Right, 2 Pivot, 3 End), each the box center `(x, y)` normalized to
   [0, 1] of the frame, or `(−1, −1)` when not detected.
-- **The policy input** (`loop-plan.md`): the pool, the last **6**
+- **The policy input** (`synthetic-loop-dia.md`, *Contracts*): the pool, the last **6**
   marker frames, newest first, each keyed by its **age** — milliseconds
   of simulated time before the current capture (newest 0, older
   negative): 6 × (1 + 8) = 54 floats.
-- **MuJoCo's clock is the authority** (`loop-plan.md`): every time in
+- **MuJoCo's clock is the authority** (`synthetic-loop-dia.md`): every time in
   the loop is simulated time, `data.time`.
 - **The detector this plan reuses** (`detector-plan.md` *Results*,
   2026-10-23): on the Orin, Python with OpenCV pre-processing and a
@@ -85,7 +85,7 @@ leg as it runs today.
 ## Settled decisions
 
 - **The frame reaches the synthetic Orin through the orchestrator**
-  (user, 2026-10-23), as `loop-plan.md` *Transport* has it ("Sim: every
+  (user, 2026-10-23), as the retired `loop-plan.md` *Transport* had it ("Sim: every
   link goes through the orchestrator"). The Unity player is unchanged:
   it still renders and returns the JPEG. The orchestrator attaches the
   frame's simulated capture time when it forwards the frame.
@@ -127,7 +127,7 @@ leg as it runs today.
 
 The orchestrator stays the WebSocket server; the synthetic Orin connects
 as a client, like the player, so each part is reached by an address it
-is given (`loop-plan.md` *Later — scaling*).
+is given (`orchestrator-plan.md`, *Later — scaling*).
 
 - **Episode start**, orchestrator → Orin, text:
   `{"type": "reset", "frame_interval": 0.02}` — clears the window; T in
@@ -232,7 +232,7 @@ the real Orin's camera capture, and what becomes of the Rust
 detector; its removal is a separate decision). *Superseded
 (`synthetic-loop-dia.md`):* the reply has no `command` field, because the
 policy is in the trainer; the delay D is the orchestrator's RND(8, 15) ms
-latency (`loop-plan.md`, *Timing*).
+latency (`synthetic-loop-dia.md`).
 
 ## Placeholders
 
@@ -241,6 +241,8 @@ latency (`loop-plan.md`, *Timing*).
   *Superseded (`synthetic-loop-dia.md`):* there is no frame interval;
   each capture goes out at the previous observation's arrival step.
 - **Confidence 0.25** (`ObjectDetection.toml`), as in `detector-plan.md`.
+- **GPU vs CPU inference** — the same model on this PC's GPU and on the
+  robot can differ slightly; compare once.
 
 ## Results (2026-10-23, executed on this PC)
 
@@ -305,9 +307,7 @@ latency (`loop-plan.md`, *Timing*).
 
 - `synthetic-loop-dia.md` — the planned loop, the source of truth for
   the decisions marked *Superseded*
-- `loop-plan.md` — parts, the marker frame, the policy input, timing,
-  transport
 - `detector-plan.md` — the reference pipeline, D3/D4, *Results* (the
   Orin TensorRT test)
 - `unity-player-plan.md` — the player protocol and the orchestrator stub
-- `physics-plan.md` — `states.csv` and the physics mode
+- `mujoco-plan.md` — `states.csv` and the physics mode

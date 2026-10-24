@@ -1,4 +1,4 @@
-//! The cart's Arduino firmware (loop-plan.md part 5): one source for the
+//! The cart's Arduino firmware (synthetic-arduino-plan.md): one source for the
 //! rig and the sim loop. The Orin sends a target step-pulse rate (4
 //! bytes, `i32` little-endian, pulses/s, sign = direction); the firmware
 //! clamps it to the motor's top rate and emits whole step pulses at that

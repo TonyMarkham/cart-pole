@@ -13,7 +13,7 @@ Unity as a STEP assembly (via the greyhound packages), and rendered there to
 generate labeled synthetic-vision datasets. The trained detector
 (YOLO11n, `cp2-640-base`; see *The trained detector*) later runs on a
 Jetson Orin Nano Super (replacing the Raspberry Pi 5, user 2026-10-23:
-TensorRT FP16 built from the ONNX export, `loop-plan.md`) with the Pi
+TensorRT FP16 built from the ONNX export, *The real robot*) with the Pi
 global-shutter camera (IMX296) against the real rig. The balance policy
 trains in the **synthetic loop** (`synthetic-loop-dia.md`, the source of
 truth for the loop plans): the Rust orchestrator steps MuJoCo
@@ -64,6 +64,18 @@ adds repo structure around them, never overrides them.
   does today, verify against landed sources. When citing a plan, name it
   as a plan. (Worked example: `ArUco.md` specifies `DICT_4X4_50` ids 0–3;
   the landed markers are `DICT_4X4_1000` tags 376/596/920/937.)
+- **`synthetic-loop-dia.md` is the single source of truth for the
+  synthetic loop's design** (user, 2026-10-23). Where a loop plan
+  (a participant plan) disagrees with the diagram, the
+  diagram is right and the plan is out of date. A change to the loop's
+  design lands in the diagram first; the plans follow it. The diagram is
+  still a plan: it is the truth for what the loop is meant to be, never
+  for what the code does today — verify that against landed sources, as
+  above.
+- **Truth flows one way: diagram → participant plans → code** (user,
+  2026-10-23). A participant's plan is written from the diagram alone,
+  never from the code. Code that disagrees with its plan is not a
+  conflict to raise: it is work to do, a step in that plan.
 - **Separate requirement from recommendation.** State invariants as
   requirements and defaults as choices. A recommendation never hardens
   into an instruction.
@@ -238,14 +250,14 @@ adds repo structure around them, never overrides them.
   excluded) — the synthetic loop's parts, each with its plan:
   `orchestrator/` (the loop's driver; it began as the Unity leg's stub),
   `physics/` (MuJoCo in-process, configured by `physics.toml`,
-  `physics-plan.md`), `firmware/` (the Arduino firmware, one source for
-  the rig and the loop's synthetic Arduino, `loop-plan.md` part 5), and
+  `mujoco-plan.md`), `firmware/` (the Arduino firmware, one source for
+  the rig and the loop's synthetic Arduino, `synthetic-arduino-plan.md`), and
   `object-detection/` (the Rust detector crate, configured by
   `ObjectDetection.toml`, `detector-plan.md`; superseded on the robot
   and in the loop by the Python synthetic Orin). Roles by the crates'
   own header comments and the plans.
 - `orin/` — the synthetic Orin, a `uv` project: Python + TensorRT
-  detection, the 6-entry pool, the WebSocket client (`orin-plan.md`).
+  detection, the 6-entry pool, the WebSocket client (`synthetic-orin-plan.md`).
 - `training/` — the detector training, a `uv` project: the numbered
   docs `01`–`07` and appendices, `src/` (`build_dataset.py`,
   `convert_proposals.py`, `dataset_stats.py`), and `runs/` (gitignored;
@@ -254,9 +266,10 @@ adds repo structure around them, never overrides them.
   detection"); no doc names its use.
 - **Plans and design docs at the root** — `synthetic-loop-dia.md` (the
   planned sequence of one run, the source of truth for the loop plans),
-  `loop-plan.md` (the master loop plan) and its leg plans
-  `physics-plan.md`, `unity-player-plan.md`, `detector-plan.md`,
-  `orin-plan.md`; `DATASETS.md` (the one dataset format) and
+  one plan per diagram participant, named after it: `orchestrator-plan.md`, `mujoco-plan.md`,
+  `trainer-plan.md`, `synthetic-arduino-plan.md`,
+  `synthetic-orin-plan.md`, `unity-player-plan.md`; `detector-plan.md`
+  (the Rust detector crate the synthetic Orin superseded); `DATASETS.md` (the one dataset format) and
   `GENERATOR.md` (the generator's binding directives, which win over
   `DATASETS.md` where they conflict); `training-plan.md`,
   `training-plan-noob.md` and `training-plan-audit.md` (the YOLO training
@@ -275,13 +288,45 @@ at `weights/best.pt`. Best mAP50-95 read from each run's `results.csv`
   640, the one the robot runs. Best mAP50-95 0.971 at epoch 494 of 500.
   Beside `best.pt`: `best.onnx` (exported 2026-10-17) and
   `best_fp16.engine` (TensorRT FP16 for this PC's 3090, built
-  2026-10-23, `orin-plan.md`).
+  2026-10-23, `synthetic-orin-plan.md`).
 - **`training/runs/cp2-1440-base/`** — the **metrology model**, imgsz
   1440, for proposals and audits on the 3090. Best mAP50-95 0.982 at
   epoch 324 (early-stopped at 374).
 
 The roles and per-class figures are in `training/05-POST_TRAINING.md`
 (Steps 3–4).
+
+## The real robot (what the synthetic loop stands in for)
+
+- **The robot's computer is a Jetson Orin Nano Super** (user,
+  2026-10-23), replacing the Raspberry Pi 5: TensorRT FP16 detects in
+  8–10 ms per frame on it, against 80–125 ms for the best Pi 5 options
+  (`detector-plan.md`, *Results*). "The Pi" in older plans names that
+  computer's role, the robot side of the loop, not the board. Its code
+  is built on the device: the repo is cloned there and compiled (user,
+  2026-10-22, for the Pi; unchanged for the Orin). Requirement: every
+  dependency of the robot-side code builds there — aarch64 Linux,
+  JetPack 6.2.3 (CUDA 12.6, TensorRT 10.3).
+- **Live and virtual are one source.** The robot computer's code and
+  the Arduino firmware are each one source built two ways: the live
+  build for the hardware, the synthetic build for the loop; only the
+  edges (where frames come from, where commands go) differ. Exception:
+  detection on the robot runs in Python (user, 2026-10-23) — on the
+  Orin, OpenCV pre-processing + TensorRT ran 11.9–14.5 ms per frame
+  against 18.7–19.1 ms for the Rust POC in the same session
+  (`detector-plan.md`, *Results*).
+- **On the rig, the Orin sends the command packets to the Arduino over
+  WiFi.**
+- **Each diagram participant's real counterpart:**
+
+  | Participant | On the real robot |
+  |---|---|
+  | Orchestrator | none — it stands in for the physical world |
+  | MuJoCo | the physical rig |
+  | Unity player | the Pi GS camera (IMX296), its frame reduced to 728×544 greyscale |
+  | Synthetic Orin | the Orin: detection, and in production the policy |
+  | Synthetic Arduino | the Arduino, the DRV8825, the stepper and the belt |
+  | Trainer | none — training happens only in the synthetic loop |
 
 ## Verified contracts
 

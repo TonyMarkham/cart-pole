@@ -35,7 +35,7 @@ use crate::tract_engine::Engine;
 use anyhow::{Result, bail};
 
 /// Slots in the marker frame: 0 Left, 1 Right, 2 Pivot, 3 End
-/// (loop-plan.md, the class-id contract).
+/// (synthetic-loop-dia.md, Contracts: the class-id contract).
 pub const SLOTS: usize = 4;
 
 // Output rows before the class scores: box center x, center y, width,

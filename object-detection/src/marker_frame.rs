@@ -1,10 +1,10 @@
 use crate::SLOTS;
 
 /// A slot's position when its class was not detected. Outside [0, 1], so
-/// it can never be a real position (loop-plan.md).
+/// it can never be a real position (synthetic-loop-dia.md, Contracts).
 pub const NOT_DETECTED: (f32, f32) = (-1.0, -1.0);
 
-/// The 4-slot marker frame (loop-plan.md): per class, in class order, the
+/// The 4-slot marker frame (synthetic-loop-dia.md, Contracts): per class, in class order, the
 /// best box's center normalized to [0, 1] of the frame (top-left origin),
 /// or [`NOT_DETECTED`].
 #[derive(Debug, Clone, Copy, PartialEq)]

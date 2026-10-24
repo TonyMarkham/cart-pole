@@ -1,4 +1,4 @@
-# Physics Plan — the loop's physics (part 1 of `loop-plan.md`)
+# MuJoCo Plan — the loop's physics
 
 The loop's frames must show the cart-pole moving the way the real rig
 would, so the orchestrator needs real physics in place of the stub's
@@ -161,7 +161,7 @@ with `cargo run -q -p orchestrator -- …`; physics-only output under
 
 1. **Commit** (nothing is committed). New: `physics.toml`, `physics/`,
    `orchestrator/src/control.rs`, `orchestrator/src/sweep.rs`,
-   `physics-plan.md`. Changed: root `Cargo.toml` and `Cargo.lock`,
+   `mujoco-plan.md`. Changed: root `Cargo.toml` and `Cargo.lock`,
    `orchestrator/Cargo.toml`, `orchestrator/src/args.rs`,
    `orchestrator/src/main.rs`. Removed: `orchestrator/src/pose.rs`
    (`Pose` moved to `physics`). These sit on top of the Unity leg's
@@ -306,7 +306,7 @@ hand.
 - **`damping` 0** — the slide's friction is the joint's `frictionloss`
   (0.05 N), not the actuator's.
 - **`delay` 0** — the command delay D belongs to the orchestrator's
-  scheduling (`loop-plan.md`, *Timing*), not to the actuator.
+  scheduling (`orchestrator-plan.md`), not to the actuator.
 - **`kp`, `dampratio`, `timeconst`, `cranklength`, `lengthrange`,
   `inheritrange`** — stored in the asset but not used by a
   `<velocity>` actuator.
@@ -398,7 +398,7 @@ Requirements (the leg is wrong without them):
   because a silent reset would make the truth log and the frames lie.
 - **P4 — MuJoCo's clock only.** Simulated time advances only through
   `mj_step`; the frame interval is a whole number of physics steps
-  (`loop-plan.md`, *Timing*). An interval that is not a whole multiple
+  (`synthetic-loop-dia.md`). An interval that is not a whole multiple
   of the timestep is rejected, not rounded. *Superseded
   (`synthetic-loop-dia.md`):* there is no frame interval. Time still
   advances only through `mj_step`, a fixed 2 ms each; the arrival step
@@ -489,7 +489,7 @@ Recommendations (choices, with the reason):
      speed in m/s. Out-of-range values are clamped by MuJoCo itself
      (`ctrllimited="true"`, ±0.68 m/s); keeping the command inside the
      motor's speed range is the firmware's job in a later leg
-     (`loop-plan.md`).
+     (`synthetic-arduino-plan.md`).
    - `step(n)`: `n` × `mj_step`.
    - `time()`, `pose() -> Pose`: one `mj_getState` each.
    - `warnings()`: the handler's count.
@@ -532,7 +532,7 @@ Recommendations (choices, with the reason):
    - `states.csv` in `--out`: header `id,time,ctrl,cart,pole` (since
      the firmware leg, `id,time,ctrl,cart,pole,command`: `command` is
      the pulse-rate packet the scripted `ctrl` speed becomes,
-     `loop-plan.md` part 5), values
+     `synthetic-arduino-plan.md`), values
      written with Rust's `{}` for `f64` (shortest text that reads back
      to the same number), so files compare byte for byte (Done-when 4).
      *Superseded (`synthetic-loop-dia.md`, Truth log):* one row per
@@ -590,18 +590,18 @@ its exporter.
 ## Placeholders
 
 - **T = 20 ms** (`--frame-interval-ms` default) — until the Pi's frame
-  interval is measured (`loop-plan.md`). *Superseded
+  interval is measured. *Superseded
   (`synthetic-loop-dia.md`):* there is no frame interval; each capture
   goes out at the previous observation's arrival step.
 - **The scripted controls** (`speed:0.2`, `speed:0.6`, `sine:0.4,4`,
   start `0,1.0`) are test values for bring-up stages 1–2
-  (`loop-plan.md`), not training settings.
+  (`trainer-plan.md`, *Bring-up*), not training settings.
 - **The actuator's values** (±0.68 m/s, ±98 N, `kv` 100, `armature`
   0.227 kg; derivations in *The actuator's values*) rest on an assumed
   2.5 A phase current and an estimated corner speed; the real top speed
   and the DRV8825's actual current setting are to be measured.
 
-## Consequence for `loop-plan.md`
+## Consequence for `loop-plan.md` (retired 2026-10-23)
 
 Its *Targets* item 2 ("Physics worker") and part 1's "No physics worker
 process exists" describe the worker-process shape. Under this leg's
@@ -613,7 +613,6 @@ decision, physics is a library inside the orchestrator. Updated
 
 - `synthetic-loop-dia.md` — the planned loop, the source of truth for
   the decisions marked *Superseded*
-- `loop-plan.md` — parts, contracts, timing, bring-up stages
 - `unity-player-plan.md` — the renderer, the message format, the sign
   convention check
 - MuJoCo 3.15.0 headers: `include\mujoco\mujoco.h`, `mjtype.h`

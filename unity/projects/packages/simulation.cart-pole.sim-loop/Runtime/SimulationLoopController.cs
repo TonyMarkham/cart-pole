@@ -42,7 +42,7 @@ namespace Simulation.CartPole.SimLoop
         // so slides need no sign.
         private const int MjcfToUnityHingeSign = -1;
 
-        // The frame contract (loop-plan.md): half the IMX296's native
+        // The frame contract (synthetic-loop-dia.md, Contracts): half the IMX296's native
         // 1456x1088. The 24 is the depth buffer's bit count - what lets
         // near surfaces hide far ones - matching the dataset generator.
         private const int FrameWidth = 728;

@@ -18,7 +18,7 @@ pub struct Config {
     pub max_speed_um_per_s: u32,
 }
 
-/// The rig (loop-plan.md, physics-plan.md *The actuator's values*):
+/// The rig (synthetic-arduino-plan.md, mujoco-plan.md *The actuator's values*):
 /// 23HS32-4004S (1.8°), DRV8825, 48T GT2 pulley, 900 mm usable rail.
 /// `microsteps` is a placeholder until the driver's setting is chosen
 /// (1/32 is the DRV8825's finest); `max_speed_um_per_s` is the 24 V

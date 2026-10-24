@@ -61,7 +61,7 @@ pub struct Args {
 
     /// Physics mode: simulated time between frames, in milliseconds; a
     /// whole number of physics steps. 20 is a placeholder for the Pi's
-    /// frame interval T (loop-plan.md).
+    /// frame interval T, which orchestrator-plan.md replaces with the arrival step.
     #[arg(long, default_value_t = 20, requires = "physics")]
     pub frame_interval_ms: u32,
 
@@ -69,7 +69,7 @@ pub struct Args {
     #[arg(long, requires = "physics")]
     pub no_render: bool,
 
-    /// Physics mode: launch the synthetic Orin (orin-plan.md) with this
+    /// Physics mode: launch the synthetic Orin (synthetic-orin-plan.md) with this
     /// command — program and arguments, e.g. `--orin uv run --project
     /// orin python orin/synthetic_orin.py --config ObjectDetection.toml
     /// --engine <file>` — appending `--orchestrator ws://<listen> --out

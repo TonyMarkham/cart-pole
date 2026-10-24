@@ -1,4 +1,4 @@
-# Unity Player Plan — the loop's renderer (part 2 of `loop-plan.md`)
+# Unity Player Plan — the loop's renderer
 
 The loop needs a renderer that turns MuJoCo's joint positions into
 exactly the frame the Pi's detector will see — a 728×544 greyscale JPEG
@@ -146,7 +146,7 @@ All runs from the repo root against `Build/SimulationLoop.exe`.
      camera ranges and a retrain. The check script and per-frame CSVs
      are scratch files, not committed.
 3. **Timing:** per-frame round trip and sustained frames per second in
-   the stub, to compare with the Pi's frame interval T (`loop-plan.md`).
+   the stub, to compare with the Pi's frame interval T (the retired `loop-plan.md`).
    Proposed as a separate session ("Add frame timing to the orchestrator
    stub").
 4. **Step 3's remaining check:** one dataset-generator run, frames as
@@ -160,7 +160,7 @@ All runs from the repo root against `Build/SimulationLoop.exe`.
    `Windows (Loop)` build profile (+ `.meta`),
    `EditorBuildSettings.asset`, `01-Cart-Pole.root.asset`.
    greyhound-snake: `mujoco-win.md`.
-6. **Then the other legs** of `loop-plan.md` — physics worker, virtual
+6. **Then the other legs** of the retired `loop-plan.md` — physics worker, virtual
    Pi, firmware, and the real orchestrator — each with its own plan.
 
 ## Facts this plan builds on
@@ -300,7 +300,7 @@ All runs from the repo root against `Build/SimulationLoop.exe`.
   sends a scripted sweep or one fixed pose, saves and checks the
   frames. It stands in for MuJoCo; it is the seed of the real
   orchestrator, not the orchestrator plan.
-- Frame contract: 728×544 greyscale JPEG, q90 (`loop-plan.md`).
+- Frame contract: 728×544 greyscale JPEG, q90 (`synthetic-loop-dia.md`, *Contracts*).
 - Loop scene: `Assets/SimulationLoop/Scenes/SimulationLoop.unity`.
 - **SO pattern, as synthetic-data-gen does it:** what the loop controls
   is identified by ScriptableObjects carrying sibling-index paths — here
@@ -509,6 +509,9 @@ in only when a later plan needs them).
 
 - **Camera pose** — the scene's (0, 0.25, −2.41), no rotation, is
   nominal; the real mount's measured pose replaces it.
+- **The real camera's greyscale** — the IMX296 is a colour sensor; the
+  robot's reduction to 728×544 greyscale must use the renderer's method
+  (Q1), or the real frames will not look like the training frames.
 - **Environment** — the scene's `neon_photostudio_4k` skybox and
   Directional Light, no desk; replaced when the real bench's look is
   chosen.

@@ -1,4 +1,4 @@
-"""The detector's settings, read from ObjectDetection.toml (orin-plan.md R3).
+"""The detector's settings, read from ObjectDetection.toml (synthetic-orin-plan.md R3).
 
 One file configures detection for the Rust crate and for this project, so
 both run the same model with the same letterbox and threshold. Only the keys
@@ -31,7 +31,7 @@ class DetectorConfig:
             confidence=float(raw["confidence"]),
             classes=list(raw["classes"]),
         )
-        # The marker frame has exactly four slots (loop-plan.md).
+        # The marker frame has exactly four slots (synthetic-loop-dia.md, Contracts).
         if len(config.classes) != 4:
             raise ValueError(f"{path}: classes must name 4 slots, got {config.classes}")
         return config

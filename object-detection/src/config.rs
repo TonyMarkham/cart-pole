@@ -61,7 +61,7 @@ impl DetectorConfig {
             bail!("{}: confidence {} is not within 0..1", path.display(), file.confidence);
         }
         // The marker frame has one slot per class, and the contract
-        // (loop-plan.md) fixes four.
+        // (synthetic-loop-dia.md, Contracts) fixes four.
         if file.classes.len() != SLOTS {
             bail!(
                 "{}: {} classes, but the marker frame has {SLOTS} slots",

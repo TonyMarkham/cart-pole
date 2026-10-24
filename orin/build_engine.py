@@ -1,4 +1,4 @@
-"""Build the detector's TensorRT engine from the float ONNX (orin-plan.md R2).
+"""Build the detector's TensorRT engine from the float ONNX (synthetic-orin-plan.md R2).
 
 An engine only runs on the GPU and TensorRT version it was built with, so
 each machine builds its own from the same best.onnx; the Windows TensorRT

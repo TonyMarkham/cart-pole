@@ -1,4 +1,4 @@
-/// The Orin → Arduino command packet's length (loop-plan.md, *Command*).
+/// The Orin → Arduino command packet's length (synthetic-loop-dia.md, *Contracts*).
 pub const COMMAND_LEN: usize = 4;
 
 /// Decodes one command packet: one `i32`, little-endian, the target step

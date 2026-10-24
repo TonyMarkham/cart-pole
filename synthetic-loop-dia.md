@@ -38,7 +38,8 @@ nearly every observation, and the run goes as fast as the Orin's round
 trip allows. At that same step the trainer's command takes effect and the
 next capture goes out. Captures sit on the 2 ms grid, so the arrival step
 rounds the latency up to the next step: the gap between two captures is
-10, 12, 14 or 16 ms.
+10, 12, 14 or 16 ms. The latency is drawn at random because the policy
+cannot observe it directly: the range is the band it trains in.
 
 Not yet in the loop: more than one episode per run.
 
@@ -165,5 +166,34 @@ the rail, a guarantee, so the Arduino is never told a start position. The
 2 ms step is the MJCF's timestep, and the loop's fixed deltatime: it sets
 no `<option>`, so MuJoCo's default applies. The Orin latency's range,
 8–15 ms, is actual object-detection inference time over 250 test images,
-a placeholder for D = detection + policy + WiFi (`loop-plan.md`,
-*Timing*).
+a placeholder for D = detection + policy + WiFi, to be measured on the
+Orin (`orchestrator-plan.md`, *Placeholders*).
+
+**Contracts** — what the messages carry, in full:
+
+- **The frame (13):** 728×544 greyscale JPEG, quality 90 — exactly half
+  the IMX296's native 1456×1088 (`DATASETS.md`, *Image spec*).
+- **The marker frame (each pool entry):** 4 slots in class order — 0
+  Left (tag 376), 1 Right (596), 2 Pivot (920), 3 End (937), the repo's
+  class-id contract. Each slot is the box center `(x, y)`, normalized to
+  [0, 1], or `(−1, −1)` when that class was not detected; −1 lies outside
+  the valid range, so "not detected" can never be a real position. When
+  a class has several boxes, the slot takes the highest-confidence one.
+  `(−1, −1)` means *not detected*, whatever the cause: occluded, missed,
+  out of frame, or a failed frame.
+- **The pool (14, 17):** 6 entries × (1 age + 4 × `(x, y)`) = 54 floats.
+  Ages are relative to the current capture so the input never depends on
+  absolute clock values, and the policy sees the real spacing between
+  frames.
+- **The command (18, 19):** 4 bytes, one `i32`, little-endian, in
+  pulses per second; fixed length, no id; sign = direction, never a
+  distance or position offset. Why 4 bytes: at 1/32 microstepping the
+  top rate is 0.68 m/s ÷ 15 µm = 45,333 pulses/s, past an `i16`'s
+  32,767; an `i32` never limits the microstep setting or the speed. One
+  pulse per second is 0.015 mm/s, finer than the slowest motion a
+  balance needs.
+- **The cart speed (20, 21):** meters per pulse = belt travel per
+  pulley turn ÷ (full steps per turn × microsteps) = 96 mm ÷ (200 × 32)
+  = 15 µm. The 96 mm is the CAD pulley `pully-gt2-48t-6w-8b`: 48 teeth
+  at GT2's 2 mm pitch. The MJCF's `ctrlrange` (±0.68 m/s) matches the
+  top rate, 45,333 pulses/s × 15 µm.

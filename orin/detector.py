@@ -1,9 +1,9 @@
 """The robot's marker detector: JPEG in, the 4-slot marker frame out.
 
-Python + TensorRT is how the robot detects (loop-plan.md, Principles,
+Python + TensorRT is how the robot detects (AGENTS.md, The real robot,
 exception), and the synthetic Orin runs this same module on the PC's GPU.
 It must compute what Ultralytics' predictor computes on best.onnx
-(orin-plan.md O1, detector-plan.md D1-D3):
+(synthetic-orin-plan.md O1, detector-plan.md D1-D3):
 
 - decode greyscale with OpenCV;
 - letterbox to input_size: r = min(S / h, S / w), resized (round(w r),

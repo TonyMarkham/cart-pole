@@ -1,4 +1,4 @@
-# Detector Plan — the virtual Pi's object detection (part 3 of `loop-plan.md`)
+# Detector Plan — the virtual Pi's object detection
 
 The policy must act on what the real robot sees, so every rendered frame
 has to be turned into exactly what the Pi will compute from its camera:
@@ -25,7 +25,7 @@ uncommitted).
 **The planned loop is `synthetic-loop-dia.md`** (2026-10-23), the
 source of truth: it supersedes the decisions marked *Superseded* below.
 In it, detection runs in the synthetic Orin (Python + TensorRT,
-`orin-plan.md`), not in this crate called by the orchestrator. What this
+`synthetic-orin-plan.md`), not in this crate called by the orchestrator. What this
 plan built and measured (*Results*) stays as the record.
 
 ## Done when
@@ -76,7 +76,7 @@ plan built and measured (*Results*) stays as the record.
   - pixel values are divided by 255.
   For a 728×544 frame: r = 640/728 = 0.879121, resized 640×478,
   81 rows of padding top and bottom, none left or right.
-- **The marker-frame contract** (`loop-plan.md`): 4 slots in class order
+- **The marker-frame contract** (`synthetic-loop-dia.md`, *Contracts*): 4 slots in class order
   (0 Left / tag 376, 1 Right / 596, 2 Pivot / 920, 3 End / 937), each the
   box center `(x, y)` normalized to [0, 1] of the original frame, or
   `(−1, −1)` when that class was not detected; with several boxes of a
@@ -88,10 +88,10 @@ plan built and measured (*Results*) stays as the record.
   reference CSVs and the script that wrote them are scratch files, to be
   regenerated for step 5.
 - **Requirements already set by the user:** the Pi's code is built on
-  the Pi 5, aarch64 Linux (`loop-plan.md`, *Principles*); the object
+  the Pi 5, aarch64 Linux (`AGENTS.md`, *The real robot*); the object
   detection crate is configured by `ObjectDetection.toml` at the repo
-  root (`loop-plan.md`, *Targets* 4).
-- **Precedent:** the `physics` crate and `physics.toml` (`physics-plan.md`)
+  root (user, 2026-10-22).
+- **Precedent:** the `physics` crate and `physics.toml` (`mujoco-plan.md`)
   — workspace member, config file at the repo root with paths relative
   to the file's folder, strict parse (`deny_unknown_fields`).
 
@@ -223,7 +223,7 @@ Recommendations (choices, with the reason):
 ## Not in this plan
 
 The 6-frame window with ages and the policy input (with the policy leg),
-the Pi's camera capture and its greyscale reduction (`loop-plan.md`
+the Pi's camera capture and its greyscale reduction (`unity-player-plan.md`,
 *Placeholders*), deploying to the Pi, GPU inference, the delay D, and
 any retraining.
 
@@ -365,11 +365,10 @@ any retraining.
 
 - `synthetic-loop-dia.md` — the planned loop, the source of truth for
   the decisions marked *Superseded*
-- `loop-plan.md` — the marker-frame contract, the build-on-the-Pi
-  principle, *Targets* 4
+- `AGENTS.md`, *The real robot* — the build-on-the-device principle
 - `unity-player-plan.md` *Next* 2 — the reference runs and the mount
   pose
-- `physics-plan.md` — the config-file precedent
+- `mujoco-plan.md` — the config-file precedent
 - Ultralytics 8.4.177 source in `training/.venv`: `engine/predictor.py`
   (`preprocess`, `pre_transform`), `data/augment.py` (`LetterBox`),
   `data/loaders.py` (greyscale read)

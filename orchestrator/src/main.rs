@@ -29,7 +29,7 @@ use tokio::{
 };
 use tokio_tungstenite::{WebSocketStream, accept_async, tungstenite::Message};
 
-// The frame contract (loop-plan.md): half the IMX296's native 1456×1088.
+// The frame contract (synthetic-loop-dia.md, Contracts): half the IMX296's native 1456×1088.
 const FRAME_WIDTH: u16 = 728;
 const FRAME_HEIGHT: u16 = 544;
 
@@ -115,8 +115,8 @@ struct Simulation {
     control: Control,
     steps_per_frame: u32,
     csv: BufWriter<File>,
-    // The cart's firmware between the command and MuJoCo (loop-plan.md
-    // part 5), ticked once per physics step.
+    // The cart's firmware between the command and MuJoCo
+    // (synthetic-arduino-plan.md), ticked once per physics step.
     arduino: SyntheticArduino,
     step_micros: u32,
     meters_per_pulse: f64,
@@ -282,7 +282,7 @@ fn launch(player: &Path, url: &str) -> Result<Child> {
 }
 
 // The synthetic Orin: the given program and arguments, plus its address
-// and the run's folder (orin-plan.md R4); kill_on_drop as for the player.
+// and the run's folder (synthetic-orin-plan.md R4); kill_on_drop as for the player.
 fn launch_orin(command: &[String], url: &str, out: &Path) -> Result<Child> {
     let (program, rest) = command.split_first().ok_or_else(|| anyhow!("--orin needs a command"))?;
     println!("launching synthetic Orin: {} --orchestrator {url} --out {}", command.join(" "), out.display());

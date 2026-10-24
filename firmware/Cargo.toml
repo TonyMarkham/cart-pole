@@ -5,7 +5,7 @@ edition           = { workspace = true }
 description       = "The cart's Arduino firmware, one source for the rig and the sim loop: the Orin's 4-byte pulse-rate command in, step pulses out (synthetic feature: the cart actuator's ctrl)"
 
 [features]
-# The sim loop's build (loop-plan.md part 5): runs on the PC with std and
+# The sim loop's build (synthetic-arduino-plan.md): runs on the PC with std and
 # turns the pulses the stepper would emit into the velocity actuator's
 # ctrl, in m/s. Without it the crate is no_std, the shape the board's
 # build takes.

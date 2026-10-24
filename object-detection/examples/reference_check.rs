@@ -22,7 +22,7 @@ use object_detection::{Detector, DetectorConfig, SLOTS};
 const CENTER_PX: f64 = 1.0;
 const CONFIDENCE: f32 = 0.01;
 
-// The loop's frame contract (loop-plan.md).
+// The loop's frame contract (synthetic-loop-dia.md, Contracts).
 const WIDTH: usize = 728;
 const HEIGHT: usize = 544;
 
