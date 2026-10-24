@@ -58,9 +58,10 @@ code is `orchestrator/src/`; the trainer launches it with
   (9–10), the first capture state.
 - **O3 — the clock.** MuJoCo runs at a fixed deltatime, its 2 ms
   timestep. At each capture state the orchestrator draws the Orin's
-  latency, a seeded RND(8, 15) ms, and caches the arrival time, the
-  capture time plus the latency. Captures sit on the 2 ms grid, so the
-  arrival step rounds the latency up: gaps of 10, 12, 14 or 16 ms.
+  latency, a seeded RND(MIN, MAX) ms (`--rnd-delay-min`,
+  `--rnd-delay-max`), and caches the arrival time, the capture time plus
+  the latency. Captures sit on the 2 ms grid, so the arrival step rounds
+  the latency up: at 8–15 ms, gaps of 10, 12, 14 or 16 ms.
 - **O4 — observe while physics steps (11–16).** The orchestrator sends
   the Orin `{"id": n, "time": t, "joints": [cart, pole]}` (11). While
   the Orin works, MuJoCo steps every 2 ms on the old command (15–16)
@@ -125,11 +126,16 @@ code is `orchestrator/src/`; the trainer launches it with
 - **The run's seed** is the trainer's `[orchestrator]` `seed` (user,
   2026-10-23), passed as `--seed` and on to the Orin as `--seed` (4): it
   seeds the Orin's pre-warm gaps and the orchestrator's latency draws.
+- **The latency band** is the trainer's `[orchestrator]`
+  `rnd_delay_min` and `rnd_delay_max`, in ms (user, 2026-10-24; 8 and
+  15 today), passed as `--rnd-delay-min` and `--rnd-delay-max` and on to
+  the Orin under the same names (4): the band of the orchestrator's
+  latency draws and of the Orin's pre-warm gaps. 0 ≤ min ≤ max.
 - **The latency generator is SplitMix64, written in the orchestrator**
   (user, 2026-10-24): no dependency, a published algorithm with known
   test outputs, and a stream that never changes unless the code does.
   Seeded with `--seed`; each draw is one 64-bit output, its top 53 bits
-  as u ∈ [0, 1), latency = 8 + 7u ms. The Orin's pre-warm generator is
+  as u ∈ [0, 1), latency = min + (max − min)·u ms. The Orin's pre-warm generator is
   its own (Python's `random`), seeded the same way: each must repeat
   itself, not match the other.
 - **A value given on the command line wins.** Where a setting has both a
@@ -171,7 +177,12 @@ in the diagram first:
    construction: `step_to` stops at the arrival step and the reply is
    awaited before anything steps again. The latency generator
    (SplitMix64, *Configuration*) matches the algorithm's published
-   outputs for seed 0 (`orchestrator/src/tests.rs`).
+   outputs for seed 0 (`orchestrator/src/tests.rs`). The band comes
+   from `--rnd-delay-min` and `--rnd-delay-max` (2026-10-24): at the
+   trainer's 8 and 15, a seed-0 run's 250 latencies and the Orin's
+   pre-warm ages match the run before the change exactly; a 2–4 ms band
+   gives 500 gaps, all 4 ms (every latency in [2, 4) arrives at the next
+   step but one); an inverted band is refused.
 3. **Truth log** (O6). *Check:* Done-when 5. **Done (2026-10-24):** 60
    rows join `observations.jsonl` on the id, the capture time and the
    newest entry bit for bit — after turning on `serde_json`'s
@@ -221,7 +232,8 @@ in the diagram first:
 
 ## Placeholders
 
-- **The Orin's latency** — RND(8, 15) ms, the Orin's measured detection
+- **The Orin's latency** — RND(8, 15) ms today (the trainer's
+  `rnd_delay_min`, `rnd_delay_max`), the Orin's measured detection
   time over 250 test images, stands in for D = detection + policy +
   WiFi, to be measured on the Orin.
 

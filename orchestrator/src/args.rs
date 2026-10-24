@@ -46,6 +46,18 @@ pub struct Args {
     #[arg(long)]
     pub seed: u64,
 
+    /// The Orin latency's lower bound, ms: each observation's latency is a
+    /// seeded RND(--rnd-delay-min, --rnd-delay-max) (synthetic-loop-dia.md),
+    /// and the synthetic Orin's pre-warm gaps come from the same band (4).
+    /// The trainer passes its settings.toml [orchestrator] rnd_delay_min.
+    #[arg(long)]
+    pub rnd_delay_min: f64,
+
+    /// The Orin latency's upper bound, ms; the trainer passes its
+    /// rnd_delay_max. 0 ≤ --rnd-delay-min ≤ --rnd-delay-max.
+    #[arg(long)]
+    pub rnd_delay_max: f64,
+
     /// The built Unity player to launch with
     /// `-orin ws://127.0.0.1:<unity-port>` (6).
     #[arg(long, required_unless_present_any = ["no_launch", "no_render"])]
@@ -92,7 +104,8 @@ pub struct Args {
     /// orin python orin/src/synthetic_orin.py --engine <file>` —
     /// appending `--orchestrator
     /// ws://127.0.0.1:<orin-port> --frames-listen 127.0.0.1:<unity-port>
-    /// --out <out> --seed <seed>` (4). Required unless --no-render. Must
+    /// --out <out> --seed <seed> --rnd-delay-min <min> --rnd-delay-max
+    /// <max>` (4). Required unless --no-render. Must
     /// come last: every argument after it is the command.
     #[arg(
         long,

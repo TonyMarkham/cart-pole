@@ -39,9 +39,11 @@ Rules:
 - Pre-warm (synthetic-loop-dia.md, the note at 4; The initial pool): at
   launch, before any frame, the window is six entries of no detection,
   (-1, -1) x4, at times -d1, -(d1+d2), ..., -(d1+...+d6) before the first
-  capture (t = 0). Each gap dk is a fresh RND(8, 15) ms draw,
-  random.Random(--seed).uniform(8, 15), d1 first, so the same seed gives
-  the same pool. Every frame, the first included, is then one append:
+  capture (t = 0). Each gap dk is a fresh RND(MIN, MAX) ms draw,
+  random.Random(--seed).uniform(--rnd-delay-min, --rnd-delay-max), d1
+  first, so the same seed and band give the same pool. The band is the
+  trainer's settings.toml rnd_delay_min and rnd_delay_max, passed on by
+  the orchestrator (4). Every frame, the first included, is then one append:
   frame 0's ages are 0, -d1, ..., -(d1+...+d5).
 - A failed frame (synthetic-loop-dia.md, the note at 13; O3): Unity's
   JPEG does not decode or is not 728x544. Its entry is (-1, -1) x4, the
@@ -61,13 +63,14 @@ plus "error" for a failed frame, whose confidences and detect_ms are null.
 usage (from the repo root):
   uv run --project orin python orin/src/synthetic_orin.py
       --orchestrator ws://... --frames-listen 127.0.0.1:<port>
-      --out <dir> --seed <seed>
+      --out <dir> --seed <seed> --rnd-delay-min <ms> --rnd-delay-max <ms>
       --engine <file> [--config <settings.toml>]
 """
 
 import argparse
 import collections
 import json
+import math
 import random
 import time
 from dataclasses import dataclass
@@ -86,10 +89,6 @@ FRAME_SIZE = (728, 544)
 # The policy input's window length (synthetic-loop-dia.md, Contracts).
 WINDOW = 6
 
-# The Orin's latency band, ms (synthetic-loop-dia.md): the pre-warm gaps
-# are drawn from it.
-GAP_MS = (8.0, 15.0)
-
 # A slot with no detection (synthetic-loop-dia.md, Contracts).
 NOT_DETECTED = (-1.0, -1.0)
 
@@ -105,13 +104,14 @@ class Entry:
     failed: bool = False  # Unity's frame broke the JPEG contract
 
 
-def pre_warm(seed: int) -> collections.deque[Entry]:
-    """The pool before any frame: six no-detection entries before t = 0."""
+def pre_warm(seed: int, gap_ms: tuple[float, float]) -> collections.deque[Entry]:
+    """The pool before any frame: six no-detection entries before t = 0,
+    each gap a draw from the latency band gap_ms = (min, max)."""
     draws = random.Random(seed)
     times = []
     t = 0.0
     for _ in range(WINDOW):
-        t -= draws.uniform(*GAP_MS) / 1000  # d1 first: the gap nearest t = 0
+        t -= draws.uniform(*gap_ms) / 1000  # d1 first: the gap nearest t = 0
         times.append(t)
     window: collections.deque[Entry] = collections.deque(maxlen=WINDOW)
     for t in reversed(times):  # the window runs oldest first
@@ -146,18 +146,25 @@ def main() -> None:
     parser.add_argument("--out", type=Path, required=True, help="the run's output folder")
     parser.add_argument("--seed", type=int, required=True, help="the run's seed: the pre-warm gaps")
     parser.add_argument(
+        "--rnd-delay-min", type=float, required=True, help="the latency band's lower bound, ms: the pre-warm gaps"
+    )
+    parser.add_argument("--rnd-delay-max", type=float, required=True, help="the latency band's upper bound, ms")
+    parser.add_argument(
         "--config", type=Path, default=DEFAULT_PATH, help="the detector's settings (default: orin/settings.toml)"
     )
     parser.add_argument("--engine", type=Path, required=True, help="TensorRT engine built by build_engine.py")
     args = parser.parse_args()
     if args.seed < 0:
         parser.error(f"--seed is a whole number >= 0, got {args.seed}")
+    band = (args.rnd_delay_min, args.rnd_delay_max)
+    if not (math.isfinite(band[0]) and math.isfinite(band[1]) and 0 <= band[0] <= band[1]):
+        parser.error(f"the latency band is 0 <= --rnd-delay-min <= --rnd-delay-max ms, got {band}")
 
     detector = Detector(DetectorConfig.load(args.config), args.engine, FRAME_SIZE)
-    window = pre_warm(args.seed)
+    window = pre_warm(args.seed, band)
     # Before frame 0, the entries' times are their ages from t = 0.
     ages_ms = ", ".join(f"{entry.time * 1000:.3f}" for entry in reversed(window))
-    print(f"synthetic orin: pre-warmed from seed {args.seed}, ages {ages_ms} ms", flush=True)
+    print(f"synthetic orin: pre-warmed from seed {args.seed}, band {band} ms, ages {ages_ms} ms", flush=True)
     host, port = args.frames_listen
     frames = FrameSocket(host, port)
     print(f"synthetic orin: frame socket listening on ws://{host}:{port}", flush=True)

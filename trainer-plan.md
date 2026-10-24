@@ -101,7 +101,8 @@ the diagram first:
    1–2. **In part (2026-10-24):** `trainer/` is a `uv` project (code in
    `src/`). `naive_trainer.py` starts the run (1): it launches
    `target/release/orchestrator.exe` with the command `settings.toml`
-   builds (the ports, the seed and `[mjcf]` inserted ahead of `--orin`;
+   builds (the ports, the seed, the latency band `rnd_delay_min` and
+   `rnd_delay_max`, and `[mjcf]` inserted ahead of `--orin`;
    `launch.py`, without the trainer's `VIRTUAL_ENV`), waits for it and
    reports its exit code. `pool.py` and `output.py` check the pool (17)
    and the answer (18) and carry their link encodings

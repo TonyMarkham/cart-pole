@@ -1,6 +1,4 @@
-/// The Orin's latency band, ms (synthetic-loop-dia.md: RND(8, 15), the
-/// detector's measured inference time over 250 test images).
-const LATENCY_MS: (f64, f64) = (8.0, 15.0);
+use anyhow::{Result, bail};
 
 /// 2^53: a 53-bit integer divided by it is exactly representable in an
 /// f64 and lies in [0, 1).
@@ -13,11 +11,19 @@ const TWO_POW_53: f64 = 9_007_199_254_740_992.0;
 /// test outputs for seed 0 are in tests.rs.
 pub struct Latency {
     state: u64,
+    /// The band, ms: RND(min, max) (synthetic-loop-dia.md), the trainer's
+    /// rnd_delay_min and rnd_delay_max.
+    min_ms: f64,
+    max_ms: f64,
 }
 
 impl Latency {
-    pub fn new(seed: u64) -> Latency {
-        Latency { state: seed }
+    /// Fails unless 0 ≤ min ≤ max, both finite.
+    pub fn new(seed: u64, min_ms: f64, max_ms: f64) -> Result<Latency> {
+        if !(min_ms.is_finite() && max_ms.is_finite() && 0.0 <= min_ms && min_ms <= max_ms) {
+            bail!("the latency band is 0 ≤ --rnd-delay-min ≤ --rnd-delay-max ms, finite; got {min_ms} and {max_ms}");
+        }
+        Ok(Latency { state: seed, min_ms, max_ms })
     }
 
     /// The next 64-bit SplitMix64 output.
@@ -29,12 +35,12 @@ impl Latency {
         z ^ (z >> 31)
     }
 
-    /// The next latency, ms, in [8, 15): the output's top 53 bits as
-    /// u ∈ [0, 1), then 8 + 7u.
+    /// The next latency, ms, in [min, max): the output's top 53 bits as
+    /// u ∈ [0, 1), then min + (max − min)·u (at 8–15: 8 + 7u).
     pub fn next_ms(&mut self) -> f64 {
         // A u64 shifted right by 11 has at most 53 bits, so the cast to
         // f64 is exact.
         let u = (self.next_u64() >> 11) as f64 / TWO_POW_53;
-        LATENCY_MS.0 + (LATENCY_MS.1 - LATENCY_MS.0) * u
+        self.min_ms + (self.max_ms - self.min_ms) * u
     }
 }

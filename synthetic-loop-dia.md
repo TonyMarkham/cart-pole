@@ -29,8 +29,11 @@ race.
 
 MuJoCo's time is the clock, and it runs at a fixed deltatime: its 2 ms
 timestep. When the orchestrator takes a capture state, it draws the Orin's
-latency, a seeded RND(8, 15) ms, and caches the arrival time, the capture
-time plus the latency. MuJoCo keeps stepping on the old command while the
+latency, a seeded RND(MIN, MAX) ms, and caches the arrival time, the
+capture time plus the latency. MIN and MAX are the trainer's
+`settings.toml` `[orchestrator]` `rnd_delay_min` and `rnd_delay_max`
+(user, 2026-10-24), 8 and 15 today, passed to the orchestrator and on to
+the Orin (4). MuJoCo keeps stepping on the old command while the
 Orin works, as the real Arduino keeps stepping until the next packet
 lands. The observation reaches the trainer at the first step whose time is
 later than the arrival time; if MuJoCo gets there before the Orin has
@@ -39,8 +42,8 @@ faster than real time, so in practice it waits at the arrival step on
 nearly every observation, and the run goes as fast as the Orin's round
 trip allows. At that same step the trainer's command takes effect and the
 next capture goes out. Captures sit on the 2 ms grid, so the arrival step
-rounds the latency up to the next step: the gap between two captures is
-10, 12, 14 or 16 ms. The latency is drawn at random because the policy
+rounds the latency up to the next step: at 8–15 ms, the gap between two
+captures is 10, 12, 14 or 16 ms. The latency is drawn at random because the policy
 cannot observe it directly: the range is the band it trains in.
 
 Not yet in the loop: more than one episode per run.
@@ -63,8 +66,8 @@ sequenceDiagram
     Note over M,O: Start: load the MJCF (path and names from the trainer's settings.toml [mjcf]),<br/>reset to --start (at rest, cart at 50% of the rail, t = 0)
     O->>M: load + reset(start pose)
     O->>A: new(RIG): the cart starts at 50% of the rail, guaranteed (stands in for homing)
-    O->>N: launch --orchestrator ws://… --frames-listen ADDR --out DIR --seed S<br/>(S: the run's seed, the trainer's settings.toml [orchestrator] seed)
-    Note over N: pre-warm: builds the 6-entry pool, slots (−1, −1),<br/>at times −d₁, −(d₁+d₂), …, −(d₁+…+d₆) before t = 0<br/>then opens the frame listener
+    O->>N: launch --orchestrator ws://… --frames-listen ADDR --out DIR --seed S<br/>--rnd-delay-min MIN --rnd-delay-max MAX<br/>(the trainer's settings.toml [orchestrator] seed, rnd_delay_min, rnd_delay_max)
+    Note over N: pre-warm: builds the 6-entry pool, slots (−1, −1),<br/>at times −d₁, −(d₁+d₂), …, −(d₁+…+d₆) before t = 0<br/>each dₖ a seeded RND(MIN, MAX) ms<br/>then opens the frame listener
     N-->>O: connects (control socket: the listener is up)
     O->>U: launch SimulationLoop.exe -orin ws://ADDR
     U-->>N: connects (frame socket)
@@ -73,7 +76,7 @@ sequenceDiagram
     M-->>O: t, qpos (cart m, pole rad): the first capture state
 
     loop every observation n, until the trainer says stop
-        Note over O: capture state = MuJoCo's current t, qpos<br/>(the start state, then each arrival step's)<br/>arrival time = t + seeded RND(8, 15) ms, cached
+        Note over O: capture state = MuJoCo's current t, qpos<br/>(the start state, then each arrival step's)<br/>arrival time = t + seeded RND(MIN, MAX) ms, cached
         par the Orin observes
             O->>N: text {"id":n,"time":t,"joints":[cart, pole]}
             N->>U: text {"id":n,"joints":[cart, pole]} (the trigger)
@@ -153,7 +156,7 @@ exit: stdout closes, and the exit code says closed (0) or failed (1).
 **The initial pool.** At startup, before any frame exists, the Orin
 pre-warms the pool: six entries with no detection (−1, −1) at cumulative
 times before the first capture (t = 0), each gap a fresh draw dₖ of
-RND(8, 15) ms from the Orin's generator, seeded with `--seed`. These gaps
+RND(MIN, MAX) ms from the Orin's generator, seeded with `--seed`. These gaps
 are not rounded to the 2 ms grid, unlike the live gaps; it barely
 matters, since pre-warm entries hold no detection. Every frame, the first
 included, is then one push: the newest entry goes in and the oldest
@@ -181,7 +184,7 @@ Pivot marker out of bounds means penalty, and stop this run. The bounds
 are not set yet; they must sit inside the slide's ends by more than the
 cart can travel between a capture and the stop taking effect, at most
 0.68 m/s (45,333 pulses/s × 15 µm) × 16 ms (the longest gap to the
-arrival step) ≈ 11 mm, or the simulated cart reaches the slide's end
+arrival step at 8–15 ms) ≈ 11 mm, or the simulated cart reaches the slide's end
 first. The real board finds its centre by homing: left to the limit
 switch, right to the limit switch, then back half the pulses between the
 two hits. The synthetic run instead always starts with the cart at 50% of
@@ -191,8 +194,8 @@ states it, as `<option timestep="0.002" integrator="implicitfast"/>`,
 written by the exporter from the rig's StepJointSet, never left to MuJoCo's
 defaults: the timestep is both the physics step and the grid the latency
 rounds to, and `implicitfast` is MuJoCo's recommended integrator for the
-cart's `<velocity>` servo. The Orin latency's range,
-8–15 ms, is actual object-detection inference time over 250 test images,
+cart's `<velocity>` servo. The Orin latency's range, 8–15 ms today
+(`rnd_delay_min`, `rnd_delay_max`), is actual object-detection inference time over 250 test images,
 a placeholder for D = detection + policy + WiFi, to be measured on the
 Orin (`orchestrator-plan.md`, *Placeholders*).
 

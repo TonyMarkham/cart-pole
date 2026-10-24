@@ -436,7 +436,7 @@ Requirements (the leg is wrong without them):
   (`synthetic-loop-dia.md`):* there is no frame interval. Time still
   advances only through `mj_step`, a fixed 2 ms each; the arrival step
   is the first step whose time is later than capture time + the Orin's
-  RND(8, 15) ms latency, so the latency is rounded up to the next step
+  RND(MIN, MAX) ms latency (8–15 ms today), so the latency is rounded up to the next step
   by design.
 - **P5 — no panic across FFI.** The log handler is called from C; it
   must not panic (write with `writeln!` to `stderr` and ignore the

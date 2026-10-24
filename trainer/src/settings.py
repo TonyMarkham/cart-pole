@@ -38,6 +38,8 @@ class Settings:
     orin_port: int  # the control socket, 127.0.0.1
     unity_port: int  # the frame socket, 127.0.0.1
     seed: int  # the run's seed, 0 to 2**64 - 1
+    rnd_delay_min: float  # the Orin latency's band, ms: RND(min, max)
+    rnd_delay_max: float
     mjcf: Mjcf
 
     @staticmethod
@@ -67,6 +69,10 @@ class Settings:
         # The orchestrator reads it as a u64.
         if not isinstance(seed, int) or isinstance(seed, bool) or not 0 <= seed < 2**64:
             raise ValueError(f"{path}: orchestrator.seed is a whole number, 0 to 2**64 - 1, got {seed!r}")
+        rnd_delay_min = milliseconds(path, orchestrator, "rnd_delay_min")
+        rnd_delay_max = milliseconds(path, orchestrator, "rnd_delay_max")
+        if rnd_delay_min > rnd_delay_max:
+            raise ValueError(f"{path}: rnd_delay_min {rnd_delay_min} is above rnd_delay_max {rnd_delay_max}")
         raw_mjcf = raw["mjcf"]
         mjcf = Mjcf(
             model=(cwd / raw_mjcf["model"]).resolve(),
@@ -76,7 +82,13 @@ class Settings:
         )
         if not mjcf.model.is_file():
             raise ValueError(f"{path}: mjcf.model is not a file: {mjcf.model}")
-        inserted = ["--orin-port", str(orin_port), "--unity-port", str(unity_port), "--seed", str(seed)]
+        inserted = [
+            "--orin-port", str(orin_port),
+            "--unity-port", str(unity_port),
+            "--seed", str(seed),
+            "--rnd-delay-min", str(rnd_delay_min),
+            "--rnd-delay-max", str(rnd_delay_max),
+        ]
         return Settings(
             # The inserted arguments go first: --orin takes every argument after it.
             orchestrator_command=[str(program), *inserted, *mjcf.arguments(), *command[1:]],
@@ -84,6 +96,8 @@ class Settings:
             orin_port=orin_port,
             unity_port=unity_port,
             seed=seed,
+            rnd_delay_min=rnd_delay_min,
+            rnd_delay_max=rnd_delay_max,
             mjcf=mjcf,
         )
 
@@ -93,4 +107,12 @@ def port(path: Path, table: dict, key: str) -> int:
     # bool is an int in Python; a port of `true` is a typo, not 1.
     if not isinstance(value, int) or isinstance(value, bool) or not 1 <= value <= 65535:
         raise ValueError(f"{path}: orchestrator.{key} is a port, 1-65535, got {value!r}")
+    return value
+
+
+def milliseconds(path: Path, table: dict, key: str) -> float:
+    value = table[key]
+    # TOML gives 8 as an int and 8.5 as a float; both are milliseconds.
+    if not isinstance(value, (int, float)) or isinstance(value, bool) or not 0 <= value < float("inf"):
+        raise ValueError(f"{path}: orchestrator.{key} is milliseconds, a finite number >= 0, got {value!r}")
     return value

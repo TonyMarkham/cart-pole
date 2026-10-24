@@ -64,14 +64,14 @@ async fn main() -> Result<()> {
         bail!("--orin-port and --unity-port are both {}; each socket needs its own port", args.orin_port);
     }
     let command = args.orin.as_deref().ok_or_else(|| anyhow!("--orin is required unless --no-render"))?;
-    let seed = args.seed;
     let connect_timeout = Duration::from_secs(args.connect_timeout);
 
-    // 4–5: the synthetic Orin first. It pre-warms its pool from the seed,
-    // opens the frame socket, then connects to the control socket.
+    // 4–5: the synthetic Orin first. It pre-warms its pool from the seed
+    // and the latency band, opens the frame socket, then connects to the
+    // control socket.
     let (orin_listener, orin_url) = bind(args.orin_port, "control socket (synthetic Orin)").await?;
     let frames_listen = SocketAddr::from((Ipv4Addr::LOCALHOST, args.unity_port));
-    let mut orin_child = launch_orin(command, &orin_url, frames_listen, &args.out, seed)?;
+    let mut orin_child = launch_orin(command, &orin_url, frames_listen, &args)?;
     let stream = accept(&orin_listener, &mut orin_child, "synthetic Orin", connect_timeout).await?;
     let mut orin = accept_async(stream).await.context("synthetic Orin WebSocket handshake")?;
     eprintln!("synthetic Orin connected");
@@ -161,11 +161,13 @@ impl Simulation {
             false => "the trainer's commands".to_string(),
         };
         eprintln!(
-            "physics: model {}\n         start cart {:+.3} m pole {:.3} rad, driven by {driver}, seed {} -> {}",
+            "physics: model {}\n         start cart {:+.3} m pole {:.3} rad, driven by {driver}, seed {}, latency RND({}, {}) ms -> {}",
             config.model.display(),
             start.cart,
             start.pole,
             args.seed,
+            args.rnd_delay_min,
+            args.rnd_delay_max,
             path.display()
         );
         Ok(Simulation {
@@ -175,7 +177,7 @@ impl Simulation {
             arduino,
             meters_per_pulse,
             names: config.names,
-            latency: Latency::new(args.seed),
+            latency: Latency::new(args.seed, args.rnd_delay_min, args.rnd_delay_max)?,
         })
     }
 
@@ -268,11 +270,14 @@ fn launch(player: &Path, frames_url: &str) -> Result<Child> {
 
 // The synthetic Orin (synthetic-loop-dia.md, 4): the given program and
 // arguments, plus the control socket's address, the frame socket's
-// address, the run's folder and the seed; kill_on_drop as for the player.
-fn launch_orin(command: &[String], url: &str, frames_listen: SocketAddr, out: &Path, seed: u64) -> Result<Child> {
+// address, the run's folder, the seed and the latency band (its bounds as
+// the shortest text that reads back to the same f64); kill_on_drop as for
+// the player.
+fn launch_orin(command: &[String], url: &str, frames_listen: SocketAddr, args: &Args) -> Result<Child> {
     let (program, rest) = command.split_first().ok_or_else(|| anyhow!("--orin needs a command"))?;
+    let (out, seed, min, max) = (&args.out, args.seed, args.rnd_delay_min, args.rnd_delay_max);
     eprintln!(
-        "launching synthetic Orin: {} --orchestrator {url} --frames-listen {frames_listen} --out {} --seed {seed}",
+        "launching synthetic Orin: {} --orchestrator {url} --frames-listen {frames_listen} --out {} --seed {seed} --rnd-delay-min {min} --rnd-delay-max {max}",
         command.join(" "),
         out.display()
     );
@@ -286,6 +291,10 @@ fn launch_orin(command: &[String], url: &str, frames_listen: SocketAddr, out: &P
         .arg(out)
         .arg("--seed")
         .arg(seed.to_string())
+        .arg("--rnd-delay-min")
+        .arg(min.to_string())
+        .arg("--rnd-delay-max")
+        .arg(max.to_string())
         .stdin(Stdio::null())
         .stdout(child_stdout())
         .kill_on_drop(true)

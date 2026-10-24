@@ -27,14 +27,24 @@ unity_port = 9001
 # The run's seed, passed as --seed (synthetic-loop-dia.md, 4): the
 # orchestrator hands it to the synthetic Orin for the pool's pre-warm
 # gaps and uses it for the latency draws. The same seed and the same
-# commands give byte-identical observations.jsonl and states.csv.
-# A whole number, 0 to 2**64 - 1.
+# commands give the same physics, bit for bit (synthetic-loop-dia.md,
+# Determinism). A whole number, 0 to 2**64 - 1.
 seed = 0
 
-# Not the whole command: the trainer inserts the two ports, the seed and
-# [mjcf] (below) straight after the program, as --orin-port,
-# --unity-port, --seed, --model, --cart-joint, --pole-joint and
-# --actuator, so those never appear here.
+# The band of the Orin's latency, RND(rnd_delay_min, rnd_delay_max) ms
+# (synthetic-loop-dia.md), passed as --rnd-delay-min and --rnd-delay-max:
+# the orchestrator draws each observation's latency from it, and hands it
+# to the synthetic Orin (4) for the pool's pre-warm gaps. 8-15 ms is the
+# measured detection time, a placeholder for detection + policy + WiFi
+# (orchestrator-plan.md, Placeholders). Milliseconds, 0 <= min <= max.
+rnd_delay_min = 8
+rnd_delay_max = 15
+
+# Not the whole command: the trainer inserts the two ports, the seed, the
+# latency band and [mjcf] (below) straight after the program, as
+# --orin-port, --unity-port, --seed, --rnd-delay-min, --rnd-delay-max,
+# --model, --cart-joint, --pole-joint and --actuator, so those never
+# appear here.
 command = [
     "target/release/orchestrator.exe",
     "--player", "unity/projects/cart-pole/Build/SimulationLoop.exe",

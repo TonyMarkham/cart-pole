@@ -17,7 +17,8 @@ Since (2026-10-24, committed; the *Superseded* notes below say what each
 replaced): the diagram's Orin runs end to end with the real player. Code
 in `orin/src/`, settings in `orin/settings.toml` (was
 `ObjectDetection.toml`). At launch it pre-warms the pool from `--seed`
-(six no-detection entries at seeded RND(8, 15) gaps), opens the frame
+(six no-detection entries at seeded RND(MIN, MAX) gaps, from
+`--rnd-delay-min` and `--rnd-delay-max`), opens the frame
 socket at `--frames-listen` (`frame_socket.py`, one camera), connects to
 the orchestrator and, once Unity connects, sends `{"type":
 "registered"}` (4–8). Each pose is forwarded to Unity as the trigger, the
@@ -130,9 +131,11 @@ leg as it runs today.
   not 0 / 0.
   *Superseded (`synthetic-loop-dia.md`):* the Orin pre-warms the pool
   at launch with six entries of no detection (−1, −1), each gap a seeded
-  RND(8, 15) ms draw from `--seed`; every frame, the first included, is
-  then one push. The draws (2026-10-23): Python's `random.Random(S)`,
-  one `uniform(8, 15)` per gap, newest gap first; the seed is the
+  RND(MIN, MAX) ms draw from `--seed`; every frame, the first included,
+  is then one push. The draws (2026-10-23): Python's `random.Random(S)`,
+  one `uniform(MIN, MAX)` per gap, newest gap first; MIN and MAX are
+  `--rnd-delay-min` and `--rnd-delay-max` (8 and 15 today), the
+  trainer's `rnd_delay_min` and `rnd_delay_max` (user, 2026-10-24); the seed is the
   trainer's `settings.toml` `[orchestrator]` `seed`, passed on by the
   orchestrator.
 - **`--detect` is superseded** by `--orin`: in-process tract detection
@@ -192,7 +195,7 @@ Requirements (the observations are wrong without them):
   does not step MuJoCo until it has the reply. *Superseded
   (`synthetic-loop-dia.md`):* one reply per frame, in order, still
   holds; MuJoCo steps on the old command up to the arrival step (capture
-  time + the orchestrator's RND(8, 15) ms latency) and is frozen there
+  time + the orchestrator's RND(MIN, MAX) ms latency) and is frozen there
   until the reply is in.
 
 Recommendations (choices, with the reason):
@@ -223,7 +226,8 @@ Recommendations (choices, with the reason):
   <command>`), as it launches the player, and passes it `--orchestrator
   ws://…` and the run's `--out` folder. `synthetic-loop-dia.md` adds
   `--frames-listen ADDR` (the frame socket Unity connects to) and
-  `--seed S` (the pre-warm gaps).
+  `--seed S` (the pre-warm gaps), and `--rnd-delay-min MIN
+  --rnd-delay-max MAX` (their band, ms).
 
 ## Steps
 
@@ -252,7 +256,7 @@ the real Orin's camera capture, and what becomes of the Rust
 `object-detection` crate (superseded as the loop's and the robot's
 detector; retired, user 2026-10-23, `detector-plan.md`). *Superseded
 (`synthetic-loop-dia.md`):* the reply has no `command` field, because the
-policy is in the trainer; the delay D is the orchestrator's RND(8, 15) ms
+policy is in the trainer; the delay D is the orchestrator's RND(MIN, MAX) ms
 latency (`synthetic-loop-dia.md`).
 
 ## Placeholders
