@@ -87,6 +87,13 @@ messages.
   Action: a ∈ [−1, 1], command = round(a × 56,666). Until the reward,
   the end crash and the time limit are decided: reward 0, no
   termination, truncation at a placeholder length (`TimeLimit`).
+- **T9 — the policy learns by SAC** (the diagram's *The policy learns by
+  SAC*; user, 2026-10-24): Stable-Baselines3's `SAC` with its
+  `MlpPolicy`, on one `LoopEnv`, on the 3090 (the CPU doubled the
+  step's wall time, and the GPU is idle while SAC updates; the diagram
+  gives the numbers). Its updates run between
+  steps, while MuJoCo is frozen, so they cost wall time only. A
+  truncation is not a crash: only the end crash ends the value.
 
 ## Bring-up — what the trainer returns first
 
@@ -108,8 +115,6 @@ look.
 These are needed to build the trainer; per `AGENTS.md`, each lands in
 the diagram first:
 
-- **The learning method** (`gymnasium-research.md` holds the research
-  for this decision). Its tooling is settled: a Gymnasium `Env` (T8).
 - **The time limit** (the reward and the end crash are settled, T3a,
   T4): `gym.toml`'s `max_episode_steps` is a placeholder until then.
 - **How the trained policy reaches the Orin** for production.
@@ -213,8 +218,24 @@ Both runs give the same fit; the figures are the wider run's.
      was +0.4395 m, 3 mm past the 0.4364 m bound and 10.5 mm short of
      the slide's end; Pivot x 0.72810; commands reached 0.81 m/s; the run
      stopped and closed with exit 0.
-4. **Learning**, once the method is in the diagram. *Check:* Done-when
-   4.
+4. **Learning** (T9). *Check:* Done-when 4.
+   - **4a — the library.** `stable-baselines3` in `trainer/`'s uv
+     project, with PyTorch's CUDA build (`training/`'s `pytorch-cu128`
+     index).
+     *Check:* SB3 builds a `SAC` on `LoopEnv`'s spaces. **Done
+     (2026-10-24):** `stable-baselines3` 2.9.0 with `torch` 2.14.1+cpu;
+     `SAC("MlpPolicy", make())` builds without starting a run: the pool
+     flattens to 54 inputs, two hidden layers of 256, one action. Then
+     300 steps of `SAC.learn` through the real loop, two episodes of 150
+     (learning from step 100): both truncated by the time limit, no
+     crash; commands −56,356 to +56,350; 200 updates; every run stopped
+     and closed with exit 0. A step took 22 ms (median) before learning
+     and 46 ms after; an update 13.5 ms on the CPU. Switched to the
+     3090 (user, 2026-10-24): `torch` 2.11.0+cu128; the same 300 steps
+     passed the same way, 22.1 ms a step before learning and 46.5 ms
+     after, an update 16.1 ms, 28 MiB of GPU memory: no faster than the
+     CPU.
+   - **4b — a training run**, its values in a toml.
 
 ## Not in this plan
 

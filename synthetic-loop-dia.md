@@ -187,6 +187,30 @@ end crash scores −10 and terminates the episode. Each step is scored from
 the newest pool entry with both Pivot and End detected, and scores 0 when
 no entry has them.
 
+**The policy learns by SAC** (Soft Actor-Critic, Stable-Baselines3's
+`SAC` with its `MlpPolicy`; user, 2026-10-24, on the agent's
+recommendation), on one environment, on the 3090. Why SAC: it is made for
+one continuous action, and it is off-policy, reusing every stored
+observation many times, so it needs the fewest observations of the usual
+choices, and each observation costs real time (about 45 a second). Its
+updates run between steps, while MuJoCo stays frozen at the arrival step,
+so they cost wall time, never simulated time. Why the 3090 (user,
+2026-10-24): on the CPU, measured over 300 steps through the loop
+(2026-10-24), a step took 22 ms (median) before learning started and 46
+ms once SAC updated every step, one update of the network (the 54 pool
+values, two layers of 256, one action) taking 13.5 ms on 16 threads, so
+learning doubled the step's wall time. The 3090 is free for it: the loop
+runs one thing at a time, so while SAC updates, Unity and the Orin wait
+and the GPU's rendering and detection are idle; and SAC needs about 0.5
+GB of its 24 GB (the networks under 10 MB, the rest CUDA's own; the
+replay buffer stays in main memory). On the 3090, measured the same way
+(2026-10-24): 22.1 ms a step before learning and 46.5 ms after, one
+update 16.1 ms, 28 MiB held by PyTorch. The 3090 is no faster than the
+CPU here, so the doubled step is not the network's arithmetic; where
+the time goes is not yet measured. A time-limit truncation is
+not a crash: SAC keeps valuing the state it stopped in, and only the end
+crash ends the value.
+
 **The initial pool.** At startup, before any frame exists, the Orin
 pre-warms the pool: six entries with no detection (−1, −1) at cumulative
 times before the first capture (t = 0), each gap a fresh draw dₖ of

@@ -1,7 +1,17 @@
+[[tool.uv.index]]
+name = "pytorch-cu128"
+url = "https://download.pytorch.org/whl/cu128"
+explicit = true
+
+[tool.uv.sources]
+torch = { index = "pytorch-cu128" }
+
 [project]
 name = "trainer"
 version = "0.1.0"
 requires-python = ">=3.12"
 dependencies = [
     "gymnasium>=1.4.0",
+    "stable-baselines3>=2.9.0",
+    "torch>=2.11.0",
 ]
