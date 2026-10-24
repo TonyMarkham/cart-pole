@@ -35,8 +35,8 @@ unity_port = 9001
 # (synthetic-loop-dia.md, Training instances): each its own MuJoCo,
 # synthetic Arduino, synthetic Orin and Unity window, all feeding the one
 # policy. Instance k uses the ports orin_port + 2k and unity_port + 2k, so
-# 4 instances use 9000-9007. Read by train.py; naive_trainer.py and
-# env_check.py always run one. 1 to 6.
+# 4 instances use 9000-9007 and 12 use 9000-9023. Read by train.py;
+# naive_trainer.py and env_check.py always run one. 1 to 12.
 instances = 6
 
 # The run's seed, passed as --seed (synthetic-loop-dia.md, 4): the
@@ -61,9 +61,17 @@ rnd_delay_max = 15
 # as --instances, --orin-port, --unity-port, --seed, --rnd-delay-min, --rnd-delay-max,
 # --model, --cart-joint, --pole-joint and --actuator, so those never
 # appear here.
+#
+# The players' windows open in a grid (synthetic-loop-dia.md, Training
+# instances, The windows): --window-columns across, each --window-step
+# x,y pixels from the last (a 960x720 window plus its title bar), from
+# --window-origin x,y (default 0,0) on the display they open on. Without
+# --window-columns, Windows places them.
 command = [
     "target/release/orchestrator.exe",
     "--player", "unity/projects/cart-pole/Build/SimulationLoop.exe",
+    "--window-columns", "3",
+    "--window-step", "960,752",
     "--out", "target/trainer-run",
     # --orin must come last: every argument after it is the Orin's command.
     "--orin", "uv", "run", "--project", "orin", "python", "orin/src/synthetic_orin.py",

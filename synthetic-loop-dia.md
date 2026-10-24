@@ -56,7 +56,7 @@ orchestrator owns the whole group, so one launch starts it, one place
 lays out the windows, and one stop or failure shuts it all down; one
 orchestrator per instance would need something above them doing the
 same. The number of instances is a setting per run, `instances`, 1 to
-6 (user, 2026-10-24), in the trainer's `settings.toml` `[orchestrator]`.
+12 (user, 2026-10-24: 6, then 12, a 4 × 3 grid of windows), in the trainer's `settings.toml` `[orchestrator]`.
 Instance k (from 0) uses the ports `orin_port + 2k` and `unity_port + 2k`.
 This sequence shows one instance; the group works as follows.
 
@@ -98,9 +98,33 @@ This sequence shows one instance; the group works as follows.
   first is S + k. Every later episode's seed comes with its reset.
 - **One fails, all stop.** A failed pool in any instance fails the run
   (26), as for one.
-- **The windows** open where Windows puts them; a layout from the toml is
-  not decided yet. The player must be built without Force Single Instance
-  (user, 2026-10-24), or every player after the first exits at launch.
+- **The windows** are laid out in a grid (user, 2026-10-24), so every
+  player can be watched at once. Each window is 960×720 (the `Windows
+  (Loop)` build profile), so eight fit on a 4K display. The orchestrator,
+  the one place that lays out the windows, launches instance k's player
+  with `-window-position x,y`:
+  x = origin x + (k mod columns) × step x,
+  y = origin y + ⌊k ÷ columns⌋ × step y,
+  in pixels from the top-left corner of the display the window opens on.
+  The player's `PlayerController` moves its window there at startup.
+  The grid's values are orchestrator arguments in `settings.toml`'s
+  `command`: `--window-columns`, `--window-step x,y` (a window's outer
+  size, its title bar included) and `--window-origin x,y` (default
+  0,0). Without `--window-columns`, the windows open where Windows puts
+  them. The player must be built without Force Single Instance (user,
+  2026-10-24), or every player after the first exits at launch.
+- **The players draw only when asked** (2026-10-24, after the resumed
+  first run measured six instances no faster than four,
+  `trainer-observations.md`). The GPU runs one process at a time, so
+  every render, detection and SAC update queues behind the others, and
+  each player used to redraw its window nonstop between triggers (about
+  2.2 CPU cores each, and a turn on the GPU per redraw). Now a player
+  renders the scene only for a trigger (12): the frame it sends is also
+  what its window shows, and nothing is rendered between triggers.
+  Between triggers the player sleeps until the next one arrives, waking
+  at least every 100 ms to keep the window responsive, so a trigger is
+  handled as soon as it arrives. The window holds the last frame while
+  an instance waits (during a reset, or while the trainer thinks).
 
 ```mermaid
 sequenceDiagram
@@ -327,8 +351,11 @@ GB of its 24 GB (the networks under 10 MB, the rest CUDA's own; the
 replay buffer stays in main memory). On the 3090, measured the same way
 (2026-10-24): 22.1 ms a step before learning and 46.5 ms after, one
 update 16.1 ms, 28 MiB held by PyTorch. The 3090 is no faster than the
-CPU here, so the doubled step is not the network's arithmetic; where
-the time goes is not yet measured. A time-limit truncation is
+CPU here, so the doubled step is not the network's arithmetic. Where
+the time went (measured 2026-10-24, `trainer-observations.md`): every
+process using the GPU takes turns on it, and the players' nonstop
+redraws made SAC's update wait; with the players drawing only when asked,
+the trainer's turn is about 17 ms for 1 or 6 instances. A time-limit truncation is
 not a crash: SAC keeps valuing the state it stopped in, and only the end
 crash ends the value.
 
@@ -351,8 +378,11 @@ true cart and pole, bit for bit. A reset with seed S reseeds both, so an
 episode after a reset repeats a fresh run with seed S, its ids offset by
 the observations before it. The observation is not bit-identical, by
 decision (user, 2026-10-24): Unity's SSAO (blue noise) changes its noise
-pattern on every render, and the player renders between triggers, so a
-frame's shading jitters slightly from run to run. The detector found every
+pattern on every render, and the player rendered between triggers, so a
+frame's shading jittered slightly from run to run. Since the players draw
+only when asked (*Training instances*), a run's nth frame is its player's
+nth render, so the frames may now repeat bit for bit; not yet checked,
+and not required. The detector found every
 marker in every frame regardless; run to run, the detections differ by at
 most 0.04 px (2026-10-24), and so do `states.csv`'s observed columns and
 `observations.jsonl` (which also logs `detect_ms`, a wall-clock time).

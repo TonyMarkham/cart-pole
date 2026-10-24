@@ -22,7 +22,10 @@ namespace Simulation.CartPole.SimLoop
     // joint-state text message from the Orin - drives the cart and pole,
     // renders the camera, and answers with exactly one binary message, the
     // 728x544 greyscale q90 JPEG the Orin's detector would see. One reply
-    // per trigger, in order: lockstep.
+    // per trigger, in order: lockstep. Nothing is rendered between
+    // triggers, and the window shows the last frame sent
+    // (synthetic-loop-dia.md, Training instances, The players draw only
+    // when asked).
     //
     // Message in: {"id": 7, "joints": [{"name": "02-Cart.Slider.joint",
     // "qpos": 0.05}, {"name": "04-Pole.Hinge.joint", "qpos": 3.14}]} - MJCF
@@ -52,6 +55,14 @@ namespace Simulation.CartPole.SimLoop
         private const int DepthBits = 24;
 
         private const string OrinArgument = "-orin";
+
+        // The player draws only when asked (synthetic-loop-dia.md,
+        // Training instances): between triggers Update sleeps on the inbox
+        // instead of spinning, and wakes at least this often so the
+        // window stays responsive and a closed socket is noticed. A
+        // trigger ends the wait as soon as it arrives. The editor never
+        // waits: blocking its main thread would stall the editor itself.
+        private const int IdleWaitMilliseconds = 100;
 
         [SerializeField] private StepJointSet m_JointSet;
         public StepJointSet JointSet => m_JointSet;
@@ -111,12 +122,15 @@ namespace Simulation.CartPole.SimLoop
 
         private RenderTexture m_Target;
         private Texture2D m_Readback;
+        // The window shows the last frame sent, once there is one.
+        private bool m_HasFrame;
 
         private ClientWebSocket m_Socket;
         private readonly CancellationTokenSource m_Cancel = new CancellationTokenSource();
         // Received on a background task, drained on the main thread: Unity
-        // APIs are main-thread only.
-        private readonly ConcurrentQueue<string> m_Inbox = new ConcurrentQueue<string>();
+        // APIs are main-thread only. Blocking, so the main thread can sleep
+        // until a trigger arrives.
+        private readonly BlockingCollection<string> m_Inbox = new BlockingCollection<string>();
         // ClientWebSocket allows one send at a time; each reply chains on
         // the previous one, which also keeps replies in request order.
         private Task m_Sending = Task.CompletedTask;
@@ -166,6 +180,9 @@ namespace Simulation.CartPole.SimLoop
 
             m_Target = new RenderTexture(FrameWidth, FrameHeight, DepthBits);
             m_Readback = new Texture2D(FrameWidth, FrameHeight, TextureFormat.RGB24, false);
+            // Disabled, Unity never renders the camera on its own; Render()
+            // still renders it on demand, once per trigger.
+            m_RenderCamera.enabled = false;
 
             var url = OrinUrl();
             if (url == null)
@@ -336,9 +353,14 @@ namespace Simulation.CartPole.SimLoop
             {
                 return;
             }
-            while (m_Inbox.TryDequeue(out var json))
+            var wait = Application.isEditor ? 0 : IdleWaitMilliseconds;
+            if (m_Inbox.TryTake(out var json, wait))
             {
                 Handle(json);
+                while (m_Inbox.TryTake(out json))
+                {
+                    Handle(json);
+                }
             }
             if (m_SocketEnded)
             {
@@ -393,7 +415,20 @@ namespace Simulation.CartPole.SimLoop
             m_Readback.ReadPixels(new Rect(0, 0, FrameWidth, FrameHeight), 0, 0);
             m_Readback.Apply();
             RenderTexture.active = previousActive;
+            m_HasFrame = true;
             return GreyscaleEncoder.Encode(m_Readback);
+        }
+
+        // The window shows the last frame rendered, stretched to fill it
+        // (960x720 against 728x544 is 0.4% off in aspect): with the camera
+        // disabled, nothing else draws there.
+        private void OnGUI()
+        {
+            if (!m_HasFrame || Event.current.type != EventType.Repaint)
+            {
+                return;
+            }
+            GUI.DrawTexture(new Rect(0, 0, Screen.width, Screen.height), m_Target, ScaleMode.StretchToFill, false);
         }
 
         // In a player the address comes only from the command line - the
@@ -442,7 +477,7 @@ namespace Simulation.CartPole.SimLoop
                     }
                     if (result.MessageType == WebSocketMessageType.Text)
                     {
-                        m_Inbox.Enqueue(Encoding.UTF8.GetString(message.GetBuffer(), 0, (int)message.Length));
+                        m_Inbox.Add(Encoding.UTF8.GetString(message.GetBuffer(), 0, (int)message.Length));
                     }
                     message.SetLength(0);
                 }

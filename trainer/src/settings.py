@@ -16,7 +16,7 @@ from pathlib import Path
 DEFAULT_PATH = Path(__file__).resolve().parent.parent / "settings.toml"
 
 SEED_LIMIT = 2**64  # the orchestrator reads the seed as a u64
-INSTANCES_MAX = 6  # the orchestrator's --instances range, 1 to 6 (synthetic-loop-dia.md, Training instances)
+INSTANCES_MAX = 12  # the orchestrator's --instances range, 1 to 12 (synthetic-loop-dia.md, Training instances)
 
 
 @dataclass(frozen=True)

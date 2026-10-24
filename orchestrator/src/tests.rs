@@ -3,6 +3,7 @@ use crate::{
     latency::Latency,
     meters_per_pulse,
     trainer_link::{Next, parse_answers},
+    window::{Pixels, grid_position},
 };
 use arduino::{Direction, Drv8825Signals, RIG};
 
@@ -124,4 +125,26 @@ fn cart_velocity_is_step_rate_times_15_um_signed_by_dir() {
     assert!((velocity(Direction::Negative, 26_667) + 0.400_005).abs() < 1e-12);
     assert!((velocity(Direction::Negative, 56_666) + 0.849_99).abs() < 1e-12);
     assert_eq!(velocity(Direction::Positive, 0), 0.0);
+}
+
+// The windows' grid (synthetic-loop-dia.md, Training instances, The
+// windows): 4 columns of 960×752 cells from (0, 0) put instances 0–3 on
+// the top row and 4–5 below, from the left.
+#[test]
+fn the_windows_fill_the_grid_row_by_row() {
+    let step = Pixels { x: 960, y: 752 };
+    let origin = Pixels { x: 0, y: 0 };
+    let places: Vec<(i32, i32)> = (0..6)
+        .map(|k| grid_position(k, 4, step, origin))
+        .map(|p| (p.x, p.y))
+        .collect();
+    assert_eq!(places, [(0, 0), (960, 0), (1920, 0), (2880, 0), (0, 752), (960, 752)]);
+    assert_eq!(grid_position(5, 4, step, Pixels { x: -100, y: 40 }), Pixels { x: 860, y: 792 });
+}
+
+#[test]
+fn a_window_place_is_x_comma_y() {
+    assert_eq!("960,-8".parse::<Pixels>(), Ok(Pixels { x: 960, y: -8 }));
+    assert!("960".parse::<Pixels>().is_err());
+    assert!("9.5,0".parse::<Pixels>().is_err());
 }

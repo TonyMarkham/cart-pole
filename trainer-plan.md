@@ -282,7 +282,7 @@ Both runs give the same fit; the figures are the wider run's.
    a fresh run; each episode took 7.0 and 7.8 s against 9.6 and 10.4 s.
 6. **Training instances** (the diagram's *Training instances*; user,
    2026-10-24). **Done (2026-10-24):** `settings.toml`'s `[orchestrator]
-   instances` (4; 1 to 6, ports checked) reaches the orchestrator as
+   instances` (4; 1 to 6, ports checked; 1 to 12 since 2026-10-24) reaches the orchestrator as
    `--instances`; `launch.py`'s `Run` reads and answers the link's lists;
    `vec_env.py`'s `LoopVecEnv` is the group as one SB3 `VecEnv`, an
    instance whose episode ends answered alone with reset so the next

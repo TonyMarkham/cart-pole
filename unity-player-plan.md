@@ -488,6 +488,36 @@ Recommendations (choices, with the reason):
    same way (Done-when 4). A mismatch is a `SimulationLoopController`
    sign/axis bug, fixed before anything consumes frames.
 
+10. **`PlayerController` — the window's place** (the diagram's
+    *Training instances*, *The windows*; user, 2026-10-24). A component
+    in the package's `Runtime/`, dropped into the loop scene by the user.
+    In a player started with `-window-position x,y` it moves the main
+    window to (x, y) pixels from the top-left corner of the display the
+    window is on (`Screen.MoveMainWindowTo` with
+    `Screen.mainWindowDisplayInfo`), once, at startup. Without the
+    argument, and in the editor, it does nothing. A malformed value is
+    logged as an error and the window stays where it opened: the place
+    is for watching, never for the frames. The window is 960×720 (the
+    `Windows (Loop)` build profile, user, 2026-10-24); the frames stay
+    728×544, rendered into their own target. *Check (the user's):* it
+    compiles, and a 6-instance run's windows open in the grid.
+11. **`SimulationLoopController` — draw only when asked** (the
+    diagram's *Training instances*, *The players draw only when asked*;
+    2026-10-24). The render camera is disabled at startup, so Unity never
+    renders it on its own; `Render()` still renders it on demand into
+    the 728×544 target. The window shows that target, stretched to the
+    window (`OnGUI`, repaint only; 960×720 against 728×544 is 0.4% off
+    in aspect). `Update` waits on the inbox (a `BlockingCollection`) for
+    up to 100 ms, so between triggers the player sleeps instead of
+    spinning, and a trigger is handled when it arrives. *Check (the
+    user's, then a measured run):* it compiles; the window shows the
+    frames; a player idles near 0% CPU; and the 6-instance speed test
+    (`trainer-observations.md`) gets faster. **Done (2026-10-24):** the
+    user compiled and built it; in the speed test the detector found all
+    four markers in every frame, and 6 instances ran about 96 steps a
+    second against 39 (`trainer-observations.md`, Change 2). Step 10's
+    grid launched each player with its `-window-position`.
+
 ## Orchestrator stub (`orchestrator/`)
 
 A Rust binary crate, member of the repo-root Cargo workspace

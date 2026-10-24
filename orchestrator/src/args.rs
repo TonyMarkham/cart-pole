@@ -2,7 +2,7 @@ use std::path::PathBuf;
 
 use clap::Parser;
 
-use crate::control::Control;
+use crate::{control::Control, window::Pixels};
 
 /// The synthetic loop's orchestrator (orchestrator-plan.md): steps MuJoCo
 /// (the MJCF --model names) and sends each capture state to the synthetic
@@ -30,10 +30,10 @@ pub struct Args {
     pub actuator: String,
 
     /// The number of training instances (synthetic-loop-dia.md, Training
-    /// instances), 1 to 6: each its own MuJoCo, synthetic Arduino,
+    /// instances), 1 to 12: each its own MuJoCo, synthetic Arduino,
     /// synthetic Orin and Unity player. The trainer passes its
     /// settings.toml [orchestrator] instances.
-    #[arg(long, default_value_t = 1, value_parser = clap::value_parser!(u16).range(1..=6))]
+    #[arg(long, default_value_t = 1, value_parser = clap::value_parser!(u16).range(1..=12))]
     pub instances: u16,
 
     /// Instance 0's control socket port on 127.0.0.1 (synthetic-loop-dia.md,
@@ -77,6 +77,24 @@ pub struct Args {
     /// the synthetic Orin's frame socket itself.
     #[arg(long)]
     pub no_launch: bool,
+
+    /// Lay the players' windows out in a grid this many columns wide
+    /// (synthetic-loop-dia.md, Training instances, The windows): instance
+    /// k's player is launched with `-window-position x,y`, x = origin x +
+    /// (k mod columns) × step x, y = origin y + ⌊k ÷ columns⌋ × step y.
+    /// Without it, the windows open where Windows puts them.
+    #[arg(long, value_parser = clap::value_parser!(u16).range(1..), requires = "window_step")]
+    pub window_columns: Option<u16>,
+
+    /// The grid's step, x,y pixels: a window's outer size, its title bar
+    /// included.
+    #[arg(long, requires = "window_columns")]
+    pub window_step: Option<Pixels>,
+
+    /// The grid's top-left corner, x,y pixels from the top-left corner of
+    /// the display the windows open on.
+    #[arg(long, default_value = "0,0", allow_hyphen_values = true)]
+    pub window_origin: Pixels,
 
     /// Seconds to wait for the synthetic Orin to connect, and then for
     /// Unity to register with it, covering each one's startup.

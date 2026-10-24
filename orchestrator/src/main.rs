@@ -8,6 +8,7 @@ mod registered;
 #[cfg(test)]
 mod tests;
 mod trainer_link;
+mod window;
 
 use crate::{
     args::Args,
@@ -18,6 +19,7 @@ use crate::{
     pose_message::PoseMessage,
     registered::{Registered, ResetMessage},
     trainer_link::{Next, PoolEntry, TrainerLink},
+    window::{Pixels, grid_position},
 };
 
 use anyhow::{Context, Result, anyhow, bail};
@@ -110,7 +112,13 @@ async fn main() -> Result<()> {
     // --no-launch, editor Play mode connects there itself.
     for instance in &mut instances {
         instance.player = match (&args.player, args.no_launch) {
-            (Some(player), false) => Some(launch(instance.k, player, &instance.frames_url)?),
+            (Some(player), false) => {
+                let place = args
+                    .window_columns
+                    .zip(args.window_step)
+                    .map(|(columns, step)| grid_position(instance.k, columns, step, args.window_origin));
+                Some(launch(instance.k, player, &instance.frames_url, place)?)
+            }
             _ => {
                 eprintln!("[{}] --no-launch: enter Play mode in the editor; it connects to {}", instance.k, instance.frames_url);
                 None
@@ -537,14 +545,20 @@ fn cart_velocity(signals: Drv8825Signals, meters_per_pulse: f64) -> f64 {
     }
 }
 
-// 6: the player, told its Orin's frame socket. kill_on_drop: an early
-// error return drops the handle, and the player must not outlive the
-// orchestrator that launched it.
-fn launch(k: usize, player: &Path, frames_url: &str) -> Result<Child> {
-    eprintln!("[{k}] launching {} -orin {frames_url}", player.display());
-    Command::new(player)
-        .arg("-orin")
-        .arg(frames_url)
+// 6: the player, told its Orin's frame socket and, with a grid, its
+// window's place (synthetic-loop-dia.md, Training instances, The windows).
+// kill_on_drop: an early error return drops the handle, and the player
+// must not outlive the orchestrator that launched it.
+fn launch(k: usize, player: &Path, frames_url: &str, place: Option<Pixels>) -> Result<Child> {
+    let mut command = Command::new(player);
+    command.arg("-orin").arg(frames_url);
+    let mut shown = format!("{} -orin {frames_url}", player.display());
+    if let Some(Pixels { x, y }) = place {
+        command.arg("-window-position").arg(format!("{x},{y}"));
+        shown.push_str(&format!(" -window-position {x},{y}"));
+    }
+    eprintln!("[{k}] launching {shown}");
+    command
         .stdin(Stdio::null())
         .stdout(child_stdout())
         .kill_on_drop(true)

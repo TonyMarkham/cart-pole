@@ -254,6 +254,15 @@ in the diagram first:
    time, cart and pole exactly, starting at t = 0, cart 0, pole 0, with
    ids 151–301 against 0–150; one launch of the Orin and the player.
 
+9. **The windows' grid** (the diagram's *Training instances*, *The
+   windows*; user, 2026-10-24). With `--window-columns C`, `--window-step
+   x,y` (required with it) and `--window-origin x,y` (default 0,0), each
+   player is launched with `-window-position x,y`, x = origin x + (k mod
+   C) × step x, y = origin y + ⌊k ÷ C⌋ × step y. Without
+   `--window-columns`, no position is passed. *Check:* a unit test of the
+   positions, and a run whose windows land in the grid (the latter needs
+   the player's `PlayerController`, `unity-player-plan.md` step 10).
+
 ## Placeholders
 
 - **The Orin's latency** — RND(8, 15) ms today (the trainer's
@@ -283,10 +292,10 @@ the loop — decided when pooling arrives.
 cycling. The orchestrator owns a fixed group of training instances, each
 a bundle of one MuJoCo, one synthetic Arduino, one synthetic Orin and one
 Unity player that stays together, so the Orin's pool never leaves its
-loop. `[orchestrator] instances`, 1 to 6, sets the group's size per run;
+loop. `[orchestrator] instances`, 1 to 12, sets the group's size per run;
 instance k uses ports `orin_port + 2k` and `unity_port + 2k`.
 
-**Built (2026-10-24, step 9).** `--instances N` (1 to 6, default 1);
+**Built (2026-10-24, step 9).** `--instances N` (1 to 12 since 2026-10-24, first 1 to 6; default 1);
 `main.rs` holds one `Instance` per bundle (its `Simulation`, Orin, player,
 current observation) and runs the diagram's rounds: every advanced
 instance's pose goes out first, then each steps to its arrival step and
