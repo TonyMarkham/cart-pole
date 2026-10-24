@@ -84,9 +84,11 @@ messages.
   returns pool 0; `step(a)` answers with continue and returns the next
   pool; `reset()` or `close()` on an open run answers stop and waits for
   it to close; a failed run raises. Observation: the pool, 6 × 9.
-  Action: a ∈ [−1, 1], command = round(a × 56,666). Until the reward,
-  the end crash and the time limit are decided: reward 0, no
-  termination, truncation at a placeholder length (`TimeLimit`).
+  Action: a ∈ [−1, 1], command = round(a × 56,666). The reward and the
+  end crash are T3a and T4; the time limit is T8a.
+- **T8a — the time limit** (the diagram's *The time limit*; user,
+  2026-10-24): `TimeLimit` truncates an episode after 1,500 steps,
+  about 19 s simulated, `gym.toml`'s `[env] max_episode_steps`.
 - **T9 — the policy learns by SAC** (the diagram's *The policy learns by
   SAC*; user, 2026-10-24): Stable-Baselines3's `SAC` with its
   `MlpPolicy`, on one `LoopEnv`, on the 3090 (the CPU doubled the
@@ -115,8 +117,6 @@ look.
 These are needed to build the trainer; per `AGENTS.md`, each lands in
 the diagram first:
 
-- **The time limit** (the reward and the end crash are settled, T3a,
-  T4): `gym.toml`'s `max_episode_steps` is a placeholder until then.
 - **How the trained policy reaches the Orin** for production.
 
 ## Steps

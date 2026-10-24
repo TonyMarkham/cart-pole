@@ -42,7 +42,7 @@ class Sweep:
 
 @dataclass(frozen=True)
 class GymSettings:
-    max_episode_steps: int  # [env]: the placeholder episode length, in steps
+    max_episode_steps: int  # [env]: the time limit, in steps (T8a)
     reward: Reward
     end_crash: EndCrash
     sweep: Sweep | None  # [sweep], when the file has one

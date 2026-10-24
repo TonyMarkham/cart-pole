@@ -163,9 +163,13 @@ for the run to close (26), and `reset()` then starts the next run. A run
 that fails (26, code 1) raises, which ends training. The observation is
 the pool, 6 × 9 floats; the action is one value a ∈ [−1, 1], and the
 command is a × 56,666 (the top rate), rounded to the `i32`. The reward is
-graded (below), and the end crash terminates the episode. The time limit
-is not decided yet: until it is, a placeholder length truncates the
-episode.
+graded (below), and the end crash terminates the episode. **The time
+limit** (user, 2026-10-24, on the agent's recommendation): 1,500 steps,
+about 19 s of simulated time at the mean gap of 12.57 ms, then the
+episode is truncated: time to swing up from hanging and then hold the
+pole upright for most of it, with the 3 s relaunch of each run about 4%
+of an episode's wall time. Reference tasks run 10 s (DeepMind's cart-pole
+swing-up, Gymnasium's `CartPole-v1`) to 40 s (`InvertedPendulum-v5`).
 
 **The reward is graded** (user, 2026-10-24), from the pool alone, in two
 parts: the pole, low hanging down and rising to high upright, so every

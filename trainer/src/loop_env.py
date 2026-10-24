@@ -19,8 +19,8 @@ action is clipped, so the command never asks past the top rate.
 
 Each step's reward is the graded score of the pool it returns (reward.py,
 gym.toml [reward]); the Pivot marker past gym.toml's [end_crash] bounds
-scores the penalty and terminates the episode. The time limit is still a
-placeholder: TimeLimit truncates after gym.toml [env] max_episode_steps.
+scores the penalty and terminates the episode. TimeLimit truncates it
+after gym.toml [env] max_episode_steps (trainer-plan.md T8a).
 The pool reset() returns is not scored (trainer-plan.md T3).
 
 Seeding: reset(seed=s) runs the orchestrator with --seed s; reset() without
@@ -134,7 +134,7 @@ class LoopEnv(gym.Env):
 
 def make(settings: Settings | None = None, gym_settings: GymSettings | None = None) -> gym.Env:
     """The environment through gymnasium.make, so it carries its spec: the
-    TimeLimit (gym.toml's placeholder episode length) and nondeterministic."""
+    TimeLimit (gym.toml's episode length) and nondeterministic."""
     settings = settings if settings is not None else Settings.load()
     gym_settings = gym_settings if gym_settings is not None else GymSettings.load(settings.gym)
     if ENV_ID not in gym.registry:
