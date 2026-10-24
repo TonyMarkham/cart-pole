@@ -235,7 +235,21 @@ Both runs give the same fit; the figures are the wider run's.
      passed the same way, 22.1 ms a step before learning and 46.5 ms
      after, an update 16.1 ms, 28 MiB of GPU memory: no faster than the
      CPU.
-   - **4b — a training run**, its values in a toml.
+   - **4b — a training run**, its values in a toml. **Built
+     (2026-10-24):** `train.py` runs SAC on the environment until
+     `gym.toml`'s `[train] total_steps` (200,000, about 3 h), with SAC's
+     arguments in `[sac]` (`train_settings.py`). Each run gets a folder
+     in `[train] runs_dir` (`trainer/runs/`, gitignored) with copies of
+     both tomls, `episodes.csv` (per episode: seed, steps, length, how it
+     ended, reward, pole part max and mean), and every `save_every`
+     steps the model and replay buffer (`latest.zip`,
+     `latest_buffer.pkl`, about 450 MB) plus a snapshot
+     `model_<steps>.zip`. A failed or stopped run resumes with `--resume
+     <run folder>`. Episode k runs with seed settings.toml's seed + k.
+     Tested with throwaway settings (episodes of 150, saves every 200):
+     400 steps, two episodes, saves at 200 and 400; then resumed to 600,
+     the episode count and the seeds carried on. Not yet tested: Ctrl+C
+     during a run, and the 200,000-step run itself.
 
 ## Not in this plan
 
