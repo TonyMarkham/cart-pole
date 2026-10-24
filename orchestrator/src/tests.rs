@@ -2,34 +2,64 @@ use crate::{
     cart_velocity,
     latency::Latency,
     meters_per_pulse,
-    trainer_link::{Next, parse_answer},
+    trainer_link::{Next, parse_answers},
 };
 use arduino::{Direction, Drv8825Signals, RIG};
 
-// The answer (synthetic-loop-dia.md, Contracts, 18): continue with the
-// command, reset with the next episode's seed, or stop.
+fn line(answers: &str) -> String {
+    format!(r#"{{"answers": [{answers}]}}"#)
+}
+
+// The answers (synthetic-loop-dia.md, Training instances and Contracts,
+// 18): per instance, continue with the command, reset with the next
+// episode's seed, or stop.
 #[test]
-fn the_answer_is_continue_reset_or_stop() {
-    let a = parse_answer(r#"{"command": -26667, "next": "continue"}"#).unwrap();
-    assert_eq!((a.command, a.next, a.seed), (-26_667, Next::Continue, None));
-    let a = parse_answer(r#"{"command": 0, "next": "reset", "seed": 18446744073709551615}"#).unwrap();
-    assert_eq!((a.next, a.seed), (Next::Reset, Some(u64::MAX)));
-    let a = parse_answer(r#"{"command": 0, "next": "stop"}"#).unwrap();
-    assert_eq!(a.next, Next::Stop);
+fn an_answer_is_continue_reset_or_stop() {
+    let all = [true, true, true];
+    let answers = parse_answers(
+        &line(
+            r#"{"instance": 0, "command": -26667, "next": "continue"},
+               {"instance": 2, "command": 0, "next": "reset", "seed": 18446744073709551615}"#,
+        ),
+        &all,
+    )
+    .unwrap();
+    assert_eq!((answers[0].instance, answers[0].command, answers[0].next), (0, -26_667, Next::Continue));
+    assert_eq!((answers[1].instance, answers[1].next, answers[1].seed), (2, Next::Reset, Some(u64::MAX)));
+    let stop = r#"{"instance": 0, "command": 0, "next": "stop"}, {"instance": 1, "command": 0, "next": "stop"}"#;
+    assert!(parse_answers(&line(stop), &[true, true]).is_ok());
+}
+
+// Only pending instances are answered, each once: after instance 1 alone
+// was reset, it is pending again while the others still are.
+#[test]
+fn a_line_may_answer_some_pending_instances() {
+    let answer = |k| format!(r#"{{"instance": {k}, "command": 5, "next": "continue"}}"#);
+    assert!(parse_answers(&line(&answer(1)), &[true, true, true]).is_ok());
+    assert!(parse_answers(&line(&answer(1)), &[true, false, true]).is_err(), "not pending");
+    assert!(parse_answers(&line(&answer(3)), &[true, true, true]).is_err(), "no such instance");
+    assert!(parse_answers(&line(&format!("{}, {}", answer(0), answer(0))), &[true, true]).is_err(), "twice");
+    assert!(parse_answers(&line(""), &[true]).is_err(), "no answer");
 }
 
 #[test]
 fn a_bad_answer_is_refused() {
-    for line in [
-        r#"{"command": 0, "next": "reset"}"#,                // a reset needs a seed
-        r#"{"command": 0, "next": "continue", "seed": 1}"#, // only a reset carries one
-        r#"{"command": 0, "next": "pause"}"#,
-        r#"{"command": 0, "continue": true}"#, // the old answer
-        r#"{"command": 0, "next": "reset", "seed": -1}"#,
-        r#"{"command": 2147483648, "next": "continue"}"#,
+    let pending = [true, true];
+    for answers in [
+        r#"{"instance": 0, "command": 0, "next": "reset"}"#, // a reset needs a seed
+        r#"{"instance": 0, "command": 0, "next": "continue", "seed": 1}"#, // only a reset carries one
+        r#"{"instance": 0, "command": 0, "next": "pause"}"#,
+        r#"{"instance": 0, "command": 0, "continue": true}"#, // the old answer
+        r#"{"instance": 0, "command": 0, "next": "reset", "seed": -1}"#,
+        r#"{"instance": 0, "command": 2147483648, "next": "continue"}"#,
+        r#"{"command": 0, "next": "continue"}"#, // no instance
+        // A stop is for the whole run: every pending instance, all stop.
+        r#"{"instance": 0, "command": 0, "next": "stop"}"#,
+        r#"{"instance": 0, "command": 0, "next": "stop"}, {"instance": 1, "command": 0, "next": "continue"}"#,
     ] {
-        assert!(parse_answer(line).is_err(), "{line} was accepted");
+        assert!(parse_answers(&line(answers), &pending).is_err(), "{answers} was accepted");
     }
+    assert!(parse_answers(r#"{"command": 0, "next": "continue"}"#, &[true]).is_err(), "the one-instance line");
 }
 
 // SplitMix64's published outputs for seed 0 (the reference

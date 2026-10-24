@@ -47,8 +47,7 @@ rounds the latency up to the next step: at 8–15 ms, the gap between two
 captures is 10, 12, 14 or 16 ms. The latency is drawn at random because the policy
 cannot observe it directly: the range is the band it trains in.
 
-**Training instances** (planned, user, 2026-10-24; built after reset in
-place, *Reset in place*). Data comes faster from several copies of the
+**Training instances** (user, 2026-10-24). Data comes faster from several copies of the
 loop at once, so the orchestrator will run a fixed group of **training
 instances**, each a bundle that is always together: one MuJoCo, one
 synthetic Arduino, one synthetic Orin and one Unity player, the Orin's
@@ -59,11 +58,42 @@ orchestrator per instance would need something above them doing the
 same. The number of instances is a setting per run, `instances`, 1 to
 6 (user, 2026-10-24), in the trainer's `settings.toml` `[orchestrator]`.
 Instance k (from 0) uses the ports `orin_port + 2k` and `unity_port + 2k`.
-The instances step together, each step waiting for the slowest, and the
-trainer link carries one pool per instance out and one answer per
-instance in, each instance continuing or resetting on its own. This
-sequence shows one instance; the group's details (the link's lines, the
-logs, the window layout) land here before they are built.
+This sequence shows one instance; the group works as follows.
+
+- **Each instance is the sequence above, on its own.** Its own MuJoCo
+  clock, latency draws, Orin, player and episodes; nothing passes between
+  instances. Its folder is the run's `--out` / `instance_k/` (its
+  `states.csv`, frames and `observations.jsonl`).
+- **Rounds.** The trainer link carries a list each way. Every instance
+  whose pool the trainer has not yet answered is *pending*. The trainer
+  answers any pending instances in one line; the orchestrator advances
+  exactly those (a continue sets the command and runs the next
+  observation; a reset resets in place, R1–R7, and runs the new episode's
+  first) and replies with their new pools in one line. Instances not
+  answered stay frozen at their arrival step, as one instance is while
+  the trainer thinks. In a round the orchestrator first sends every
+  advanced instance's pose (11), so their Orins detect at the same time,
+  then steps each MuJoCo and collects each reply: a round waits for the
+  slowest Orin.
+- **Why answer only some.** Episodes end at different times. When
+  instance k's episode ends, the trainer answers k alone with reset and
+  gets back k's first pool of the new episode, so the next commands for
+  all instances are chosen from current pools; the others stay pending
+  meanwhile.
+- **The lines (17, 18).** Out: `{"pools": [{"instance": k, "id": n,
+  "pool": [...]}, …]}`, one entry per instance advanced, in instance
+  order (the first line, after the start, holds all of them). In:
+  `{"answers": [{"instance": k, "command": c, "next": …}, …]}`, each a
+  pending instance at most once, with the one-instance answer's fields
+  (*Contracts*). A stop is for the whole run: a line with a stop answers
+  every pending instance with stop.
+- **Seeds.** `--seed S` is instance 0's first episode; instance k's
+  first is S + k. Every later episode's seed comes with its reset.
+- **One fails, all stop.** A failed pool in any instance fails the run
+  (26), as for one.
+- **The windows** open where Windows puts them; a layout from the toml is
+  not decided yet. The player must be built without Force Single Instance
+  (user, 2026-10-24), or every player after the first exits at launch.
 
 ```mermaid
 sequenceDiagram
@@ -360,15 +390,16 @@ yet (`orchestrator-plan.md`, *Placeholders*).
   [[age_ms, x0, y0, x1, y1, x2, y2, x3, y3], …6 rows, newest first],
   "failed": false}` — row 0 is this frame, age 0; slot k is class k;
   `failed` is true when 3 of the pool's 6 entries are failed frames. To
-  the trainer (17), one stdout line: `{"id": n, "pool": [...]}`, the same
-  6 rows; no `failed`, since a failed pool goes to the shutdown and never
-  reaches the trainer.
-- **The answer (18):** one stdin line, `{"command": c, "next":
-  "continue"}`, `{"command": c, "next": "reset", "seed": S}` or
-  `{"command": c, "next": "stop"}`: c is the command below, a JSON
-  integer that must fit an `i32`, used only on continue; S, on a reset
-  only, is the next episode's seed, a whole number 0 to 2⁶⁴ − 1 like
-  `--seed`.
+  the trainer (17), each instance's entry in the stdout line (*Training
+  instances*): `{"instance": k, "id": n, "pool": [...]}`, the same 6 rows;
+  no `failed`, since a failed pool goes to the shutdown and never reaches
+  the trainer.
+- **The answer (18):** each instance's entry in the stdin line,
+  `{"instance": k, "command": c, "next": "continue"}`, `{"instance": k,
+  "command": c, "next": "reset", "seed": S}` or `{"instance": k,
+  "command": c, "next": "stop"}`: c is the command below, a JSON integer
+  that must fit an `i32`, used only on continue; S, on a reset only, is
+  the next episode's seed, a whole number 0 to 2⁶⁴ − 1 like `--seed`.
 - **The reset (R5, R7):** on the control socket, the orchestrator sends
   `{"type": "reset", "seed": S}` and the Orin replies `{"type": "reset"}`
   once the pool is pre-warmed again.

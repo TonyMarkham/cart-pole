@@ -5,12 +5,14 @@ starts the orchestrator, with the command its settings.toml names
 (synthetic-loop-dia.md, 1), and the one that learns how the run ended (26).
 
 The trainer link (synthetic-loop-dia.md, Trainer link) is the orchestrator's
-stdin and stdout, held here as pipes: per observation one stdout line, the
-pool (17), and one stdin line back, the answer (18). The orchestrator's log
-is on its stderr: the trainer's console, or, given a log file, appended
-there, so a long training run's console holds only its summaries. The run's end is the
-orchestrator's exit: stdout closes, then exit code 0 (closed) or 1 (failed:
-training ends).
+stdin and stdout, held here as pipes. The run holds one or more training
+instances (synthetic-loop-dia.md, Training instances), so each line carries
+a list: one stdout line, the pools of the instances advanced (17), and one
+stdin line back, the answers to any pending instances (18), whose next pools
+come in the next line. The orchestrator's log is on its stderr: the
+trainer's console, or, given a log file, appended there, so a long training
+run's console holds only its summaries. The run's end is the orchestrator's
+exit: stdout closes, then exit code 0 (closed) or 1 (failed: training ends).
 """
 
 import json
@@ -42,32 +44,47 @@ def orchestrator_environment() -> dict[str, str]:
     return environment
 
 
-def read_pool(line: str, expected_id: int) -> Pool:
-    """One stdout line (17): {"id": n, "pool": [6 rows]}. Anything else on
-    stdout means the link is broken, so it fails the run."""
+def read_pools(line: str, expected_ids: dict[int, int]) -> dict[int, Pool]:
+    """One stdout line (17): {"pools": [{"instance": k, "id": n, "pool": [6
+    rows]}, ...]}, exactly the instances advanced, each at its next id.
+    Anything else on stdout means the link is broken, so it fails the run."""
     try:
         message = json.loads(line)
     except json.JSONDecodeError as error:
         raise ValueError(f"the orchestrator's stdout is the link alone, got {line!r}") from error
-    if not isinstance(message, dict) or set(message) != {"id", "pool"}:
-        raise ValueError(f"a pool message is {{'id', 'pool'}}, got {line!r}")
-    if message["id"] != expected_id:
-        raise ValueError(f"expected pool {expected_id}, got pool {message['id']!r}")
-    return Pool.from_rows(message["pool"])
+    if not isinstance(message, dict) or set(message) != {"pools"} or not isinstance(message["pools"], list):
+        raise ValueError(f"a pools message is {{'pools': [...]}}, got {line!r}")
+    pools = {}
+    for entry in message["pools"]:
+        if not isinstance(entry, dict) or set(entry) != {"instance", "id", "pool"}:
+            raise ValueError(f"a pool entry is {{'instance', 'id', 'pool'}}, got {entry!r}")
+        k = entry["instance"]
+        if k not in expected_ids or k in pools:
+            raise ValueError(f"pool for instance {k!r}, expected each of {sorted(expected_ids)} once")
+        if entry["id"] != expected_ids[k]:
+            raise ValueError(f"instance {k}: expected pool {expected_ids[k]}, got pool {entry['id']!r}")
+        pools[k] = Pool.from_rows(entry["pool"])
+    if set(pools) != set(expected_ids):
+        raise ValueError(f"expected pools for instances {sorted(expected_ids)}, got {sorted(pools)}")
+    return pools
 
 
 class Run:
     """One run, from the launch (1) to the exit (26).
 
-    The link alternates: `next_pool()` reads pool n, `answer()` sends the
-    answer to it, and so on. After a stop, `finish()` waits for the run to
-    close. A run that ends without a stop, or with exit code 1, raises
-    RunFailed. If anything else goes wrong, `kill()` makes sure no run
-    outlives the trainer that started it.
+    The link alternates: `next_pools()` reads the pools of the instances
+    advanced, `answer()` answers any of the pending ones, and the next
+    `next_pools()` reads exactly those instances' next pools. After a stop,
+    `finish()` waits for the run to close. A run that ends without a stop,
+    or with exit code 1, raises RunFailed. If anything else goes wrong,
+    `kill()` makes sure no run outlives the trainer that started it.
     """
 
-    def __init__(self, settings: Settings, seed: int | None = None, log: Path | None = None) -> None:
-        command = settings.command(seed)
+    def __init__(
+        self, settings: Settings, seed: int | None = None, log: Path | None = None, instances: int | None = None
+    ) -> None:
+        self.instances = settings.instances if instances is None else instances
+        command = settings.command(seed, self.instances)
         self.log = log
         self.log_file = open(log, "a", encoding="utf-8") if log is not None else None
         launching = f"trainer: launching {' '.join(command)}"
@@ -85,29 +102,35 @@ class Run:
             stderr=self.log_file,
             encoding="utf-8",
         )
-        self.observations = 0  # pools read so far; the next one's id
+        self.next_ids = [0] * self.instances  # per instance, the next pool's id
+        self.advanced = list(range(self.instances))  # whose pools the next line holds
         self.stopped = False
 
     def failed(self, what: str) -> RunFailed:
         where = f" (the run's log: {self.log})" if self.log is not None else ""
         return RunFailed(what + where)
 
-    def next_pool(self) -> Pool:
-        """Pool n (17). The run ending instead means it failed."""
+    def next_pools(self) -> dict[int, Pool]:
+        """The advanced instances' pools (17), by instance. The run ending
+        instead means it failed."""
         assert self.process.stdout is not None and not self.stopped
         line = self.process.stdout.readline()
         if not line:
-            raise self.failed(f"the run ended before pool {self.observations}: exit code {self.process.wait()}")
-        pool = read_pool(line, self.observations)
-        self.observations += 1
-        return pool
+            raise self.failed(f"the run ended before the next pools: exit code {self.process.wait()}")
+        pools = read_pools(line, {k: self.next_ids[k] for k in self.advanced})
+        for k in pools:
+            self.next_ids[k] += 1
+        return pools
 
-    def answer(self, answer: Answer) -> None:
-        """The answer to the last pool (18)."""
+    def answer(self, answers: dict[int, Answer]) -> None:
+        """The answers to pending instances (18), by instance; their next
+        pools come in the next line. A stop answers every instance."""
         assert self.process.stdin is not None and not self.stopped
-        self.process.stdin.write(answer.line())
+        entries = [{"instance": k, **answers[k].entry()} for k in sorted(answers)]
+        self.process.stdin.write(json.dumps({"answers": entries}) + "\n")
         self.process.stdin.flush()
-        self.stopped = answer.next == STOP
+        self.advanced = sorted(answers)
+        self.stopped = any(answer.next == STOP for answer in answers.values())
 
     def finish(self) -> int:
         """After the stop: the run shuts down (22-25) and closes stdout;

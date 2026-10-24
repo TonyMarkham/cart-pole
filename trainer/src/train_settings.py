@@ -86,10 +86,19 @@ class TrainSettings:
             gamma=fraction(path, s, "sac.gamma"),
             tau=fraction(path, s, "sac.tau"),
             train_freq=whole(path, s, "sac.train_freq", 1),
-            gradient_steps=whole(path, s, "sac.gradient_steps", 1),
+            gradient_steps=gradient_steps(path, s),
             net_arch=net_arch,
         )
         return TrainSettings(train=train, sac=sac)
+
+
+def gradient_steps(path: Path, table: dict) -> int:
+    """Updates per step, >= 1, or -1: as many as the samples the step took
+    (one per training instance)."""
+    value = table["gradient_steps"]
+    if isinstance(value, bool) or not isinstance(value, int) or not (value >= 1 or value == -1):
+        raise ValueError(f"{path}: sac.gradient_steps is a whole number >= 1, or -1, got {value!r}")
+    return value
 
 
 def fraction(path: Path, table: dict, name: str) -> float:

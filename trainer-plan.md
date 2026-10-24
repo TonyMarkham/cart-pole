@@ -275,11 +275,25 @@ Both runs give the same fit; the figures are the wider run's.
    150): one launch, two resets, episodes on seeds 0 and 1 with rewards
    74.469 and 73.101, the same as the earlier test where each episode was
    a fresh run; each episode took 7.0 and 7.8 s against 9.6 and 10.4 s.
+6. **Training instances** (the diagram's *Training instances*; user,
+   2026-10-24). **Done (2026-10-24):** `settings.toml`'s `[orchestrator]
+   instances` (4; 1 to 6, ports checked) reaches the orchestrator as
+   `--instances`; `launch.py`'s `Run` reads and answers the link's lists;
+   `vec_env.py`'s `LoopVecEnv` is the group as one SB3 `VecEnv`, an
+   instance whose episode ends answered alone with reset so the next
+   commands come from current pools; `train.py` runs it, `episodes.csv`
+   gains `instance`, and saves land each time the step count crosses a
+   multiple of `save_every`. `LoopEnv` (the naive trainer, `env_check`)
+   always runs one instance. A resume with a different `instances` is
+   refused (the replay buffer holds one column per instance). Tested with
+   throwaway settings, 4 instances, episodes of 150, saves every 200: 1,200
+   steps, 8 episodes on seeds 0–7, one launch; a resume to 1,800, episodes
+   8–11; a resume with `instances = 1` refused. With 4 instances, one SAC
+   update follows every 4 samples unless `[sac] gradient_steps` is −1.
 
 ## Not in this plan
 
-More than one loop at a time (planned: the diagram's *Training
-instances*, `[orchestrator] instances` 1 to 6, after reset in place), the orchestrator
+The orchestrator
 (`orchestrator-plan.md`), and running the trained policy on the Orin.
 
 ## References

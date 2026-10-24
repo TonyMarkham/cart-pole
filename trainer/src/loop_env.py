@@ -1,5 +1,6 @@
 """The synthetic loop as a Gymnasium environment: one run holding many
-episodes.
+episodes, on one training instance (the group of instances train.py runs
+is vec_env.py's).
 
 A learning algorithm needs the loop behind the interface it already speaks,
 a Gymnasium Env, so the trainer's environment wraps the run
@@ -98,21 +99,23 @@ class LoopEnv(gym.Env):
     def reset(self, *, seed: int | None = None, options: dict | None = None):
         super().reset(seed=seed)
         if self.run is None:
-            self.run = Run(self.settings, seed, self.log)
+            # One instance, whatever settings.toml's instances: this is the
+            # one-environment form (train.py runs the group, vec_env.py).
+            self.run = Run(self.settings, seed, self.log, instances=1)
         else:
-            self.run.answer(Answer.reset(self.settings.seed if seed is None else seed))
+            self.run.answer({0: Answer.reset(self.settings.seed if seed is None else seed)})
         pool = self._next_pool()
-        return observation(pool), {"id": self.run.observations - 1}
+        return observation(pool), {"id": self.run.next_ids[0] - 1}
 
     def step(self, action):
         if self.run is None:
             raise gym.error.ResetNeeded("step() before reset(), or after the run failed")
         rate = command(action)
-        self.run.answer(Answer.go(rate))
+        self.run.answer({0: Answer.go(rate)})
         pool = self._next_pool()
         scored = score(pool, self.gym_settings.reward, self.gym_settings.end_crash)
         info = {
-            "id": self.run.observations - 1,
+            "id": self.run.next_ids[0] - 1,
             "command": rate,
             "pole": scored.pole,
             "cart": scored.cart,
@@ -126,7 +129,7 @@ class LoopEnv(gym.Env):
     def _next_pool(self) -> Pool:
         assert self.run is not None
         try:
-            return self.run.next_pool()
+            return self.run.next_pools()[0]
         except RunFailed:
             # The run is over; nothing remains to stop.
             self.run.kill()
@@ -140,7 +143,7 @@ class LoopEnv(gym.Env):
         run, self.run = self.run, None
         try:
             if not run.stopped:
-                run.answer(Answer.stop())
+                run.answer({0: Answer.stop()})
             run.finish()
         finally:
             run.kill()

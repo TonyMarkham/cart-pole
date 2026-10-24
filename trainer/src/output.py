@@ -9,13 +9,13 @@ direction and magnitude the pulses per second, plus what comes next:
 continue, reset the run in place for the next episode with that episode's
 seed (synthetic-loop-dia.md, Reset in place), or stop the run. The
 synthetic Arduino clamps the rate to +-56,666 pulses/s, so the trainer only
-has to keep it an i32. On the trainer link it travels as one JSON line on
-the orchestrator's stdin, {"command": c, "next": "continue" | "reset" |
-"stop"}, with "seed": S on a reset only (synthetic-loop-dia.md, Contracts);
-on to the Arduino the command alone travels, as 4 bytes little-endian.
+has to keep it an i32. On the trainer link it travels as its instance's
+entry in one JSON line on the orchestrator's stdin, {"instance": k,
+"command": c, "next": "continue" | "reset" | "stop"}, with "seed": S on a
+reset only (synthetic-loop-dia.md, Contracts); on to the Arduino the
+command alone travels, as 4 bytes little-endian.
 """
 
-import json
 from dataclasses import dataclass
 
 I32_MIN, I32_MAX = -(2**31), 2**31 - 1
@@ -56,9 +56,10 @@ class Answer:
     def stop() -> "Answer":
         return Answer(0, STOP)
 
-    def line(self) -> str:
-        """The answer as the link carries it (18), newline included."""
+    def entry(self) -> dict:
+        """The answer's fields in its instance's entry on the link (18);
+        the run adds "instance"."""
         message: dict = {"command": self.command, "next": self.next}
         if self.seed is not None:
             message["seed"] = self.seed
-        return json.dumps(message) + "\n"
+        return message

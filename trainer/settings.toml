@@ -31,6 +31,14 @@ cwd = ".."
 orin_port = 9000
 unity_port = 9001
 
+# The number of training instances, passed as --instances
+# (synthetic-loop-dia.md, Training instances): each its own MuJoCo,
+# synthetic Arduino, synthetic Orin and Unity window, all feeding the one
+# policy. Instance k uses the ports orin_port + 2k and unity_port + 2k, so
+# 4 instances use 9000-9007. Read by train.py; naive_trainer.py and
+# env_check.py always run one. 1 to 6.
+instances = 4
+
 # The run's seed, passed as --seed (synthetic-loop-dia.md, 4): the
 # orchestrator hands it to the synthetic Orin for the pool's pre-warm
 # gaps and uses it for the latency draws. The same seed and the same
@@ -48,9 +56,9 @@ seed = 0
 rnd_delay_min = 8
 rnd_delay_max = 15
 
-# Not the whole command: the trainer inserts the two ports, the seed, the
-# latency band and [mjcf] (below) straight after the program, as
-# --orin-port, --unity-port, --seed, --rnd-delay-min, --rnd-delay-max,
+# Not the whole command: the trainer inserts the instances, the two ports,
+# the seed, the latency band and [mjcf] (below) straight after the program,
+# as --instances, --orin-port, --unity-port, --seed, --rnd-delay-min, --rnd-delay-max,
 # --model, --cart-joint, --pole-joint and --actuator, so those never
 # appear here.
 command = [

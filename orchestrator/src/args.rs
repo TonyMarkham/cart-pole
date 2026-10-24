@@ -29,20 +29,30 @@ pub struct Args {
     #[arg(long)]
     pub actuator: String,
 
-    /// The control socket's port on 127.0.0.1 (synthetic-loop-dia.md,
+    /// The number of training instances (synthetic-loop-dia.md, Training
+    /// instances), 1 to 6: each its own MuJoCo, synthetic Arduino,
+    /// synthetic Orin and Unity player. The trainer passes its
+    /// settings.toml [orchestrator] instances.
+    #[arg(long, default_value_t = 1, value_parser = clap::value_parser!(u16).range(1..=6))]
+    pub instances: u16,
+
+    /// Instance 0's control socket port on 127.0.0.1 (synthetic-loop-dia.md,
     /// 4–5): the orchestrator listens, the synthetic Orin connects.
+    /// Instance k listens on --orin-port + 2k.
     #[arg(long, default_value_t = 9000)]
     pub orin_port: u16,
 
-    /// The frame socket's port on 127.0.0.1 (6–7): the synthetic Orin
+    /// Instance 0's frame socket port on 127.0.0.1 (6–7): the synthetic Orin
     /// listens on it (--frames-listen), the Unity player connects.
+    /// Instance k's is --unity-port + 2k.
     #[arg(long, default_value_t = 9001)]
     pub unity_port: u16,
 
-    /// The run's seed (synthetic-loop-dia.md, 4): the source of the
-    /// latency draws (SplitMix64), and passed to the synthetic Orin for its
-    /// pool's pre-warm gaps. The trainer passes its settings.toml
-    /// [orchestrator] seed.
+    /// Instance 0's first episode's seed (synthetic-loop-dia.md, 4): the
+    /// source of its latency draws (SplitMix64), and passed to its
+    /// synthetic Orin for the pool's pre-warm gaps; instance k's is
+    /// --seed + k. Later episodes' seeds come with their resets. The
+    /// trainer passes its settings.toml [orchestrator] seed.
     #[arg(long)]
     pub seed: u64,
 
@@ -116,8 +126,8 @@ pub struct Args {
     )]
     pub orin: Option<Vec<String>>,
 
-    /// The run's folder: states.csv here; the synthetic Orin writes the
-    /// frames and observations.jsonl beside it.
+    /// The run's folder: instance k's states.csv in instance_k/, where its
+    /// synthetic Orin writes the frames and observations.jsonl beside it.
     #[arg(long, default_value = "target/orchestrator-frames")]
     pub out: PathBuf,
 }

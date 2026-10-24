@@ -54,9 +54,9 @@ period = 320
 # SAC): SAC learns on the environment, episode after episode, until it has
 # taken total_steps steps.
 
-# Steps in the whole run. A step with learning takes about 46 ms of wall
-# time (measured, 2026-10-24), so 200,000 is about 2.6 h plus about 3 s
-# per episode for each run's relaunch: about 3 h.
+# Steps in the whole run, every training instance's counting. With one
+# instance a step with learning takes about 46 ms of wall time (measured,
+# 2026-10-24), so 200,000 is about 2.6 h.
 total_steps = 200000
 
 # Every save_every steps the run saves the model and its replay buffer
@@ -96,7 +96,11 @@ gamma = 0.99
 # How fast the target critics follow the critics.
 tau = 0.005
 
-# One update (gradient_steps) after every step (train_freq).
+# One update (gradient_steps) after every step (train_freq). A step is one
+# step of every training instance (settings.toml's instances), so with 4
+# instances one update follows every 4 new samples; gradient_steps = -1
+# (SB3: as many updates as samples) keeps one per sample, at 4x the update
+# time.
 train_freq = 1
 gradient_steps = 1
 

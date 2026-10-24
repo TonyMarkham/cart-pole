@@ -284,8 +284,28 @@ cycling. The orchestrator owns a fixed group of training instances, each
 a bundle of one MuJoCo, one synthetic Arduino, one synthetic Orin and one
 Unity player that stays together, so the Orin's pool never leaves its
 loop. `[orchestrator] instances`, 1 to 6, sets the group's size per run;
-instance k uses ports `orin_port + 2k` and `unity_port + 2k`. Steps for it
-follow reset in place (step 8).
+instance k uses ports `orin_port + 2k` and `unity_port + 2k`.
+
+**Built (2026-10-24, step 9).** `--instances N` (1 to 6, default 1);
+`main.rs` holds one `Instance` per bundle (its `Simulation`, Orin, player,
+current observation) and runs the diagram's rounds: every advanced
+instance's pose goes out first, then each steps to its arrival step and
+collects its reply; the pools go out in one line and the answers name
+which instances advance next (`trainer_link.rs`, tests
+`an_answer_is_continue_reset_or_stop`,
+`a_line_may_answer_some_pending_instances`, `a_bad_answer_is_refused`).
+Instance k's seed is `--seed + k`, its folder `--out/instance_k/`; every
+port of the group must be its own. `--no-render` runs one instance.
+Checked with the user's rebuilt player (Force Single Instance off): 4
+instances, instance k driven by a sine of amplitude (k + 1) × 0.2, against
+four 1-instance runs on the same seeds and commands: every instance's 151
+rows match its 1-instance run exactly on id, time, cart and pole, the
+carts reaching 0.067, 0.135, 0.199 and 0.276 m; one launch, 4 players
+registered. 150 steps took 55.8 ms a step for 4 instances (72 samples/s)
+against 23.2 ms for one (43 samples/s). Found on the way: when the
+orchestrator is killed, or fails before every Orin is connected, the
+Orin's `uv run` is killed but its Python child is not, and it keeps its
+frame port (three were left holding 9001, 9005 and 9007).
 
 ## References
 

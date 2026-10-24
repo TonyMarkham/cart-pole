@@ -20,7 +20,7 @@ out and counted.
 
 usage (from the repo root):
   uv run --project trainer python trainer/src/observation_fit.py [states.csv]
-  (default: target/trainer-run/states.csv)
+  (default: target/trainer-run/instance_0/states.csv, the naive trainer's)
 """
 
 import csv
@@ -46,7 +46,8 @@ def fit(x: np.ndarray, y: np.ndarray, degree: int = 1) -> tuple[np.ndarray, np.n
 
 
 def main() -> int:
-    path = Path(sys.argv[1]) if len(sys.argv) > 1 else REPO / "target" / "trainer-run" / "states.csv"
+    default = REPO / "target" / "trainer-run" / "instance_0" / "states.csv"
+    path = Path(sys.argv[1]) if len(sys.argv) > 1 else default
     with open(path, newline="") as f:
         rows = list(csv.DictReader(f))
     usable = [
