@@ -5,15 +5,21 @@ the cart off the supports, so each step is scored on both
 (synthetic-loop-dia.md, The reward is graded, The pole pays only when it is
 slow; trainer-plan.md T3a, T4), from what the trainer sees:
 
-- the pole part, (1 - cos theta) / 2 x exp(-(omega / pole_speed)^2):
-  theta is the Pivot-to-End direction in the image, in pixels (x right,
-  y down; 0 = End straight below Pivot), measured equal to the pole angle
-  (trainer-plan.md, What the trainer sees), so the height is 0 hanging and
-  1 upright and rises all the way up; omega is the pole's turning speed,
-  rad/s, the change in theta between the newest two entries with both
-  Pivot and End over the gap between their ages. A still pole keeps its
-  height in full, and a fast one earns almost nothing, so spinning the
-  pole round no longer pays (the first run's spin averaged 0.5 for free,
+- the pole part, height x exp(-(omega / pole_speed)^2): theta is the
+  Pivot-to-End direction in the image, in pixels (x right, y down; 0 = End
+  straight below Pivot), measured equal to the pole angle (trainer-plan.md,
+  What the trainer sees). The height is the distance from upright,
+  d = pi - |theta|, on a log scale (synthetic-loop-dia.md, The pole's
+  height is scored on a log scale): 1 - ln(d / band) / ln(pi / band), and
+  1 within upright_band of upright, so it is 0 hanging and 1 upright, and
+  every halving of d pays the same (0.19 at a 5 degree band). A high swing
+  turning back below the top pays far less than upright, which
+  (1 - cos theta) / 2 did not (0.93 at 150 degrees,
+  trainer-observations.md). omega is the pole's turning speed, rad/s, the
+  change in theta between the newest two entries with both Pivot and End
+  over the gap between their ages. A still pole keeps its height in full,
+  and a fast one earns almost nothing, so spinning the pole round no
+  longer pays (the first run's spin averaged 0.5 for free,
   trainer-observations.md);
 - the cart part, 1 - u^2: u is the Pivot marker's x offset from the middle
   of the end-crash bounds over their half-span, 1 in the middle and 0 at a
@@ -38,7 +44,7 @@ from pool import END, FRAME_HEIGHT, FRAME_WIDTH, PIVOT, Entry, Pool
 class Score:
     reward: float
     crashed: bool
-    pole: float | None  # the pole's height, (1 - cos theta) / 2, 0 to 1; None with no usable entry
+    pole: float | None  # the plain height, (1 - cos theta) / 2, 0 to 1, for the logs; None with no usable entry
     cart: float | None  # the cart part, 1 to 0 inside the bounds
     speed: float | None  # omega, rad/s; None with fewer than two usable entries
 
@@ -46,6 +52,17 @@ class Score:
 def angle(entry: Entry) -> float:
     (pivot_x, pivot_y), (end_x, end_y) = entry.markers[PIVOT], entry.markers[END]
     return math.atan2((end_x - pivot_x) * FRAME_WIDTH, (end_y - pivot_y) * FRAME_HEIGHT)
+
+
+def upright_height(theta: float, band_deg: float) -> float:
+    """The pole's height on the log scale: 0 hanging, 1 within band_deg of
+    upright, each halving of the distance from upright paying the same."""
+    band = math.radians(band_deg)
+    # atan2 gives theta in (-pi, pi], so d runs from 0 upright to pi hanging.
+    d = math.pi - abs(theta)
+    if d <= band:
+        return 1.0
+    return 1 - math.log(d / band) / math.log(math.pi / band)
 
 
 def score(pool: Pool, reward: Reward, end_crash: EndCrash) -> Score:
@@ -73,4 +90,5 @@ def score(pool: Pool, reward: Reward, end_crash: EndCrash) -> Score:
     cart = 1 - u * u
     if not end_crash.pivot_x_min <= pivot_x <= end_crash.pivot_x_max:
         return Score(end_crash.penalty, True, pole, cart, speed)
-    return Score(reward.pole_weight * pole * slow + reward.cart_weight * cart, False, pole, cart, speed)
+    height = upright_height(theta, reward.upright_band)
+    return Score(reward.pole_weight * height * slow + reward.cart_weight * cart, False, pole, cart, speed)

@@ -948,3 +948,465 @@ last resume, and every step stored since holds its own.
 
 For the session after that, raise it again: to 800,000, for another
 200,000.
+
+(Later the same day: that session ran, in 34 min, and run 1 is now at
+step 600,002. See the next entry. `total_steps` was then raised to
+800,000 with Change 3, for another 200,000, and then to 1,100,000:
+sessions are now 500,000 steps, *The command*, in Change 3.)
+
+## Run 1, continued: 400,000 to 600,000 steps
+
+### The command
+
+The same resume, from the repo root:
+
+```
+uv run --project trainer python trainer/src/train.py --resume
+```
+
+It ran 2026-10-24 from 14:45:46 to 15:20:08, **34 min 22 s**, with no
+stops. It carried on from step 400,004 with the policy, the critics and
+the replay buffer as they were. Settings, as copied into the run's folder
+(`settings_from_400004.toml`, `gym_from_400004.toml`):
+
+- **Group:** 6 training instances, as in the last session, now in the
+  3 × 2 window grid, with the players drawing only when asked (Change 2).
+  Episode numbers carry on from 343.
+- **Length:** to 600,000 steps, so 200,000 more.
+- **SAC and the reward:** unchanged (Change 1's slow-pole reward,
+  `pole_speed = 4.0`). So nothing was rescored, regrouped or dropped.
+
+### What happened
+
+132 episodes, 343 to 474, 22 per instance. **Every one ran the full
+1,500 steps: no crashes at all.** The columns are the same as in the last
+entry (*What happened*, above, says what each one means):
+
+| Steps | Episodes | Crashes | Mean reward | Full turns per episode | Spinning episodes | Slow episodes | Within 20° of upright | Longest hold | Slow visits to the top |
+|---|---|---|---|---|---|---|---|---|---|
+| 400k–420k | 12 | 0 | 812 | 4.7 | 1 | 10 | 1.5% | 0.32 s | 3 |
+| 420k–440k | 12 | 0 | 812 | 3.7 | 1 | 11 | 2.1% | 0.55 s | 1 |
+| 440k–460k | 12 | 0 | 820 | 4.0 | 1 | 10 | 1.5% | 0.43 s | 2 |
+| 460k–480k | 12 | 0 | 839 | 5.3 | 2 | 9 | 2.9% | 0.53 s | 3 |
+| 480k–500k | 18 | 0 | 837 | 3.3 | 0 | 17 | 2.1% | 0.41 s | 3 |
+| 500k–520k | 12 | 0 | 875 | 7.0 | 1 | 8 | 4.1% | 0.53 s | 4 |
+| 520k–540k | 12 | 0 | 841 | 3.7 | 1 | 10 | 2.0% | 0.52 s | 1 |
+| 540k–560k | 12 | 0 | 859 | 5.8 | 0 | 9 | 3.3% | 0.37 s | 1 |
+| 560k–580k | 12 | 0 | 853 | 5.7 | 2 | 10 | 3.1% | 0.65 s | 4 |
+| 580k–600k | 18 | 0 | 862 | 1.4 | 0 | 18 | 1.6% | 0.49 s | 5 |
+
+(Two bands hold 18 episodes: all six instances finish an episode
+together, every 9,000 steps, and three such rounds fell in those bands.)
+
+In short:
+- **The spin is gone.** 112 of the 132 episodes are slow (under 10
+  turns), against 19 of the last session's final 55. Only 9 spun.
+- **The crashes are gone.** None in 200,000 steps.
+- **The score crept up**, 812 → 862 a band, and the best episode, 473
+  (instance 4, the last round), scored 1,007.
+- **But the pole spends less time at the top, not more.** Within 20° of
+  upright fell from 6.4% (the last session's final bands) to 1.5–4.1%.
+  Slow visits to the top fell from 7–11 a band to 1–5. The longest hold,
+  0.65 s (episode 445), is shorter than the last session's 0.79 s. There
+  is still no catch.
+
+### Where the score comes from now
+
+The reward has two parts (see *The reward it ran on*, in run 1): the
+cart part, up to 0.5 a step for the cart in the middle of the slide, and
+the pole part, up to 1 a step for the pole high *and* slow. Splitting each
+episode's score into the two, from MuJoCo's true state (an approximation:
+the real reward reads the detected markers, but the two parts add up to
+within a few points of the logged score):
+
+| Steps | Mean reward | Cart part | Pole part | Highest point (median) | Pole above horizontal |
+|---|---|---|---|---|---|
+| 200k–240k | 374 | 323 | 58 | 158° | 19% |
+| 240k–280k | 674 | 618 | 58 | 180° | 43% |
+| 280k–320k | 790 | 722 | 68 | 180° | 43% |
+| 320k–360k | 820 | 689 | 132 | 180° | 31% |
+| 360k–400k | 849 | 706 | 145 | 180° | 28% |
+| 400k–440k | 812 | 731 | 82 | 90° | 9% |
+| 440k–480k | 829 | 735 | 95 | 168° | 12% |
+| 480k–520k | 852 | 731 | 122 | 179° | 14% |
+| 520k–560k | 850 | 731 | 120 | 179° | 15% |
+| 560k–600k | 858 | 730 | 128 | 112° | 12% |
+
+"Highest point" is the highest the pole got in the episode, 0° hanging
+and 180° upright; half the band's episodes got higher, half didn't.
+(The first rows are the last session's, with its crashes: a crash costs
+10 and ends the episode, which is why its early cart part is low.)
+
+- **The cart part is close to its ceiling.** 1,500 steps × 0.5 is 750,
+  and the policy gets 730. The cart stays within about ±0.2 m of the
+  middle (±0.31 m at the most) of a ±0.45 m slide.
+- **The pole part dropped at the start of this session and has climbed
+  back,** 82 → 128 a band, but not past the 145 of 360k–400k.
+- So the total is flat: what the cart part gained, by no longer crashing
+  or spinning, made up for what the pole part lost.
+
+### What the policy does now: a slow pump, then a swing near the top
+
+Every episode starts with the pole hanging still (the reset puts it
+there). The policy then **pumps the swing up**, moving the cart back and
+forth in time with the pole, the way you pump a playground swing. Here
+is the best episode, 473, as the pole's highest point in each second:
+
+```
+ 0s: 24°  1s: 26°  2s: 59°  3s:118°  4s:113°  5s:101°  6s:111°  7s: 95°
+ 8s:168°  9s:180° 10s:140° 11s:179° 12s:122° 13s:179° 14s:164° 15s:179°
+16s: 85° 17s: 97° 18s:179°
+```
+
+It takes about 8 s, almost half the episode, to bring the pole to the
+top. After that it keeps the pole swinging high, reaching the top every
+second or two, and twice lets the swing die down and pumps it up again.
+Other episodes show the same two halves:
+- **Episode 466** (instance 3): reaches the top at 8 s and passes through
+  it every second until 15 s, then once more at 17 s.
+- **Episode 448** (instance 3, score 964, the third best): never reaches
+  the top. The pole swings to 117°–149° and back, again and again, from
+  7 s to the end.
+- **Episode 352** (instance 3, early in the session): the pole never gets
+  above 59°. A slow start like this was common early on: in 400k–440k
+  half the episodes never got the pole above horizontal (the 90° median).
+
+The cart's command is mostly near the top speed, one way or the other.
+On 20,000 stored observations, the actor's average command is beyond 95%
+of the top speed, either way, for 20–38% of them, depending on the
+snapshot. That is normal for a swing-up: the pump is strongest with the
+cart driven hard.
+
+### Why the score is stuck: the swing pays nearly as well as a visit
+
+**A pendulum is slow at the ends of its swing.** At the highest point of
+each swing it stops, for an instant, before it falls back. So a pole
+swinging to 150° is slow and high twice every swing, and the pole part
+pays it well: at 150°, (1 − cos 150°) ÷ 2 is 0.93 of the full height. The
+reward was made to pay a slow pole at the top (Change 1), and it does,
+but it also pays a slow pole *near* the top, at every turnaround of a high
+swing.
+
+The numbers show it. Episode 448, which never came within 20° of upright,
+earned **234** from the pole. Episode 466, which went over the top every
+second for seven seconds, earned **184**: going over the top is fast, so
+it pays little. Episode 473, the best, earned 283.
+
+**What the policy has learned is a safe way to earn the pole part:**
+pump the swing high and keep it there, with the cart near the middle. It
+never crashes and never costs anything. Trying to stop the pole at the
+top costs nothing directly either, but it fails almost every time: the
+pole falls off one side, the swing is lost, and the next few seconds go
+to pumping it up again. So the critics rate the swing above the attempt.
+(This is a reading of the numbers, not a measurement of the critics.)
+
+**Balancing would still pay far more.** A pole held upright pays nearly 1
+a step: held for the last 10 s of an episode, about 800 steps, it would
+earn about 800 from the pole alone. A whole episode of swinging earns
+about 280 at best. The
+policy is on a small hill, and the big one is across a valley it hasn't
+crossed: to get there it has to catch the pole, which means moving the
+cart under it the moment it leans, the second half of balancing (*What it
+has learned, and what it hasn't*, in the last entry). It hasn't done that
+yet, and this session gave it fewer chances, with fewer visits to the top.
+
+This is common in reinforcement learning. The name for it is a **local
+optimum**: a behaviour that is better than anything close to it, but not
+the best there is. A reward that pays for progress toward the goal (here,
+height and slowness) helps the policy find the goal, but it also creates
+hills like this one along the way.
+
+### How random the actor is
+
+- **The entropy coefficient** (the randomness bonus; see *The randomness
+  bonus* in the last entry) fell from 0.0058 to 0.0033 over this session,
+  mostly in the first 120,000 steps, then held at 0.0032–0.0036. That is
+  just above run 1's lowest, 0.0031.
+- **The actor's own randomness didn't fall.** The actor's command is a
+  bell curve: a middle (its best guess) and a spread (how far it strays
+  from it). On the same 20,000 stored observations, the median spread was
+  0.58 at step 400,004 and 0.62 at 600,002 (0.52–0.62 at every snapshot
+  since 200,000). That spread is before the squash that keeps commands
+  within the top speed, so where the middle is near the top speed, the
+  spread that is left is much smaller.
+
+The two fit together. SAC's auto-tuning holds the actor's randomness near
+its target, and the coefficient is the price it pays to do that: when the
+actor stays random enough on its own, the price falls. So the actor still
+explores about as much as it did. It just explores around the swing.
+
+### Speed: as measured
+
+- **34 min 22 s for 200,000 steps,** about 97 steps a second. The speed
+  test estimated 35 min and 96 steps a second (*Change 2*). The last
+  session, before Change 2, took 1 h 25 min for the same steps: 2.5×
+  faster.
+- **An episode of 1,500 steps took 91–97 s,** against 227–231 s last
+  session.
+- **From the loop's log at the end:** Orin round trip about 43 ms,
+  trainer's turn about 14 ms.
+- **Updates:** 33,332 (the counter went from 80,832 to 114,164), one per
+  group step, as before. Run 1 has now had 114,164 updates in 600,002
+  steps.
+
+### Also found: the Orins exited with an error at the very end
+
+After the trainer stopped the run, all six synthetic Orins exited with
+exit code 1. Each printed `ConnectionResetError: [WinError 10054] An
+existing connection was forcibly closed by the remote host`, then
+`websockets.exceptions.ConnectionClosedError: no close frame received or
+sent`. In the two earlier sessions they exited with 0.
+
+**Nothing was lost.** It happened after the run had stopped and the
+model and buffer were saved (`latest.zip` 15:20:06, the log's end
+15:20:08). Every instance's `observations.jsonl` and `states.csv` end on
+the same last step, 33,355, with whole lines. The players exited with 0.
+
+**Why (found from the code, not reproduced).** The flaw is in the
+orchestrator's shutdown, and the Orin's keepalive pings expose it.
+
+- **A WebSocket goodbye is a handshake.** One side sends a close frame,
+  the other answers with its own, and only then is the connection itself
+  closed (RFC 6455, section 7.1.1). The orchestrator sends its close
+  frame to each Orin and then drops the connection at once
+  (`orchestrator/src/main.rs`, the shutdown after `run`), without waiting
+  for the Orin's answer.
+- **The Orin pings the orchestrator every 20 s.** The `websockets`
+  library (17.3) does this by default (`ping_interval=20`) to check the
+  other end is alive. In the middle of a run the orchestrator answers
+  each ping the next time it reads from the socket, and skips it.
+- **A ping can be left unread at the end.** Between the orchestrator's
+  last read of the Orin's pool and the shutdown is the trainer's last
+  turn: about 1 s here, because the trainer saves the model and buffer
+  before it says stop. A ping that arrives then sits unread.
+- **Closing a connection with unread data in it resets it.** The
+  orchestrator's side then sends a reset (TCP RST) instead of an orderly
+  close. On Windows a reset throws away whatever the receiver hasn't read
+  yet, and that includes the close frame sent a moment earlier. So the
+  Orin sees `ConnectionResetError` and `no close frame received or
+  sent`, and exits with 1.
+- **It is chance.** A ping lands in a 1 s window about once in 20. The six
+  Orins connect within milliseconds of each other, so their pings come
+  together, and all six fail or none do. That fits: this session all six,
+  the two before it none.
+- **Without a ping it still isn't a proper close,** only a quiet one: the
+  Orin's answering close frame arrives at a connection already gone, and
+  the Orin exits on the end of the connection.
+
+The fix belongs in the orchestrator: after sending its close frame, read
+from each Orin until its close frame comes back (with a time limit), and
+only then drop the connection. Reading also takes in any waiting ping.
+The Orin is right to treat a cut connection as an error. On the robot,
+a lost connection is a real failure.
+
+**Fixed (2026-10-24, the user: "plz fix it, even if it isn't really
+hurting").**
+- **The design:** the diagram's shutdown has a note at 22: the close is
+  a handshake. `orchestrator-plan.md` has it as step 10.
+- **The code:** `orchestrator/src/main.rs` now sends every Orin its close
+  frame first, then waits on each (`await_close`). The wait reads until
+  the Orin's close frame comes back, the connection ends, or 5 s pass,
+  and passes over anything else, such as a ping. Only then does it drop
+  the connection.
+- **The proof:** a new test, `the_close_frame_reaches_a_client_whose_ping_is_unread`
+  in `orchestrator/src/tests.rs`. A client pings, the server leaves the
+  ping unread for 0.2 s, then closes. With the fix, the client gets the
+  close frame and an orderly end. Run the old way (close, then drop at
+  once), it failed 3 times out of 3 with `os error 10054`, "An existing
+  connection was forcibly closed by the remote host": exactly the Orins'
+  error. So the cause is confirmed, not only read from the code.
+- **Not yet seen in a real run:** the next resume's log should show every
+  `synthetic Orin exited: exit code: 0`.
+
+### Files
+
+All in `trainer/runs/20261024_041436/`:
+- `episodes.csv`: the rows from episode 343 on are this session;
+- `loop_from_400004/instance_0` to `instance_5`: 33,356 frames per
+  instance, plus each instance's `states.csv` and `observations.jsonl`,
+  5.0 GB in all;
+- `latest.zip` and `latest_buffer.pkl`: the model and the buffer at step
+  600,002;
+- `model_<steps>.zip`: snapshots every 10,000 steps, to `model_600002.zip`.
+
+### How it was measured
+
+With read-only scratch scripts, run by `uv run --project trainer`, the
+same way as in the last entry (*How it was measured*):
+- **The tables:** from each instance's `states.csv`, matched to
+  `episodes.csv` from episode 343 on.
+- **The cart and pole parts:** the reward's formula applied to the true
+  pole angle, its turning speed (from neighbouring rows), and the Pivot
+  marker's x in the frame.
+- **The actor's spread:** 20,000 observations drawn at random from
+  `latest_buffer.pkl`, given to each snapshot's actor; the spread is
+  `exp(log_std)` of its bell curve.
+- **The second-by-second traces:** the pole's highest point in each
+  second of simulated time.
+
+### To continue (ideas, none tested, none decided)
+
+`total_steps` is 600,000 and the run has reached it, so it must be
+raised before the next `--resume` (*Continuing a run: raise
+`total_steps` first*).
+
+What might get the policy across the valley:
+- **More of the same.** The slow arrivals took about 120,000 steps to
+  appear after the reward changed. A catch may also just take longer.
+  Cheapest to try: raise `total_steps` to 800,000 and resume.
+- **More updates per step.** The run has made one update per 6 steps. At
+  6 instances, `gradient_steps = 2` would cost about 16 ms more per group
+  step (*How many instances to train with*): about 76 steps a second
+  instead of 97, but about 25 updates a second instead of 16.
+- **A reward that pays near the top less than at it.** The swing earns
+  because the pole part pays 0.93 at 150°. A reward that rises more
+  steeply toward upright would pay the turnarounds of a swing less and a
+  hold just as much. That would be a change to the reward, so it would
+  start in the diagram (*The reward is graded*).
+
+(Chosen 2026-10-24: the third, as Change 3, below.)
+
+## Change 3: the pole's height on a log scale (2026-10-24)
+
+**The problem it solves:** the policy learned that a high swing pays
+nearly as well as reaching the top (*Why the score is stuck*, above). The
+old height, (1 − cos θ) ÷ 2, is 0.93 at 150° and 1 upright: almost no
+difference. So nothing pushed the policy the last 30° to the top, where
+the catch has to happen. The user's idea: score the height on a log
+scale, so higher is much better than almost as high.
+
+### The new height
+
+Measure how far the pole is from upright, d, in degrees (180 hanging, 0
+upright), and score that on a log scale:
+
+  height = 1 − ln(d ÷ ε) ÷ ln(180 ÷ ε), and 1 when d is ε or less
+
+ε is the **upright band**, `[reward] upright_band` in `trainer/gym.toml`,
+set to 5°. Within 5° of upright counts as fully upright.
+
+**Why a log scale:** a log scale pays for ratios, not differences. Every
+halving of the distance from upright pays the same step up:
+ln 2 ÷ ln 36 = 0.19. Going from 40° away to 20° away is worth as much as
+from 20° to 10°, and from 10° to 5°. The closer the pole gets, the more
+each degree is worth.
+
+| Pole angle | Distance from upright | Old height | New height |
+|---|---|---|---|
+| 0° (hanging) | 180° | 0 | 0 |
+| 60° | 120° | 0.25 | 0.11 |
+| 90° (horizontal) | 90° | 0.50 | 0.19 |
+| 120° | 60° | 0.75 | 0.31 |
+| 150° | 30° | 0.93 | 0.50 |
+| 160° | 20° | 0.97 | 0.61 |
+| 170° | 10° | 0.99 | 0.81 |
+| 175° and up | 5° or less | 1.00 | 1.00 |
+
+The rest of the reward is unchanged:
+- **The slow factor** still multiplies the height: a pole has to be slow
+  to be paid.
+- **The cart part, the crash and the weights** are the same as before.
+
+### What it does to the episodes we have
+
+The pole part of last session's episodes, from MuJoCo's true state, old
+height against new:
+
+| Episode | What the pole did | Old | New |
+|---|---|---|---|
+| 448 | swung to 117–149°, never reached the top | 234 | 102 |
+| 466 | over the top every second for 7 s | 184 | 114 |
+| 473 | the best: pumped up, then at the top often | 283 | 148 |
+| All 132 | the session's average | 111 | 64 |
+
+**The order flips.** Under the old height, 448's swing beat 466's visits
+to the top. Under the new one, reaching the top pays more than swinging
+below it. A pole held within 5° for the last 10 s of an episode still
+earns about 800, as before, so a hold is now worth about 5–6 times the
+best swing instead of about 3.
+
+### The cost, named once
+
+The new height also pays less on the way up: 60° pays 0.11 instead of
+0.25. So pumping from hanging is paid less until the pole is high. The
+policy already knows how to pump, so this matters less for run 1 than it
+would for a new run.
+
+### The logs keep the old height
+
+`episodes.csv`'s `pole_max` and `pole_mean` columns stay the plain
+height, (1 − cos θ) ÷ 2. They describe where the pole went, not what it
+was paid, so they still compare across the whole run. The `reward`
+column is the new score.
+
+### Carrying run 1 over
+
+The next `--resume` rescores the whole replay buffer with the new height,
+the same way as for Change 1: each stored step's reward is worked out
+again from the pool it was read from. The stored steps then teach the new
+reward, not the old one. Nothing is dropped and nothing is regrouped.
+
+**Checked in memory** (on run 1's buffer at step 600,002, nothing saved):
+- **The new height by hand,** at 0°, 90°, 150°, 170°, 175°, 178°, 180°
+  and the same angles on the other side: all exactly as the formula
+  gives.
+- **The old height patched back in,** the rescore gives every one of the
+  599,802 stored steps back as stored, to within 0.0000072. The small
+  differences are only in the last session's steps. Those were scored
+  live from the full-precision pool, while the buffer keeps a rounded
+  copy (32-bit). The steps of earlier sessions had already been rescored
+  from the buffer, and they come back exactly.
+- **With the new height,** the average reward per stored step falls from
+  0.525 to 0.502. The last session's episodes fall from 841 to 794 on
+  average, 47 less, matching the true-state estimate above (111 → 64)
+  exactly.
+
+### What to expect
+
+- **The score drops at the resume,** by about 47 an episode for the same
+  behaviour. That is the new scale, not a worse policy.
+- **The critics need time to adjust.** Their values were learned on the
+  old reward, so the first several thousand steps are a relearning. After
+  Change 1 the randomness bonus moved fast for about 20,000 steps
+  (*The randomness bonus*).
+- **What to look for:** more time within 20° of upright, more slow visits
+  to the top, and longer holds. Episodes like 448, a high swing that
+  never reaches the top, should become rarer.
+
+### Files
+
+- `synthetic-loop-dia.md`: the new section *The pole's height is scored
+  on a log scale*.
+- `trainer-plan.md`: T3a, and step 9.
+- `trainer/src/reward.py`: `upright_height`, used by `score`.
+- `trainer/src/gym_settings.py`: `upright_band`, checked to lie between 0
+  and 180.
+- `trainer/gym.toml`: `[reward] upright_band = 5.0`, and `[train]
+  total_steps`, now 1,100,000 (below).
+
+### The command
+
+From the repo root:
+
+```
+uv run --project trainer python trainer/src/train.py --resume
+```
+
+It continues run 1 from step 600,002 to 1,100,000 and writes that
+session's frames and true states to `loop_from_600002/`.
+
+**Sessions are now 500,000 steps, up from 200,000** (user, 2026-10-24,
+since Change 2 made a session 2.5× faster). `[train] total_steps` is
+1,100,000. What that means, at last session's measured 97 steps a
+second:
+- **Time:** about 1 h 26 min.
+- **Episodes:** about 333, 55 or 56 per instance.
+- **Updates:** about 83,000, one per group step of 6, taking run 1 to
+  about 197,000.
+- **Disk:** about 12.5 GB of frames and states in `loop_from_600002/`
+  (5.0 GB per 200,000), with 3.3 TB free on D:.
+- **Saves:** still every 10,000 steps, now about every 1.7 minutes. A
+  stopped session loses at most that.
+
+For the session after that, raise `total_steps` by 500,000 again, to
+1,600,000.

@@ -17,12 +17,14 @@ MAX_RATE = 56_666  # pulses/s: arduino::RIG's top rate (synthetic-loop-dia.md, N
 
 @dataclass(frozen=True)
 class Reward:
-    """[reward]: pole_weight x (1 - cos theta) / 2 x exp(-(omega / pole_speed)^2)
-    + cart_weight x (1 - u^2)."""
+    """[reward]: pole_weight x height x exp(-(omega / pole_speed)^2)
+    + cart_weight x (1 - u^2), the height 1 - ln(d / upright_band) /
+    ln(pi / upright_band), d the distance from upright (reward.py)."""
 
     pole_weight: float
     cart_weight: float
     pole_speed: float  # rad/s, > 0: the pole's speed at which its height pays 1/e
+    upright_band: float  # degrees, 0 < band < 180: within it of upright the height is 1
 
 
 @dataclass(frozen=True)
@@ -58,9 +60,12 @@ class GymSettings:
             pole_weight=number(path, raw["reward"], "reward.pole_weight"),
             cart_weight=number(path, raw["reward"], "reward.cart_weight"),
             pole_speed=number(path, raw["reward"], "reward.pole_speed"),
+            upright_band=number(path, raw["reward"], "reward.upright_band"),
         )
         if reward.pole_speed <= 0:
             raise ValueError(f"{path}: reward.pole_speed is > 0 rad/s, got {reward.pole_speed}")
+        if not 0 < reward.upright_band < 180:
+            raise ValueError(f"{path}: reward.upright_band is between 0 and 180 degrees, got {reward.upright_band}")
         end_crash = EndCrash(
             pivot_x_min=number(path, raw["end_crash"], "end_crash.pivot_x_min"),
             pivot_x_max=number(path, raw["end_crash"], "end_crash.pivot_x_max"),

@@ -190,6 +190,7 @@ sequenceDiagram
     end
 
     O->>N: close the control socket (on the trainer's stop, or a failed run)
+    Note over O,N: the close is a handshake (RFC 6455 7.1.1): N answers with its own close frame,<br/>and O drops the connection only once that answer has come, reading until it does.<br/>Dropped with data unread (the Orin's keepalive ping), it is reset, and the reset<br/>discards O's close frame before N reads it (run 1, trainer-observations.md)
     N->>U: close the frame socket
     U-->>O: exits
     N-->>O: exits
@@ -331,6 +332,24 @@ leads from hanging (a fast swing earns little, so the reward pays arriving
 at the top slowly). With fewer than two entries holding both markers the
 speed is unknown and the pole part is 0. The cart part, the end crash and
 which entry they are read from are unchanged.
+
+**The pole's height is scored on a log scale** (user, 2026-10-24, after
+run 1's 400,000–600,000 steps, `trainer-observations.md`). That session
+learned to pump the swing high and keep it there, slow at every
+turnaround below the top, because (1 − cos θ) / 2 pays 0.93 at 150° and 1
+upright: a high swing earned as much as reaching the top, and the pole
+was near upright less often than before. So the height is now scored by
+its distance from upright, d = π − |θ| (θ wrapped into (−π, π]), on a log
+scale: 1 − ln(d / ε) / ln(π / ε) for d > ε, and 1 within ε of upright;
+ε is `gym.toml`'s `[reward] upright_band`, 5°. Every halving of the
+distance from upright pays the same, ln 2 / ln 36 = 0.19 at 5°: hanging
+0, horizontal 0.19, 150° 0.50, 170° 0.81, 175° and up 1. The pole part is
+that height × exp(−(ω / ω₀)²); the slow factor, the cart part, the end
+crash and which entry they are read from are unchanged. On that
+session's episodes, rescored from MuJoCo's true state, a swing that never
+came within 20° of upright drops from 234 to 102 and one that reached the
+top every second from 184 to 114, so reaching the top now pays more than
+swinging below it; a pole held within 5° pays the full 1 as before.
 
 **The policy learns by SAC** (Soft Actor-Critic, Stable-Baselines3's
 `SAC` with its `MlpPolicy`; user, 2026-10-24, on the agent's

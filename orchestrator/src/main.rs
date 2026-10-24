@@ -138,12 +138,16 @@ async fn main() -> Result<()> {
 
     // 22–25 for every instance: closing the control socket ends the run for
     // the Orin, which closes the frame socket, so the player quits, then the
-    // Orin. Every socket is closed before any exit is awaited, so the
-    // instances shut down together. A failed close only means the Orin is
-    // already gone.
+    // Orin. Every close frame is sent before any answer is awaited, and
+    // every socket is closed before any exit is awaited, so the instances
+    // shut down together. A failed close only means the Orin is already
+    // gone.
+    for instance in &mut instances {
+        let _ = instance.orin.close(None).await;
+    }
     let mut children = Vec::with_capacity(instances.len());
     for mut instance in instances {
-        let _ = instance.orin.close(None).await;
+        await_close(&mut instance.orin, CLIENT_EXIT_GRACE).await;
         // The server ends the TCP connection (RFC 6455 7.1.1); the Orin's
         // client waits for that, up to its 10 s close timeout, before it
         // exits, so the socket is dropped before the exit is awaited.
@@ -764,6 +768,25 @@ async fn reset_orin(orin: &mut WebSocketStream<TcpStream>, seed: u64, timeout: D
             _ => {}
         }
     }
+}
+
+// 22: the close is a handshake (RFC 6455 7.1.1). After sending its close
+// frame the server reads until the client's close frame answers it, and
+// only then ends the TCP connection. A socket dropped with data unread
+// (the Orin's keepalive ping, every 20 s) is reset, and the reset discards
+// the close frame on the Orin's side before it reads it: the Orin then
+// exits 1 (trainer-observations.md, run 1 at 600,000). Whatever else
+// arrives first is passed over; an error or the socket's end also ends
+// the wait, and so does the timeout, if the Orin never answers.
+async fn await_close(orin: &mut WebSocketStream<TcpStream>, timeout: Duration) {
+    let _ = tokio::time::timeout(timeout, async {
+        while let Some(Ok(message)) = orin.next().await {
+            if message.is_close() {
+                break;
+            }
+        }
+    })
+    .await;
 }
 
 // A launched process quits on its own when its socket closes; it is

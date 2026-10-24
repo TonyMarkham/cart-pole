@@ -59,7 +59,12 @@ messages.
   2026-10-24): the pole part is (1 − cos θ) / 2 × exp(−(ω / ω₀)²), ω the
   change in θ between the newest two entries with Pivot and End over the
   gap between their ages, ω₀ = `[reward] pole_speed` (4 rad/s); fewer
-  than two such entries, the pole part is 0.
+  than two such entries, the pole part is 0. **The pole's height is
+  scored on a log scale** (the diagram's section of that name; user,
+  2026-10-24): the height (1 − cos θ) / 2 is replaced by
+  1 − ln(d / ε) / ln(π / ε), d = π − |θ| the distance from upright, 1
+  within ε = `[reward] upright_band` (5°); the pole part is that height ×
+  exp(−(ω / ω₀)²).
 - **T4 — the end crash.** The Pivot marker out of bounds is a training
   failure: penalty, and end this episode. The bounds must sit inside the
   slide's ends by more than the cart can travel between a capture and
@@ -338,6 +343,24 @@ Both runs give the same fit; the figures are the wider run's.
    `--out <run folder>/loop_from_<steps>`, `<steps>` the steps already
    taken, in place of `settings.toml`'s `--out` (`Settings.command(out=)`
    replaces the orchestrator's own `--out`, the one before `--orin`).
+9. **The pole's height on a log scale** (T3a; the diagram's section of
+   that name; user, 2026-10-24, after run 1's 400,000–600,000 steps
+   learned a high swing, `trainer-observations.md`). `reward.py` scores
+   the height as 1 − ln(d / ε) / ln(π / ε), d = π − |θ|, 1 within ε;
+   `gym.toml`'s `[reward] upright_band` is ε in degrees, 5.0, greater
+   than 0 and less than 180. The resume's rescore (step 7) carries the
+   buffer over. `episodes.csv`'s `pole_max` and `pole_mean` stay
+   (1 − cos θ) / 2, the plain height, so they compare across the whole
+   run. *Check:* the height by hand at hanging, horizontal, 150°, 170°,
+   175° and upright; the run 1 buffer rescored in memory, the pole part's
+   change matching the true-state estimate; then the resume to 1,100,000
+   (`[train] total_steps`; sessions are 500,000 steps since 2026-10-24,
+   user). **Code landed (2026-10-24), the resume not yet
+   run:** the heights exact at every angle checked; with the old height
+   patched in, all 599,802 stored steps rescored back to within 7.2 × 10⁻⁶
+   (the last session's, scored live from the full-precision pool; earlier
+   sessions' exactly); with the new height the last session's episodes
+   fall from 841 to 794, as estimated from the true state.
 
 ## Not in this plan
 

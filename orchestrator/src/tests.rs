@@ -1,11 +1,16 @@
 use crate::{
-    cart_velocity,
+    await_close, cart_velocity,
     latency::Latency,
     meters_per_pulse,
     trainer_link::{Next, parse_answers},
     window::{Pixels, grid_position},
 };
+use anyhow::Result;
 use arduino::{Direction, Drv8825Signals, RIG};
+use futures_util::{SinkExt, StreamExt};
+use std::time::Duration;
+use tokio::net::TcpListener;
+use tokio_tungstenite::{accept_async, connect_async, tungstenite::Message};
 
 fn line(answers: &str) -> String {
     format!(r#"{{"answers": [{answers}]}}"#)
@@ -147,4 +152,33 @@ fn a_window_place_is_x_comma_y() {
     assert_eq!("960,-8".parse::<Pixels>(), Ok(Pixels { x: 960, y: -8 }));
     assert!("960".parse::<Pixels>().is_err());
     assert!("9.5,0".parse::<Pixels>().is_err());
+}
+
+// The close handshake (synthetic-loop-dia.md, the note at 22): a ping still
+// unread when the server closes must not cost the client the close frame.
+// The client pings, as the Orin's keepalive does; the server reads nothing
+// until it has sent its close, as at the end of a run. The client must get
+// the close frame and then the connection's end, with no reset.
+#[tokio::test]
+async fn the_close_frame_reaches_a_client_whose_ping_is_unread() -> Result<()> {
+    let listener = TcpListener::bind("127.0.0.1:0").await?;
+    let url = format!("ws://{}", listener.local_addr()?);
+    let client = tokio::spawn(async move {
+        let (mut ws, _) = connect_async(url).await?;
+        ws.send(Message::Ping(Default::default())).await?;
+        let mut closed = false;
+        while let Some(message) = ws.next().await {
+            closed |= message?.is_close();
+        }
+        anyhow::Ok(closed)
+    });
+    let (stream, _) = listener.accept().await?;
+    let mut ws = accept_async(stream).await?;
+    // Long enough for the ping to arrive and sit unread.
+    tokio::time::sleep(Duration::from_millis(200)).await;
+    ws.close(None).await?;
+    await_close(&mut ws, Duration::from_secs(5)).await;
+    drop(ws);
+    assert!(client.await??, "the client never received the close frame");
+    Ok(())
 }

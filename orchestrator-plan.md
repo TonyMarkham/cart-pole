@@ -100,7 +100,9 @@ code is `orchestrator/src/`; the trainer launches it with
   arrival step (21). The arrival step is also the next capture: the loop
   goes round.
 - **O9 — stop and shutdown (22–26).** On the trainer's stop, or a
-  failed run: close the control socket (22), the Orin closes the frame
+  failed run: close the control socket (22) with the close handshake
+  (send the close frame, read until the Orin's close frame answers it,
+  then drop the connection), the Orin closes the frame
   socket (23), the player and the Orin exit (24–25), and the trainer is
   told the run closed, or that it failed and training ends (26): the
   orchestrator exits, closing stdout, with code 0 (closed) or 1
@@ -262,6 +264,20 @@ in the diagram first:
    `--window-columns`, no position is passed. *Check:* a unit test of the
    positions, and a run whose windows land in the grid (the latter needs
    the player's `PlayerController`, `unity-player-plan.md` step 10).
+10. **The close handshake** (O9; the diagram's note at 22; user,
+    2026-10-24, after run 1's 400,000–600,000 steps ended with all six
+    Orins exiting 1, `trainer-observations.md`). The shutdown sends every
+    Orin its close frame first, then reads each control socket until the
+    Orin's close frame comes back, or the socket ends, or the grace
+    period (`CLIENT_EXIT_GRACE`, 5 s) passes; only then is the socket
+    dropped. Anything else read meanwhile, such as a keepalive ping, is
+    passed over. *Check:* a test with a client that pings just before the
+    close: it must receive the close frame and answer it; then a run's
+    Orins exiting 0. **Done in code (2026-10-24), not yet seen in a run:**
+    `await_close` in `main.rs`; the test
+    `the_close_frame_reaches_a_client_whose_ping_is_unread` passes, and
+    run without `await_close` it fails 3 of 3 with os error 10054, the
+    Orins' reset.
 
 ## Placeholders
 
