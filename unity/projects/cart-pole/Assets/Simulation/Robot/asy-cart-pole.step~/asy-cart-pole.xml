@@ -2,6 +2,7 @@
 <!-- exported by com.greyhound.step from asy-cart-pole -->
 <mujoco model="asy-cart-pole">
   <compiler angle="radian" meshdir="meshes" autolimits="true" inertiafromgeom="auto" balanceinertia="false" />
+  <option timestep="0.002" integrator="implicitfast" />
   <asset>
     <!-- first used by: base-motor -->
     <mesh name="mesh_000" file="mesh_000.stl" />

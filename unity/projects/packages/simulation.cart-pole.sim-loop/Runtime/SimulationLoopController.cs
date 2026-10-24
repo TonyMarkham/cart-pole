@@ -15,12 +15,14 @@ using UnityEngine.SceneManagement;
 
 namespace Simulation.CartPole.SimLoop
 {
-    // The simulated robot loop's Unity side: the orchestrator launches the
-    // player with -orchestrator ws://<host>:<port>; this component connects
-    // there, and for every joint-state text message it receives, drives the
-    // cart and pole, renders the camera, and answers with exactly one
-    // binary message - the 728x544 greyscale q90 JPEG the Pi's detector
-    // would see. One reply per request, in order: lockstep.
+    // The simulated robot loop's Unity side, the Orin's camera
+    // (synthetic-loop-dia.md, 6-7, 12-13): the orchestrator launches the
+    // player with -orin ws://<host>:<port>, the synthetic Orin's frame
+    // socket; this component connects there, and for every trigger - a
+    // joint-state text message from the Orin - drives the cart and pole,
+    // renders the camera, and answers with exactly one binary message, the
+    // 728x544 greyscale q90 JPEG the Orin's detector would see. One reply
+    // per trigger, in order: lockstep.
     //
     // Message in: {"id": 7, "joints": [{"name": "02-Cart.Slider.joint",
     // "qpos": 0.05}, {"name": "04-Pole.Hinge.joint", "qpos": 3.14}]} - MJCF
@@ -49,7 +51,7 @@ namespace Simulation.CartPole.SimLoop
         private const int FrameHeight = 544;
         private const int DepthBits = 24;
 
-        private const string OrchestratorArgument = "-orchestrator";
+        private const string OrinArgument = "-orin";
 
         [SerializeField] private StepJointSet m_JointSet;
         public StepJointSet JointSet => m_JointSet;
@@ -70,10 +72,13 @@ namespace Simulation.CartPole.SimLoop
         [SerializeField] private Camera m_RenderCamera;
         public Camera RenderCamera => m_RenderCamera;
 
-        // Editor Play mode has no command line: the orchestrator stub runs
-        // with --no-launch on its default address, and this field matches it.
-        [SerializeField] private string m_EditorOrchestratorUrl = "ws://127.0.0.1:9000";
-        public string EditorOrchestratorUrl => m_EditorOrchestratorUrl;
+        // Editor Play mode has no command line: the orchestrator runs with
+        // --no-launch, and this field is the synthetic Orin's frame socket
+        // at the trainer's default unity_port. A new field rather than a
+        // renamed one, so the old orchestrator address (port 9000, now the
+        // control socket) is not carried over.
+        [SerializeField] private string m_EditorOrinUrl = "ws://127.0.0.1:9001";
+        public string EditorOrinUrl => m_EditorOrinUrl;
 
         [Serializable]
         private sealed class JointQpos
@@ -162,12 +167,13 @@ namespace Simulation.CartPole.SimLoop
             m_Target = new RenderTexture(FrameWidth, FrameHeight, DepthBits);
             m_Readback = new Texture2D(FrameWidth, FrameHeight, TextureFormat.RGB24, false);
 
-            var url = OrchestratorUrl();
+            var url = OrinUrl();
             if (url == null)
             {
                 Debug.LogError(
-                    $"[SimulationLoopController] no {OrchestratorArgument} <url> on the " +
-                    "command line - the orchestrator launches this player and passes it",
+                    $"[SimulationLoopController] no {OrinArgument} <url> on the " +
+                    "command line - the orchestrator launches this player and passes it " +
+                    "the synthetic Orin's frame socket",
                     this);
                 Stop(1);
                 return;
@@ -336,9 +342,10 @@ namespace Simulation.CartPole.SimLoop
             }
             if (m_SocketEnded)
             {
-                Debug.Log("[SimulationLoopController] orchestrator connection ended", this);
-                // A launched player exists only for its orchestrator: a
-                // normal close ends it with 0, a failed connection with 1.
+                Debug.Log("[SimulationLoopController] synthetic Orin connection ended", this);
+                // A launched player exists only for its run: the Orin
+                // closing the frame socket ends it with 0 (24), a failed
+                // connection with 1.
                 Stop(m_SocketFailed ? 1 : 0);
             }
         }
@@ -391,16 +398,16 @@ namespace Simulation.CartPole.SimLoop
 
         // In a player the address comes only from the command line - the
         // orchestrator that launched it; in the editor, from the inspector.
-        private string OrchestratorUrl()
+        private string OrinUrl()
         {
             if (Application.isEditor)
             {
-                return m_EditorOrchestratorUrl;
+                return m_EditorOrinUrl;
             }
             var args = Environment.GetCommandLineArgs();
             for (var i = 0; i < args.Length - 1; i++)
             {
-                if (args[i] == OrchestratorArgument)
+                if (args[i] == OrinArgument)
                 {
                     return args[i + 1];
                 }
@@ -409,7 +416,7 @@ namespace Simulation.CartPole.SimLoop
         }
 
         // Background task: connect, then queue every text message until the
-        // orchestrator closes the socket or the component goes away.
+        // synthetic Orin closes the socket or the component goes away.
         private async Task ConnectAndReceive(string url, CancellationToken token)
         {
             try
@@ -425,7 +432,7 @@ namespace Simulation.CartPole.SimLoop
                     if (result.MessageType == WebSocketMessageType.Close)
                     {
                         await m_Socket.CloseOutputAsync(
-                            WebSocketCloseStatus.NormalClosure, "closed by orchestrator", token);
+                            WebSocketCloseStatus.NormalClosure, "closed by the synthetic Orin", token);
                         break;
                     }
                     message.Write(buffer, 0, result.Count);

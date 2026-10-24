@@ -299,7 +299,12 @@ All runs from the repo root against `Build/SimulationLoop.exe`.
   (or, with `--no-launch`, waits for editor Play mode to connect),
   sends a scripted sweep or one fixed pose, saves and checks the
   frames. It stands in for MuJoCo; it is the seed of the real
-  orchestrator, not the orchestrator plan.
+  orchestrator, not the orchestrator plan. *Superseded (2026-10-23,
+  `synthetic-loop-dia.md` 6–13):* the player connects to the synthetic
+  Orin's frame socket (`-orin`), so the orchestrator has no player
+  socket: the sweep and `--pose` are gone, the Orin triggers every frame
+  and saves it, and `--no-launch` now means editor Play mode connects to
+  the Orin (`m_EditorOrinUrl`, default `ws://127.0.0.1:9001`).
 - Frame contract: 728×544 greyscale JPEG, q90 (`synthetic-loop-dia.md`, *Contracts*).
 - Loop scene: `Assets/SimulationLoop/Scenes/SimulationLoop.unity`.
 - **SO pattern, as synthetic-data-gen does it:** what the loop controls

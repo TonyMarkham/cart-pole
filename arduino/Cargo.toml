@@ -1,5 +1,5 @@
 [package]
-name              = "firmware"
+name              = "arduino"
 version           = { workspace = true }
 edition           = { workspace = true }
 description       = "The cart's Arduino firmware, one source for the rig and the sim loop: the Orin's 4-byte pulse-rate command in, step pulses out (synthetic feature: the cart actuator's ctrl)"

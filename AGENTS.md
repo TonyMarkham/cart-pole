@@ -136,7 +136,7 @@ adds repo structure around them, never overrides them.
   **outside this repo**: from `Packages/`, `../../../../../greyhound-snake`
   is the sibling checkout `D:\git\greyhound-snake`, whose `dist/package/`
   is what the editor actually loads.
-- The Rust side resolves to the same sibling checkout: `physics.toml`'s
+- The Rust side resolves to the same sibling checkout: `orchestrator.toml`'s
   `mujoco_dir` is `../greyhound-snake/dist/mujoco/…` from the repo root.
 - There is no greyhound submodule (dropped 2026-10-22: nothing built
   from it, and the `dist/` everything loads is gitignored in greyhound).
@@ -249,15 +249,20 @@ adds repo structure around them, never overrides them.
 - **The Rust workspace** (`Cargo.toml` at the repo root; `aruco/`
   excluded) — the synthetic loop's parts, each with its plan:
   `orchestrator/` (the loop's driver; it began as the Unity leg's stub),
-  `physics/` (MuJoCo in-process, configured by `physics.toml`,
-  `mujoco-plan.md`), `firmware/` (the Arduino firmware, one source for
-  the rig and the loop's synthetic Arduino, `synthetic-arduino-plan.md`), and
-  `object-detection/` (the Rust detector crate, configured by
-  `ObjectDetection.toml`, `detector-plan.md`; superseded on the robot
-  and in the loop by the Python synthetic Orin). Roles by the crates'
-  own header comments and the plans.
+  `physics/` (MuJoCo in-process, linked from `orchestrator.toml`'s
+  `mujoco_dir`; the MJCF and its names come from the trainer's
+  `settings.toml` `[mjcf]` on the orchestrator's command line,
+  `mujoco-plan.md`), `arduino/` (the Arduino firmware, one source for
+  the rig and the loop's synthetic Arduino, `synthetic-arduino-plan.md`).
+  Roles by the crates' own header comments and the plans. The Rust
+  detector crate, `object-detection/`, was retired on 2026-10-23 (user):
+  a Pi-era POC whose question `detector-plan.md` answered, the Python
+  synthetic Orin being faster on the Orin. Its `ObjectDetection.toml`
+  moved to `orin/settings.toml`, the Orin's detector configuration.
 - `orin/` — the synthetic Orin, a `uv` project: Python + TensorRT
   detection, the 6-entry pool, the WebSocket client (`synthetic-orin-plan.md`).
+  The root holds the uv files and `settings.toml` (the detector's
+  settings); the code is in `orin/src/`.
 - `training/` — the detector training, a `uv` project: the numbered
   docs `01`–`07` and appendices, `src/` (`build_dataset.py`,
   `convert_proposals.py`, `dataset_stats.py`), and `runs/` (gitignored;
@@ -269,7 +274,8 @@ adds repo structure around them, never overrides them.
   one plan per diagram participant, named after it: `orchestrator-plan.md`, `mujoco-plan.md`,
   `trainer-plan.md`, `synthetic-arduino-plan.md`,
   `synthetic-orin-plan.md`, `unity-player-plan.md`; `detector-plan.md`
-  (the Rust detector crate the synthetic Orin superseded); `DATASETS.md` (the one dataset format) and
+  (the retired Rust detector crate's plan, kept for its *Results*: the
+  measurements that chose the Orin and Python); `DATASETS.md` (the one dataset format) and
   `GENERATOR.md` (the generator's binding directives, which win over
   `DATASETS.md` where they conflict); `training-plan.md` (the YOLO
   training plan). Plans state intent, not current state (*Working with

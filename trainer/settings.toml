@@ -1,0 +1,62 @@
+# The trainer's settings (trainer-plan.md).
+
+[orchestrator]
+# The trainer starts each run by launching the orchestrator with this
+# command (synthetic-loop-dia.md, 1): the program, then its arguments, one
+# list item each. It runs in `cwd`, a folder relative to this file; ".." is
+# the repo root, which every path in the command is relative to, the
+# program's included.
+#
+# The program is the built release binary, never `cargo run`: build it
+# first with `cargo build --release -p orchestrator`.
+#
+# These are the orchestrator's arguments today (the last good loop run,
+# synthetic-orin-plan.md Results, minus --control and --frames, which the
+# trainer's command and stop replace). They change as the orchestrator
+# follows its plan.
+cwd = ".."
+
+# The run's two sockets, both on 127.0.0.1, passed as --orin-port and
+# --unity-port. orin_port is the control socket (synthetic-loop-dia.md,
+# 4–5): the orchestrator listens, the synthetic Orin connects. unity_port
+# is the frame socket (6–7): the Unity player connects to it (the
+# orchestrator listens on it until the Orin serves it). They must differ.
+orin_port = 9000
+unity_port = 9001
+
+# The run's seed, passed as --seed (synthetic-loop-dia.md, 4): the
+# orchestrator hands it to the synthetic Orin for the pool's pre-warm
+# gaps and uses it for the latency draws. The same seed and the same
+# commands give byte-identical observations.jsonl and states.csv.
+# A whole number, 0 to 2**64 - 1.
+seed = 0
+
+# Not the whole command: the trainer inserts the two ports, the seed and
+# [mjcf] (below) straight after the program, as --orin-port,
+# --unity-port, --seed, --model, --cart-joint, --pole-joint and
+# --actuator, so those never appear here.
+command = [
+    "target/release/orchestrator.exe",
+    "--player", "unity/projects/cart-pole/Build/SimulationLoop.exe",
+    "--out", "target/trainer-run",
+    # --orin must come last: every argument after it is the Orin's command.
+    "--orin", "uv", "run", "--project", "orin", "python", "orin/src/synthetic_orin.py",
+    "--engine", "training/runs/cp2-640-base/weights/best_fp16.engine",
+]
+
+[mjcf]
+# The MJCF the run loads (synthetic-loop-dia.md, 2) and the names in it.
+# They reach the orchestrator as --model, --cart-joint, --pole-joint and
+# --actuator, placed straight after the program (--orin takes every
+# argument after it).
+
+# The model the Unity exporter writes beside the rig's STEP asset
+# (stepAssetPath: Assets/Simulation/Robot/asy-cart-pole.step), relative
+# to [orchestrator] cwd.
+model = "unity/projects/cart-pole/Assets/Simulation/Robot/asy-cart-pole.step~/asy-cart-pole.xml"
+
+# As in the model's <joint name> / actuator name. The joint names are also
+# the wire keys of the player's state message.
+cart_joint = "02-Cart.Slider.joint"
+pole_joint = "04-Pole.Hinge.joint"
+actuator   = "03-Cart.Slider.Actuator"

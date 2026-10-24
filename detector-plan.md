@@ -18,7 +18,12 @@ accuracy, against 80–125 ms for the best Pi 5 options. **Detection on
 the robot runs in Python** (user, 2026-10-23): OpenCV pre-processing +
 TensorRT, 11.9–14.5 ms per frame against the Rust POC's 18.7–19.1 ms
 in the same session. That Python path exists only as the scratch test
-(`trt_detect.py`). The crate keeps its engines (tract on the CPU,
+(`trt_detect.py`). **Retired (user, 2026-10-23):** the crate,
+`object-detection/`, is removed from the repo, with its workspace
+entries and `ObjectDetection.toml`'s crate-only keys (`edgetpu_model`,
+`threads`), and the file itself moved to `orin/settings.toml`; this
+plan stays for its *Results*. What follows describes
+the crate as it was. The crate keeps its engines (tract on the CPU,
 which the loop on the PC uses; the `edgetpu` Coral engine,
 uncommitted).
 
@@ -91,7 +96,8 @@ plan built and measured (*Results*) stays as the record.
   the Pi 5, aarch64 Linux (`AGENTS.md`, *The real robot*); the object
   detection crate is configured by `ObjectDetection.toml` at the repo
   root (user, 2026-10-22).
-- **Precedent:** the `physics` crate and `physics.toml` (`mujoco-plan.md`)
+- **Precedent:** the `physics` crate and `physics.toml` (now
+  `orchestrator.toml`, `mujoco-plan.md`)
   — workspace member, config file at the repo root with paths relative
   to the file's folder, strict parse (`deny_unknown_fields`).
 

@@ -1,91 +1,116 @@
-use std::{net::SocketAddr, path::PathBuf};
+use std::path::PathBuf;
 
 use clap::Parser;
 
 use crate::control::Control;
 
-/// Sim-loop orchestrator stub: sends the Unity player joint states over a
-/// WebSocket and checks the frames it returns. The states come from a
-/// scripted sweep, one fixed pose, or (with --physics) MuJoCo stepping
-/// the model named in physics.toml. Joint names come from physics.toml.
+/// The synthetic loop's orchestrator (orchestrator-plan.md): steps MuJoCo
+/// (the MJCF --model names) and sends each capture state to the synthetic
+/// Orin, which triggers the Unity player and detects the markers
+/// (synthetic-loop-dia.md). The trainer launches it with all of its
+/// arguments, from its settings.toml.
 #[derive(Parser, Debug)]
 #[command(version, about)]
 pub struct Args {
-    /// Address the WebSocket server listens on; the player is told to
-    /// connect to ws://<listen>.
-    #[arg(long, default_value = "127.0.0.1:9000")]
-    pub listen: SocketAddr,
+    /// The MJCF to load, relative to the working directory.
+    #[arg(long)]
+    pub model: PathBuf,
 
-    /// The built Unity player to launch with `-orchestrator ws://<listen>`.
+    /// The MJCF's cart slide joint name; also the cart's wire key in the
+    /// pose message (synthetic-loop-dia.md, Contracts).
+    #[arg(long)]
+    pub cart_joint: String,
+
+    /// The MJCF's pole hinge joint name; also the pole's wire key.
+    #[arg(long)]
+    pub pole_joint: String,
+
+    /// The MJCF's cart actuator name.
+    #[arg(long)]
+    pub actuator: String,
+
+    /// The control socket's port on 127.0.0.1 (synthetic-loop-dia.md,
+    /// 4–5): the orchestrator listens, the synthetic Orin connects.
+    #[arg(long, default_value_t = 9000)]
+    pub orin_port: u16,
+
+    /// The frame socket's port on 127.0.0.1 (6–7): the synthetic Orin
+    /// listens on it (--frames-listen), the Unity player connects.
+    #[arg(long, default_value_t = 9001)]
+    pub unity_port: u16,
+
+    /// The run's seed (synthetic-loop-dia.md, 4), required with --orin:
+    /// passed to the synthetic Orin for its pool's pre-warm gaps, and
+    /// the source of the latency draws. The trainer passes its
+    /// settings.toml [orchestrator] seed.
+    #[arg(long)]
+    pub seed: Option<u64>,
+
+    /// The built Unity player to launch with
+    /// `-orin ws://127.0.0.1:<unity-port>` (6).
     #[arg(long, required_unless_present_any = ["no_launch", "no_render"])]
     pub player: Option<PathBuf>,
 
-    /// Launch nothing; wait for any client (editor Play mode).
+    /// Launch no player: editor Play mode is the camera, connecting to
+    /// the synthetic Orin's frame socket itself.
     #[arg(long)]
     pub no_launch: bool,
 
-    /// Seconds to wait for the player to connect, covering its startup.
+    /// Seconds to wait for the synthetic Orin to connect, and then for
+    /// Unity to register with it, covering each one's startup.
     #[arg(long, default_value_t = 120)]
     pub connect_timeout: u64,
 
-    /// Seconds to wait for each frame after sending its state.
+    /// Seconds to wait for the synthetic Orin's reply to each pose.
     #[arg(long, default_value_t = 10)]
     pub reply_timeout: u64,
 
-    /// Number of states: sweep states, or physics frames (ignored with
-    /// --pose).
+    /// Number of observations in the run (until the trainer's stop
+    /// replaces it).
     #[arg(long, default_value_t = 60)]
     pub frames: u32,
 
-    /// Send one state instead of the sweep: cart meters, pole radians
-    /// (e.g. --pose 0.2,0.5 or --pose -0.2,0.5).
-    #[arg(long, value_delimiter = ',', allow_hyphen_values = true, conflicts_with = "physics")]
-    pub pose: Option<Vec<f64>>,
-
-    /// Step MuJoCo (the model in physics.toml) between frames and send
-    /// its qpos; writes states.csv beside the frames.
-    #[arg(long)]
-    pub physics: bool,
-
-    /// Physics mode: the cart command, a target cart speed — zero,
-    /// speed:<m_s>, or sine:<amp_m_s>,<period_s> (m/s; seconds of
-    /// simulated time). sine moves the cart ±amp·period/2π m about its
-    /// start.
-    #[arg(long, default_value = "zero", requires = "physics")]
+    /// The cart command, a target cart speed — zero, speed:<m_s>, or
+    /// sine:<amp_m_s>,<period_s> (m/s; seconds of simulated time); a
+    /// stand-in until the trainer's command arrives. sine moves the cart
+    /// ±amp·period/2π m about its start.
+    #[arg(long, default_value = "zero")]
     pub control: Control,
 
-    /// Physics mode: the start pose, cart meters and pole radians, at
-    /// rest (0 = hanging).
-    #[arg(long, value_delimiter = ',', allow_hyphen_values = true, requires = "physics")]
-    pub start: Option<Vec<f64>>,
+    /// The pole's start angle in radians, at rest (0 = hanging,
+    /// π = upright). The cart always starts at the rail's center
+    /// (synthetic-loop-dia.md, 2), so it has no start value.
+    #[arg(long, default_value_t = 0.0, allow_hyphen_values = true)]
+    pub start: f64,
 
-    /// Physics mode: simulated time between frames, in milliseconds; a
-    /// whole number of physics steps. 20 is a placeholder for the Pi's
-    /// frame interval T, which orchestrator-plan.md replaces with the arrival step.
-    #[arg(long, default_value_t = 20, requires = "physics")]
+    /// Simulated time between observations, in milliseconds; a whole
+    /// number of physics steps. A placeholder that orchestrator-plan.md
+    /// replaces with the arrival step.
+    #[arg(long, default_value_t = 20)]
     pub frame_interval_ms: u32,
 
-    /// Physics mode: no player, no socket — physics and states.csv only.
-    #[arg(long, requires = "physics")]
+    /// No Orin, no player, no socket — physics and states.csv only.
+    #[arg(long)]
     pub no_render: bool,
 
-    /// Physics mode: launch the synthetic Orin (synthetic-orin-plan.md) with this
+    /// Launch the synthetic Orin (synthetic-orin-plan.md) with this
     /// command — program and arguments, e.g. `--orin uv run --project
-    /// orin python orin/synthetic_orin.py --config ObjectDetection.toml
-    /// --engine <file>` — appending `--orchestrator ws://<listen> --out
-    /// <out>`. It connects after the player; every frame is forwarded to
-    /// it with its simulated capture time, and MuJoCo steps only after
-    /// its reply. Must come last: every argument after it is the command.
+    /// orin python orin/src/synthetic_orin.py --engine <file>` —
+    /// appending `--orchestrator
+    /// ws://127.0.0.1:<orin-port> --frames-listen 127.0.0.1:<unity-port>
+    /// --out <out> --seed <seed>` (4). Required unless --no-render. Must
+    /// come last: every argument after it is the command.
     #[arg(
         long,
         num_args = 1..,
         allow_hyphen_values = true,
-        requires = "physics",
+        required_unless_present = "no_render",
         conflicts_with = "no_render"
     )]
     pub orin: Option<Vec<String>>,
 
-    /// Directory the returned frames (and states.csv) are written into.
+    /// The run's folder: states.csv here; the synthetic Orin writes the
+    /// frames and observations.jsonl beside it.
     #[arg(long, default_value = "target/orchestrator-frames")]
     pub out: PathBuf,
 }

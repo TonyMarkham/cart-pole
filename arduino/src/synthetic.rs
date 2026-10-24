@@ -24,10 +24,11 @@ pub struct StepSignal {
 }
 
 impl SyntheticArduino {
-    /// At rest at `position` pulses from the rail's center (the episode's
-    /// start pose; the board homes to its own).
-    pub fn new(config: Config, position: i32) -> SyntheticArduino {
-        SyntheticArduino { stepper: Stepper::new(config, position) }
+    /// At rest at the rail's center, 0 pulses (synthetic-loop-dia.md, 3):
+    /// every run starts the cart at 50% of the rail, a guarantee that
+    /// stands in for the board's homing, so no start position is taken.
+    pub fn new(config: Config) -> SyntheticArduino {
+        SyntheticArduino { stepper: Stepper::new(config, 0) }
     }
 
     /// One command packet from the Orin (4 bytes, `i32` LE, pulses/s).

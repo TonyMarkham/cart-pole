@@ -41,7 +41,9 @@ leg as it runs today.
    cart. Step 6 says why these are the expected values.
 3. **Free swing:** `--physics --no-render --start 0,1.0 --control zero --frames 250`:
    the pole's swing never exceeds 1.0 rad and its peaks shrink; the cart
-   stays near its start.
+   stays near its start. *Superseded (2026-10-23):* `--start` now takes
+   the pole's angle alone (`--start 1.0`); the cart always starts at the
+   rail's center (`synthetic-loop-dia.md`, 2).
 4. **Deterministic:** the same command run twice writes byte-identical
    `states.csv` files.
 5. **Rendered:** with the built player, `--physics --control sine:0.4,4 --frames 250`
@@ -324,6 +326,13 @@ hand.
 - **`physics.toml` at the repo root, beside `Cargo.toml`** (user,
   2026-10-22): the physics crate's configuration — where MuJoCo is, the
   model to load, its joint and actuator names (*`physics.toml`* below).
+  *Superseded (user, 2026-10-23):* renamed **`orchestrator.toml`**, the
+  more intuitive name, since the orchestrator is the program it
+  configures. It now holds only `mujoco_dir`, a build input: `model`
+  and `[names]` moved to the trainer's `settings.toml` `[mjcf]`, and
+  reach the orchestrator as `--model`, `--cart-joint`, `--pole-joint`
+  and `--actuator` (user, 2026-10-23). This supersedes R1 and the run-time
+  reader in the rules below.
 - **Hand-written declarations, no bindgen.** About a dozen `extern "C"`
   functions, each checked by hand against the 3.15.0 header.
 - **Function-only access.** `mjModel` and `mjData` are opaque pointers;
@@ -332,9 +341,16 @@ hand.
   eight-field `mjLogMessage`.
 - **The orchestrator stub grows a physics mode**; the sweep and `--pose`
   stay as the renderer's smoke tests. The message to the player is
-  unchanged.
+  unchanged. *Superseded (2026-10-23):* physics is the only mode, so
+  `--physics` is gone; the sweep and `--pose` went with the player's
+  socket to the orchestrator (Unity now connects to the synthetic Orin,
+  `synthetic-loop-dia.md` 6–7). `--no-render` stays: physics and
+  `states.csv` only.
 
 ## `physics.toml`
+
+*Now `orchestrator.toml` (user, 2026-10-23, Settled decisions); the
+content and rules below are unchanged.*
 
 ```toml
 # Read by the physics crate at build time (mujoco_dir: what to link) and
@@ -367,6 +383,11 @@ Rules:
   file relative to the current directory, and the MuJoCo it links is
   always the one the file names. `cargo:rerun-if-changed=<path>` makes
   an edit to `mujoco_dir` relink on the next `cargo run`.
+- **`mujoco.dll` beside the binaries** (2026-10-23): the trainer
+  launches `target/release/orchestrator.exe` without cargo, so the build
+  script also copies the DLL into `target/<profile>/`, where Windows
+  looks first. `mujoco_dir` is therefore a build input only: the run
+  uses the MuJoCo the binary was built with.
 - **Paths resolve against the file's folder**, not the current
   directory (Cargo's own rule for paths in its config files), so the
   file is committable as written: both paths are relative.

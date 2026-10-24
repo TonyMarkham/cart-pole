@@ -1,0 +1,8 @@
+# The orchestrator's build configuration (mujoco-plan.md): read by the
+# physics crate's build script, never at run time. The MJCF and its names
+# come from the trainer's settings.toml [mjcf], on the command line.
+# Relative paths resolve against this file's folder, the repo root.
+
+# A MuJoCo 3.15.0 release tree: bin\mujoco.dll, lib\mujoco.lib.
+# Here: the sibling greyhound checkout (greyhound mujoco-win.md).
+mujoco_dir = "../greyhound-snake/dist/mujoco/x86_64-windows/3.15.0"

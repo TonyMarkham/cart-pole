@@ -55,7 +55,7 @@ leg as it runs today.
   `states.csv` — `ctrl` the scripted speed (m/s), `command` the
   pulse-rate packet it becomes — and steps MuJoCo `--frame-interval-ms`
   (default 20, a placeholder for T) of simulated time, with the
-  synthetic Arduino (`firmware` crate, `synthetic-arduino-plan.md`) turning
+  synthetic Arduino (`arduino` crate, `synthetic-arduino-plan.md`) turning
   the command into each 2 ms step's `ctrl`. (When this plan was
   written, `--detect` ran the Rust `object-detection` crate on each
   frame in-process; step 6 removed it.)
@@ -117,7 +117,10 @@ leg as it runs today.
   *Superseded (`synthetic-loop-dia.md`):* the Orin pre-warms the pool
   at launch with six entries of no detection (−1, −1), each gap a seeded
   RND(8, 15) ms draw from `--seed`; every frame, the first included, is
-  then one push.
+  then one push. The draws (2026-10-23): Python's `random.Random(S)`,
+  one `uniform(8, 15)` per gap, newest gap first; the seed is the
+  trainer's `settings.toml` `[orchestrator]` `seed`, passed on by the
+  orchestrator.
 - **`--detect` is superseded** by `--orin`: in-process tract detection
   ran ~110 ms per frame on this PC and is no longer the robot's
   detector. It is removed once Done-when 2 passes (step 6), so the loop
@@ -197,7 +200,11 @@ Recommendations (choices, with the reason):
   (input size, pad value, confidence, classes; Python's `tomllib`),
   with a new key for the engine path — one place for the detector's
   parameters, as the user set for the crate. The Rust loader learns the
-  key so its strict parse keeps passing.
+  key so its strict parse keeps passing. *Superseded (user,
+  2026-10-23):* the file is now **`orin/settings.toml`**, beside the
+  project's `pyproject.toml`, the crate's keys and loader gone with the
+  crate. The scripts read it by default (`--config` overrides it for
+  `synthetic_orin.py`); the engine path stays the `--engine` argument.
 - **R4 — the orchestrator launches the synthetic Orin** (`--orin
   <command>`), as it launches the player, and passes it `--orchestrator
   ws://…` and the run's `--out` folder. `synthetic-loop-dia.md` adds
@@ -209,7 +216,7 @@ Recommendations (choices, with the reason):
 1. **Environment.** After the OK on R1: `orin/` uv project; check that
    TensorRT loads and sees the 3090. *Check:* a one-line script prints
    TensorRT's version and the GPU name.
-2. **Engine.** `orin/build_engine.py` builds the FP16 engine from
+2. **Engine.** `orin/src/build_engine.py` builds the FP16 engine from
    `best.onnx`. *Check:* it loads, and its tensors are input
    `[1, 1, 640, 640]`, output `[1, 8, 8400]`.
 3. **Detector** (O1, O3): `orin/` detector module — decode, letterbox,
@@ -229,7 +236,7 @@ The policy and its command (the reply's `command` field), the virtual
 Arduino, the delay D, episode end conditions, several episodes per run,
 the real Orin's camera capture, and what becomes of the Rust
 `object-detection` crate (superseded as the loop's and the robot's
-detector; its removal is a separate decision). *Superseded
+detector; retired, user 2026-10-23, `detector-plan.md`). *Superseded
 (`synthetic-loop-dia.md`):* the reply has no `command` field, because the
 policy is in the trainer; the delay D is the orchestrator's RND(8, 15) ms
 latency (`synthetic-loop-dia.md`).
@@ -245,6 +252,9 @@ latency (`synthetic-loop-dia.md`).
   robot can differ slightly; compare once.
 
 ## Results (2026-10-23, executed on this PC)
+
+*The scripts have since moved to `orin/src/` (2026-10-23): read
+`orin/<script>.py` below as `orin/src/<script>.py`.*
 
 - **Step 1 — gate passed.** `orin/` uv project, Python 3.12.14 (uv
   managed). The first resolve took `tensorrt-cu12` 11.4.0.106: it loads
@@ -301,7 +311,8 @@ latency (`synthetic-loop-dia.md`).
 - **Step 6.** `--detect` removed: the flag, its `states.csv` columns,
   and the orchestrator's `object-detection` dependency (the crate
   itself and its workspace entry stay). Done-when 2–4 re-run after the
-  removal: the same results.
+  removal: the same results. *Since retired (user, 2026-10-23):* the
+  crate and its workspace entry are removed too.
 
 ## References
 

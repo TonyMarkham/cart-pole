@@ -1,15 +1,16 @@
-"""The detector's settings, read from ObjectDetection.toml (synthetic-orin-plan.md R3).
+"""The detector's settings, read from orin/settings.toml (synthetic-orin-plan.md R3).
 
-One file configures detection for the Rust crate and for this project, so
-both run the same model with the same letterbox and threshold. Only the keys
-this project uses are read; the crate's own keys (edgetpu_model, threads)
-are ignored here. Relative paths resolve against the file's folder, as the
-crate resolves them.
+One file holds the detector's parameters, so the engine build, the
+reference check and the loop run the same model with the same letterbox and
+threshold. Relative paths resolve against the file's folder.
 """
 
 import tomllib
 from dataclasses import dataclass
 from pathlib import Path
+
+# orin/settings.toml, beside pyproject.toml.
+DEFAULT_PATH = Path(__file__).resolve().parent.parent / "settings.toml"
 
 
 @dataclass(frozen=True)
@@ -21,7 +22,7 @@ class DetectorConfig:
     classes: list[str]  # class order = slot order = the model's class ids
 
     @staticmethod
-    def load(path: Path) -> "DetectorConfig":
+    def load(path: Path = DEFAULT_PATH) -> "DetectorConfig":
         with open(path, "rb") as f:
             raw = tomllib.load(f)
         config = DetectorConfig(

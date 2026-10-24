@@ -106,9 +106,20 @@ fn synthetic_tick_returns_the_step_signal() {
     use crate::{StepSignal, SyntheticArduino};
     // 26,667 pulses/s (0.4 m/s) × 2 ms = 53.33 pulses: 53, 53, 54 over
     // three steps, 160 pulses = 26,667 × 0.006 s rounded down.
-    let mut a = SyntheticArduino::new(RIG, 0);
+    let mut a = SyntheticArduino::new(RIG);
     a.receive(encode_command(26_667));
     let pulses: [i32; 3] = core::array::from_fn(|_| a.tick(STEP_US).pulses);
     assert_eq!(pulses, [53, 53, 54]);
     assert_eq!(a.tick(STEP_US), StepSignal { pulses: 53, micros: STEP_US });
+}
+
+#[cfg(feature = "synthetic")]
+#[test]
+fn synthetic_starts_at_rest_at_the_center() {
+    use crate::{StepSignal, SyntheticArduino};
+    // synthetic-arduino-plan.md Done-when 1: created with RIG alone, the
+    // cart at 50% of the rail (0 pulses from center), rate 0.
+    let mut a = SyntheticArduino::new(RIG);
+    assert_eq!(a.stepper().position(), 0);
+    assert_eq!(a.tick(STEP_US), StepSignal { pulses: 0, micros: STEP_US });
 }

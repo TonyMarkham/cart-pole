@@ -37,8 +37,12 @@ diagram's messages.
 - **O1 — the world in one process.** MuJoCo and the synthetic Arduino
   run in-process; the orchestrator is the only participant that sends
   MuJoCo anything.
-- **O2 — the start (1–10).** On the trainer's start (1): load the MJCF
-  and reset to `--start`, at rest, with the cart at 50% of the rail and
+- **O2 — the start (1–10).** The trainer starts the run by launching the
+  orchestrator, with the command in `trainer/settings.toml` (1). Then:
+  load the MJCF the command names, with its joint and actuator names
+  (the trainer's `[mjcf]`), and reset to `--start` (the pole's angle
+  alone: the cart has no start value), at rest, with the
+  cart at 50% of the rail and
   t = 0 (2); create the synthetic Arduino with `RIG` (3); launch the
   synthetic Orin with `--orchestrator ws://… --frames-listen ADDR --out
   DIR --seed S` (4) and wait for its control connection (5); launch the
@@ -80,16 +84,45 @@ diagram's messages.
   seed the Orin's pre-warm gaps come from; the freeze keeps the
   workstation's speed out of simulated time.
 
+## Configuration (user, 2026-10-23)
+
+- **`orchestrator.toml` holds build inputs only.** Today that is
+  `mujoco_dir`, the MuJoCo release tree the physics crate links; it is
+  read by `physics/build.rs` and never at run time, and any other key
+  fails the build. The MuJoCo a run uses is the one its binary was built
+  with (`mujoco.dll` sits beside the binary).
+- **Everything about a run comes from the command line**, which the
+  trainer builds from its `trainer/settings.toml`: the MJCF and its
+  names (`--model`, `--cart-joint`, `--pole-joint`, `--actuator`, from
+  `[mjcf]`) and the rest of the command (`[orchestrator]`). The
+  trainer launches the built binary, `target/release/orchestrator.exe`,
+  never `cargo run`.
+- **Each socket has its own port, on 127.0.0.1**, set in the
+  trainer's `[orchestrator]` as `orin_port` and `unity_port` and passed
+  as `--orin-port` (the control socket, 4–5: the orchestrator listens,
+  the Orin connects) and `--unity-port` (the frame socket, 6–7: Unity
+  connects; the Orin serves it, `--frames-listen 127.0.0.1:<port>`).
+  The two must differ.
+- **The run's seed** is the trainer's `[orchestrator]` `seed` (user,
+  2026-10-23), passed as `--seed` and on to the Orin as `--seed` (4): it
+  seeds the Orin's pre-warm gaps and the orchestrator's latency draws.
+- **A value given on the command line wins.** Where a setting has both a
+  command-line argument and a config value, the config's value is
+  ignored.
+- **The timestep and the integrator belong to the MJCF**, as its
+  `<option>`, written by the Unity exporter from the rig's StepJointSet.
+  The orchestrator neither sets nor overrides them.
+
 ## Not decided by the diagram
 
 These are needed to build the orchestrator; per `AGENTS.md`, each lands
 in the diagram first:
 
-- **The trainer's link** (1, 17, 18, 26): its transport, and whether
-  the trainer launches the orchestrator for each run or connects to one
-  already running.
-- **Where `--start` and `--seed` come from** for a run: the trainer, or
-  the orchestrator's own command line.
+- **The trainer's link** (17, 18, 26): its transport. The start (1) is
+  settled: the trainer launches the orchestrator.
+- **Where `--start` comes from** for a run: the trainer, or the
+  orchestrator's own command line. (`--seed` is settled: the trainer's
+  `settings.toml`, *Configuration*.)
 - **The latency generator** — which seeded generator, given that the
   Orin draws its pre-warm gaps from the same seed in its own process.
 - **Timeouts** — for the Orin's and the player's connections and for

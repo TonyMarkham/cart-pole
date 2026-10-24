@@ -8,12 +8,14 @@ frame, and checks every slot: the same detected / not-detected decision,
 centers within 1 px, confidences within 0.01. A decision may differ when the
 confidence lies within 0.01 of the threshold (the reference's, or ours when
 the reference has none); such slots are listed, not failed. Exit 1 on any
-failure. The same rules as the Rust crate's reference_check example.
+failure. The same rules the retired Rust crate's reference_check used.
 
 Time per frame is decode + letterbox + copy + infer + slot rule, after a
 20-frame warm-up.
 
-usage: python reference_check.py <ObjectDetection.toml> <engine> <reference.csv> <frames_dir>
+The detector's settings are orin/settings.toml.
+
+usage (from the repo root): uv run --project orin python orin/src/reference_check.py <engine> <reference.csv> <frames_dir>
 """
 
 import csv
@@ -34,8 +36,8 @@ FRAME_SIZE = (728, 544)
 
 
 def main() -> int:
-    config_path, engine_path, csv_path, frames_dir = map(Path, sys.argv[1:])
-    config = DetectorConfig.load(config_path)
+    engine_path, csv_path, frames_dir = map(Path, sys.argv[1:])
+    config = DetectorConfig.load()
     detector = Detector(config, engine_path, FRAME_SIZE)
     w, h = FRAME_SIZE
 

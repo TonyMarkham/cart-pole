@@ -7,7 +7,7 @@ description       = "Sim-loop orchestrator stub: launches the Unity player, send
 [dependencies]
 anyhow            = { workspace = true }
 clap              = { workspace = true }
-firmware          = { workspace = true, features = ["synthetic"] }
+arduino           = { workspace = true, features = ["synthetic"] }
 futures-util      = { workspace = true }
 physics           = { workspace = true }
 serde             = { workspace = true }

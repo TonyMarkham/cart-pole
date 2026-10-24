@@ -44,7 +44,7 @@ messages.
   two ways: the synthetic edge for the loop, the board's edge for the
   rig.
 
-**The numbers** (`firmware::RIG`, as the diagram gives them): 200 full
+**The numbers** (`arduino::RIG`, as the diagram gives them): 200 full
 steps × 32 microsteps per turn and 96 mm of belt per pulley turn, so
 15 µm per pulse; ±30,000 pulses of travel (±0.45 m); a top rate of
 45,333 pulses/s (0.68 m/s).

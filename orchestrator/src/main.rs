@@ -1,26 +1,26 @@
 mod args;
 mod control;
 mod joint_qpos;
-mod jpeg_info;
-mod orin_message;
 mod orin_reply;
-mod state_message;
-mod sweep;
+mod pose_message;
+mod registered;
 
 use crate::{
-    args::Args, control::Control, joint_qpos::JointQpos, jpeg_info::JpegInfo, orin_message::OrinMessage,
-    orin_reply::OrinReply, state_message::StateMessage,
+    args::Args, control::Control, joint_qpos::JointQpos, orin_reply::OrinReply, pose_message::PoseMessage,
+    registered::Registered,
 };
 
 use anyhow::{Context, Result, anyhow, bail};
+use arduino::{Config, RIG, SyntheticArduino, encode_command};
 use clap::Parser;
 use futures_util::{SinkExt, StreamExt};
-use firmware::{Config, RIG, SyntheticArduino, encode_command};
 use physics::{Names, Physics, PhysicsConfig, Pose};
 use std::{
     fs::File,
     io::{BufWriter, Write},
+    net::{Ipv4Addr, SocketAddr},
     path::Path,
+    process::ExitStatus,
     time::{Duration, Instant},
 };
 use tokio::{
@@ -29,130 +29,118 @@ use tokio::{
 };
 use tokio_tungstenite::{WebSocketStream, accept_async, tungstenite::Message};
 
-// The frame contract (synthetic-loop-dia.md, Contracts): half the IMX296's native 1456×1088.
-const FRAME_WIDTH: u16 = 728;
-const FRAME_HEIGHT: u16 = 544;
-
-// How long a launched client (player, synthetic Orin) gets to quit on its
+// How long a launched process (player, synthetic Orin) gets to quit on its
 // own after its socket closes before it is killed.
 const CLIENT_EXIT_GRACE: Duration = Duration::from_secs(5);
 
 #[tokio::main]
 async fn main() -> Result<()> {
     let args = Args::parse();
-    // Every mode takes the wire keys from physics.toml's [names] — the
-    // same names physics mode reads qpos by.
-    let config = PhysicsConfig::load()?;
     tokio::fs::create_dir_all(&args.out)
         .await
         .with_context(|| format!("creating {}", args.out.display()))?;
-    let mut source = Source::new(&args, &config)?;
+    // 2–3: MuJoCo loaded and reset, the synthetic Arduino created.
+    let mut sim = Simulation::new(&args)?;
 
     if args.no_render {
-        return run(None, None, &args, &config.names, &mut source).await;
+        return run(None, &args, &mut sim).await;
     }
 
-    let listener = TcpListener::bind(args.listen)
-        .await
-        .with_context(|| format!("binding {}", args.listen))?;
-    let url = format!("ws://{}", args.listen);
-    println!("listening on {url}");
+    // Each socket has its own port, so neither the connection order nor
+    // the messages have to tell the participants apart.
+    if args.orin_port == args.unity_port {
+        bail!("--orin-port and --unity-port are both {}; each socket needs its own port", args.orin_port);
+    }
+    let command = args.orin.as_deref().ok_or_else(|| anyhow!("--orin is required unless --no-render"))?;
+    let seed = args.seed.ok_or_else(|| anyhow!("--orin needs --seed (the Orin's pre-warm gaps)"))?;
+    let connect_timeout = Duration::from_secs(args.connect_timeout);
 
-    let mut child = match (&args.player, args.no_launch) {
-        (Some(player), false) => Some(launch(player, &url)?),
+    // 4–5: the synthetic Orin first. It pre-warms its pool from the seed,
+    // opens the frame socket, then connects to the control socket.
+    let (orin_listener, orin_url) = bind(args.orin_port, "control socket (synthetic Orin)").await?;
+    let frames_listen = SocketAddr::from((Ipv4Addr::LOCALHOST, args.unity_port));
+    let mut orin_child = launch_orin(command, &orin_url, frames_listen, &args.out, seed)?;
+    let stream = accept(&orin_listener, &mut orin_child, "synthetic Orin", connect_timeout).await?;
+    let mut orin = accept_async(stream).await.context("synthetic Orin WebSocket handshake")?;
+    println!("synthetic Orin connected");
+
+    // 6: the player, pointed at the Orin's frame socket — or, with
+    // --no-launch, editor Play mode connects there itself.
+    let frames_url = format!("ws://{frames_listen}");
+    let mut player = match (&args.player, args.no_launch) {
+        (Some(player), false) => Some(launch(player, &frames_url)?),
         _ => {
-            println!("--no-launch: waiting for a client (enter Play mode in the editor)");
+            println!("--no-launch: enter Play mode in the editor; it connects to {frames_url}");
             None
         }
     };
 
-    let connect_timeout = Duration::from_secs(args.connect_timeout);
-    let stream = accept(&listener, child.as_mut(), "player", connect_timeout).await?;
-    let mut ws = accept_async(stream).await.context("WebSocket handshake")?;
-    println!("player connected");
+    // 7–8: Unity connects to the Orin, and the Orin says so.
+    wait_registered(&mut orin, &mut orin_child, player.as_mut(), connect_timeout).await?;
+    println!("Unity has registered with the synthetic Orin");
 
-    // The synthetic Orin is launched only after the player has connected,
-    // so the order of connections tells the two clients apart.
-    let mut orin = match &args.orin {
-        Some(command) => {
-            let mut orin_child = launch_orin(command, &url, &args.out)?;
-            let stream = accept(&listener, Some(&mut orin_child), "synthetic Orin", connect_timeout).await?;
-            let orin_ws = accept_async(stream).await.context("synthetic Orin WebSocket handshake")?;
-            println!("synthetic Orin connected");
-            Some((orin_child, orin_ws))
-        }
-        None => None,
-    };
+    let result = run(Some(&mut orin), &args, &mut sim).await;
 
-    let orin_ws = orin.as_mut().map(|(_, orin_ws)| orin_ws);
-    let result = run(Some(&mut ws), orin_ws, &args, &config.names, &mut source).await;
-    // Closing tells each client the run is over; a failed close only
-    // means that client is already gone.
-    if let Some((orin_child, mut orin_ws)) = orin {
-        let _ = orin_ws.close(None).await;
-        // The server ends the TCP connection (RFC 6455 7.1.1); the Orin's
-        // client waits for that, up to its 10 s close timeout, before it
-        // exits, so the socket is dropped before the exit is awaited.
-        drop(orin_ws);
-        stop(orin_child, "synthetic Orin").await?;
-    }
-    let _ = ws.close(None).await;
-    if let Some(child) = child {
-        stop(child, "player").await?;
+    // 22–25: closing the control socket ends the run for the Orin, which
+    // closes the frame socket, so the player quits, then the Orin. A
+    // failed close only means the Orin is already gone.
+    let _ = orin.close(None).await;
+    // The server ends the TCP connection (RFC 6455 7.1.1); the Orin's
+    // client waits for that, up to its 10 s close timeout, before it
+    // exits, so the socket is dropped before the exit is awaited.
+    drop(orin);
+    stop(orin_child, "synthetic Orin").await?;
+    if let Some(player) = player {
+        stop(player, "player").await?;
     }
     result
 }
 
-// Where the states come from: a fixed list (the sweep or --pose), or
-// MuJoCo stepping between frames.
-enum Source {
-    Poses(Vec<Pose>),
-    Physics(Simulation),
-}
-
+// MuJoCo, the synthetic Arduino between the command and MuJoCo
+// (synthetic-arduino-plan.md), and the truth log.
 struct Simulation {
     physics: Physics,
     control: Control,
     steps_per_frame: u32,
     csv: BufWriter<File>,
-    // The cart's firmware between the command and MuJoCo
-    // (synthetic-arduino-plan.md), ticked once per physics step.
+    // Ticked once per physics step.
     arduino: SyntheticArduino,
     step_micros: u32,
     meters_per_pulse: f64,
+    names: Names,
 }
 
-// One frame's state at its capture. Physics mode adds the simulated time
-// and the command set at this capture, held until the next one.
+// One observation's state at its capture: simulated time, the pose, and
+// the command set at this capture, held until the next one.
 struct Capture {
+    time: f64,
     pose: Pose,
-    time_and_ctrl: Option<(f64, f64)>,
+    ctrl: f64,
 }
 
-impl Source {
-    fn new(args: &Args, config: &PhysicsConfig) -> Result<Source> {
-        if !args.physics {
-            let poses = match args.pose.as_deref() {
-                Some([cart, pole]) => vec![Pose { cart: *cart, pole: *pole }],
-                Some(other) => bail!("--pose takes exactly two values (cart, pole), got {}", other.len()),
-                None => (0..args.frames).map(|i| sweep::sweep(i, args.frames)).collect(),
-            };
-            return Ok(Source::Poses(poses));
-        }
-
-        let start = match args.start.as_deref() {
-            None => Pose { cart: 0.0, pole: 0.0 },
-            Some([cart, pole]) => Pose { cart: *cart, pole: *pole },
-            Some(other) => bail!("--start takes exactly two values (cart, pole), got {}", other.len()),
+impl Simulation {
+    fn new(args: &Args) -> Result<Simulation> {
+        // The cart always starts at the rail's center, 50% (2): only the
+        // pole's angle is the run's to choose.
+        let start = Pose { cart: 0.0, pole: args.start };
+        // The MJCF and its names come only from the command line
+        // (the trainer's settings.toml [mjcf]).
+        let config = PhysicsConfig {
+            model: args.model.clone(),
+            names: Names {
+                cart_joint: args.cart_joint.clone(),
+                pole_joint: args.pole_joint.clone(),
+                actuator: args.actuator.clone(),
+            },
         };
-        let mut physics = Physics::load(config)?;
+        let mut physics = Physics::load(&config)?;
         physics.reset(start)?;
         let steps_per_frame = steps_per_frame(args.frame_interval_ms, physics.timestep())?;
         let step_micros = step_micros(physics.timestep())?;
         let meters_per_pulse = meters_per_pulse(&RIG);
-        // The firmware starts where the episode puts the cart; the rig's
-        // board homes instead.
-        let arduino = SyntheticArduino::new(RIG, (start.cart / meters_per_pulse).round() as i32);
+        // Created with RIG alone (3): the synthetic Arduino starts at the
+        // rail's center too, where MuJoCo's cart was just reset.
+        let arduino = SyntheticArduino::new(RIG);
 
         let path = args.out.join("states.csv");
         let file = File::create(&path).with_context(|| format!("creating {}", path.display()))?;
@@ -167,7 +155,7 @@ impl Source {
             args.frame_interval_ms,
             path.display()
         );
-        Ok(Source::Physics(Simulation {
+        Ok(Simulation {
             physics,
             control: args.control,
             steps_per_frame,
@@ -175,70 +163,50 @@ impl Source {
             arduino,
             step_micros,
             meters_per_pulse,
-        }))
+            names: config.names,
+        })
     }
 
-    fn len(&self, frames: u32) -> Result<u32> {
-        match self {
-            Source::Poses(poses) => u32::try_from(poses.len()).context("too many poses"),
-            Source::Physics(_) => Ok(frames),
-        }
+    // 9–10, and each arrival step after: the capture state.
+    fn capture(&self) -> Capture {
+        let time = self.physics.time();
+        Capture { time, pose: self.physics.pose(), ctrl: self.control.at(time) }
     }
 
-    fn capture(&self, index: usize) -> Result<Capture> {
-        match self {
-            Source::Poses(poses) => {
-                let pose = *poses.get(index).ok_or_else(|| anyhow!("no pose {index}"))?;
-                Ok(Capture { pose, time_and_ctrl: None })
-            }
-            Source::Physics(sim) => {
-                let time = sim.physics.time();
-                Ok(Capture {
-                    pose: sim.physics.pose(),
-                    time_and_ctrl: Some((time, sim.control.at(time))),
-                })
-            }
-        }
-    }
-
-    // After frame `id` is rendered: log the truth, apply the command, and
-    // step to the next capture (D = 0: the command takes effect at the
-    // capture it was decided at).
+    // After observation `id`: log the truth, apply the command, and step
+    // to the next capture (D = 0: the command takes effect at the capture
+    // it was decided at).
     //
-    // The scripted speed stands in for the Orin's command: it is sent to
-    // the firmware as the packet the Orin would send (pulses/s, rounded),
-    // and each physics step MuJoCo's ctrl is the step signal the firmware
-    // emitted in that step, as a speed: pulses × meters per pulse ÷ the
-    // step's duration.
+    // The scripted speed stands in for the trainer's command: it is sent
+    // to the firmware as the packet the trainer would send (pulses/s,
+    // rounded), and each physics step MuJoCo's ctrl is the step signal the
+    // firmware emitted in that step, as a speed: pulses × meters per pulse
+    // ÷ the step's duration.
     fn advance(&mut self, id: u32, capture: &Capture) -> Result<()> {
-        let (Source::Physics(sim), Some((time, speed))) = (self, capture.time_and_ctrl) else {
-            return Ok(());
-        };
         // `as` saturates, so an absurd speed becomes the i32 limit, which
         // the firmware clamps to the motor's top rate.
-        let command = (speed / sim.meters_per_pulse).round() as i32;
+        let command = (capture.ctrl / self.meters_per_pulse).round() as i32;
         // `{}` writes a float as the shortest text that reads back to the
         // same number, so identical runs give identical files.
-        writeln!(sim.csv, "{id},{time},{speed},{},{},{command}", capture.pose.cart, capture.pose.pole)?;
-        sim.arduino.receive(encode_command(command));
-        for _ in 0..sim.steps_per_frame {
-            let signal = sim.arduino.tick(sim.step_micros);
-            let ctrl = f64::from(signal.pulses) * sim.meters_per_pulse / (f64::from(signal.micros) / 1e6);
-            sim.physics.set_ctrl(ctrl)?;
-            sim.physics.step(1);
+        writeln!(
+            self.csv,
+            "{id},{},{},{},{},{command}",
+            capture.time, capture.ctrl, capture.pose.cart, capture.pose.pole
+        )?;
+        self.arduino.receive(encode_command(command));
+        for _ in 0..self.steps_per_frame {
+            let signal = self.arduino.tick(self.step_micros);
+            let ctrl = f64::from(signal.pulses) * self.meters_per_pulse / (f64::from(signal.micros) / 1e6);
+            self.physics.set_ctrl(ctrl)?;
+            self.physics.step(1);
         }
         Ok(())
     }
 
-    // MuJoCo warnings seen during the run (0 for a fixed list).
+    // MuJoCo warnings seen during the run.
     fn finish(&mut self) -> Result<usize> {
-        match self {
-            Source::Poses(_) => Ok(0),
-            Source::Physics(sim) => {
-                sim.csv.flush().context("writing states.csv")?;
-                Ok(sim.physics.warnings())
-            }
-        }
+        self.csv.flush().context("writing states.csv")?;
+        Ok(self.physics.warnings())
     }
 }
 
@@ -269,231 +237,198 @@ fn meters_per_pulse(config: &Config) -> f64 {
     f64::from(config.belt_um_per_rev) / 1e6 / f64::from(config.pulses_per_rev())
 }
 
-// kill_on_drop: an early error return drops the handle, and the player
-// must not outlive the orchestrator that launched it.
-fn launch(player: &Path, url: &str) -> Result<Child> {
-    println!("launching {} -orchestrator {url}", player.display());
+// 6: the player, told the Orin's frame socket. kill_on_drop: an early
+// error return drops the handle, and the player must not outlive the
+// orchestrator that launched it.
+fn launch(player: &Path, frames_url: &str) -> Result<Child> {
+    println!("launching {} -orin {frames_url}", player.display());
     Command::new(player)
-        .arg("-orchestrator")
-        .arg(url)
+        .arg("-orin")
+        .arg(frames_url)
         .kill_on_drop(true)
         .spawn()
         .with_context(|| format!("launching {}", player.display()))
 }
 
-// The synthetic Orin: the given program and arguments, plus its address
-// and the run's folder (synthetic-orin-plan.md R4); kill_on_drop as for the player.
-fn launch_orin(command: &[String], url: &str, out: &Path) -> Result<Child> {
+// The synthetic Orin (synthetic-loop-dia.md, 4): the given program and
+// arguments, plus the control socket's address, the frame socket's
+// address, the run's folder and the seed; kill_on_drop as for the player.
+fn launch_orin(command: &[String], url: &str, frames_listen: SocketAddr, out: &Path, seed: u64) -> Result<Child> {
     let (program, rest) = command.split_first().ok_or_else(|| anyhow!("--orin needs a command"))?;
-    println!("launching synthetic Orin: {} --orchestrator {url} --out {}", command.join(" "), out.display());
+    println!(
+        "launching synthetic Orin: {} --orchestrator {url} --frames-listen {frames_listen} --out {} --seed {seed}",
+        command.join(" "),
+        out.display()
+    );
     Command::new(program)
         .args(rest)
         .arg("--orchestrator")
         .arg(url)
+        .arg("--frames-listen")
+        .arg(frames_listen.to_string())
         .arg("--out")
         .arg(out)
+        .arg("--seed")
+        .arg(seed.to_string())
         .kill_on_drop(true)
         .spawn()
         .with_context(|| format!("launching {program}"))
 }
 
-// Waits for the next connection; a launched client that exits before
+// The loop runs on this workstation, so every socket is on 127.0.0.1.
+async fn bind(port: u16, what: &str) -> Result<(TcpListener, String)> {
+    let address = SocketAddr::from((Ipv4Addr::LOCALHOST, port));
+    let listener = TcpListener::bind(address)
+        .await
+        .with_context(|| format!("binding the {what} on {address}"))?;
+    let url = format!("ws://{address}");
+    println!("{what}: listening on {url}");
+    Ok((listener, url))
+}
+
+// Waits for the next connection; a launched process that exits before
 // connecting fails the wait at once instead of after the timeout.
-async fn accept(listener: &TcpListener, child: Option<&mut Child>, who: &str, timeout: Duration) -> Result<TcpStream> {
+async fn accept(listener: &TcpListener, child: &mut Child, who: &str, timeout: Duration) -> Result<TcpStream> {
     let wait = async {
-        match child {
-            Some(child) => tokio::select! {
-                accepted = listener.accept() => Ok(accepted?.0),
-                status = child.wait() => Err(anyhow!("{who} exited before connecting: {status:?}")),
-            },
-            None => Ok(listener.accept().await?.0),
+        tokio::select! {
+            accepted = listener.accept() => Ok(accepted?.0),
+            status = child.wait() => Err(anyhow!("{who} exited before connecting: {status:?}")),
         }
     };
     tokio::time::timeout(timeout, wait)
         .await
-        .map_err(|_| anyhow!("no connection within {} s", timeout.as_secs()))?
+        .map_err(|_| anyhow!("no connection from the {who} within {} s", timeout.as_secs()))?
 }
 
-// Lockstep: take one state, send it, wait for its one frame, check and
-// save it, then advance. Every frame is checked; the run fails at the
-// end if any broke the size contract or MuJoCo warned (P3). Without a
-// socket (--no-render) only the states are produced. With the synthetic
-// Orin, each frame that met the contract is forwarded to it and MuJoCo
-// steps only after its reply (O4); one run is one episode, so the reset
-// goes out once, before frame 0.
-async fn run(
-    mut ws: Option<&mut WebSocketStream<TcpStream>>,
-    mut orin: Option<&mut WebSocketStream<TcpStream>>,
-    args: &Args,
-    names: &Names,
-    source: &mut Source,
+// 8: the Orin's {"type": "registered"}, its first message. The Orin or the
+// player exiting first fails the wait at once instead of after the
+// timeout.
+async fn wait_registered(
+    orin: &mut WebSocketStream<TcpStream>,
+    orin_child: &mut Child,
+    player: Option<&mut Child>,
+    timeout: Duration,
 ) -> Result<()> {
-    let reply_timeout = Duration::from_secs(args.reply_timeout);
-    let count = source.len(args.frames)?;
-    let mut broken = 0usize;
-    if let Some(orin) = orin.as_deref_mut() {
-        let reset = OrinMessage::Reset { frame_interval: f64::from(args.frame_interval_ms) / 1000.0 };
-        orin.send(Message::text(serde_json::to_string(&reset)?))
-            .await
-            .context("sending reset to the synthetic Orin")?;
-    }
-    for id in 0..count {
-        let capture = source.capture(usize::try_from(id)?)?;
-        let pose = capture.pose;
-        let mut state = format!(
-            "cart {:+.3} m  pole {:.3} rad ({:.1}°)",
-            pose.cart,
-            pose.pole,
-            pose.pole.to_degrees()
-        );
-        if let Some((time, ctrl)) = capture.time_and_ctrl {
-            state = format!("t {time:.3} s  ctrl {ctrl:+.3} m/s  {state}");
-        }
-
-        match ws.as_deref_mut() {
-            Some(ws) => match render(ws, id, pose, names, reply_timeout, &args.out, &state).await? {
-                Some(jpeg) => {
-                    if let Some(orin) = orin.as_deref_mut() {
-                        let (time, _) = capture
-                            .time_and_ctrl
-                            .ok_or_else(|| anyhow!("--orin needs physics mode's capture time"))?;
-                        forward(orin, id, time, &jpeg, reply_timeout).await?;
+    let wait = async {
+        let player_exit = async {
+            match player {
+                Some(player) => player.wait().await,
+                None => std::future::pending::<std::io::Result<ExitStatus>>().await,
+            }
+        };
+        tokio::pin!(player_exit);
+        loop {
+            tokio::select! {
+                message = orin.next() => {
+                    let message = message.ok_or_else(|| anyhow!("synthetic Orin disconnected before Unity registered"))??;
+                    match message {
+                        Message::Text(text) => {
+                            let registered = serde_json::from_str::<Registered>(text.as_str())
+                                .with_context(|| format!("synthetic Orin message {:?}", text.as_str()))?;
+                            if registered.kind != "registered" {
+                                bail!("synthetic Orin sent {:?} before Unity registered", text.as_str());
+                            }
+                            return Ok(());
+                        }
+                        Message::Binary(_) => bail!("synthetic Orin sent binary data before Unity registered"),
+                        Message::Close(frame) => bail!("synthetic Orin closed the socket before Unity registered: {frame:?}"),
+                        _ => {}
                     }
                 }
-                None => broken += 1,
-            },
+                status = orin_child.wait() => bail!("synthetic Orin exited before Unity registered: {status:?}"),
+                status = &mut player_exit => bail!("the player exited before registering with the synthetic Orin: {status:?}"),
+            }
+        }
+    };
+    tokio::time::timeout(timeout, wait)
+        .await
+        .map_err(|_| anyhow!("Unity did not register with the synthetic Orin within {} s", timeout.as_secs()))?
+}
+
+// Lockstep: take the capture state, send it to the Orin, wait for its one
+// reply, then advance. The run fails on an error reply (O3) or if MuJoCo
+// warned (P3). Without the Orin (--no-render) only the states are
+// produced.
+async fn run(mut orin: Option<&mut WebSocketStream<TcpStream>>, args: &Args, sim: &mut Simulation) -> Result<()> {
+    let reply_timeout = Duration::from_secs(args.reply_timeout);
+    for id in 0..args.frames {
+        let capture = sim.capture();
+        let state = format!(
+            "t {:.3} s  ctrl {:+.3} m/s  cart {:+.3} m  pole {:.3} rad ({:.1}°)",
+            capture.time,
+            capture.ctrl,
+            capture.pose.cart,
+            capture.pose.pole,
+            capture.pose.pole.to_degrees()
+        );
+        match orin.as_deref_mut() {
+            Some(orin) => observe(orin, id, &capture, &sim.names, reply_timeout, &state).await?,
             None => println!("state {id:06}  {state}"),
         }
-        source.advance(id, &capture)?;
+        sim.advance(id, &capture)?;
     }
 
-    let warnings = source.finish()?;
-    if broken > 0 {
-        bail!("{broken} of {count} frames broke the 728x544 JPEG contract");
-    }
+    let warnings = sim.finish()?;
     if warnings > 0 {
         bail!("MuJoCo warned {warnings} time(s); the states cannot be trusted");
     }
-    match ws {
-        Some(_) => println!("all {count} frames 728x544 -> {}", args.out.display()),
-        None => println!("{count} states -> {}", args.out.display()),
+    match orin {
+        Some(_) => println!("all {} observations -> {}", args.frames, args.out.display()),
+        None => println!("{} states -> {}", args.frames, args.out.display()),
     }
     Ok(())
 }
 
-// Sends one state, saves the frame that comes back, and prints its
-// header. Returns the frame when it met the 728×544 JPEG contract.
-async fn render(
-    ws: &mut WebSocketStream<TcpStream>,
-    id: u32,
-    pose: Pose,
-    names: &Names,
-    reply_timeout: Duration,
-    out: &Path,
-    state: &str,
-) -> Result<Option<Vec<u8>>> {
-    let message = StateMessage {
-        id,
-        joints: vec![
-            JointQpos { name: names.cart_joint.clone(), qpos: pose.cart },
-            JointQpos { name: names.pole_joint.clone(), qpos: pose.pole },
-        ],
-    };
-    ws.send(Message::text(serde_json::to_string(&message)?))
-        .await
-        .with_context(|| format!("sending state {id}"))?;
-    let jpeg = next_frame(ws, reply_timeout)
-        .await
-        .with_context(|| format!("frame {id}"))?;
-
-    let path = out.join(format!("frame_{id:06}.jpg"));
-    tokio::fs::write(&path, &jpeg)
-        .await
-        .with_context(|| format!("writing {}", path.display()))?;
-
-    match JpegInfo::read(&jpeg) {
-        Some(info) => {
-            let ok = info.width == FRAME_WIDTH && info.height == FRAME_HEIGHT;
-            println!(
-                "frame {id:06}  {}x{}  {} ch  {} bytes  {state}{}",
-                info.width,
-                info.height,
-                info.channels,
-                jpeg.len(),
-                if ok { "" } else { "  <- expected 728x544" }
-            );
-            Ok(ok.then_some(jpeg))
-        }
-        None => {
-            println!("frame {id:06}  not a JPEG ({} bytes)  {state}", jpeg.len());
-            Ok(None)
-        }
-    }
-}
-
-// The next binary message is the frame. Text from the player is
-// informational (logged, not a reply); ping/pong are answered by the
-// WebSocket layer itself.
-async fn next_frame(ws: &mut WebSocketStream<TcpStream>, timeout: Duration) -> Result<Vec<u8>> {
-    loop {
-        let message = tokio::time::timeout(timeout, ws.next())
-            .await
-            .map_err(|_| anyhow!("no reply within {} s", timeout.as_secs()))?
-            .ok_or_else(|| anyhow!("player disconnected"))??;
-        match message {
-            Message::Binary(data) => return Ok(data.to_vec()),
-            Message::Text(text) => println!("player: {}", text.as_str()),
-            Message::Close(frame) => bail!("player closed the socket: {frame:?}"),
-            _ => {}
-        }
-    }
-}
-
-// Sends one frame to the synthetic Orin — its id and simulated capture
-// time (O2), then the JPEG — and waits for its one reply. A reply for
-// another frame, or an error reply (O3), fails the run.
-async fn forward(
+// 11 and 14: sends one capture state to the synthetic Orin and waits for
+// its one reply. A reply for another id, or an error reply (O3), fails the
+// run.
+async fn observe(
     orin: &mut WebSocketStream<TcpStream>,
     id: u32,
-    time: f64,
-    jpeg: &[u8],
+    capture: &Capture,
+    names: &Names,
     timeout: Duration,
+    state: &str,
 ) -> Result<()> {
     let started = Instant::now();
-    let header = OrinMessage::Frame { id, time };
-    orin.send(Message::text(serde_json::to_string(&header)?))
+    let message = PoseMessage {
+        id,
+        time: capture.time,
+        joints: vec![
+            JointQpos { name: names.cart_joint.clone(), qpos: capture.pose.cart },
+            JointQpos { name: names.pole_joint.clone(), qpos: capture.pose.pole },
+        ],
+    };
+    orin.send(Message::text(serde_json::to_string(&message)?))
         .await
-        .with_context(|| format!("sending frame {id}'s header to the synthetic Orin"))?;
-    orin.send(Message::binary(jpeg.to_vec()))
-        .await
-        .with_context(|| format!("sending frame {id} to the synthetic Orin"))?;
+        .with_context(|| format!("sending pose {id} to the synthetic Orin"))?;
     let reply = loop {
         let message = tokio::time::timeout(timeout, orin.next())
             .await
-            .map_err(|_| anyhow!("no reply from the synthetic Orin for frame {id} within {} s", timeout.as_secs()))?
+            .map_err(|_| anyhow!("no reply from the synthetic Orin for pose {id} within {} s", timeout.as_secs()))?
             .ok_or_else(|| anyhow!("synthetic Orin disconnected"))??;
         match message {
             Message::Text(text) => {
                 break serde_json::from_str::<OrinReply>(text.as_str())
                     .with_context(|| format!("synthetic Orin reply {:?}", text.as_str()))?;
             }
-            Message::Binary(_) => bail!("synthetic Orin sent binary data for frame {id}, expected its reply"),
+            Message::Binary(_) => bail!("synthetic Orin sent binary data for pose {id}, expected its reply"),
             Message::Close(frame) => bail!("synthetic Orin closed the socket: {frame:?}"),
             _ => {}
         }
     };
     if reply.id != id {
-        bail!("synthetic Orin replied for frame {}, expected {id}", reply.id);
+        bail!("synthetic Orin replied for pose {}, expected {id}", reply.id);
     }
     if let Some(error) = reply.error {
         bail!("synthetic Orin rejected frame {id}: {error}");
     }
-    println!("orin  {id:06}  ack {:.1} ms", started.elapsed().as_secs_f64() * 1000.0);
+    println!("observation {id:06}  {state}  orin {:.1} ms", started.elapsed().as_secs_f64() * 1000.0);
     Ok(())
 }
 
-// A launched client quits on its own when its socket closes; it is killed
-// only if it is still running after the grace period.
+// A launched process quits on its own when its socket closes; it is
+// killed only if it is still running after the grace period.
 async fn stop(mut child: Child, who: &str) -> Result<()> {
     match tokio::time::timeout(CLIENT_EXIT_GRACE, child.wait()).await {
         Ok(status) => println!("{who} exited: {}", status?),

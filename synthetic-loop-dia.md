@@ -17,7 +17,9 @@ in the trainer, which is where it is trained. The pose rides through the
 Orin's sim edge to Unity; detection sees only pixels, and the policy only
 the marker pool. Only the pool, the current state, reaches the trainer: the
 trainer generates the reward or penalty and decides continue or stop
-itself, and nothing in the control loop touches training. Stop ends this
+itself, and nothing in the control loop touches training. The trainer
+starts each run by launching the orchestrator, with the command its
+`trainer/settings.toml` names (1). Stop ends this
 run, one episode for now; the trainer itself carries on and starts the
 next run (1). A failed run (3 failed frames in the pool) is different: it
 ends training, so the trainer is told the run failed (26) and starts no
@@ -52,21 +54,21 @@ sequenceDiagram
     end
     participant T as Trainer (holds the policy being trained)
     box transparent Observation timeframe
-        participant A as Synthetic Arduino (firmware crate, in-process)
+        participant A as Synthetic Arduino (arduino crate, in-process)
         participant N as Synthetic Orin (Python + TensorRT, process)
         participant U as Unity player (process, the Orin's camera)
     end
 
-    T->>O: start the run
-    Note over M,O: Start: load the MJCF, reset to --start (at rest, cart at 50% of the rail, t = 0)
+    T->>O: start the run: launch the orchestrator with the command in trainer/settings.toml
+    Note over M,O: Start: load the MJCF (path and names from the trainer's settings.toml [mjcf]),<br/>reset to --start (at rest, cart at 50% of the rail, t = 0)
     O->>M: load + reset(start pose)
     O->>A: new(RIG): the cart starts at 50% of the rail, guaranteed (stands in for homing)
-    O->>N: launch --orchestrator ws://… --frames-listen ADDR --out DIR --seed S
+    O->>N: launch --orchestrator ws://… --frames-listen ADDR --out DIR --seed S<br/>(S: the run's seed, the trainer's settings.toml [orchestrator] seed)
     Note over N: pre-warm: builds the 6-entry pool, slots (−1, −1),<br/>at times −d₁, −(d₁+d₂), …, −(d₁+…+d₆) before t = 0<br/>then opens the frame listener
     N-->>O: connects (control socket: the listener is up)
     O->>U: launch SimulationLoop.exe -orin ws://ADDR
     U-->>N: connects (frame socket)
-    N-->>O: Unity has registered (the frame socket is up)<br/>the observation side is ready: the trigger to start
+    N-->>O: text {"type":"registered"}: Unity has registered (the frame socket is up)<br/>the observation side is ready: the trigger to start
     O->>M: time(), pose()
     M-->>O: t, qpos (cart m, pole rad): the first capture state
 
@@ -148,7 +150,7 @@ gaps both come from `--seed`, and the freeze at the arrival step keeps the
 workstation's speed out of the sim, so the same seed and the same trainer
 commands give byte-identical `observations.jsonl` and `states.csv`.
 
-Numbers: `firmware::RIG` (200 steps × 32 microsteps, 96 mm per pulley turn:
+Numbers: `arduino::RIG` (200 steps × 32 microsteps, 96 mm per pulley turn:
 15 µm per pulse, ±30,000 pulses of travel, 45,333 pulses/s top rate). The
 travel limit acts only on the board, whose timer counts the pulses it
 sends; the synthetic Arduino receives only the i32, so in the loop the
@@ -163,14 +165,23 @@ first. The real board finds its centre by homing: left to the limit
 switch, right to the limit switch, then back half the pulses between the
 two hits. The synthetic run instead always starts with the cart at 50% of
 the rail, a guarantee, so the Arduino is never told a start position. The
-2 ms step is the MJCF's timestep, and the loop's fixed deltatime: it sets
-no `<option>`, so MuJoCo's default applies. The Orin latency's range,
+2 ms step is the MJCF's timestep, and the loop's fixed deltatime. The MJCF
+states it, as `<option timestep="0.002" integrator="implicitfast"/>`,
+written by the exporter from the rig's StepJointSet, never left to MuJoCo's
+defaults: the timestep is both the physics step and the grid the latency
+rounds to, and `implicitfast` is MuJoCo's recommended integrator for the
+cart's `<velocity>` servo. The Orin latency's range,
 8–15 ms, is actual object-detection inference time over 250 test images,
 a placeholder for D = detection + policy + WiFi, to be measured on the
 Orin (`orchestrator-plan.md`, *Placeholders*).
 
 **Contracts** — what the messages carry, in full:
 
+- **The pose (11, 12):** `joints` is `[{"name": the cart joint, "qpos":
+  cart m}, {"name": the pole joint, "qpos": pole rad}]`, the MJCF joint
+  names from the trainer's `[mjcf]` as the keys. The orchestrator sends
+  `{"id", "time", "joints"}`; the Orin forwards `{"id", "joints"}`
+  unchanged, and Unity drives each joint by its name.
 - **The frame (13):** 728×544 greyscale JPEG, quality 90 — exactly half
   the IMX296's native 1456×1088 (`DATASETS.md`, *Image spec*).
 - **The marker frame (each pool entry):** 4 slots in class order — 0

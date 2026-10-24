@@ -27,8 +27,11 @@ messages.
 
 ## Requirements (from the diagram)
 
-- **T1 — the trainer owns the run.** It tells the orchestrator to start
-  (1) and is told when the run has closed, or that it failed (26).
+- **T1 — the trainer owns the run.** It starts the run by launching the
+  orchestrator, with the command its `trainer/settings.toml` names (1),
+  and is told when the run has closed, or that it failed (26). The same
+  file's `[mjcf]` names the model the run loads and its joint and
+  actuator names; the trainer passes them on the command line (2).
 - **T2 — the pool, and nothing else (17).** The current state: 6
   entries, newest first, each keyed by its age in −ms from the current
   capture time (newest = 0), each holding the 4 marker `(x, y)` in class
@@ -80,9 +83,8 @@ the diagram first:
 - **The pole's start** for each run (the cart's is guaranteed at 50%).
   The intent so far is near θ = π: at hinge angle 0 the pole hangs, so
   upright is θ = π.
-- **The link to the orchestrator** (1, 17, 18, 26): its transport, and
-  whether the trainer launches the orchestrator for each run or
-  connects to one already running.
+- **The link to the orchestrator** (17, 18, 26): its transport. The
+  start (1) is settled: the trainer launches the orchestrator.
 - **How the trained policy reaches the Orin** for production.
 
 ## Steps

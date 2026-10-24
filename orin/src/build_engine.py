@@ -11,7 +11,9 @@ After writing the engine the script loads it back and checks its tensors
 against the config: input [1, 1, input_size, input_size], output
 [1, 4 + classes, N].
 
-usage: python build_engine.py <ObjectDetection.toml> <engine-out>
+The detector's settings are orin/settings.toml.
+
+usage (from the repo root): uv run --project orin python orin/src/build_engine.py <engine-out>
 """
 
 import sys
@@ -56,8 +58,8 @@ def check(config: DetectorConfig, engine_path: Path, logger: trt.Logger) -> None
 
 
 def main() -> None:
-    config_path, engine_path = map(Path, sys.argv[1:])
-    config = DetectorConfig.load(config_path)
+    (engine_path,) = map(Path, sys.argv[1:])
+    config = DetectorConfig.load()
     logger = trt.Logger(trt.Logger.WARNING)
     print(f"TensorRT {trt.__version__}: {config.model} -> {engine_path} (FP16)")
     build(config, engine_path, logger)

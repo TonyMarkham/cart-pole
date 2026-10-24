@@ -1,6 +1,6 @@
-//! MuJoCo for the sim loop (mujoco-plan.md): loads the MJCF named in
-//! `physics.toml`, sets the cart actuator's `ctrl`, steps, reads the
-//! joints' `qpos`. All `unsafe` in the workspace lives in this crate.
+//! MuJoCo for the sim loop (mujoco-plan.md): loads the MJCF the caller
+//! names, sets the cart actuator's `ctrl`, steps, reads the joints'
+//! `qpos`. All `unsafe` in the workspace lives in this crate.
 
 mod config;
 mod ffi;
