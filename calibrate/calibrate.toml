@@ -1,0 +1,181 @@
+# The centring program's settings (calibrate/src/main.rs). The board has
+# no file system, so the build script reads this file and compiles the
+# values in: a change here takes effect at the next build and upload.
+# Relative paths resolve against this file's folder.
+#
+# Rates are pulses/s, the unit the firmware drives. At the rig's 15 µm a
+# pulse (96 mm per turn ÷ (200 × 32), trainer/settings.toml [drive]),
+# 1,000 pulses/s is 15 mm/s.
+
+[calibrate]
+# The drive figures, used only to report the measured span in mm: the
+# trainer's [drive] table.
+drive_settings = "../trainer/settings.toml"
+
+# Whether every power-up or reset homes and centres the cart by itself.
+# false: the board waits for the page's Calibrate button.
+run_at_start = false
+
+# The wait after power-up before the cart moves, ms (with run_at_start):
+# time to open the serial monitor and stand clear.
+start_ms = 3000
+
+# The top speed per supply, for choosing home_speed (motor-spec.md,
+# *The top pulse rate per supply*). It is the motor's estimated corner
+# speed, where its torque starts to fall, not a measurement:
+# V ÷ (2 × L × I) full steps/s × 32 microsteps, with L = 3.2 mH and
+# I = 2.69 A, the DM542's RMS setting:
+#
+#   supply   top speed          cart speed
+#   12 V     22,266 pulses/s    0.334 m/s
+#   24 V     44,600 pulses/s    0.669 m/s
+#   30 V     55,733 pulses/s    0.836 m/s
+#
+# At the DRV8825's 2.5 A, used until 2026-10-29, each was about 7%
+# higher: 24,000, 48,000 and 60,000 pulses/s. The DM542 itself takes up
+# to 200,000, the most either speed may be.
+
+# The slow seek toward each limit switch, pulses/s, started from rest
+# and stopped in one jump. 2,000 pulses/s is 30 mm/s, about 30 s across
+# the rail: a jump that small cannot make the motor slip, and the cart
+# stops within a pulse or two of the switch tripping. Jogs run at it
+# too. Keep it slow: the seek has no ramp, so it cannot be a top speed
+# from the table.
+seek_speed = 2000
+
+# The move to the centre once both ends are found, and Go to centre,
+# pulses/s: it ramps from seek_speed up to home_speed and back down.
+# 48,000 was the 24 V row at the DRV8825's 2.5 A; at the DM542's 2.69 A
+# the row is 44,600 (the maker's 24 V curve gives 81 N·cm at 48,000,
+# 450 rpm, at its 4.0 A).
+home_speed = 48000
+
+# The ramp's acceleration, pulses/s². 200,000 is 3 m/s², about a third
+# of the jump-limit experiment's starting change rate (620,000,
+# [experiment] j_start below); the real limit is what that experiment
+# measures. It is also the experiment's "gentle" change, so keep it well
+# under the j the trials test.
+accel = 200000
+
+# The longest one seek may run before the program gives up, ms: past
+# it, no switch tripped (a wiring fault, a missed switch, or a motor
+# that is not stepping). Timed, not counted (user, 2026-10-27), so the
+# limit is the same at any seek_speed. 34,000 ms at seek_speed 2,000
+# is 68,000 pulses, 1,020 mm, longer than the ~1,000 mm slide, so a
+# working seek reaches a switch first from anywhere on the rail. Lower
+# seek_speed and this must rise with it.
+seek_timeout_ms = 34000
+
+# One jog from the page, pulses, at seek_speed; a jog stops early at
+# either switch. 333 pulses is 5 mm. Kept short: a jog toward a switch
+# the cart already presses cannot see it, so it pushes on past it.
+jog_pulses = 333
+
+# A switch the cart starts a slow move on counts again only after it has
+# read released for this many pulses in a row, so its contact bouncing
+# as the cart leaves is not taken for a trip. 100 pulses is 1.5 mm, 50 ms
+# at seek_speed. A choice, not a measurement of these switches.
+release_pulses = 100
+
+# A switch counts as pressed only after it reads pressed without a break
+# for this long, µs. It filters spikes on the switch wire (about 1 m of
+# it runs beside the motor leads) and the contact chattering as the rig
+# shakes; one such spike halted the first jump-limit run 143 mm from the
+# switch (2026-10-27). The wait is the same at every real trip, so it
+# cancels in the span and the noise floor: at seek_speed 2,000 it adds
+# about 2 pulses to each. The switches are read once a pulse, so it
+# takes at least two readings. A choice, not a measurement.
+trip_us = 1000
+
+# How often a slow move (a seek or a jog) pauses to ask the WiFi bridge
+# whether the page's STOP was pressed, ms. Each check pauses the pulses
+# about 6 ms, longer if a page is being sent. The fast ramp to the
+# centre is not checked: pausing mid-ramp would lose steps.
+stop_check_ms = 200
+
+# The pause at each switch before the next move, ms, so the cart is at
+# rest when the direction changes.
+settle_ms = 250
+
+# STEP's on time, D4 low, ns. The DM542 needs at least 2,500 on and
+# 2,500 off (manual, section 10, t3 and t4); 5,000 leaves room for the
+# PNP stage's switching delay. The build checks both at the top rates.
+pulse_low_ns = 5000
+
+# DIR's setup before the next pulse, ns: at least 5,000, the DM542's t2.
+dir_setup_ns = 5000
+
+# The monitor line's baud: SCI9, which the board's ESP32-S3 forwards to
+# its USB serial port.
+monitor_baud = 115200
+
+[wifi]
+# The file holding the network's ssid and password. It is kept out of
+# git (calibrate/.gitignore); wifi.example.toml is the template.
+credentials = "wifi.toml"
+
+# The name the router lists for the board: letters, digits and hyphens.
+hostname = "cart-pole"
+
+# The TCP port of the page: http://<board IP>:<port>/
+port = 80
+
+[experiment]
+# The jump-limit experiment (jump-limit-experiment.md): the page's
+# Jump-limit experiment button. Each value names the brief's section.
+
+# The rig's conditions, copied into the report (section 6). The board
+# measures none of them: keep this true to the rig.
+conditions = "24 V supply; DM542 3.76 A peak, 2.69 A RMS (SW1-3 on, off, off); 1/32; pole mounted"
+
+# The top pulse rate the trials stay inside, pulses/s: the rate training
+# will clamp to (section 2). 48,000 was the 24 V row at the DRV8825's
+# 2.5 A; the table above's 24 V row is now 44,600.
+trial_top = 48000
+
+# Δt, the gap between commands, ms: the loop's longest, the hardest
+# (section 3). Use the real loop's gap once it is measured.
+trial_dt_ms = 16
+
+# The first change rate tried, pulses/s² (section 7): a tenth of the
+# ceiling. At the DM542's 2.69 A the motor pushes at most
+# 2.4 N·m × 2.69 ÷ 4.0 ÷ 0.01528 m = 106 N; over 1.136 kg that is
+# 93 m/s², 6,200,000 pulses/s² at 15 µm a pulse.
+j_start = 620000
+
+# How much j rises after a j passes, % (section 7: about a quarter).
+j_growth_percent = 25
+
+# Trials at each j; a kind's limit is the largest j where none lost a
+# step (section 5, step 4). The run moves to the next j or kind at the
+# first failure.
+trials_per_j = 10
+
+# Slow returns to the reference switch for the noise floor (section 5,
+# step 1), each from this many pulses away. 2,000 pulses is 30 mm.
+noise_repeats = 10
+noise_away_pulses = 2000
+
+# The hold at c_a before the jump, so the cart runs steadily, ms (a
+# choice), and at c_b after it, ms (section 5, step 2c: 0.1 s).
+steady_ms = 200
+hold_ms = 100
+
+# The room a trial's plan must leave at each end of the rail, pulses.
+# A trial that would come closer ends its kind with "no room". 3,000
+# pulses is 45 mm. A choice, from no source.
+end_margin_pulses = 3000
+
+[report]
+# Where each finished trial's record goes: the bench station on the Pi
+# (bench-station/src/trials.rs), which keeps the whole record so the board
+# keeps none of it. After every trial, with the cart at rest at the
+# reference switch, the board sends `POST /trial` with one CSV line:
+# kind,j,trial,c_a,c_b,dt_ms,switch_count,lost,pass. Never during a trial
+# or a move. A record the Pi does not take is noted in the board's log,
+# and the run goes on.
+
+# The Pi's address on the home network, and its page's port
+# (bench-station.toml [station] listen).
+host = "192.168.0.247"
+port = 8080

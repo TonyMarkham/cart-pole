@@ -1,0 +1,20 @@
+# The bench station as a systemd service, so it starts when the Pi boots
+# and restarts if it stops (README.md, *Run it as a service*). The paths
+# are the Pi's today: the crate in /home/tony/bench-station, run as tony,
+# who is in the dialout group that owns /dev/ttyACM0. Change them if the
+# folder or the user is different.
+
+[Unit]
+Description=cart-pole bench station (the rig's page, experiment, log and flashing)
+
+[Service]
+User=tony
+WorkingDirectory=/home/tony/bench-station
+ExecStart=/home/tony/bench-station/target/release/bench-station /home/tony/bench-station/bench-station.toml
+# After a crash, start again in 5 s; a stop asked for with systemctl stays
+# stopped.
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

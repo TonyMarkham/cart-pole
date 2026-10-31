@@ -1,0 +1,20 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 168e4ea5f6d96c3409bb2e239fe3d52b, type: 3}
+  m_Name: 12-Right-Rail.Site
+  m_EditorClassIdentifier: com.greyhound.step.runtime::Greyhound.Step.StepSite
+  root: {fileID: 11400000, guid: 8cadb91f77a9547bb96d92c7e759076c, type: 2}
+  body:
+    indices: 0000000001000000i
+    name: rod-clamp-16mm
+  mj:
+    pos: {x: -0.01, y: 0, z: 0}

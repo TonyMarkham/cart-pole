@@ -1,0 +1,159 @@
+# The trainer's settings (trainer-plan.md).
+
+[trainer]
+# The trainer's own settings: none of them reach the orchestrator.
+
+# The Gymnasium environment's settings: the plugins, the episode and SAC
+# (rl-rewrite-plan.md, 3.3), relative to this file.
+gym = "gym.toml"
+
+# The measures' values (measure.py, trainer/src/measures/), relative to
+# this file.
+measures = "measures.toml"
+
+[orchestrator]
+# The trainer starts each run by launching the orchestrator with this
+# command (synthetic-loop-dia.md, 1): the program, then its arguments, one
+# list item each. It runs in `cwd`, a folder relative to this file; ".." is
+# the repo root, which every path in the command is relative to, the
+# program's included.
+#
+# The program is the built release binary, never `cargo run`: build it
+# first with `cargo build --release -p orchestrator`.
+#
+# These are the orchestrator's arguments today (the last good loop run,
+# synthetic-orin-plan.md Results, minus --control and --frames, which the
+# trainer's command and stop replace). They change as the orchestrator
+# follows its plan.
+cwd = ".."
+
+# The run's two sockets, both on 127.0.0.1, passed as --orin-port and
+# --unity-port. orin_port is the control socket (synthetic-loop-dia.md,
+# 4–5): the orchestrator listens, the synthetic Orin connects. unity_port
+# is the frame socket (6–7): the Unity player connects to it (the
+# orchestrator listens on it until the Orin serves it). They must differ.
+orin_port = 9000
+unity_port = 9001
+
+# The training instances, as a grid of windows, passed as --instance-rows
+# and --instance-columns (synthetic-loop-dia.md, Training instances): rows x
+# columns instances, each its own MuJoCo, synthetic Arduino, synthetic Orin
+# and Unity window, all feeding the one policy. Instance k uses the ports
+# orin_port + 2k and unity_port + 2k, so 4 instances use 9000-9007 and 12 use
+# 9000-9023. Read by train.py; env_check.py always runs one, a 1 x 1 grid.
+# Each at least 1; rows x columns at most 12.
+instance_rows = 3
+instance_columns = 4
+
+# The area the grid fills, in pixels, passed as --screen-width and
+# --screen-height (synthetic-loop-dia.md, Training instances, The windows):
+# the orchestrator sizes each window from these. The height is the part
+# above the taskbar, since Windows keeps windows out from under it: this
+# display's 2160 less the taskbar's 48. Each at least 1.
+screen_width = 3840
+screen_height = 2112
+
+# The run's seed, passed as --seed (synthetic-loop-dia.md, 4): the
+# orchestrator uses it for every timing draw: the pool's pre-warm gaps, each
+# latency and each command rate. The same seed and the same
+# commands give the same physics, bit for bit (synthetic-loop-dia.md,
+# Determinism). A whole number, 0 to 2**64 - 1.
+seed = 0
+
+# The band of the Orin's latency, RND(rnd_delay_min, rnd_delay_max) ms
+# (synthetic-loop-dia.md), passed as --rnd-delay-min and --rnd-delay-max:
+# the orchestrator draws each observation's latency from it. A command takes
+# effect that long after its frame's capture. How often commands come is the
+# gym file's [env] command_rate_min and command_rate_max.
+# 8-15 ms is the detection time measured on the Orin (detector-plan.md, Results); the
+# policy's inference and the WiFi hop are not in it yet
+# (orchestrator-plan.md, Placeholders). Milliseconds, 0 <= min <= max.
+rnd_delay_min = 8
+rnd_delay_max = 15
+
+# Not the whole command: the trainer inserts the grid, the screen, the two
+# ports, the seed, the latency band, the gym file's command rates, [mjcf] and
+# [drive] (below) straight after the program, as --instance-rows,
+# --instance-columns, --screen-width, --screen-height, --orin-port, --unity-port,
+# --seed, --rnd-delay-min, --rnd-delay-max, --command-rate-min, --command-rate-max,
+# --model, --cart-joint, --pole-joint, --actuator, the nine --*-site
+# flags, --full-steps-per-rev, --microsteps, --belt-um-per-rev and
+# --jump-limit, so those never appear here.
+#
+# The players' borderless windows fill screen_width x screen_height
+# (synthetic-loop-dia.md, Training instances, The windows): the orchestrator
+# divides it into one window per instance. The grid starts at --window-origin
+# x,y (default 0,0) on the display the windows open on.
+command = [
+    "target/release/orchestrator.exe",
+    "--player", "unity/projects/cart-pole/Build/SimulationLoop.exe",
+    "--out", "target/trainer-run",
+    # --orin must come last: every argument after it is the Orin's command.
+    "--orin", "uv", "run", "--project", "orin", "python", "orin/src/synthetic_orin.py",
+    "--engine", "training/runs/cp2-640-base/weights/best_fp16.engine",
+]
+
+[mjcf]
+# The MJCF the run loads (synthetic-loop-dia.md, 2) and the names in it.
+# They reach the orchestrator as --model, --cart-joint, --pole-joint,
+# --actuator and one --*-site flag per site below (--left-site ...
+# --right-cart-site), placed straight after the program (--orin takes
+# every argument after it).
+
+# The model the Unity exporter writes beside the rig's STEP asset
+# (stepAssetPath: Assets/Simulation/Robot/asy-cart-pole.step), relative
+# to [orchestrator] cwd.
+model = "unity/projects/cart-pole/Assets/Simulation/Robot/asy-cart-pole.step~/asy-cart-pole.xml"
+
+# As in the model's <joint name> / actuator name. The joint names are also
+# the wire keys of the player's state message.
+cart_joint = "02-Cart.Slider.joint"
+pole_joint = "04-Pole.Hinge.joint"
+actuator   = "03-Cart.Slider.Actuator"
+
+# As in the model's <site name> (synthetic-loop-dia.md, Contracts, the
+# sites): one at the centre of each marker, and Target, fixed where End
+# sits with the cart centred and the pole upright. The load fails if the
+# model lacks one.
+left_site   = "05-Left.Site"
+right_site  = "06-Right.Site"
+pivot_site  = "07-Pole.Pivot.Site"
+end_site    = "08-Pole.End.Site"
+target_site = "09-Pole.End.Target.Site"
+
+# Dynamic Target rides the cart where End sits with the pole upright,
+# wherever the cart is. Cart rides the cart at the slider joint; Cart
+# Target is fixed where Cart sits with the cart centred, so the distance
+# between them is the cart's distance from the middle.
+dynamic_target_site = "14-Dynamic.End.Target.Site"
+cart_site           = "16-Cart.Site"
+cart_target_site    = "15-Cart.Target.Site"
+
+# The strike faces: where the cart would strike each base (rail), and the
+# cart's face that would strike it. Left Cart.x - Left Rail.x and Right
+# Rail.x - Right Cart.x are the clearances to each base, 0 at contact.
+left_rail_site  = "10-Left-Rail.Site"
+left_cart_site  = "11-Left-Cart.Site"
+right_rail_site = "12-Right-Rail.Site"
+right_cart_site = "13-Right-Cart.Site"
+
+[drive]
+# The drive between the command and the cart (synthetic-loop-dia.md,
+# Contracts, the cart speed): metres per pulse = belt_um_per_rev /
+# (full_steps_per_rev x microsteps). The MJCF holds the cart top speed
+# (its actuator's ctrlrange) but not these. They reach the orchestrator as
+# --full-steps-per-rev, --microsteps, --belt-um-per-rev and --jump-limit,
+# placed straight after the program. Whole numbers, at least 1.
+full_steps_per_rev = 200   # the motor's 1.8° step (motor-spec.md)
+microsteps = 32            # the DM542's switches: 1/32 (control-design.md)
+belt_um_per_rev = 96000    # 48T GT2 at 2 mm pitch (the CAD pulley)
+
+# m, pulses/s^2: the jump limit, the fastest the drive changes the rate it
+# sends (synthetic-loop-dia.md, The acceleration ceiling): every tick the
+# sent rate moves towards the command by at most m x the tick, so a 2 ms
+# step moves it at most 2,421 pulses/s. Measured on the rig 2026-10-28
+# (jump-limit-results.md): the staircase's limit, the smallest of the four
+# kinds', at 24 V, the DM542 at 2.69 A RMS, 1/32, pole mounted, a 16 ms
+# gap. Measure again if any of those change (jump-limit-experiment.md
+# section 1).
+jump_limit = 1210937

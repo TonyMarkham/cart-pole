@@ -29,7 +29,7 @@ namespace Simulation.CartPole.SyntheticDataGen
         // disk and the error names it.
         private const int MaxConsecutiveUnconfirmed = 20;
 
-        private const int JpegQuality = 90;
+        private const int JpegQuality = GreyscaleEncoder.Quality;
 
         private readonly GenerationSetSO set;
         private readonly RigSO rig;
@@ -226,7 +226,7 @@ namespace Simulation.CartPole.SyntheticDataGen
             var lines = proposed
                 .Where(line => confirmed.Contains(int.Parse(line.Split(' ')[0])))
                 .ToList();
-            writer.WriteFrame(name, GreyscaleJpeg(captureReadback), lines);
+            writer.WriteFrame(name, GreyscaleEncoder.Encode(captureReadback), lines);
             return true;
         }
 
@@ -265,30 +265,6 @@ namespace Simulation.CartPole.SyntheticDataGen
                 return false;
             }
             return true;
-        }
-
-        // Greyscale is the only render path: the color readback is
-        // luminance-equalized into a neutral image before encoding.
-        // The channels stay RGB (equal values, neutral chroma) because
-        // EncodeToJPG's single-channel support is not guaranteed
-        // across platforms - the image carries no color information
-        // either way.
-        private static byte[] GreyscaleJpeg(Texture2D source)
-        {
-            var pixels = source.GetPixels();
-            for (var i = 0; i < pixels.Length; i++)
-            {
-                var l = pixels[i].r * 0.299f +
-                    pixels[i].g * 0.587f + pixels[i].b * 0.114f;
-                pixels[i] = new Color(l, l, l);
-            }
-            var grey = new Texture2D(
-                source.width, source.height, TextureFormat.RGB24, false);
-            grey.SetPixels(pixels);
-            grey.Apply();
-            var jpeg = grey.EncodeToJPG(JpegQuality);
-            Object.Destroy(grey);
-            return jpeg;
         }
 
         private float Draw(float2 range)

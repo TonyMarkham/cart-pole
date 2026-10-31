@@ -1,0 +1,29 @@
+# The measures' values (trainer/src/measures/, run by measure.py). Each
+# table belongs to the measure of the same name.
+
+[episodes]
+# Episodes are grouped by the run's step count when they ended, in bands
+# of band_steps (run 1's later entries used 50,000).
+band_steps = 50000
+
+# "Near upright": within this many degrees of straight up
+# (trainer-observations.md's tables use 20).
+upright_degrees = 20.0
+
+# An episode of spin_turns full turns or more is spinning; one of fewer
+# than slow_turns that no end plugin ended is slow (trainer-observations.md:
+# 15 and 10).
+spin_turns = 15.0
+slow_turns = 10.0
+
+# A visit near upright counts as a slow visit when it lasts this long, s
+# (trainer-observations.md: 0.3).
+visit_seconds = 0.3
+
+[entropy]
+
+[actor_spread]
+# Observations drawn from the run's latest replay buffer for each
+# snapshot's actor (trainer-observations.md: 20,000), and the draw's seed.
+samples = 20000
+seed = 0

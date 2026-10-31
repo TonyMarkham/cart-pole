@@ -1,0 +1,28 @@
+# The pole-drop check (trainer/src/pole_drop.py): MuJoCo's hinge friction
+# against the real pole. On the rig (user, 2026-10-29) the pole, let go
+# from horizontal with the cart held by the powered stepper, made 300
+# swings before it stopped, each pass through hanging counted as one; the
+# model's hinge frictionloss was 0.02.
+# The script drops the pole the same way in MuJoCo, with the cart frozen
+# at the middle, once per value below, and counts.
+
+# Where the pole is let go, degrees from hanging (90: horizontal).
+start_degrees = 90.0
+
+# The hinge's frictionloss values to try, N·m (MuJoCo's joint
+# frictionloss: a constant friction torque). Each gets its own drop; the
+# model's own value is the one in the exported MJCF.
+frictionloss = [0.0013, 0.00135, 0.0014]
+
+# The pole counts as stopped when it has not passed hanging for this long,
+# simulated seconds, or when a swing peaks under stop_degrees.
+still_seconds = 5.0
+stop_degrees = 0.5
+
+# A drop that has not stopped by this much simulated time is reported as
+# not stopped, seconds.
+max_seconds = 3600.0
+
+# The decay's shape: for each, the swings until one first
+# peaks under it, degrees from hanging.
+marks_degrees = [60.0, 45.0, 30.0, 10.0, 5.0]
