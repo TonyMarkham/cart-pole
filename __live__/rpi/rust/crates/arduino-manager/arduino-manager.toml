@@ -1,0 +1,62 @@
+# The Arduino manager's settings (src/main.rs). Read at start-up: restart
+# the service after a change. Relative paths resolve against this file's
+# folder.
+#
+# Rates are pulses/s, the unit the Arduino drives. At the rig's 15 µm a
+# pulse (96 mm per turn ÷ (200 × 32)), 1,000 pulses/s is 15 mm/s.
+
+[station]
+# Where the page listens. 0.0.0.0 answers on every network the computer is
+# on; the router must not forward this port, because POST /flash lets
+# anyone who reaches it reflash the rig.
+listen = "0.0.0.0:8080"
+
+# The folder for the log files, one per opening of the serial line.
+log_dir = "logs"
+
+# How many of the newest log lines the page shows.
+page_log_lines = 300
+
+# The board's own page, when its firmware has one; the manager's page links
+# to it.
+board_page = "http://192.168.0.220/"
+
+[serial]
+# The Arduino's USB serial port. /dev/serial/by-id/... names one board
+# and survives replugging into another socket; /dev/ttyACM0 is whichever
+# board enumerated first.
+port = "/dev/ttyACM0"
+
+# The line's baud. Any rate but 1,200 and 2,400 only sets the speed; the
+# bridge resets the RA4M1 at those two (UNOR4USBBridge.ino,
+# usbEventCallback), so opening at 115,200 never resets the board.
+baud = 115200
+
+# The longest a command may wait for its reply, ms. The slowest is a seek
+# across the whole rail, which the Arduino itself ends after its
+# seek timeout (34,000); this is the manager's backstop for a board that has
+# stopped answering.
+reply_timeout_ms = 60000
+
+# The wait between attempts to open the port while it is missing, ms.
+reopen_ms = 1000
+
+[flash]
+# The program that uploads a .bin, and the board's FQBN (the name
+# arduino-cli knows this kind of board by).
+arduino_cli = "arduino-cli"
+fqbn = "arduino:renesas_uno:unor4wifi"
+
+# Where an uploaded .bin is kept while it is flashed.
+work_dir = "flash"
+
+# How long after an upload to wait for the port to come back, ms: the
+# board re-enumerates as it leaves its bootloader.
+port_wait_ms = 15000
+
+[rig]
+# The rate of a jog, pulses/s: the firmware's seek speed.
+seek_speed = 2000
+
+# One jog, pulses; a jog stops early at either switch. 333 pulses is 5 mm.
+jog_pulses = 333

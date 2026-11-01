@@ -1,0 +1,18 @@
+# The webserver's settings. Read once when it starts, from the folder it runs
+# in, so run it from this folder (its README, deployment step 9).
+
+[arduino]
+# Where the rig's Arduino listens, for the /arduino page. The board prints its
+# address on its USB serial port after it joins the WiFi; on this network it
+# has been 192.168.0.220. The port must match the firmware's [wifi] udp_port.
+address = "192.168.0.220"
+port = 4210
+
+# How long to wait for the board's answer before the page says it gave none,
+# ms. A datagram can be lost on WiFi, and nothing resends it: the next reading
+# simply asks again. Chosen, not measured.
+timeout_ms = 1000
+
+# The pause between the page's readings, ms. A reading happens only while the
+# page is open; between readings the board sleeps.
+poll_ms = 1000

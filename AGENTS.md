@@ -134,6 +134,13 @@ adds repo structure around them, never overrides them.
   into an instruction.
 - Clearly distinguish source inspection from an executed build or test.
   Do not claim validation that has not actually happened.
+- **No JavaScript** (user, 2026-10-31). Browser code in this repo is Rust
+  compiled to WebAssembly, the choice orin-cam made on purpose to avoid all
+  JavaScript except the absolutely necessary interop (`trunk`'s generated
+  loader and calls through `web-sys`). See
+  `__live__/orin/wasm/viewer` and `__live__/orin/wasm/arduino`.
+  Never hand-write JavaScript. Worked failure: the first `/arduino` page was
+  about 165 lines of it, with the viewer crate right beside it.
 - **Python policy.** Always `uv`, never pip; install nothing without
   permission (a standing directive). No Python on the dataset-verify path —
   the Python checker retired; verification runs in-process through the
@@ -327,6 +334,14 @@ adds repo structure around them, never overrides them.
   a Pi-era POC whose question `detector-plan.md` answered, the Python
   synthetic Orin being faster on the Orin. Its `ObjectDetection.toml`
   moved to `orin/settings.toml`, the Orin's detector configuration.
+- `__live__/` — what runs on the real rig, one folder per computer.
+  `__live__/README.md` says what is built, moved and started where; each
+  part's own README has the commands. **It is kept apart from the repo**
+  (user, 2026-10-31): nothing in it runs on the PC. `__live__/orin/rust` and
+  `__live__/rpi/rust` are each a workspace with its crates in `crates/`, pushed
+  to and built on that computer, so nothing in them points outside them. Only
+  the firmware (`__live__/arduino/rust/crates/calibration`) and the browser
+  pages (`__live__/orin/wasm`) are built on the PC, as root workspace members.
 - `orin/` — the synthetic Orin, a `uv` project: Python + TensorRT
   detection, the 6-entry pool, the WebSocket client (`synthetic-orin-plan.md`).
   The root holds the uv files and `settings.toml` (the detector's
@@ -420,6 +435,18 @@ The roles and per-class figures are in `training/05-POST_TRAINING.md`
   `synthetic-loop-dia.md` or code: the step-acceleration ceiling, where
   every tick moves the sent rate towards the last command by at most
   `m × dt` (`m` the jump limit, `jump-limit-results.md`; `dt` the tick).
+- **The Arduino has the interrupt bridge; never poll it for WiFi
+  messages** (user, 2026-10-31). Its WiFi chip runs the user's fork of
+  Arduino's bridge firmware (`D:\git\unor4-wifi-interrupt-bridge`, branch
+  `feature/interrupt`; the board reported revision 0.6.102 on 2026-10-31,
+  and prints it at each start). Push mode sends each UDP datagram to the
+  processor unasked, and `unor4-hal`'s `UartIrq` (feature `uart-irq`) wakes
+  it, so firmware sleeps until a message arrives
+  (`__live__/arduino/rust/crates/calibration/src/wifi.rs`). Push mode does not
+  cover TCP, so such messages are datagrams, not web requests. The older
+  `calibrate` firmware predates this and polls: never copy its WiFi
+  loop. Worked failure: the agent copied it for the pin page, with a note
+  about the bridge already in front of it.
 - **Each diagram participant's real counterpart:**
 
   | Participant | On the real robot |

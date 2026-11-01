@@ -340,9 +340,15 @@ jump-limit trial interrupted by the rocker is void.
 | D6 | ENA, through Q3 (low disables the driver) |
 | D7 | unused (ENA's pin before 2026-10-27) |
 | D8 | unused (the DRV8825's FAULT) |
-| VIN | the supply's +, through the rocker |
+| Barrel jack | the board's power (user, 2026-10-31) |
+| VIN, and the GND beside it | not connected (user, 2026-10-31) |
 | 5 V | Q1–Q3's emitters and pull-ups |
-| GND | the supply's −, PUL−, DIR−, ENA−, the switches' C terminals |
+| GND | PUL−, DIR−, ENA−, the switches' C terminals |
+
+The Arduino controls only the DM542's 5 V side. The motor side runs on 24 V
+from a power supply, and the 5 V and 24 V sides are kept separate to avoid
+differing grounds (user, 2026-10-31). This replaces what *Power* and *The
+power rocker* above say about the supply reaching the Arduino.
 
 ## What the firmware still needs
 

@@ -95,8 +95,8 @@ Open:
   the board. The commands arrive by the bridge's UDP push mode (the
   user's fork, `v0.6.0-interrupt.2`: each datagram is sent to the RA4M1
   unasked as `+UDPRX: <sock>,<len>|<bytes>`); the page is TCP, which
-  push mode does not cover. Which bridge build is on the rig is not
-  recorded.
+  push mode does not cover. The rig has the fork (user, 2026-10-31);
+  the board reported 0.6.102, `v0.6.0-interrupt.2`, the same day.
 
 ## The Orin's page (user, 2026-10-29)
 

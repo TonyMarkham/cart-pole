@@ -1,0 +1,13 @@
+[package]
+name           = "image-push"
+version        = { workspace = true }
+edition        = { workspace = true }
+
+[dependencies]
+clap           = { workspace = true }
+error-location = { workspace = true }
+thiserror      = { workspace = true }
+ureq           = { workspace = true }
+
+[lints]
+workspace      = true

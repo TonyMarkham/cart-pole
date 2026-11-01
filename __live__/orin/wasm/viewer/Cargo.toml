@@ -1,0 +1,13 @@
+[package]
+name           = "viewer"
+version        = { workspace = true }
+edition        = { workspace = true }
+
+[dependencies]
+error-location = { workspace = true }
+thiserror      = { workspace = true }
+wasm-bindgen   = { workspace = true }
+web-sys        = { workspace = true }
+
+[lints]
+workspace      = true

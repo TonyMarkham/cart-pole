@@ -475,3 +475,142 @@ matrix_path        where the stored matrix lives on the Orin
     checked by hand).
     OpenCV is already a dependency of `orin/` (`orin/pyproject.toml`,
     `opencv-python-headless`), imported by `orin/src/detector.py`.
+
+## Appendix: implementation
+
+### Where it lives in the repo
+
+The calibration runs on three computers, in two languages, so it has no
+single home: each part sits under the computer it runs on (user,
+2026-10-31). `__live__/` holds what runs on the real rig and
+`__synthetic__/` is its counterpart for the synthetic loop. Each computer
+has a folder per language, and only `orin/` has two.
+
+```text
+cart-pole/
+├── Cargo.toml                       the root workspace, which builds the [root] crates
+├── calibrate-w-homography.md        this plan
+├── __synthetic__/                   nothing of the calibration yet (a README only)
+└── __live__/
+    ├── arduino/
+    │   └── rust/
+    │       └── crates/
+    │           └── calibration/     [root] the firmware: the cart's three stops
+    ├── orin/
+    │   ├── python/                  a uv project: measures the stops, fits the matrix
+    │   │   ├── pyproject.toml
+    │   │   ├── uv.lock
+    │   │   ├── settings.toml
+    │   │   └── src/
+    │   │       └── capture_push.py  one picture, pushed to the browser
+    │   ├── rust/                    the Orin's workspace, pushed and built there
+    │   │   ├── Cargo.toml
+    │   │   ├── pages/               the built browser pages, from wasm/
+    │   │   └── crates/
+    │   │       ├── image-push/      the command-line tool that sends a picture
+    │   │       └── webserver/       receives pictures, serves the pages
+    │   └── wasm/
+    │       ├── arduino/             [root] the Arduino's pins, in the browser
+    │       └── viewer/              [root] the camera's pictures, in the browser
+    └── rpi/
+        └── rust/                    the Pi's workspace, pushed and built there
+            ├── Cargo.toml
+            └── crates/
+                └── arduino-manager/ flashes the Arduino and logs its serial line
+```
+
+A **crate** is one Rust package. A **workspace** is a group of crates built
+together from one `Cargo.toml`. A **uv project** is a Python package whose
+dependencies `uv` installs into its own `.venv` folder, leaving the
+computer's Python alone.
+
+### What each part does in the calibration
+
+```text
+part                             runs on   its job (The calibration sequence)
+arduino/rust                     Arduino   makes each move on a trigger, stops, reports which pin tripped
+orin/python                      Orin      captures, detects, measures each stop, fits and checks H, stores it
+orin/rust                        Orin      shows the camera's pictures on a browser, the Orin having no monitor
+rpi/rust                         Pi        flashes the firmware and logs the serial line, before the run
+```
+
+- **The Python on the Orin holds the arithmetic,** because detection on the
+  robot is Python (`AGENTS.md`, *Python policy*) and the fit is OpenCV's
+  `cv2.findHomography`[^3].
+- **The manager takes no part in the sequence.** Its link is the USB cable,
+  and with the cable in, both limit switches read open
+  (`__live__/rpi/rust/crates/arduino-manager/README.md`), so the cart could not
+  find its stops. The Orin triggers each move over WiFi with a POST
+  (*The calibration sequence*).
+
+### What exists today
+
+```text
+part                             today
+arduino/rust                     sleeps until a UDP datagram asks for its pins' levels, moves nothing. On the rig's board since 2026-10-31.
+orin/python                      capture_push.py, on the Orin in ~/live-orin-python since 2026-10-31.
+                                 No detection, measurement or fit yet.
+orin/rust, orin/wasm             orin-cam's code, plus the /arduino pin page. On the Orin in ~/orin-cam since 2026-10-31.
+rpi/rust                         on the Pi since 2026-10-31: logs the board and has flashed it. No firmware speaks its protocol.
+__synthetic__                    a README. Nothing has moved there.
+```
+
+The older folders stay where they are: `calibrate/` and `bench-station/`
+measure the motor's limits, and `orin/` is the synthetic Orin, with the
+detector the calibration needs (`orin/src/detector.py`).
+
+### How each part builds
+
+`__live__` is kept apart from the repo (user, 2026-10-31). What is built on the
+Pi or the Orin is that computer's own workspace, pushed whole and needing
+nothing else from the repo. Only the firmware and the browser pages are built
+on the PC, as members of the root workspace, which needs the `unor4-hal`
+checkout beside the repo.
+
+```text
+part                       built on   from                 with
+arduino/rust/crates/calibration  PC   its own folder       cargo build --profile firmware
+orin/wasm/viewer, arduino  the PC     its own folder       trunk build --release
+orin/rust                  the Orin   its workspace root   cargo build --release -p webserver -p image-push
+rpi/rust                   the Pi     its workspace root   cargo build --release
+orin/python                the Orin   its own folder       uv run python src/<script>.py
+```
+
+Each part's README has the full steps; the Python's usage is at the head
+of its script.
+
+### Changes the layout brings
+
+Proposed, not decided:
+
+- **The settings' home.** The *Settings* section above proposes
+  `orin/settings.toml`; in this layout the `[calibration]` table goes in
+  `__live__/orin/python/settings.toml`, beside the camera's settings.
+- **The stored matrix stays out of git.** `matrix_path` names a file on
+  the Orin, outside the repo, because a matrix belongs to one camera
+  position on one rig. The two gaps, also that rig's, are in the settings
+  file by the plan's rule and so are committed.
+- **`image_push` in the settings stays at `~/orin-cam`:** the copy is
+  deployed into that folder on the Orin (user, 2026-10-31).
+
+Requirements on the Orin, from what it has (checked on `robo-orin`,
+2026-10-31):
+
+- **The repo has to be on it, on this branch.** `~/git/cart-pole` is on
+  `feature/sim-loop` with no `__live__/`, which is why the capture ran
+  from a temporary copy.
+- **The `.venv` must see the system's Python packages,** because TensorRT
+  (the NVIDIA runtime the detector uses) is installed only for the system
+  Python 3.10, in `/usr/lib/python3.10/dist-packages`.
+  `~/orin-test/.venv` is set up this way.
+
+### Open
+
+- **Who sends the triggers:** the Python, which knows when a stop is
+  measured, or `orin/rust`, which already has a web server.
+- **What `orin/rust` adds to orin-cam** beyond showing pictures.
+- **How `__live__/orin/python` reaches the detector,** which is in
+  `orin/src/`: a shared package, or a move.
+- **How the synthetic Orin runs the same calibration.** *In the synthetic
+  loop* requires one source for both, and this layout puts the
+  measurement and the fit under `__live__/`.

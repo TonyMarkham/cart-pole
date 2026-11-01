@@ -1,0 +1,38 @@
+# capture_push.py's settings: taking the picture on the Orin and pushing it
+# to the viewer. Read at each run.
+
+[camera]
+# Which camera, and which of its modes. Mode 0 is the sensor's full frame,
+# 1456 x 1088 at 60 frames/s (v4l2-ctl --list-formats-ext on robo-orin).
+sensor_id = 0
+sensor_mode = 0
+width = 1456
+height = 1088
+framerate = 60
+
+# Frames to capture; only the last is kept, because the camera's automatic
+# exposure needs a moment to settle after it starts.
+frames = 30
+
+# The camera software's noise reduction and edge sharpening, 0 = off, so
+# the picture changes as little as possible from what the sensor saw.
+tnr_mode = 0
+ee_mode = 0
+
+# How long the capture may take before it counts as failed, s. 30 frames
+# took 7.6 s on robo-orin, nearly all of it writing the PNGs.
+timeout_s = 60
+
+[png]
+# Where the picture is written. Each run replaces it.
+path = "/tmp/orin-capture.png"
+
+# PNG compression, 0 (none) to 9 (most, slowest). 1 keeps a run short and
+# made a 2.9 MB file.
+compression_level = 1
+
+[push]
+# orin-cam's command-line tool, and the orin-cam server it sends to. The
+# server runs on the Orin too, so this is the Orin's own address.
+image_push = "~/orin-cam/target/release/image-push"
+server = "http://localhost:8080"

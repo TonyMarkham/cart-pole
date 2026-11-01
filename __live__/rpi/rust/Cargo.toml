@@ -1,0 +1,46 @@
+# The Pi's workspace: this folder is pushed to the Pi and built there, so nothing
+# here may point outside it.
+[workspace]
+members           = [
+                      "crates/arduino-manager",
+]
+resolver          = "3"
+
+[workspace.package]
+version           = "0.1.0"
+edition           = "2024"
+
+[workspace.dependencies]
+anyhow            = { version = "1.0.104" }
+axum              = { version = "0.8.9" }
+chrono            = { version = "0.4.45" }
+clap              = {
+                      version = "4.6.7",
+                      features = ["derive"]
+}
+futures-util      = { version = "0.3.34" }
+serde             = {
+                      version = "1.0.229",
+                      features = ["derive"]
+}
+tokio             = {
+                      version = "1.54.1",
+                      features = ["fs", "macros", "net", "process", "rt-multi-thread", "time"]
+}
+tokio-serial      = {
+                      version = "5.5.0",
+                      default-features = false
+}
+tokio-util        = {
+                      version = "0.7.20",
+                      features = ["codec"]
+}
+toml              = { version = "1.1.8" }
+
+[workspace.lints.clippy]
+unwrap_used       = "deny"
+expect_used       = "deny"
+panic             = "deny"
+
+[workspace.lints.rust]
+unused_must_use   = "deny"

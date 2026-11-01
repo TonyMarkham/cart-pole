@@ -1,0 +1,20 @@
+# The values the calibration firmware is built with. The board has no file
+# system, so build.rs reads this file and compiles them in: a change takes
+# effect at the next build and upload.
+
+[firmware]
+# The USB serial port's speed, bits per second. It carries the WiFi join's
+# messages, the bridge's version and the board's address.
+monitor_baud = 115200
+
+[wifi]
+# The file holding the network's name and password, which git ignores.
+credentials = "wifi.toml"
+
+# The name the router lists.
+hostname = "cart-pole"
+
+# The UDP port the board listens on. The Orin's webserver must send to the same
+# port (its settings.toml, [arduino] port). 4210 is the port the bridge's own
+# example uses (unor4-wifi-interrupt-bridge, examples/UDPPushSleep).
+udp_port = 4210

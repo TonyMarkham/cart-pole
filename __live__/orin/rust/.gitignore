@@ -1,0 +1,11 @@
+# IDE
+.idea/
+
+# Rust
+target/
+
+# The browser pages, built on the PC from ../wasm and pushed with this folder
+pages/
+
+# The server's messages, when it runs in the background
+webserver.out
