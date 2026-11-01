@@ -1,10 +1,11 @@
 use crate::{
     constants::{
-        CENTRE_BUTTON_ID, IDLER_BUTTON_ID, MOTOR_BUTTON_ID, NEXT_ELEMENT_ID, RAIL_ELEMENT_ID,
-        RESULT_ELEMENT_ID, ROWS_ELEMENT_ID, SPEED_ELEMENT_ID, STATUS_ELEMENT_ID, STOP_BUTTON_ID,
-        WHERE_ELEMENT_ID,
+        CENTRE_BUTTON_ID, IDLER_BUTTON_ID, MEASURE_BUTTON_ID, MOTOR_BUTTON_ID, NEXT_ELEMENT_ID,
+        RAIL_ELEMENT_ID, RESULT_ELEMENT_ID, ROWS_ELEMENT_ID, SPEED_ELEMENT_ID, STATUS_ELEMENT_ID,
+        STOP_BUTTON_ID, WHERE_ELEMENT_ID,
     },
     error::{AppError, result::AppResult},
+    modal::Modal,
     render,
     session::Session,
     tone::Tone,
@@ -20,6 +21,7 @@ use web_sys::{Document, Element, HtmlButtonElement, HtmlInputElement, Window};
 pub(crate) struct Page {
     pub(crate) window: Window,
     pub(crate) session: RefCell<Session>,
+    pub(crate) modal: Modal,
     status: Element,
     rail: Element,
     place: Element,
@@ -29,6 +31,7 @@ pub(crate) struct Page {
     speed: HtmlInputElement,
     buttons: [(Travel, HtmlButtonElement); 3],
     stop: HtmlButtonElement,
+    measure: HtmlButtonElement,
     /// What was last written to `rail` and `rows`. Writing the drawing again
     /// restarts the belt's animation, and the table's text could not be selected.
     drawn: RefCell<(String, String)>,
@@ -38,6 +41,7 @@ impl Page {
     pub(crate) fn find(window: Window, document: &Document) -> AppResult<Self> {
         Ok(Self {
             session: RefCell::new(Session::new()),
+            modal: Modal::find(document)?,
             status: element(document, STATUS_ELEMENT_ID)?,
             rail: element(document, RAIL_ELEMENT_ID)?,
             place: element(document, WHERE_ELEMENT_ID)?,
@@ -51,6 +55,7 @@ impl Page {
                 (Travel::Centre, button(document, CENTRE_BUTTON_ID)?),
             ],
             stop: button(document, STOP_BUTTON_ID)?,
+            measure: button(document, MEASURE_BUTTON_ID)?,
             drawn: RefCell::new((String::new(), String::new())),
             window,
         })
@@ -62,6 +67,10 @@ impl Page {
 
     pub(crate) fn stop_button(&self) -> &HtmlButtonElement {
         &self.stop
+    }
+
+    pub(crate) fn measure_button(&self) -> &HtmlButtonElement {
+        &self.measure
     }
 
     /// The typed speed, for a centring. None when the box is empty.
@@ -90,6 +99,8 @@ impl Page {
         }
         self.speed.set_disabled(session.is_busy());
         self.stop.set_disabled(!session.is_busy());
+        self.measure
+            .set_disabled(session.is_busy() || session.stop_here().is_none());
 
         let rail = render::rail(&session)?;
         let rows = render::rows(&session.entries)?;
@@ -111,12 +122,12 @@ fn say(line: &Element, tone: Tone, message: &str) {
     line.set_text_content(Some(message));
 }
 
-fn element(document: &Document, id: &str) -> AppResult<Element> {
+pub(crate) fn element(document: &Document, id: &str) -> AppResult<Element> {
     document
         .get_element_by_id(id)
         .ok_or_else(|| AppError::missing(id))
 }
 
-fn button(document: &Document, id: &str) -> AppResult<HtmlButtonElement> {
+pub(crate) fn button(document: &Document, id: &str) -> AppResult<HtmlButtonElement> {
     Ok(element(document, id)?.dyn_into()?)
 }

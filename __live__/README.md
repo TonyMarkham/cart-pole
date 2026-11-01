@@ -17,7 +17,7 @@ pushed whole to their computers, so each must build with nothing else from the r
 | Webserver | `orin/rust/crates/webserver` | Orin | Orin | `orin/rust/Cargo.toml` |
 | `image-push` | `orin/rust/crates/image-push` | Orin | Orin | `orin/rust/Cargo.toml` |
 | `arduino-manager` | `rpi/rust/crates/arduino-manager` | Pi | Pi | `rpi/rust/Cargo.toml` |
-| `capture_push.py` | `orin/python` | Orin | nothing to build | a `uv` project |
+| `capture_push.py`, the marker detector and the calibration service | `orin/python` | Orin | nothing to build | a `uv` project |
 
 A **workspace** is a group of Rust crates built together, with their dependencies'
 versions in one `Cargo.toml`. Cargo finds a crate's by walking up the folders from
@@ -28,7 +28,7 @@ Each part's README:
 [firmware](arduino/rust/crates/calibration/README.md),
 [webserver, `image-push` and the pages](orin/rust/README.md),
 [manager](rpi/rust/crates/arduino-manager/README.md),
-[`capture_push.py`](orin/python/README.md).
+[`capture_push.py`, the detector and the calibration service](orin/python/README.md).
 
 The computers on this network, and what's on each since 2026-10-31:
 

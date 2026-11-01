@@ -71,8 +71,28 @@ button:disabled { background: var(--line); color: var(--quiet); cursor: not-allo
 table { border-collapse: collapse; width: 100%; min-width: 620px; background: var(--panel); }
 th, td { border: 1px solid var(--line); padding: 7px 9px; text-align: left; vertical-align: top; font-size: 14px; }
 th { color: var(--quiet); font-weight: 600; }
-td.good { color: var(--ok); font-weight: 700; }
-td.bad { color: var(--warn); font-weight: 700; }
+td.good, p.good { color: var(--ok); font-weight: 700; }
+td.bad, p.bad { color: var(--warn); font-weight: 700; }
+table.small { min-width: 0; }
+#measure-here { display: block; width: 100%; margin: 12px 0; }
+dialog { width: min(760px, calc(100vw - 32px)); max-height: calc(100vh - 32px); overflow: auto; padding: 20px;
+  border: 1px solid var(--line); border-radius: 10px; background: var(--panel); color: var(--text); }
+dialog::backdrop { background: rgba(0, 0, 0, 0.6); }
+dialog h2 { margin: 0 0 12px; }
+#modal-count, #modal-gap { width: 100%; font: inherit; padding: 8px; margin: 8px 0; border-radius: 6px;
+  border: 1px solid var(--line); background: var(--page); color: var(--text); }
+#modal-count-error, #modal-gap-error { color: var(--warn); font-weight: 600; }
+#modal-progress { display: block; width: 100%; height: 20px; }
+#modal-progress-text { text-align: center; font-size: 20px; font-weight: 600; margin: 8px 0; }
+.modal-frame { position: relative; margin: 8px 0; aspect-ratio: 728 / 544; background: var(--page); }
+.modal-frame img, #modal-boxes svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.box-pivot, .box-end { fill: none; stroke-width: 3; }
+.box-pivot { stroke: #2ecc40; }
+.box-end { stroke: #2d8cff; }
+.modal-buttons { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; margin-top: 12px; }
+.modal-buttons button { min-width: 120px; touch-action: manipulation; }
+.modal-buttons button.quiet { background: var(--line); color: var(--text); }
+[hidden] { display: none !important; }
 </style>
 </head>
 <body>
@@ -90,17 +110,18 @@ over WiFi, and a message can be lost, so it does not replace the e-stop.</p>
 
 <p id="next" class="line info"></p>
 <p id="result" class="line" role="status"></p>
+<button id="measure-here" type="button" disabled>Measure this stop</button>
 
 <div class="controls">
-  <div class="control">
-    <h3>Motor end</h3>
-    <p>Runs the cart slowly towards the motor until switch D2 trips.</p>
-    <button id="motor" type="button" disabled>Find the motor end</button>
-  </div>
   <div class="control">
     <h3>Idler end</h3>
     <p>Runs the cart slowly towards the idler pulley until switch D3 trips.</p>
     <button id="idler" type="button" disabled>Find the idler end</button>
+  </div>
+  <div class="control">
+    <h3>Motor end</h3>
+    <p>Runs the cart slowly towards the motor until switch D2 trips.</p>
+    <button id="motor" type="button" disabled>Find the motor end</button>
   </div>
   <div class="control">
     <h3>Centre</h3>
@@ -110,6 +131,45 @@ over WiFi, and a message can be lost, so it does not replace the e-stop.</p>
     <button id="centre" type="button" disabled>Move to the centre</button>
   </div>
 </div>
+
+<dialog id="modal">
+  <h2 id="modal-title"></h2>
+  <div id="modal-steady">
+    <div id="modal-gap-row">
+      <label for="modal-gap">First, measure the gap from the cart to the rail support beside it,
+      and enter it here in millimetres. It is about 5 mm.</label>
+      <input id="modal-gap" type="text" inputmode="decimal" autocomplete="off">
+      <p id="modal-gap-error" role="alert"></p>
+    </div>
+    <p>Steady the pole with your hand until it hangs still, then get clear of the camera's
+    view. Press NEXT when it is steady.</p>
+    <div class="modal-buttons"><button id="modal-next" type="button">NEXT</button></div>
+  </div>
+  <div id="modal-form" hidden>
+    <label id="modal-count-help" for="modal-count"></label>
+    <input id="modal-count" type="text" inputmode="numeric" autocomplete="off">
+    <p id="modal-count-error" role="alert"></p>
+    <div class="modal-buttons"><button id="modal-start" type="button">START</button></div>
+  </div>
+  <div id="modal-running" hidden>
+    <progress id="modal-progress" value="0" max="30"></progress>
+    <p id="modal-progress-text" role="status"></p>
+    <div class="modal-frame"><img id="modal-image" alt="The latest frame the detector looked at"><div id="modal-boxes"></div></div>
+  </div>
+  <div id="modal-summary" hidden>
+    <div id="modal-summary-text"></div>
+    <div class="modal-buttons">
+      <button id="modal-retry" type="button" class="quiet">Retry</button>
+      <button id="modal-done" type="button">Done</button>
+    </div>
+  </div>
+  <div id="modal-fit" hidden><div id="modal-fit-text"></div></div>
+  <div id="modal-problem" hidden><p id="modal-problem-text" class="bad" role="alert"></p></div>
+  <div class="modal-buttons">
+    <button id="modal-cancel" type="button" class="quiet">Cancel</button>
+    <button id="modal-close" type="button" hidden>Close</button>
+  </div>
+</dialog>
 
 <h2>What happened</h2>
 <div class="table-wrap">
@@ -152,6 +212,18 @@ not, with HTTP's meanings: 400 a bad request, 408 out of time, 409 not possible 
 504 means the Orin heard nothing back; the message may have been lost on the WiFi, so the cart may
 have moved anyway. <b>Result</b> is the board's name for how it ended. <b>Pulses</b> is how far the
 cart went. The motor's driver turns each pulse into one small step, 0.015 mm of cart travel.</p>
+<p><b>Measuring a stop.</b> The camera's pixels only become metres through a matrix, and fitting
+that matrix needs the two moving markers measured at three places the cart is known to be: each end
+and the centre. So when the cart arrives, a window asks you to steady the pole, then how many images
+to use, at least 30. At each end it first asks for the gap from the cart to the rail
+support beside it, measured by hand, because the real rig differs from its CAD. Only an image with both Pivot and End in it counts. For each marker the page
+drops any detection far from the rest and averages what is left, and more images give a steadier
+point. Retry measures the stop again, and measuring a stop again later replaces its result. After
+the third stop's Done the fit runs. The lens bends the picture, which the matrix alone cannot
+follow, so the fit also finds one number for that bend, from the six points' known real positions.
+It fails if any point is more than the limit from where the matrix puts it. Pixel positions count
+from the picture's top left corner, and the picture is 728 pixels wide and 544 high. Cancel always gets you out, and leaves the cart where it is. <b>Measure this stop</b> opens
+the window again without moving anything. The cart cannot be moved during a measurement.</p>
 <p><b>How a move happens.</b> The page asks the Orin's webserver, and the webserver sends the board
 one UDP message, because a browser cannot send UDP. UDP sends a single message over the network
 with no connection set up and no guarantee it arrives. The board answers once the cart has

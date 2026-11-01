@@ -1,7 +1,9 @@
 use crate::{
     arduino::ArduinoState,
     constants::{CENTRE_REQUEST, IDLER_REQUEST, MOTOR_REQUEST, MOVE_ANSWER_MAX, STOP_REQUEST},
+    measure::is_measuring,
     settings::ArduinoSettings,
+    stop::Stop,
 };
 
 use axum::{
@@ -24,12 +26,12 @@ pub(crate) struct CentreQuery {
 
 pub(crate) async fn idler(State(arduino): State<ArduinoState>) -> Response {
     let wait_ms = arduino.settings.move_timeout_ms;
-    travel(arduino, IDLER_REQUEST.to_string(), wait_ms).await
+    travel(arduino, IDLER_REQUEST.to_string(), wait_ms, Stop::Idler).await
 }
 
 pub(crate) async fn motor(State(arduino): State<ArduinoState>) -> Response {
     let wait_ms = arduino.settings.move_timeout_ms;
-    travel(arduino, MOTOR_REQUEST.to_string(), wait_ms).await
+    travel(arduino, MOTOR_REQUEST.to_string(), wait_ms, Stop::Motor).await
 }
 
 /// A move to the centre: with no speed the board uses its `seek_speed`. A speed
@@ -53,7 +55,7 @@ pub(crate) async fn centre(
         Some(speed) => format!("{CENTRE_REQUEST} {speed}"),
         None => CENTRE_REQUEST.to_string(),
     };
-    travel(arduino, request, wait_ms).await
+    travel(arduino, request, wait_ms, Stop::Centre).await
 }
 
 /// Asks the board to end whichever move is under way. It takes no permit, because
@@ -87,8 +89,9 @@ async fn send_stops(arduino: &ArduinoSettings) -> io::Result<()> {
 /// page closed mid-move must not make the server think the cart has stopped: the
 /// permit is held until the board answers or the wait runs out. It waits for any
 /// reading on its way to finish first, and no new one starts once it holds the
-/// permit (`pins`), so the datagram never lands while the board is answering.
-async fn travel(arduino: ArduinoState, request: String, wait_ms: u64) -> Response {
+/// permit (`pins`), so the datagram never lands while the board is answering. A
+/// measurement needs the cart still, so a move is refused during one.
+async fn travel(arduino: ArduinoState, request: String, wait_ms: u64, stop: Stop) -> Response {
     let Ok(moving) = arduino.moving.clone().try_acquire_owned() else {
         return answer_of_ours(
             StatusCode::CONFLICT,
@@ -96,12 +99,26 @@ async fn travel(arduino: ArduinoState, request: String, wait_ms: u64) -> Respons
             "a move is under way, and the board would throw this one away".to_string(),
         );
     };
+    if is_measuring(&arduino.calibration).await {
+        return answer_of_ours(
+            StatusCode::CONFLICT,
+            "busy",
+            "a measurement is under way, and it needs the cart still".to_string(),
+        );
+    }
     let settings = arduino.settings.clone();
     let reading = arduino.reading.clone();
+    let rail = arduino.rail.clone();
     let asked = tokio::spawn(async move {
         let _until_it_ends = moving;
         drop(reading.lock().await);
-        ask(&settings, &request, wait_ms).await
+        let asked = ask(&settings, &request, wait_ms).await;
+        let mut rail = rail.lock().await;
+        match &asked {
+            Ok((_, answer)) => rail.note(stop, answer),
+            Err(_) => rail.forget(),
+        }
+        asked
     })
     .await;
 

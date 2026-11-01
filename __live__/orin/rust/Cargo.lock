@@ -1008,6 +1008,7 @@ dependencies = [
  "tokio",
  "toml",
  "tower-http",
+ "ureq",
 ]
 
 [[package]]

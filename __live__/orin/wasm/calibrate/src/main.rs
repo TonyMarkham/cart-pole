@@ -3,11 +3,22 @@ mod board;
 mod constants;
 mod entry;
 mod error;
+mod fit_report;
+mod frame_boxes;
 mod heading;
+mod marker_box;
+mod marker_summary;
+mod measure_status;
+mod measure_summary;
+mod measuring;
+mod modal;
+mod modal_screen;
 mod page;
 mod place;
 mod reading;
 mod render;
+mod residual;
+mod server_state;
 mod session;
 mod settings;
 mod switches;
@@ -46,6 +57,12 @@ async fn run() -> AppResult<()> {
 
     let settings = board::settings(&page.window).await?;
     page.session.borrow_mut().address = settings.address;
+    let state = board::server_state(&page.window).await?;
+    page.session
+        .borrow_mut()
+        .restore(state.last_stop, state.span);
+    page.modal.set_poll_ms(state.poll_ms);
+    measuring::wire(&page)?;
 
     for (travel, button) in page.buttons() {
         let travel = *travel;
@@ -90,6 +107,8 @@ fn start(page: Rc<Page>, travel: Travel) {
     }
     spawn_local(async move {
         let answer = board::ask_for_move(&page.window, travel, speed.as_deref()).await;
+        // Where a move ended as asked, the cart is ready to be measured.
+        let arrived = answer.succeeded();
         page.session
             .borrow_mut()
             .finish(answer, Date::now(), time_now());
@@ -98,6 +117,9 @@ fn start(page: Rc<Page>, travel: Travel) {
         page.session.borrow_mut().read(reading, time_now());
         if let Err(error) = page.draw() {
             report(&error);
+        }
+        if arrived {
+            measuring::open(Rc::clone(&page), travel);
         }
     });
 }
@@ -124,6 +146,6 @@ fn time_now() -> String {
     )
 }
 
-fn report(error: &AppError) {
+pub(crate) fn report(error: &AppError) {
     console::error_1(&JsValue::from_str(&error.to_string()));
 }

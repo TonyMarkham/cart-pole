@@ -1,5 +1,6 @@
-# capture_push.py's settings: taking the picture on the Orin and pushing it
-# to the viewer. Read at each run.
+# The Orin's Python's settings. Read at each run. [camera], [png] and [push] are
+# capture_push.py's: taking the picture on the Orin and pushing it to the viewer.
+# [detector] is the marker detector's, read by src/detector_config.py.
 
 [camera]
 # Which camera, and which of its modes. Mode 0 is the sensor's full frame,
@@ -36,3 +37,96 @@ compression_level = 1
 # server runs on the Orin too, so this is the Orin's own address.
 image_push = "~/orin-cam/target/release/image-push"
 server = "http://localhost:8080"
+
+[stream]
+# The frames the detector gets. The sensor's full frame from [camera], halved
+# exactly on each side, in greyscale: the format of the real images the model has
+# already been run on (datasets/real-640).
+width = 728
+height = 544
+
+# JPEG quality each frame is encoded at before the detector decodes it. 0-100.
+jpeg_quality = 90
+
+# Frames thrown away after the camera starts, because its automatic exposure needs
+# a moment to settle. capture_push.py uses 30 for the same reason.
+settle_frames = 30
+
+[detector]
+# The trained detector, float ONNX: the model src/build_engine.py builds the
+# TensorRT engine from. It is not in git. This copy on the Orin has the same
+# checksum as training/runs/cp2-640-base/weights/best.onnx on the PC (2026-11-01).
+model = "~/orin-test/best.onnx"
+
+# The TensorRT engine: the model compiled for this GPU, FP16, already on the Orin.
+engine = "~/orin-test/best_fp16.engine"
+
+# The model's square input size, pixels (its metadata imgsz).
+input_size = 640
+
+# Ultralytics' letterbox padding value (0-255 grey).
+pad_value = 114
+
+# A class's best box counts as detected at or above this score.
+# 0.25 is Ultralytics' predict default, the value the reference used.
+confidence = 0.25
+
+# Class order = slot order = the model's class ids (its metadata names).
+classes = ["Left", "Right", "Pivot", "End"]
+
+[service]
+# Where calibrate_service.py listens. Only this computer can reach it: the
+# webserver forwards to it (service in the webserver's settings.toml must match).
+host = "127.0.0.1"
+port = 8090
+
+[calibration]
+# How many images a stop's measurement may be asked for. An image counts only if
+# it has both Pivot and End in it.
+min_images = 30
+max_images = 9999
+
+# A detection further from the middle of its marker's detections than this many
+# spreads is dropped before the mean. Proposed in calibrate-w-homography.md.
+clip_k = 3
+
+# The largest distance, in pixels, between a measured point and where the fitted
+# matrix puts it. Any point over this fails the fit, and nothing is stored. On
+# 2026-11-01 the rig's worst point was 1.600 px with no lens correction and 0.166 px
+# with one, so this leaves room for the corrected fit and would catch the other.
+residual_px = 1.0
+
+# The lens and sensor, to express the lens's bend (ArUco.md, Camera; lens.py).
+lens_focal_mm = 6.0        # Raspberry Pi 6 mm wide angle, SC0124
+sensor_pixel_um = 3.45     # IMX296. Halving the frame makes it 6.9 um
+
+# The range searched for the lens number at each fit, and the search's step. The
+# number itself is measured, and stored with the matrix. On 2026-11-01 it was +0.44.
+lens_k_min = -0.2
+lens_k_max = 1.2
+lens_k_step = 0.005
+
+# Where the fitted matrix is stored. It belongs to one camera position on one rig,
+# so it stays on the Orin, out of git.
+matrix_path = "~/live-orin-python/homography.json"
+
+# Where each stop's kept result is saved, so a restart does not lose it.
+kept_path = "~/live-orin-python/kept_stops.json"
+
+# The largest gap the page's form accepts, mm. The gap is the hand measurement from
+# the stopped cart's face to the rail support it faces, about 5 mm, typed in at each
+# switch. This only catches a mistyped number, such as metres or centimetres.
+max_gap_mm = 50
+
+# From the MJCF, the rig's CAD, in metres. Each is a site's position with the cart
+# centred and the pole hanging (calibrate-w-homography.md, The ground truth).
+left_wall_x = -0.485          # 10-Left-Rail.Site
+right_wall_x = 0.470          # 12-Right-Rail.Site
+left_face_to_pivot = 0.035    # Pivot x - 11-Left-Cart.Site x
+right_face_to_pivot = 0.035   # 13-Right-Cart.Site x - Pivot x
+pivot_z = 0.082               # Pivot's height
+pole_length = 0.450           # Pivot to End
+
+# Metres of cart travel per pulse: trainer/settings.toml [drive], a 96,000 um belt
+# turn over 200 full steps x 32 microsteps.
+metres_per_pulse = 0.000015

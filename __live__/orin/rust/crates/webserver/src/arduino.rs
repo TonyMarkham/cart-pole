@@ -1,6 +1,7 @@
 use crate::{
     constants::{PINS_ANSWER_MAX, PINS_REQUEST},
-    settings::ArduinoSettings,
+    rail_state::RailState,
+    settings::{ArduinoSettings, CalibrationSettings},
 };
 
 use axum::{
@@ -25,16 +26,20 @@ use tokio::{
 #[derive(Clone)]
 pub(crate) struct ArduinoState {
     pub(crate) settings: ArduinoSettings,
+    pub(crate) calibration: CalibrationSettings,
     pub(crate) reading: Arc<Mutex<()>>,
     pub(crate) moving: Arc<Semaphore>,
+    pub(crate) rail: Arc<Mutex<RailState>>,
 }
 
 impl ArduinoState {
-    pub(crate) fn new(settings: ArduinoSettings) -> Self {
+    pub(crate) fn new(settings: ArduinoSettings, calibration: CalibrationSettings) -> Self {
         Self {
             settings,
+            calibration,
             reading: Arc::new(Mutex::new(())),
             moving: Arc::new(Semaphore::new(1)),
+            rail: Arc::new(Mutex::new(RailState::default())),
         }
     }
 }

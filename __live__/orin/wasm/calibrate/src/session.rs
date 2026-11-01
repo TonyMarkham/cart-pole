@@ -21,6 +21,8 @@ pub(crate) struct Session {
     stop_line: Option<(Tone, String)>,
     /// The end the cart last tripped, as the board's `resting_on` does.
     last_trip: Option<Travel>,
+    /// Where the last move ended as asked, so where the cart can be measured.
+    last_stop: Option<Travel>,
     span: Option<u32>,
     centred: bool,
 }
@@ -39,6 +41,7 @@ impl Session {
             started_ms: 0.0,
             stop_line: None,
             last_trip: None,
+            last_stop: None,
             span: None,
             centred: false,
         }
@@ -62,14 +65,27 @@ impl Session {
         self.heading
     }
 
+    /// The stop the cart can be measured at now, if any.
+    pub(crate) fn stop_here(&self) -> Option<Travel> {
+        self.last_stop
+    }
+
+    /// What the webserver remembers, for a page that has just been opened.
+    pub(crate) fn restore(&mut self, last_stop: Option<Travel>, span: Option<u32>) {
+        self.last_stop = last_stop;
+        self.last_trip = last_stop.filter(|&stop| stop != Travel::Centre);
+        self.centred = last_stop == Some(Travel::Centre);
+        self.span = span;
+    }
+
     /// False if a move is already under way, which starts nothing.
     pub(crate) fn begin(&mut self, travel: Travel, now_ms: f64) -> bool {
         if self.is_busy() {
             return false;
         }
         self.heading = match (travel, self.place()) {
-            (Travel::Motor, _) | (Travel::Centre, Place::Idler) => Some(Heading::Left),
-            (Travel::Idler, _) | (Travel::Centre, Place::Motor) => Some(Heading::Right),
+            (Travel::Idler, _) | (Travel::Centre, Place::Motor) => Some(Heading::Left),
+            (Travel::Motor, _) | (Travel::Centre, Place::Idler) => Some(Heading::Right),
             (Travel::Centre, _) => None,
         };
         // The last reading says nothing once the cart has set off.
@@ -116,20 +132,24 @@ impl Session {
                     self.span = Some(answer.pulses);
                 }
                 self.last_trip = Some(travel);
+                self.last_stop = Some(travel);
                 self.centred = false;
             }
             "centred" if answer.succeeded() => {
                 self.last_trip = None;
+                self.last_stop = Some(travel);
                 self.centred = true;
             }
             "already_there" | "bad_speed" | "refused" | "busy" => {}
             "not_ready" => self.last_trip = None,
             "stopped" => {
                 self.last_trip = None;
+                self.last_stop = None;
                 self.centred = false;
             }
             _ => {
                 self.last_trip = None;
+                self.last_stop = None;
                 self.span = None;
                 self.centred = false;
             }
@@ -239,7 +259,7 @@ impl Session {
         }
         match (self.span, self.last_trip) {
             (Some(span), _) if self.centred => format!(
-                "Done: the rail's span is {} pulses, and the cart is at the centre.",
+                "The rail's span is {} pulses, and the cart is at the centre. Measure each stop to fit the camera.",
                 grouped(span)
             ),
             (Some(span), Some(_)) => format!(
@@ -384,6 +404,29 @@ mod tests {
     }
 
     #[test]
+    fn only_a_move_that_ended_as_asked_can_be_measured() {
+        let mut session = Session::new();
+        run(&mut session, Travel::Motor, 200, "tripped", 100);
+        assert_eq!(session.stop_here(), Some(Travel::Motor));
+        run(&mut session, Travel::Centre, 400, "bad_speed", 0);
+        assert_eq!(session.stop_here(), Some(Travel::Motor));
+        run(&mut session, Travel::Idler, 409, "stopped", 100);
+        assert_eq!(session.stop_here(), None);
+        run(&mut session, Travel::Motor, 200, "tripped", 100);
+        run(&mut session, Travel::Idler, 200, "tripped", 59_822);
+        run(&mut session, Travel::Centre, 200, "centred", 29_911);
+        assert_eq!(session.stop_here(), Some(Travel::Centre));
+    }
+
+    #[test]
+    fn a_refreshed_page_picks_up_where_the_server_is() {
+        let mut session = Session::new();
+        session.restore(Some(Travel::Idler), Some(59_822));
+        assert_eq!(session.stop_here(), Some(Travel::Idler));
+        assert!(session.next_step().contains("59,822"));
+    }
+
+    #[test]
     fn a_stop_after_a_centring_leaves_the_cart_unknown() {
         let mut session = Session::new();
         run(&mut session, Travel::Centre, 200, "centred", 29_910);
@@ -470,7 +513,7 @@ mod tests {
         let mut session = Session::new();
         session.read(levels(1, 0), "now".to_string());
         assert!(session.begin(Travel::Centre, 0.0));
-        assert_eq!(session.heading(), Some(Heading::Right));
+        assert_eq!(session.heading(), Some(Heading::Left));
     }
 
     #[test]

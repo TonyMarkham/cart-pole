@@ -3,16 +3,21 @@ mod calibrate;
 mod constants;
 mod error;
 mod images;
+mod measure;
 mod pages;
+mod rail_state;
 mod settings;
+mod stop;
 mod ws;
 
 // ---------------------------------------------------------------------------------------------- //
 
 pub(crate) use crate::constants::{
     ADDRESS, ARDUINO_PAGE_DIR, ARDUINO_PAGE_ROUTE, ARDUINO_PINS_ROUTE, ARDUINO_SETTINGS_ROUTE,
-    CALIBRATE_CENTRE_ROUTE, CALIBRATE_IDLER_ROUTE, CALIBRATE_MOTOR_ROUTE, CALIBRATE_PAGE_DIR,
-    CALIBRATE_PAGE_ROUTE, CALIBRATE_STOP_ROUTE, HELLO_ROUTE, IMAGE_ROUTE, MAX_IMAGE_BYTES, SETTINGS_PATH, VIEWER_DIR,
+    CALIBRATE_CENTRE_ROUTE, CALIBRATE_FIT_ROUTE, CALIBRATE_IDLER_ROUTE,
+    CALIBRATE_MEASURE_ACCEPT_ROUTE, CALIBRATE_MEASURE_CANCEL_ROUTE, CALIBRATE_MEASURE_ROUTE,
+    CALIBRATE_MEASURE_STATUS_ROUTE, CALIBRATE_MOTOR_ROUTE, CALIBRATE_PAGE_DIR,
+    CALIBRATE_PAGE_ROUTE, CALIBRATE_STATE_ROUTE, CALIBRATE_STOP_ROUTE, HELLO_ROUTE, IMAGE_ROUTE, MAX_IMAGE_BYTES, SETTINGS_PATH, VIEWER_DIR,
     VIEWER_ROUTE, WS_ROUTE,
 };
 
@@ -44,9 +49,15 @@ async fn main() -> AppResult<()> {
         .route(CALIBRATE_MOTOR_ROUTE, routing::post(motor))
         .route(CALIBRATE_CENTRE_ROUTE, routing::post(centre))
         .route(CALIBRATE_STOP_ROUTE, routing::post(stop))
+        .route(CALIBRATE_STATE_ROUTE, routing::get(measure::state))
+        .route(CALIBRATE_MEASURE_ROUTE, routing::post(measure::start))
+        .route(CALIBRATE_MEASURE_STATUS_ROUTE, routing::get(measure::status))
+        .route(CALIBRATE_MEASURE_CANCEL_ROUTE, routing::post(measure::cancel))
+        .route(CALIBRATE_MEASURE_ACCEPT_ROUTE, routing::post(measure::accept))
+        .route(CALIBRATE_FIT_ROUTE, routing::post(measure::fit))
         .nest_service(ARDUINO_PAGE_ROUTE, ServeDir::new(ARDUINO_PAGE_DIR))
         .nest_service(CALIBRATE_PAGE_ROUTE, ServeDir::new(CALIBRATE_PAGE_DIR))
-        .with_state(ArduinoState::new(settings.arduino));
+        .with_state(ArduinoState::new(settings.arduino, settings.calibration));
 
     let app = Router::new()
         .route(HELLO_ROUTE, routing::get(hello))

@@ -24,6 +24,14 @@ pub(crate) const CALIBRATE_MOTOR_ROUTE: &str = "/calibrate/motor";
 pub(crate) const CALIBRATE_CENTRE_ROUTE: &str = "/calibrate/centre";
 pub(crate) const CALIBRATE_STOP_ROUTE: &str = "/calibrate/stop";
 
+/// Must match the page's routes, in its `constants.rs`.
+pub(crate) const CALIBRATE_STATE_ROUTE: &str = "/calibrate/state";
+pub(crate) const CALIBRATE_MEASURE_ROUTE: &str = "/calibrate/measure";
+pub(crate) const CALIBRATE_MEASURE_STATUS_ROUTE: &str = "/calibrate/measure/status";
+pub(crate) const CALIBRATE_MEASURE_CANCEL_ROUTE: &str = "/calibrate/measure/cancel";
+pub(crate) const CALIBRATE_MEASURE_ACCEPT_ROUTE: &str = "/calibrate/measure/accept";
+pub(crate) const CALIBRATE_FIT_ROUTE: &str = "/calibrate/fit";
+
 /// The datagram that asks the Arduino for its pin levels: must match the
 /// firmware's `PINS_REQUEST`.
 pub(crate) const PINS_REQUEST: &[u8] = b"pins";

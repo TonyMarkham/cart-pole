@@ -36,6 +36,12 @@ The server listens on port `8080`. On the Orin, that's `http://192.168.0.215:808
 | `/calibrate/idler` | POST | **Moves the cart** to the idler's end, and answers when it has stopped |
 | `/calibrate/centre` | POST | **Moves the cart** to the rail's centre, and answers when it has stopped. `?speed=5000` asks for that many pulses per second |
 | `/calibrate/stop` | POST | Asks the board to end the move under way. 200 means only that the messages left; the move's own request gets the `stopped` answer |
+| `/calibrate/state` | GET | What the moves have found: the span and the stop the cart is at, so a refreshed page knows them too |
+| `/calibrate/measure` | POST | Starts measuring a stop: `?stop=motor&count=30&gap_mm=5`. The centre takes no gap. Refused while the cart is moving |
+| `/calibrate/measure/status` | GET | How the measurement is going, with the latest frame and its boxes |
+| `/calibrate/measure/accept` | POST | Keeps the finished measurement for its stop |
+| `/calibrate/measure/cancel` | POST | Ends any measurement, and throws its result away |
+| `/calibrate/fit` | POST | Fits the matrix from the three kept stops and the span, and stores it if it passes |
 
 ## The Arduino page
 
@@ -85,6 +91,23 @@ The page's own text explains the order to press them in and how to read each ans
 **What it doesn't know.** The board has no message that reports its span, so the span and the "what to do next" line on the page come from the answers that page has seen. A refreshed page starts knowing nothing, though the board remembers. The board decides every move all the same, and answers `not_ready` or `already_there` when it won't make one.
 
 The page is Rust compiled to WebAssembly, with no hand-written JavaScript. Its explanations and styling are in `../wasm/calibrate/index.html`, what it knows in `src/session.rs`, and its drawing in `src/render.rs`.
+
+### Measuring a stop
+
+The camera's pixels only become metres through a matrix, and fitting it takes Pivot and End measured at three places the cart is known to be. So when a move ends as asked, a window opens over the page, and nothing behind it can be pressed:
+
+1. At each end, it asks for the gap from the cart to the rail support beside it, measured by hand, in millimetres. It asks you to steady the pole, and you press **NEXT**. The centre has no gap to measure.
+2. It asks how many images to use, from 30 to 9,999. Only an image with both Pivot and End in it counts. You press **START**.
+3. It shows a progress bar and the latest frame, with Pivot's box in green and End's in blue.
+4. It shows a summary. **Done** keeps the result and closes the window, ready for the next move. **Retry** throws it away and starts this stop again.
+
+**Cancel** is always there, and leaves the cart where it is. **Measure this stop** on the page opens the window again without moving anything. After the third stop's Done, the fit runs and shows how close each point came.
+
+```text
+page  --POST /calibrate/measure-->  webserver  --POST /measure-->  calibrate_service.py  -->  camera, GPU
+```
+
+This needs [the calibration service](../python/README.md) running. **The cart can't move during a measurement:** each side holds the one permit while it checks the other, so a move is refused with `busy`, and a measurement is refused while the cart is moving. `[calibration]` in `settings.toml` says where the service is. With no service running, the moves still work, and the window says so at NEXT.
 
 ## Prerequisites
 
@@ -276,6 +299,7 @@ On the Orin, if the server is using its own terminal, run these in a second SSH 
 | `/arduino/` returns 404 | `pages/arduino` wasn't built or pushed, or the server was started outside `~/orin-cam` | Redo deployment steps 2 to 6, or step 9 from `~/orin-cam` |
 | `/calibrate` returns 404 | `pages/calibrate` wasn't built or pushed, or the server was started outside `~/orin-cam` | Redo deployment steps 2 to 6, or step 9 from `~/orin-cam` |
 | The calibration page shows `no_answer` after a move | The answer was lost or the board is off. The cart may have moved | Look at the switches on the page and at the cart. Find both ends again if in doubt |
+| The window says the calibration service did not answer | `calibrate_service.py` isn't running | Start it ([its README](../python/README.md)) |
 | The server stops at start with `[IO Error]` or `[Settings Error]` | `settings.toml` is missing, or something in it is wrong | Start it from `~/orin-cam`, and check that file |
 | The Arduino page says "No answer from the board" | The board is off, on other firmware or at another address, or a message was lost | Check the firmware's README, *How it runs* |
 | The page stays on "waiting for image" after a push | The page has a dead connection | Refresh the page |
@@ -288,4 +312,4 @@ On the Orin, if the server is using its own terminal, run these in a second SSH 
 - **No reconnect:** a viewer has to be refreshed after a server restart.
 - **Server doesn't start on boot:** after the Orin restarts, it has to be started again (deployment step 9).
 - **PNG check is basic:** both `image-push` and the server only check the first 8 bytes of the file.
-- **Duplicated values:** `WS_ROUTE`, `IMAGE_ROUTE` and `PNG_SIGNATURE` are defined in more than one crate and must be kept in sync by hand. `VIEWER_ROUTE` must also match `public_url` in `../wasm/viewer/Trunk.toml`. `PINS_REQUEST`, the three move datagrams, `STOP_REQUEST` and the Arduino's UDP port must match the calibration firmware. The `CALIBRATE_*_ROUTE`s must match the page's `constants.rs`.
+- **Duplicated values:** `WS_ROUTE`, `IMAGE_ROUTE` and `PNG_SIGNATURE` are defined in more than one crate and must be kept in sync by hand. `VIEWER_ROUTE` must also match `public_url` in `../wasm/viewer/Trunk.toml`. `PINS_REQUEST`, the three move datagrams, `STOP_REQUEST` and the Arduino's UDP port must match the calibration firmware. The `CALIBRATE_*_ROUTE`s must match the page's `constants.rs`. `service` in `[calibration]` must match `[service]` in `../python/settings.toml`.

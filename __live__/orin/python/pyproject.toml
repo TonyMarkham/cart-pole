@@ -1,11 +1,18 @@
 [project]
 name = "live-orin"
 version = "0.1.0"
-description = "The real Orin's Python: takes a picture with the Global Shutter camera and pushes it to the viewer"
+description = "The real Orin's Python: shows the camera's picture on the viewer, and detects the markers"
 # 3.10 is the Orin's system Python, the one JetPack's TensorRT is installed
 # for (/usr/lib/python3.10/dist-packages, checked on robo-orin 2026-10-31).
 requires-python = ">=3.10"
+# TensorRT is not listed: it comes from the system, so the .venv must be made to
+# see the system's packages (README.md). The other three are the versions
+# ~/orin-test/.venv ran the detector with (checked on robo-orin 2026-11-01).
 dependencies = [
+    # 12.6 is JetPack 6.2.3's CUDA.
+    "cuda-python>=12.6,<12.7",
+    "numpy>=2.2.6,<2.3",
+    "opencv-python-headless>=5.0.0.93",
     # Python reads toml by itself only from 3.11 (tomllib).
     "tomli>=2; python_version < '3.11'",
 ]

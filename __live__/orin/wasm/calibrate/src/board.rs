@@ -1,8 +1,9 @@
 use crate::{
     answer::Answer,
-    constants::{PINS_ROUTE, SETTINGS_ROUTE, STATUS_SERVICE_UNAVAILABLE, STOP_ROUTE},
+    constants::{PINS_ROUTE, SETTINGS_ROUTE, STATE_ROUTE, STATUS_SERVICE_UNAVAILABLE, STOP_ROUTE},
     error::{AppError, result::AppResult},
     reading::Reading,
+    server_state::ServerState,
     settings::Settings,
     travel::Travel,
 };
@@ -15,6 +16,16 @@ use web_sys::{RequestCache, RequestInit, Response, Window};
 /// `[arduino]` from the webserver's settings.toml.
 pub(crate) async fn settings(window: &Window) -> AppResult<Settings> {
     let (ok, _, text) = request(window, SETTINGS_ROUTE, "GET").await?;
+    if ok {
+        Ok(serde_json::from_str(&text)?)
+    } else {
+        Err(AppError::answer(text))
+    }
+}
+
+/// What the webserver remembers about the rail.
+pub(crate) async fn server_state(window: &Window) -> AppResult<ServerState> {
+    let (ok, _, text) = request(window, STATE_ROUTE, "GET").await?;
     if ok {
         Ok(serde_json::from_str(&text)?)
     } else {
@@ -70,7 +81,11 @@ pub(crate) async fn ask_to_stop(window: &Window) -> AppResult<()> {
 
 /// One request, never from the browser's cache: whether it worked, its status,
 /// and its body.
-async fn request(window: &Window, route: &str, method: &str) -> AppResult<(bool, u16, String)> {
+pub(crate) async fn request(
+    window: &Window,
+    route: &str,
+    method: &str,
+) -> AppResult<(bool, u16, String)> {
     let init = RequestInit::new();
     init.set_method(method);
     init.set_cache(RequestCache::NoStore);

@@ -34,3 +34,16 @@ half_span_pulses = 30000
 # measured.
 stop_sends = 3
 stop_gap_ms = 50
+
+[calibration]
+# Where calibrate_service.py listens, on this computer: host and port must match
+# [service] in ../python/settings.toml.
+service = "http://127.0.0.1:8090"
+
+# How long to wait for the service's answer, ms. It answers at once, because a
+# measurement runs on behind it, so this is only for a service that has hung.
+timeout_ms = 5000
+
+# How often the page looks at a running measurement, ms. It sets how often the
+# slide show changes, and costs the measurement nothing.
+poll_ms = 200
