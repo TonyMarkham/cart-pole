@@ -2,13 +2,15 @@
 # capture_push.py's: taking the picture on the Orin and pushing it to the viewer.
 # [detector] is the marker detector's, read by src/detector_config.py.
 
+
+
 [camera]
 # Which camera, and which of its modes. Mode 0 is the sensor's full frame,
 # 1456 x 1088 at 60 frames/s (v4l2-ctl --list-formats-ext on robo-orin).
 sensor_id = 0
 sensor_mode = 0
-width = 1456
-height = 1088
+width = 1_456
+height = 1_088
 framerate = 60
 
 # Frames to capture; only the last is kept, because the camera's automatic
@@ -24,6 +26,8 @@ ee_mode = 0
 # took 7.6 s on robo-orin, nearly all of it writing the PNGs.
 timeout_s = 60
 
+
+
 [png]
 # Where the picture is written. Each run replaces it.
 path = "/tmp/orin-capture.png"
@@ -32,11 +36,15 @@ path = "/tmp/orin-capture.png"
 # made a 2.9 MB file.
 compression_level = 1
 
+
+
 [push]
 # orin-cam's command-line tool, and the orin-cam server it sends to. The
 # server runs on the Orin too, so this is the Orin's own address.
 image_push = "~/orin-cam/target/release/image-push"
 server = "http://localhost:8080"
+
+
 
 [stream]
 # The frames the detector gets. The sensor's full frame from [camera], halved
@@ -48,9 +56,19 @@ height = 544
 # JPEG quality each frame is encoded at before the detector decodes it. 0-100.
 jpeg_quality = 90
 
-# Frames thrown away after the camera starts, because its automatic exposure needs
-# a moment to settle. capture_push.py uses 30 for the same reason.
+# The shutter, ns: 1 ms, locked. With a global shutter that keeps the swinging pole's
+# end sharp, which automatic exposure would not. It is what the real images the model
+# has been run on used (training/06-REAL_LABELING.md).
+exposure_ns = 1_000_000
+
+# The sensor's gain, locked. A 1 ms shutter lets in little light, and this makes up
+# for it, at the cost of a noisier picture. Set on the rig against detection.
+gain = 8
+
+# Frames thrown away after the camera starts, while it settles.
 settle_frames = 30
+
+
 
 [detector]
 # The trained detector, float ONNX: the model src/build_engine.py builds the
@@ -74,11 +92,15 @@ confidence = 0.25
 # Class order = slot order = the model's class ids (its metadata names).
 classes = ["Left", "Right", "Pivot", "End"]
 
+
+
 [service]
 # Where calibrate_service.py listens. Only this computer can reach it: the
 # webserver forwards to it (service in the webserver's settings.toml must match).
 host = "127.0.0.1"
 port = 8090
+
+
 
 [calibration]
 # How many images a stop's measurement may be asked for. An image counts only if
@@ -129,4 +151,4 @@ pole_length = 0.450           # Pivot to End
 
 # Metres of cart travel per pulse: trainer/settings.toml [drive], a 96,000 um belt
 # turn over 200 full steps x 32 microsteps.
-metres_per_pulse = 0.000015
+metres_per_pulse = 0.000_015

@@ -32,6 +32,7 @@ class Camera:
         self.width = stream["width"]
         self.height = stream["height"]
         self._camera = camera
+        self._stream = stream
         self._process: subprocess.Popen | None = None
         self._frames: BinaryIO | None = None
 
@@ -45,6 +46,11 @@ class Camera:
             f"sensor-mode={camera['sensor_mode']}",
             f"tnr-mode={camera['tnr_mode']}",
             f"ee-mode={camera['ee_mode']}",
+            # Locked, because automatic exposure would smear the swinging pole's end
+            # and change the picture from frame to frame.
+            f"exposuretimerange={self._stream['exposure_ns']} {self._stream['exposure_ns']}",
+            f"gainrange={self._stream['gain']} {self._stream['gain']}",
+            "ispdigitalgainrange=1 1",
             "!", f"video/x-raw(memory:NVMM),width={camera['width']},height={camera['height']},framerate={camera['framerate']}/1",
             # Out of the camera's GPU memory, halved, one byte per pixel.
             "!", "nvvidconv",
