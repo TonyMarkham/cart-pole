@@ -19,7 +19,9 @@ trains in the **synthetic loop** (`synthetic-loop-dia.md`, the source of
 truth for the loop plans): the Rust orchestrator steps MuJoCo
 in-process, the synthetic Orin triggers the standalone Unity player
 (`SimulationLoop.exe`) over WebSocket and detects the markers in its
-frames, and the trainer receives the marker pool for the policy and,
+frames, passing Pivot and End through the matrix its calibration found
+(`synthetic-loop-dia.md`, *Calibration*; user, 2026-11-01), and the trainer
+receives that pool, in metres, for the policy and,
 for the reward alone, each capture's true site positions from MuJoCo
 (user, 2026-10-25) and the pole's true speed and centre of mass, with
 its mass, inertia and centre-of-mass distance once per run (user,
@@ -43,7 +45,7 @@ it comes from, each step reproducible from the repo alone. No reward
 change lands until its ELI-5 explanation is written and the user has
 approved it.
 
-**The reward's source of truth is `trainer/reward-plan.md`** (user,
+**The reward's source of truth is `__synthetic__/trainer/python/reward-plan.md`** (user,
 2026-10-28), the ELI-5 explanation of the reward: r = r_tip ×
 r_target_speed × r_cart × r_reach × r_speed (r_cart added 2026-10-29,
 user; the same day r_tip's star moved onto the cart and r_reach kept the
@@ -141,15 +143,19 @@ adds repo structure around them, never overrides them.
   `__live__/orin/wasm/viewer` and `__live__/orin/wasm/arduino`.
   Never hand-write JavaScript. Worked failure: the first `/arduino` page was
   about 165 lines of it, with the viewer crate right beside it.
+- **Clippy must be clean, and `unwrap()` is forbidden except in tests**
+  (user, 2026-11-01). The workspace's `Cargo.toml` denies it, and the root
+  `clippy.toml` lets tests use it. Check with `cargo clippy --all-targets
+  --no-deps` from the repo root, before saying Rust work is done.
 - **Python policy.** Always `uv`, never pip; install nothing without
   permission (a standing directive). No Python on the dataset-verify path —
   the Python checker retired; verification runs in-process through the
   `com.greyhound.vision` package's native shim. Remaining Python lives
-  in five places, each for a stated reason: `trainer/` (the RL trainer,
+  in five places, each for a stated reason: `__synthetic__/trainer/python/` (the RL trainer,
   a `uv` project around Gymnasium, the learning tooling, user
   2026-10-24, `trainer-plan.md`), `freecad/tools/step-mass.py`
   (FreeCAD's scripting API is Python-only), `vision/gym_state_sender.py`
-  (the gym-side client), `orin/` (the synthetic Orin, a `uv` project:
+  (the gym-side client), `__synthetic__/orin/python/` (the synthetic Orin, a `uv` project:
   detection on the robot is Python, user 2026-10-23, because OpenCV +
   TensorRT beat the Rust POC on the Orin, `detector-plan.md` *Results*),
   and `training/` (the detector training, a `uv` project around
@@ -212,7 +218,8 @@ adds repo structure around them, never overrides them.
   is the sibling checkout `D:\git\greyhound-snake`, whose `dist/package/`
   is what the editor actually loads.
 - The Rust side resolves to the same sibling checkout: `orchestrator.toml`'s
-  `mujoco_dir` is `../greyhound-snake/dist/mujoco/…` from the repo root.
+  `mujoco_dir` is `../../../../greyhound-snake/dist/mujoco/…` from
+  `__synthetic__/orchestrator/rust/`, the file's folder.
 - There is no greyhound submodule (dropped 2026-10-22: nothing built
   from it, and the `dist/` everything loads is gitignored in greyhound).
   The greyhound version anything runs against is whatever the sibling
@@ -321,19 +328,29 @@ adds repo structure around them, never overrides them.
   marker and desk SOs) and `simulation.cart-pole.sim-loop`
   (`SimulationLoopController`, the standalone player's renderer for the
   synthetic loop, `unity-player-plan.md`).
+- `bench-station/` — kept for one reason (user, 2026-11-01): to remind the user
+  to bring the skip test, the jump-limit experiment and its `POST /trial`
+  route, into `__live__/rpi/rust/crates/arduino-manager`, which replaces it for
+  everything else. Do not extend it.
+- `__synthetic__/` — the synthetic loop's code, moved here on 2026-11-01 (user)
+  and kept apart from `__live__/`. Each part is a folder by language:
+  `orchestrator/rust/`, `orin/python/` and `trainer/python/`. The Unity project
+  and its sim-loop package, `training/`, `datasets/` and the root plans stay
+  where they are. `__synthetic__/README.md` has the layout.
 - **The Rust workspace** (`Cargo.toml` at the repo root; `aruco/`
-  excluded) — the synthetic loop's parts, each with its plan:
+  excluded) — the synthetic loop's parts, each with its plan, under
+  `__synthetic__/orchestrator/rust/crates/`:
   `orchestrator/` (the loop's driver; it began as the Unity leg's stub),
   `physics/` (MuJoCo in-process, linked from `orchestrator.toml`'s
-  `mujoco_dir`; the MJCF and its names come from the trainer's
-  `settings.toml` `[mjcf]` on the orchestrator's command line,
-  `mujoco-plan.md`), `arduino/` (the Arduino firmware, one source for
-  the rig and the loop's synthetic Arduino, `synthetic-arduino-plan.md`).
+  `mujoco_dir`, the file beside `crates/`; the MJCF and its names come from
+  the trainer's `settings.toml` `[mjcf]` on the orchestrator's command line,
+  `mujoco-plan.md`), `arduino/` (the loop's synthetic Arduino,
+  `synthetic-arduino-plan.md`).
   Roles by the crates' own header comments and the plans. The Rust
   detector crate, `object-detection/`, was retired on 2026-10-23 (user):
   a Pi-era POC whose question `detector-plan.md` answered, the Python
   synthetic Orin being faster on the Orin. Its `ObjectDetection.toml`
-  moved to `orin/settings.toml`, the Orin's detector configuration.
+  moved to `__synthetic__/orin/python/settings.toml`, the Orin's detector configuration.
 - `__live__/` — what runs on the real rig, one folder per computer.
   `__live__/README.md` says what is built, moved and started where; each
   part's own README has the commands. **It is kept apart from the repo**
@@ -345,10 +362,10 @@ adds repo structure around them, never overrides them.
   The firmware crate keeps one type per file, each file named after its type
   (user, 2026-11-01), and its `use` statements put `use crate::…` first, then a
   blank line, then the external crates.
-- `orin/` — the synthetic Orin, a `uv` project: Python + TensorRT
+- `__synthetic__/orin/python/` — the synthetic Orin, a `uv` project: Python + TensorRT
   detection, the 6-entry pool, the WebSocket client (`synthetic-orin-plan.md`).
   The root holds the uv files and `settings.toml` (the detector's
-  settings); the code is in `orin/src/`.
+  settings); the code is in `__synthetic__/orin/python/src/`.
 - `training/` — the detector training, a `uv` project: the numbered
   docs `01`–`07` and appendices, `src/` (`build_dataset.py`,
   `convert_proposals.py`, `dataset_stats.py`), and `runs/` (gitignored;
@@ -413,19 +430,18 @@ The roles and per-class figures are in `training/05-POST_TRAINING.md`
   2026-10-22, for the Pi; unchanged for the Orin). Requirement: every
   dependency of the robot-side code builds there — aarch64 Linux,
   JetPack 6.2.3 (CUDA 12.6, TensorRT 10.3).
-- **Live and virtual are one source.** The robot computer's code and
-  the Arduino firmware are each one source built two ways: the live
-  build for the hardware, the synthetic build for the loop; only the
-  edges (where frames come from, where commands go) differ. Exception:
-  detection on the robot runs in Python (user, 2026-10-23) — on the
-  Orin, OpenCV pre-processing + TensorRT ran 11.9–14.5 ms per frame
-  against 18.7–19.1 ms for the Rust POC in the same session
-  (`detector-plan.md`, *Results*).
+- **Live and synthetic are kept apart** (user, 2026-11-01). This replaces
+  the older rule that each was one source built two ways, and any plan
+  that still says "one source" is out of date. `__live__/` and
+  `__synthetic__/` share no code: what both need is copied. Detection on
+  the robot runs in Python (user, 2026-10-23) — on the Orin, OpenCV
+  pre-processing + TensorRT ran 11.9–14.5 ms per frame against 18.7–19.1 ms
+  for the Rust POC in the same session (`detector-plan.md`, *Results*).
 - **On the rig, the Orin sends the command packets to the Arduino over
   WiFi.**
 - **The orchestrator alone times perception** (user, 2026-10-30). In the
   synthetic loop it draws when each frame happens, 20–30 Hz by default
-  (`trainer/gym.toml` `[env]`), and nothing happens between commands: no
+  (`__synthetic__/trainer/python/gym.toml` `[env]`), and nothing happens between commands: no
   render, no detection, no message (`synthetic-loop-dia.md`). The synthetic
   Orin holds no timing of its own, and the firmware holds none to remove:
   its ramp is the motor's limit, unrelated to perception. The orchestrator

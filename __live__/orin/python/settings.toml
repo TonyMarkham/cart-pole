@@ -149,6 +149,6 @@ right_face_to_pivot = 0.035   # 13-Right-Cart.Site x - Pivot x
 pivot_z = 0.082               # Pivot's height
 pole_length = 0.450           # Pivot to End
 
-# Metres of cart travel per pulse: trainer/settings.toml [drive], a 96,000 um belt
+# Metres of cart travel per pulse: __synthetic__/trainer/python/settings.toml [drive], a 96,000 um belt
 # turn over 200 full steps x 32 microsteps.
 metres_per_pulse = 0.000_015

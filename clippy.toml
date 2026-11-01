@@ -1,0 +1,4 @@
+# Clippy's settings for every crate under this folder. The workspace's Cargo.toml
+# denies unwrap() (user, 2026-11-01: forbidden except in tests), and without this
+# line clippy denies it in tests too, where a failed unwrap is just a failed test.
+allow-unwrap-in-tests = true

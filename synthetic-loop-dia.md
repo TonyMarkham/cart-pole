@@ -21,7 +21,7 @@ it the capture's MuJoCo time, true site positions and true pole state
 alone: the trainer generates the reward and decides continue or stop
 itself, and nothing in the control loop touches training. The trainer
 starts each run by launching the orchestrator, with the command its
-`trainer/settings.toml` names (1). One run holds many episodes (user,
+`__synthetic__/trainer/python/settings.toml` names (1). One run holds many episodes (user,
 2026-10-24): between episodes the trainer answers reset, which puts the
 run back at the start in place, without relaunching the orchestrator, the
 Orin or the player (*Reset in place*); stop ends the run. A failed run (3 failed frames in the pool) is different: it
@@ -191,11 +191,12 @@ sequenceDiagram
         participant U as Unity player (process, the Orin's camera)
     end
 
-    T->>O: start the run: launch the orchestrator with the command in trainer/settings.toml<br/>its stdin and stdout, the trainer's pipes, are the trainer link (17, 18)
+    T->>O: start the run: launch the orchestrator with the command in __synthetic__/trainer/python/settings.toml<br/>its stdin and stdout, the trainer's pipes, are the trainer link (17, 18)
+    Note over O,U: first the Calibration (C1–C10, below): one Orin and one player find the matrix, then exit
     Note over M,O: Start: load the MJCF (path, and the joint, actuator and site names, from the trainer's settings.toml [mjcf]),<br/>reset to the start: at rest, cart at 50% of the rail, the pole hanging (θ = 0), t = 0
     O->>M: load + reset(start pose)
     O->>A: new(Config: [drive]'s three drive figures and its jump limit m, the cart top speed from MuJoCo's ctrlrange,<br/>and the tick: MuJoCo's timestep)<br/>the cart starts at 50% of the rail, guaranteed (stands in for homing), at rest: sent rate 0, command 0
-    O->>N: launch --orchestrator ws://… --frames-listen ADDR --out DIR --pool-gaps d₁,…,d₆<br/>each dₖ 1000 ÷ a seeded RND(command_rate_min, command_rate_max) ms, the orchestrator's draw<br/>(the Orin draws nothing and holds no timing of its own)
+    O->>N: launch --orchestrator ws://… --frames-listen ADDR --out DIR --pool-gaps d₁,…,d₆ --homography FILE<br/>each dₖ 1000 ÷ a seeded RND(command_rate_min, command_rate_max) ms, the orchestrator's draw<br/>(the Orin draws nothing and holds no timing of its own)
     Note over N: pre-warm: builds the 6-entry pool, slots (−1, −1),<br/>at times −d₁, −(d₁+d₂), …, −(d₁+…+d₆) before t = 0<br/>then opens the frame listener
     N-->>O: connects (control socket: the listener is up)
     O->>U: launch SimulationLoop.exe -orin ws://ADDR
@@ -211,8 +212,8 @@ sequenceDiagram
             O->>N: text {"id":n,"time":t,"joints":[cart, pole]}
             N->>U: text {"id":n,"joints":[cart, pole]} (the trigger)
             U-->>N: binary JPEG, 728×544 greyscale q90
-            Note over N: frame does not decode or is not 728×544: a failed frame,<br/>4 × (−1, −1), the error logged<br/>3 failed frames among the pool's 6 entries: the run fails<br/>else letterbox, TensorRT FP16, slot rule:<br/>4 slots (x, y) or (−1, −1)<br/>push onto the pool at age 0 ms, every older entry ages<br/>by the time since the previous capture (the oldest drops)<br/>save frame_NNNNNN.jpg, append to observations.jsonl (with any error)
-            N-->>O: id n and the pool, no timing:<br/>6 entries, newest first, each keyed by its age: −ms from the current<br/>capture time (newest = 0), 4 marker (x, y) each<br/>+ failed, when the run fails
+            Note over N: frame does not decode or is not 728×544: a failed frame,<br/>2 × (−1, −1), the error logged<br/>3 failed frames among the pool's 6 entries: the run fails<br/>else letterbox, TensorRT FP16, slot rule:<br/>4 slots (x, y) or (−1, −1)<br/>Pivot and End through the matrix (Calibration): (x, z) in metres or (−1, −1)<br/>push onto the pool at age 0 ms, every older entry ages<br/>by the time since the previous capture (the oldest drops)<br/>save frame_NNNNNN.jpg, append to observations.jsonl (with any error)
+            N-->>O: id n and the pool, no timing:<br/>6 entries, newest first, each keyed by its age: −ms from the current<br/>capture time (newest = 0), Pivot's and End's (x, z) in metres<br/>+ failed, when the run fails
         and MuJoCo steps on, the cart still ramping towards the old command
             loop every fixed deltatime (2 ms), until a step's time is later than the arrival time
                 O->>M: step
@@ -224,9 +225,9 @@ sequenceDiagram
         break the Orin reports failed
             Note over O: the run fails: go to the shutdown (22)
         end
-        Note over O: states.csv row (the truth log, see Truth log):<br/>id n, capture time t, true cart (m) and pole (rad) at capture,<br/>the 4 observed (x, y) of the pool's newest entry
+        Note over O: states.csv row (the truth log, see Truth log):<br/>id n, capture time t, true cart (m) and pole (rad) at capture,<br/>the observed Pivot and End (x, z) of the pool's newest entry
         O->>T: stdout line {"id":n,"time":t,"pool":[…6 rows],"sites":{…12 points},"pole":{speed, angle, com, hinge}}: the pool,<br/>and capture n's MuJoCo time, true site positions and pole state, for the reward and the record alone (never the policy's input)
-        Note over T: from capture n's sites and pole state:<br/>the reward for the last command (trainer/reward-plan.md), and continue, reset or stop<br/>a strike-face gap under b ends this episode, with no penalty<br/>the time limit also ends it: reset for the next, or stop<br/>nothing to score on an episode's first observation<br/>then ask the policy for the next command, from the pool and its last commands
+        Note over T: from capture n's sites and pole state:<br/>the reward for the last command (__synthetic__/trainer/python/reward-plan.md), and continue, reset or stop<br/>a strike-face gap under b ends this episode, with no penalty<br/>the time limit also ends it: reset for the next, or stop<br/>nothing to score on an episode's first observation<br/>then ask the policy for the next command, from the pool and its last commands
         T-->>O: stdin line {"command":c,"next":"continue"|"reset"|"stop"}<br/>+ "seed":S on a reset, the next episode's seed<br/>c: the command (i32, sign = direction, magnitude = pulses/s)<br/>MuJoCo stays frozen at the arrival step until it is in
         alt continue
             O->>A: receive(the command: i32 LE pulses/s), the only thing it is sent
@@ -288,18 +289,92 @@ whatever came before it. Only one message is in flight at a time, so the
 reset cannot race the loop: the Orin has replied to the last observation
 before the trainer answers it.
 
+**Calibration** (user, 2026-11-01). The detector gives pixels, and the policy needs
+to know where things are in metres, so before the training instances start the
+orchestrator brings up one synthetic Orin and one Unity player and finds the matrix
+that turns one into the other. A **homography** is that matrix: three rows of three
+numbers that map a flat plane in the world, here the plane the pole swings in, onto
+the camera's picture and back (`calibrate-w-homography.md`, *Terms*). MuJoCo holds the
+pole still in seven poses, and because MuJoCo knows where every point truly is, each
+pose gives pairs of the form "this pixel is this many metres".
+
+```mermaid
+sequenceDiagram
+    participant M as MuJoCo (in-process)
+    participant O as Orchestrator
+    participant N as Calibrating Orin
+    participant U as Calibrating Unity player
+    O->>M: C1: load the MJCF, and for each of the seven poses: reset(the pose), sites()
+    M-->>O: C2: Pivot's and End's true (x, z) in that pose (nothing steps: the pole cannot fall)
+    O->>N: C3: launch --orchestrator ws://… --frames-listen ADDR --out DIR --calibrate DIR/homography.json<br/>on instance 0's ports
+    O->>U: C4: launch SimulationLoop.exe -orin ws://ADDR
+    N-->>O: C5: {"type":"registered"}: Unity has connected
+    loop each of the seven poses
+        O->>N: C6: {"type":"measure","pose":name,"joints":[cart, pole],"pivot":[x,z],"end":[x,z]}
+        loop until [calibration] images have both Pivot and End
+            N->>U: the trigger, as 12
+            U-->>N: the JPEG, as 13
+            Note over N: detect, and keep Pivot's and End's pixels
+        end
+        Note over N: a clipped mean turns each marker's detections into one point
+        N-->>O: C7: {"type":"measured","pose":name,"images":n,"renders":r}
+    end
+    O->>N: C8: {"type":"fit"}
+    Note over N: find the lens number, fit the matrix, check every point against it<br/>every point within [calibration] residual_px: write DIR/homography.json
+    N-->>O: C9: {"type":"fitted","ok":bool,"worst_px":w,"lens_k":k}
+    O->>N: C10: close the control socket, as 22
+    N->>U: close the frame socket, as 23
+    U-->>O: exits
+    N-->>O: exits
+    Note over O: not ok, or a pose never seen: the run fails before training starts<br/>ok: the training instances start (2), every Orin told --homography DIR/homography.json
+```
+
+**The seven poses.** The cart stands at one of three stops. The left and right stops
+are `calibration_stop_gap` (the trainer's `settings.toml` `[orchestrator]`, 5 mm today)
+short of where the cart would strike each base, read from MuJoCo's strike-face sites
+with the cart centred; the centre stop is halfway between them.
+
+| Cart | Pole | Why |
+|---|---|---|
+| left, centre, right | hanging | the three stops, as the rig measures them |
+| left | horizontal, pointing left | End's furthest reach to the left |
+| right | horizontal, pointing right | End's furthest reach to the right |
+| left, right | straight up | End's furthest reach upwards |
+
+Which sign of the pole's angle points left is read from MuJoCo, not assumed. Each pose
+gives one Pivot point and one End point: 14 pairs, at 10 different places (Pivot has
+only the three stops). **Why not the hanging poses alone:** those cover only the
+rail and the hanging pole, while a swinging End reaches about 0.45 m past them on
+either side and above. A small error in the points grows with that distance. Modelled
+with each point 0.2 px off, the worst error at those extremes was about 13 mm from the
+three hanging poses and about 1.3 mm from all seven (a model of the camera, not a
+measurement). Measured on 2026-11-01 with all seven, at 13 poses the fit never saw, the
+worst single frame was 0.76 mm (`calibrate-w-homography.md`, *In the synthetic loop*).
+
+**The matrix's home.** The Orin holds it, as on the rig. Every instance's Orin reads
+`homography.json` once at launch and keeps it in memory. The file sits in the run's
+`--out`, so each launch keeps the matrix its observations came through, and each launch
+calibrates afresh, so a matrix cannot outlive the scene it was fitted to.
+
+**Each frame** (the note at 13), for Pivot and End: their pixels have the lens's bend
+undone with the stored number, and then go through the matrix, giving `(x, z)` in
+metres in the pole's plane. A marker not detected stays `(−1, −1)`, unmapped. Left and
+Right are dropped (user, 2026-11-01): they sit 55 mm behind the pole's plane, so the
+matrix does not fit them, and they never move, so they tell the policy nothing.
+`observations.jsonl` still logs all four markers' detected pixels.
+
 **The pool's size.** Three entries are the minimum for the current
 position, speed and acceleration; the other three are redundancy, so three
 valid entries survive when detections drop out to (−1, −1). A frame that
 does not decode, or is not 728×544, is a failed frame: its entry is
-4 × (−1, −1) and the error is logged. One failed frame costs about 15 ms
+2 × (−1, −1) and the error is logged. One failed frame costs about 15 ms
 of detection and does not fail the run; 3 among the pool's 6 entries fail
 it and end training. Pre-warm entries are no detection, not failed frames.
 
 **Truth log.** `states.csv` pairs MuJoCo's real values at each capture
 with what the Orin observed in that frame, one row per observation, for
-evaluation after training. Columns: `episode,id,time,cart,pole,left_x,left_y,
-right_x,right_y,pivot_x,pivot_y,end_x,end_y` — the episode (0 for the
+evaluation after training. Columns: `episode,id,time,cart,pole,pivot_x,pivot_z,
+end_x,end_z` — the episode (0 for the
 run's first, one more at each reset), the capture time (s, from 0 in each
 episode), the
 true cart (m) and pole (rad) at capture, and the pool's newest entry,
@@ -344,7 +419,7 @@ answers the pending pool with reset and the episode's seed (*Reset in
 place*) and returns the new episode's first pool; `close()` answers it
 with stop and waits for the run to close (26). A run that fails (26,
 code 1) raises, which ends training. The observation is
-the pool, 6 × 9 floats, and the last 6 commands (*The policy sees its last
+the pool, 6 × 5 floats, and the last 6 commands (*The policy sees its last
 commands*, below); the action is one value a ∈ [−1, 1], and the
 command is a × the top pulse rate (the run's values), rounded to the
 `i32`. A step of the environment is one command: the gap between two
@@ -360,8 +435,8 @@ swing-up, Gymnasium's `CartPole-v1`) to 40 s (`InvertedPendulum-v5`).
 
 **The policy sees its last commands** (user, 2026-10-24, from NFQ2.0's
 real cart-pole, `reward-research.md`; run 2 on). The observation is the
-pool's 54 floats, then the actions a of the last 6 commands, newest
-first: 60 floats. Before an episode's first command they are 0, the
+pool's 30 floats, then the actions a of the last 6 commands, newest
+first: 36 floats. Before an episode's first command they are 0, the
 command for standing still, as a reset leaves the cart. Why:
 - **The commands say how the cart is moving.** The command is the
   stepper's pulse rate, so the newest command sets the cart's speed now,
@@ -383,7 +458,7 @@ run 2: run 1 cannot resume under it.
 sites, never the detected markers; user, 2026-10-28: and from the pole's
 state and body, straight from MuJoCo: wherever MuJoCo has a value the
 reward needs, the value is MuJoCo's, never worked out from other
-numbers). The calculation is `trainer/reward-plan.md`'s, the source of
+numbers). The calculation is `__synthetic__/trainer/python/reward-plan.md`'s, the source of
 truth for its terms, constants and values; this section places it in
 the loop. Each scored step t, command c_t, is scored with capture t+1's
 entry (17), from:
@@ -393,7 +468,7 @@ entry (17), from:
 - capture t+1's pole state (*Contracts*, the pole): its turning speed.
 
 The reward is the product r = r_tip × r_target_speed × r_cart × r_reach
-× r_speed, always in (0, 1] (user, 2026-10-30; `trainer/reward-plan.md`):
+× r_speed, always in (0, 1] (user, 2026-10-30; `__synthetic__/trainer/python/reward-plan.md`):
 
 - r_tip from the distance from End to Dynamic Target, the point
   straight above the pivot that moves with the cart: it pays a pole
@@ -649,20 +724,23 @@ yet (`orchestrator-plan.md`, *Placeholders*).
   dataset generator's own) writes BT.601 luma into all three RGB
   channels, and the Orin decodes it to one channel. The size is exactly
   half the IMX296's native 1456×1088 (`DATASETS.md`, *Image spec*).
-- **The marker frame (each pool entry):** 4 slots in class order — 0
-  Left (tag 376), 1 Right (596), 2 Pivot (920), 3 End (937), the repo's
-  class-id contract. Each slot is the box center `(x, y)`, normalized to
-  [0, 1], or `(−1, −1)` when that class was not detected; −1 lies outside
-  the valid range, so "not detected" can never be a real position. When
-  a class has several boxes, the slot takes the highest-confidence one.
-  `(−1, −1)` means *not detected*, whatever the cause: occluded, missed,
-  out of frame, or a failed frame.
-- **The pool (14, 17):** 6 entries × (1 age + 4 × `(x, y)`) = 54 floats.
+- **The detection (13):** 4 slots in class order — 0 Left (tag 376), 1
+  Right (596), 2 Pivot (920), 3 End (937), the repo's class-id contract.
+  Each slot is the box center `(x, y)`, normalized to [0, 1], or `(−1, −1)`
+  when that class was not detected. When a class has several boxes, the
+  slot takes the highest-confidence one.
+- **The points (each pool entry):** Pivot, then End, each `(x, z)` in
+  metres in the pole's plane, from its slot through the matrix
+  (*Calibration*), or `(−1, −1)` when not detected: occluded, missed, out
+  of frame, or a failed frame. No real point reaches `(−1, −1)`: the
+  furthest End goes along the rail is about ±0.9 m, and it is never below
+  z = −0.4 m. Every real value lies within ±1.
+- **The pool (14, 17):** 6 entries × (1 age + 2 × `(x, z)`) = 30 floats.
   Ages are relative to the current capture so the input never depends on
   absolute clock values, and the policy sees the real spacing between
   frames. On the wire (14), one text message: `{"id": n, "pool":
-  [[age_ms, x0, y0, x1, y1, x2, y2, x3, y3], …6 rows, newest first],
-  "failed": false}` — row 0 is this frame, age 0; slot k is class k;
+  [[age_ms, pivot_x, pivot_z, end_x, end_z], …6 rows, newest first],
+  "failed": false}` — row 0 is this frame, age 0;
   `failed` is true when 3 of the pool's 6 entries are failed frames. To
   the trainer (17), each instance's entry in the stdout line (*Training
   instances*): `{"instance": k, "id": n, "time": t, "pool": [...],

@@ -1,0 +1,53 @@
+# The synthetic Orin's settings: its detector (synthetic-orin-plan.md R3),
+# read by __synthetic__/orin/python/src/detector_config.py. Relative paths resolve against this
+# file's folder, __synthetic__/orin/python/.
+
+# The trained detector (gitignored; produced by training/), float ONNX:
+# the model __synthetic__/orin/python/src/build_engine.py builds the TensorRT engine from.
+model = "../../../training/runs/cp2-640-base/weights/best.onnx"
+
+# The model's square input size, pixels (its metadata imgsz).
+input_size = 640
+
+# Ultralytics' letterbox padding value (0-255 grey).
+pad_value = 114
+
+# A class's best box counts as detected at or above this score.
+# 0.25 is Ultralytics' predict default, the value the reference used.
+confidence = 0.25
+
+# Class order = slot order = the model's class ids (its metadata names).
+classes = ["Left", "Right", "Pivot", "End"]
+
+[calibration]
+# The calibration before the training instances start (synthetic-loop-dia.md,
+# Calibration), read by src/calibration.py.
+
+# How many images each of the seven poses is measured from. An image counts only
+# if it has both Pivot and End in it. More images give a steadier point: the noise
+# in a point made from n detections shrinks as 1 / sqrt(n).
+images = 30
+
+# How many renders a pose may take to reach that many images, or the run fails:
+# a marker the detector cannot find there would otherwise be rendered for ever.
+max_renders = 90
+
+# A detection further from the middle of its marker's detections than this many
+# spreads is dropped before the mean (src/measure.py).
+clip_k = 3
+
+# The largest distance, in pixels, between a measured point and where the fitted
+# matrix puts it. Any point over this fails the calibration, and the run. One pixel
+# is about 2.6 mm in the pole's plane.
+residual_px = 1.0
+
+# The simulated camera, to express the lens's bend (src/lens.py): the Main Camera's
+# m_FocalLength and m_SensorSize.x in unity/.../Assets/SimulationLoop/Scenes/SimulationLoop.unity.
+lens_focal_mm = 6.0
+sensor_width_mm = 4.968
+
+# The range searched for the lens number at each fit, and the search's step. The
+# loop's scene has no lens distortion, so it should come out near 0.
+lens_k_min = -0.2
+lens_k_max = 1.2
+lens_k_step = 0.005

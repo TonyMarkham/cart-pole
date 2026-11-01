@@ -10,7 +10,7 @@ reward and the episode end alone, and answers each pool with the next command an
 continue, reset or stop.
 
 Status: **plan** (rewritten 2026-10-25), from `synthetic-loop-dia.md`,
-the source of truth for the loop, with `trainer/reward-plan.md`, the source of
+the source of truth for the loop, with `__synthetic__/trainer/python/reward-plan.md`, the source of
 truth for the reward calculation, and `rl-rewrite-plan.md`, the trainer's
 structure. Element numbers below are the diagram's messages.
 
@@ -31,7 +31,7 @@ structure. Element numbers below are the diagram's messages.
 ## Requirements (from the diagram and the plans)
 
 - **T1 — the trainer owns the run.** It starts the run by launching the
-  orchestrator with the command `trainer/settings.toml` names (1), with
+  orchestrator with the command `__synthetic__/trainer/python/settings.toml` names (1), with
   the instances' rows and columns, the screen size, the ports, seed, latency band, the gym file's command rates,
   `[mjcf]` (the model, its joint, actuator and twelve site names) and
   `[drive]` (full steps per turn, microsteps, belt travel per pulley turn)
@@ -43,7 +43,7 @@ structure. Element numbers below are the diagram's messages.
   detected; and the capture's MuJoCo time, twelve sites and pole state
   (*Contracts*, the sites and the pole): MuJoCo's truth, for the reward,
   the episode end and the record alone, never part of the observation.
-- **T3 — the reward** (`trainer/reward-plan.md`, the source of truth).
+- **T3 — the reward** (`__synthetic__/trainer/python/reward-plan.md`, the source of truth).
   Each scored step t, command c_t, is scored with capture t+1: r = r_tip
   × r_target_speed × r_cart × r_reach × r_speed, in (0, 1], from capture
   t+1's End, Dynamic Target, Target, Pivot, Cart and Cart Target sites and
@@ -94,7 +94,7 @@ structure. Element numbers below are the diagram's messages.
   (20 and 30 Hz by default, user 2026-10-30) set how far apart they are,
   and the trainer sees nothing between them (the diagram's *Nothing happens
   between commands*). A run saved with other rates cannot resume.
-- **T8b — the observation:** the pool's 54 floats, then the actions a of
+- **T8b — the observation:** the pool's 30 floats, then the actions a of
   the last `past_commands` (6) commands, newest first, 0 before an
   episode's first. Never a site (`rl-rewrite-plan.md`, R1).
 - **T8c — the action:** a ∈ [−1, 1], clipped; command = round(a × the
@@ -163,10 +163,10 @@ resumed, rescored or analysed (user, 2026-10-25).
    unknown key are refused, naming the key; a plugin outside the repo
    loads by name.
 4. **The reward plugin** (`rewards/tip_energy_cart.py`, user
-   2026-10-29: `trainer/reward-plan.md`'s r = r_tip × r_energy × r_cart,
+   2026-10-29: `__synthetic__/trainer/python/reward-plan.md`'s r = r_tip × r_energy × r_cart,
    every input MuJoCo's; it reused `rewards/tip_energy.py`, r_tip ×
    r_energy alone, user 2026-10-28; the earlier site plugins are
-   deleted). Both went with the nine-site runs, replaced by step 4b. *Check:* `trainer/reward-plan.md`'s
+   deleted). Both went with the nine-site runs, replaced by step 4b. *Check:* `__synthetic__/trainer/python/reward-plan.md`'s
    tables: r_tip 1 on the star, 0.011 hanging, 0.042 sideways; r_energy 1
    upright and still, 0.1 hanging still, 0.56 sideways still, 0.15
    passing straight up at 10 rad/s, at w = 0.2 m and spare_max = 2;
@@ -175,7 +175,7 @@ resumed, rescored or analysed (user, 2026-10-25).
    floor 0.667, at c_w = 0.25 m; r whatever the commands.
 4b. **The reward plugin `tip_energy_cart_centre`**
    (`rewards/tip_energy_cart_centre.py`, user 2026-10-29:
-   `trainer/reward-plan.md`'s r = r_tip × r_energy × r_cart × r_reach;
+   `__synthetic__/trainer/python/reward-plan.md`'s r = r_tip × r_energy × r_cart × r_reach;
    r_tip to Dynamic Target, r_cart from Cart and Cart Target, r_reach to
    Target; its values one table per factor, `[reward.tip]`,
    `[reward.energy]`, `[reward.cart]` and `[reward.reach]`, user
@@ -185,10 +185,10 @@ resumed, rescored or analysed (user, 2026-10-25).
    step 4 but from Cart and Cart Target; r_reach 1 on Target, 0.790 at
    0.2 m from it, always falling towards and above the floor 0.667, at
    `[reward.reach]` width = 0.2 m; straight up pays more than any lean with the
-   cart off the middle (`trainer/reward-plan.md`, section 4).
+   cart off the middle (`__synthetic__/trainer/python/reward-plan.md`, section 4).
 4c. **The reward plugin `tip_speed_cart_centre`**
    (`rewards/tip_speed_cart_centre.py`, user 2026-10-30:
-   `trainer/reward-plan.md`'s r = r_tip × r_target_speed × r_cart × r_reach
+   `__synthetic__/trainer/python/reward-plan.md`'s r = r_tip × r_target_speed × r_cart × r_reach
    × r_speed, replacing r_energy; `tip_energy_cart_centre.py` stays while
    its run can resume). Its new tables are `[reward.target_speed]` and
    `[reward.speed]`. *Check:* the plan's tables: r_target_speed 1 at or
@@ -200,7 +200,7 @@ resumed, rescored or analysed (user, 2026-10-25).
 5. **The end, observation and action plugins** (`endings/strike_gap.py`,
    `observations/pool_and_commands.py`, `actions/linear_rate.py`).
    *Check:* no end at the centred gaps of 0.440 and 0.445 m, an end
-   within b, b below its floor refused; the observation 60 floats, its
+   within b, b below its floor refused; the observation 36 floats, its
    commands zero-filled, `build(pool, history)` taking no sites; −1, 0, 1
    to − the top pulse rate, 0 and the top pulse rate.
 6. **The episode tracker** (`episode.py`). *Check:* capture 0 yields no
@@ -231,18 +231,18 @@ resumed, rescored or analysed (user, 2026-10-25).
 12. **The old code removed.** *Check:* nothing imports a removed module.
 
 Steps 2–10 and 12: **built (2026-10-25)**, each check a test in
-`trainer/tests/` on the fake link (`uv run --project trainer python -m
-unittest discover -s trainer/tests -t trainer/tests`), all passing. Step
+`__synthetic__/trainer/python/tests/` on the fake link (`uv run --project __synthetic__/trainer/python python -m
+unittest discover -s __synthetic__/trainer/python/tests -t __synthetic__/trainer/python/tests`), all passing. Step
 11's code is built; it has not run on the loop.
 
 ## Not in this plan
 
 The orchestrator (`orchestrator-plan.md`), the reward's calculation
-(`trainer/reward-plan.md`), and running the trained policy on the Orin.
+(`__synthetic__/trainer/python/reward-plan.md`), and running the trained policy on the Orin.
 
 ## References
 
 - `synthetic-loop-dia.md` — the source of truth for this plan
-- `trainer/reward-plan.md` — the source of truth for the reward calculation
+- `__synthetic__/trainer/python/reward-plan.md` — the source of truth for the reward calculation
 - `rl-rewrite-plan.md` — the trainer's structure and build order
 - `orchestrator-plan.md` — the participant the trainer talks to

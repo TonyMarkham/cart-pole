@@ -21,7 +21,7 @@ in the same session. That Python path exists only as the scratch test
 (`trt_detect.py`). **Retired (user, 2026-10-23):** the crate,
 `object-detection/`, is removed from the repo, with its workspace
 entries and `ObjectDetection.toml`'s crate-only keys (`edgetpu_model`,
-`threads`), and the file itself moved to `orin/settings.toml`; this
+`threads`), and the file itself moved to `__synthetic__/orin/python/settings.toml`; this
 plan stays for its *Results*. What follows describes
 the crate as it was. The crate keeps its engines (tract on the CPU,
 which the loop on the PC uses; the `edgetpu` Coral engine,

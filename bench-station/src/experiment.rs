@@ -408,7 +408,7 @@ pub async fn run(station: &Station) -> Result<String, Failure> {
     let limit = station.state().experiment.jump_limit(settings.j_start);
     Ok(match limit {
         JumpLimit::Measured(m) => {
-            format!("m = {m} pulses/s², measured: write it into trainer/settings.toml [drive] jump_limit")
+            format!("m = {m} pulses/s², measured: write it into __synthetic__/trainer/python/settings.toml [drive] jump_limit")
         }
         JumpLimit::AtLeast(m) => format!("m = at least {m} pulses/s²: no slip found"),
         JumpLimit::Below(m) => format!("m is below j_start, {m}: lower j_start and run again"),

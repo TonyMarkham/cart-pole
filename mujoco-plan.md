@@ -30,7 +30,7 @@ trainer fills from its `settings.toml` `[mjcf]`. The build copies
 `mujoco.dll` beside the binary, so `target/release/orchestrator.exe`
 runs without cargo. The MJCF states `<option timestep="0.002"
 integrator="implicitfast"/>`, written by the Unity exporter from the
-rig's StepJointSet (greyhound `da107c4`). `physics/README.md` documents
+rig's StepJointSet (greyhound `da107c4`). `__synthetic__/orchestrator/rust/crates/physics/README.md` documents
 the crate.
 
 Since (2026-10-25, not committed): **the sites**
@@ -50,7 +50,7 @@ looked up at load like the joints;
 the API returns them by role, computed for the current pose.
 
 Since (2026-10-28, user): **the pole** (`synthetic-loop-dia.md`,
-*Contracts*, the pole), for the reward's energy (`trainer/reward-plan.md`,
+*Contracts*, the pole), for the reward's energy (`__synthetic__/trainer/python/reward-plan.md`,
 section 2). The pole is everything that swings on `--pole-joint`: the
 body holding the joint and every body under it. Per capture, `pole()`
 returns its state: the joint's `qvel` (rad/s) and `qpos` (rad), its
@@ -206,11 +206,11 @@ with `cargo run -q -p orchestrator -- …`; physics-only output under
 
 ## Next
 
-1. **Commit** (nothing is committed). New: `physics.toml`, `physics/`,
-   `orchestrator/src/control.rs`, `orchestrator/src/sweep.rs`,
+1. **Commit** (nothing is committed). New: `physics.toml`, `__synthetic__/orchestrator/rust/crates/physics/`,
+   `__synthetic__/orchestrator/rust/crates/orchestrator/src/control.rs`, `__synthetic__/orchestrator/rust/crates/orchestrator/src/sweep.rs`,
    `mujoco-plan.md`. Changed: root `Cargo.toml` and `Cargo.lock`,
-   `orchestrator/Cargo.toml`, `orchestrator/src/args.rs`,
-   `orchestrator/src/main.rs`. Removed: `orchestrator/src/pose.rs`
+   `__synthetic__/orchestrator/rust/crates/orchestrator/Cargo.toml`, `__synthetic__/orchestrator/rust/crates/orchestrator/src/args.rs`,
+   `__synthetic__/orchestrator/rust/crates/orchestrator/src/main.rs`. Removed: `__synthetic__/orchestrator/rust/crates/orchestrator/src/pose.rs`
    (`Pose` moved to `physics`). These sit on top of the Unity leg's
    uncommitted files (`unity-player-plan.md`, *Next*).
 2. ~~`loop-plan.md` wording~~ — done 2026-10-22 (*Consequence for
@@ -282,7 +282,7 @@ with `cargo run -q -p orchestrator -- …`; physics-only output under
   *Results*): `+x` cart is right in the frame, and a small positive pole
   angle puts the tip toward `+x` — the player renders MuJoCo's `qpos`
   the way MuJoCo `simulate` shows it.
-- **The orchestrator stub** (`orchestrator/`): `Pose { cart, pole }` →
+- **The orchestrator stub** (`__synthetic__/orchestrator/rust/crates/orchestrator/`): `Pose { cart, pole }` →
   `StateMessage { id, joints: [{name, qpos}] }` → one JPEG back per
   state, lockstep, checked against 728×544, saved as
   `frame_NNNNNN.jpg` in `--out`. Modes today: the 60-state sweep and
@@ -425,7 +425,7 @@ actuator   = "03-Cart.Slider.Actuator"
 
 Rules:
 
-- **One file, two readers.** `physics/build.rs` reads
+- **One file, two readers.** `__synthetic__/orchestrator/rust/crates/physics/build.rs` reads
   `<workspace root>/physics.toml` (`CARGO_MANIFEST_DIR/..`) for
   `mujoco_dir`, and emits its absolute path to the crate as
   `cargo:rustc-env=PHYSICS_TOML=<path>`; `PhysicsConfig::load()` reads
@@ -514,11 +514,11 @@ Recommendations (choices, with the reason):
 1. **Workspace and build script.**
    - `physics.toml` at the repo root, as above.
    - `toml` added to `[workspace.dependencies]` (R2, after the user's OK).
-   - New workspace member `physics/` (library; `version`, `edition`, and
+   - New workspace member `__synthetic__/orchestrator/rust/crates/physics/` (library; `version`, `edition`, and
      lints from the workspace), added to `members` in the root
      `Cargo.toml`; `serde` and `toml` as dependencies and
      build-dependencies.
-   - `physics/build.rs`: read `physics.toml` (*`physics.toml`*, rules);
+   - `__synthetic__/orchestrator/rust/crates/physics/build.rs`: read `physics.toml` (*`physics.toml`*, rules);
      resolve `mujoco_dir`; fail with a message naming the resolved path
      if `bin\mujoco.dll` or `lib\mujoco.lib` is missing; copy both into
      `OUT_DIR`; emit `cargo:rustc-link-search=native=<OUT_DIR>`,
@@ -528,13 +528,13 @@ Recommendations (choices, with the reason):
      files.
    *Check:* `cargo build -p orchestrator` links; the Done-when 1 command
    prints the version (proves the DLL is found at run time).
-2. **`PhysicsConfig`** (`physics/src/config.rs`): the file's fields as a
+2. **`PhysicsConfig`** (`__synthetic__/orchestrator/rust/crates/physics/src/config.rs`): the file's fields as a
    `serde::Deserialize` struct: `mujoco_dir`,
    `model`, `names { cart_joint, pole_joint, actuator }`.
    `PhysicsConfig::load()` reads `env!("PHYSICS_TOML")` and resolves
    both paths against that file's folder. An unknown key is an error
    (`deny_unknown_fields`), so a misspelt key cannot silently fall back.
-3. **FFI declarations** (`physics/src/ffi.rs`, private to the crate).
+3. **FFI declarations** (`__synthetic__/orchestrator/rust/crates/physics/src/ffi.rs`, private to the crate).
    - Opaque `mjModel`, `mjData`, `mjVFS` (zero-sized `#[repr(C)]`
      structs, used only behind pointers).
    - `#[repr(C)] mjLogMessage`, all eight fields as in *Facts*.
@@ -545,7 +545,7 @@ Recommendations (choices, with the reason):
      `mjSTATE_TIME = 1`, `mjSTATE_QPOS = 2`, `mjSTATE_CTRL = 64`,
      `mjLOG_WARNING = 2`, `mjLOG_ERROR = 3`,
      `MJ_VERSION = 3015000` — each with its header line as the comment.
-4. **`Physics`** (`physics/src/lib.rs`, safe API).
+4. **`Physics`** (`__synthetic__/orchestrator/rust/crates/physics/src/lib.rs`, safe API).
    - `Physics::load(config: &PhysicsConfig)`: install the log handler
      (P3, P5); P1; `mj_loadXML` on `config.model` with a 1000-byte error
      buffer (a NULL model becomes an error carrying that text);
@@ -586,7 +586,7 @@ Recommendations (choices, with the reason):
      `--player` becomes `required_unless_present_any = [no_launch, no_render]`).
      `--cart-joint` / `--pole-joint` are removed; every mode takes the
      names from `PhysicsConfig` (R1).
-   - `Control` (`orchestrator/src/control.rs`): `at(t) -> f64` in m/s —
+   - `Control` (`__synthetic__/orchestrator/rust/crates/orchestrator/src/control.rs`): `at(t) -> f64` in m/s —
      zero; the constant; `amp · cos(2π t / period)`. The cosine makes the
      cart's position (the speed's integral) a sine centered on the start,
      amplitude `amp · period / 2π`; a sine speed would integrate to

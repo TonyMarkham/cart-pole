@@ -1,7 +1,7 @@
 """The robot's marker detector: JPEG in, the 4-slot marker frame out.
 
 Python + TensorRT is how the robot detects (AGENTS.md, The real robot,
-exception). A copy of orin/src/detector.py, which the synthetic Orin runs on the
+exception). A copy of __synthetic__/orin/python/src/detector.py, which the synthetic Orin runs on the
 PC's GPU, made on 2026-11-01 because __live__ can use nothing outside itself.
 It takes whatever JPEG it is given; where the frames come from is the caller's.
 It must compute what Ultralytics' predictor computes on best.onnx

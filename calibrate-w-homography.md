@@ -12,10 +12,9 @@ matrix. It has not yet produced a matrix from the real rig, and nothing uses a m
 yet (*Per frame*). It is a new
 scheme, on the `feature/dm_control` branch: the policy reads the cart's position and
 the pole's angle, as DeepMind's cart-pole does
-(`trainer/dm_control_reward.md`, *Where the reward's numbers come from*),
-derived on the Orin from the detections. It stands beside the synthetic
-loop (`synthetic-loop-dia.md`) and changes nothing in it; how the two
-meet is not designed here.
+(`__synthetic__/trainer/python/dm_control_reward.md`, *Where the reward's numbers come from*),
+derived on the Orin from the detections. The synthetic loop has its own calibration
+(*In the synthetic loop*), and shares no code with this one.
 
 ## The problem
 
@@ -49,7 +48,7 @@ a line.
 ## Terms
 
 - **The robot's frame of reference:** the MJCF's world frame, in which
-  every site is given (`trainer/reward-plan.md`, *Where the reward's
+  every site is given (`__synthetic__/trainer/python/reward-plan.md`, *Where the reward's
   numbers come from*): `x` along the rail, `z` up, `y` front to back,
   in metres. Cart position here is Pivot's `x` relative to the centre
   stop (*The three stops*), so it is 0 with the cart centred, negative
@@ -84,7 +83,7 @@ never measured by the camera. Two sources, both the rig's CAD
 (`freecad/`), the MJCF being exported from it:
 
 - **The sites**, from the MJCF, with the cart centred and the pole
-  hanging (`trainer/reward-plan.md`, *Where the reward's numbers come
+  hanging (`__synthetic__/trainer/python/reward-plan.md`, *Where the reward's numbers come
   from*): Pivot `(−0.010, −0.132, 0.082)`, End `(−0.010, −0.132,
   −0.368)`, 0.450 m straight below it; Left `(−0.510, −0.077, 0.025)`,
   Right `(0.495, −0.077, 0.025)`. Pivot's height, `z_P` = 0.082 m, never
@@ -128,7 +127,7 @@ x_idler     = x_centre - (span_pulses x metres_per_pulse) / 2
 x_motor     = x_centre + (span_pulses x metres_per_pulse) / 2
 ```
 
-`metres_per_pulse` is 0.015 mm: `trainer/settings.toml` `[drive]`, a 96,000 um
+`metres_per_pulse` is 0.015 mm: `__synthetic__/trainer/python/settings.toml` `[drive]`, a 96,000 um
 belt turn over 200 full steps x 32 microsteps.
 
 **Why the span and not the CAD's length.** On 2026-11-01 the board measured
@@ -335,7 +334,7 @@ holds that case and every oblique one in the same nine numbers.
 
    The length is the second running check: a frame whose arrow is far
    from 0.450 m has a bad detection in it. `cos θ` and `sin θ` are what
-   DeepMind's cart-pole observes (`trainer/dm_control_reward.md`), and
+   DeepMind's cart-pole observes (`__synthetic__/trainer/python/dm_control_reward.md`), and
    `cos θ` is what its reward reads.
 4. **Left and Right**, when seen, against their stored positions. A
    shift past a threshold (*Settings*) means the camera or the rig has
@@ -353,19 +352,26 @@ plan does not design.
 
 ## In the synthetic loop
 
-Live and virtual are one source (`AGENTS.md`, *The real robot*): the
-synthetic Orin runs this same calibration against the player's frames,
-with MuJoCo holding the cart at the three stops, and uses the same
-per-frame step after. The stops' `x` values are then the MJCF's, the
-same toml. How the orchestrator drives the cart to the stops, and how
-the derived cart position and angle reach the policy, are changes to the
-loop's design and land in `synthetic-loop-dia.md` first; they are not
-designed here.
+Built, and kept apart from the rig's code (user, 2026-11-01). `synthetic-loop-dia.md`,
+*Calibration*, is its design. It follows this plan's arithmetic, with three differences:
 
-What the loop adds is the check: the trainer has MuJoCo's true Pivot and
-End for every frame, for the reward alone. Comparing the matrix's cart
-position and angle against them over a run measures this scheme's error
-end to end, without that truth ever reaching the policy.
+- **The metres are MuJoCo's.** Each point's true position is read from its site, so the
+  hand-measured gaps, the span and the toml's wall positions have no part in it.
+- **Seven poses, not three** (user, 2026-11-01): the pole hanging at the three stops, as
+  on the rig, and also horizontal and straight up at the end stops. MuJoCo can hold a
+  pole anywhere, and End swings well outside the area the hanging pole covers.
+- **The policy gets points, not an angle** (user, 2026-11-01). Pivot's and End's `(x, z)`
+  go in the pool, in metres. Steps 1 to 3 of *Per frame* apply as far as the two points;
+  the angle and the running checks are not built.
+
+**Measured on 2026-11-01**, through the real player and detector. The fit's worst point
+was 0.103 px (0.112 px with no lens number), and the lens number was −0.005. The loop's
+scene has no lens distortion, so about 0 is what it should be. At 13 poses the fit never
+saw, such as the pole 45° up and leaning out from each end stop, the mapped points were
+at most 0.76 mm from the rig's true geometry in any single frame, about 0.3 of a pixel.
+Over one 221-frame episode of random commands, the mean error was 0.23 mm for Pivot and
+0.21 mm for End. These describe a camera with no lens distortion, so they say nothing
+about the rig's.
 
 ## What it does not cover
 
@@ -396,7 +402,7 @@ left_face_to_pivot    cart's left face to Pivot centre, 0.035 (m), from 11-Left-
 right_face_to_pivot   cart's right face to Pivot centre, 0.035 (m), from 13-Right-Cart.Site
 pivot_z            Pivot's height, 0.082 (m)
 pole_length        Pivot to End, 0.450 (m)
-metres_per_pulse   cart travel per pulse, 0.000015 (m), from trainer/settings.toml [drive]
+metres_per_pulse   cart travel per pulse, 0.000015 (m), from __synthetic__/trainer/python/settings.toml [drive]
 min_images         the fewest images a stop may be asked for, 30
 max_images         the most images a stop may be asked for, 9999
 clip_k             spreads from the centre beyond which a detection is dropped (proposed 3)
@@ -455,13 +461,13 @@ The calibration runs on three computers, in two languages, so it has no
 single home: each part sits under the computer it runs on (user,
 2026-10-31). `__live__/` holds what runs on the real rig and
 `__synthetic__/` is its counterpart for the synthetic loop. Each computer
-has a folder per language, and only `orin/` has two.
+has a folder per language, and only `__synthetic__/orin/python/` has two.
 
 ```text
 cart-pole/
 ├── Cargo.toml                       the root workspace, which builds the [root] crates
 ├── calibrate-w-homography.md        this plan
-├── __synthetic__/                   nothing of the calibration yet (a README only)
+├── __synthetic__/                   the synthetic loop's own calibration (its README)
 └── __live__/
     ├── arduino/
     │   └── rust/
@@ -523,11 +529,11 @@ orin/python                      camera, detector, measurement, fit and store, a
 orin/rust                        routes for the moves and the measurement, forwarded to the service. On the Orin in ~/orin-cam.
 orin/wasm/calibrate              the calibration page, with the measurement's window.
 rpi/rust                         on the Pi: flashes the board and logs it.
-__synthetic__                    a README. Nothing has moved there.
+__synthetic__                    its own calibration, built and measured (In the synthetic loop).
 ```
 
 The older folders stay where they are: `calibrate/` and `bench-station/` measure the
-motor's limits, and `orin/` is the synthetic Orin, whose detector `__live__/orin/python`
+motor's limits, and `__synthetic__/orin/python/` is the synthetic Orin, whose detector `__live__/orin/python`
 copied on 2026-11-01 (user: a copy for now, the obsolete code to be cleaned up later).
 
 ### How each part builds
@@ -575,6 +581,3 @@ Requirements on the Orin, from what it has (checked on `robo-orin`,
 ### Open
 
 - **What `orin/rust` adds to orin-cam** beyond showing pictures.
-- **How the synthetic Orin runs the same calibration.** *In the synthetic
-  loop* requires one source for both, and this layout puts the
-  measurement and the fit under `__live__/`.

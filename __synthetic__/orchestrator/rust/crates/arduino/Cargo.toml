@@ -1,0 +1,15 @@
+[package]
+name              = "arduino"
+version           = { workspace = true }
+edition           = { workspace = true }
+description       = "The synthetic Arduino, the sim loop's stand-in for the rig's board: the Orin's 4-byte pulse-rate command in, the DM542's DIR and STEP rate out"
+
+[features]
+# The sim loop's build (synthetic-arduino-plan.md): runs on the PC with std and
+# returns the DM542 signals, DIR and STEP rate, which the orchestrator
+# turns into the velocity actuator's ctrl, in m/s. Without it the crate is no_std, the shape the board's
+# build takes.
+synthetic         = []
+
+[lints]
+workspace = true

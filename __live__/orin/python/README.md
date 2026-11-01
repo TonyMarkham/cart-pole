@@ -14,7 +14,7 @@ folder beside it the first time it runs, leaving the Orin's own Python alone.
 ## The marker detector
 
 The calibration has to find the markers in the real camera's frames, so this
-folder has its own copy of the detector, made on 2026-11-01 from `orin/src/`,
+folder has its own copy of the detector, made on 2026-11-01 from `__synthetic__/orin/python/src/`,
 because `__live__` can use nothing outside itself.
 
 | File | What it does |

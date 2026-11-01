@@ -66,7 +66,7 @@ ceiling*; user, 2026-10-28). Until 2026-10-28 it set a smoothness factor
 in the training reward instead (the root `reward-plan.md` of the time,
 section 4, said why that was removed; deleted 2026-10-28, in git history
 at `1e6a1001`). `m` is written in the trainer's settings file
-`trainer/settings.toml`, under `[drive]`, as `jump_limit`.
+`__synthetic__/trainer/python/settings.toml`, under `[drive]`, as `jump_limit`.
 
 **It depends on.** The supply voltage and the driver's current setting
 (both set the motor's torque), the microstep setting (it sets the
@@ -81,10 +81,10 @@ change.
 | Board | Arduino UNO R4 WiFi (Renesas RA4M1, Cortex-M4 at 48 MHz); runs the firmware that makes the STEP and DIR signals | `rig-drive-research.md`, *The parts* |
 | Driver | Leadshine DM542: pulses up to 200 kHz, each on at least 2.5 µs and off at least 2.5 µs, DIR settled 5 µs before a pulse; optically isolated inputs, driven through PNP transistors | `control-design.md`, from the DM542 manual |
 | Driver current | 3.76 A peak, 2.69 A RMS, set by its DIP switches (SW1–3 on, off, off); SW4 on keeps the full current at standstill | `control-design.md`, *Setting the switches* |
-| Microstepping | 1/32, 6,400 pulses per turn, fixed (DM542 SW5–8 off, on, off, on) | `trainer/settings.toml` `[drive] microsteps`; `control-design.md` |
+| Microstepping | 1/32, 6,400 pulses per turn, fixed (DM542 SW5–8 off, on, off, on) | `__synthetic__/trainer/python/settings.toml` `[drive] microsteps`; `control-design.md` |
 | Motor | StepperOnline 23HS32-4004S: NEMA 23, 1.8° (200 full steps per turn), 4.0 A rated, 2.4 N·m holding torque, rotor inertia 530 g·cm² | `motor-spec.md` (the maker's datasheet) |
 | Torque curve | maker's pull-out torque, at 24 V and 4.0 A only: 1.86 N·m at 150 rpm falling to 0.74 N·m at 500 rpm | `motor-spec.md`, *Torque curve* |
-| Pulley and belt | 48-tooth GT2, 2 mm pitch: 96 mm of belt per turn, pitch radius 15.28 mm | `trainer/settings.toml` `[drive] belt_um_per_rev`; `mujoco-plan.md` |
+| Pulley and belt | 48-tooth GT2, 2 mm pitch: 96 mm of belt per turn, pitch radius 15.28 mm | `__synthetic__/trainer/python/settings.toml` `[drive] belt_um_per_rev`; `mujoco-plan.md` |
 | Belt per pulse | 96 mm ÷ (200 × 32) = 15 µm | from the two rows above |
 | Moving mass | 0.909 kg (cart 0.507 kg, pole 0.402 kg); the rotor adds the equivalent of 0.227 kg at the cart | `mujoco-plan.md`, *The actuator's values* |
 | Pole | hinged on the cart, its tip 0.45 m from the hinge; it swings freely | the MJCF's sites (`synthetic-loop-dia.md`, *Contracts*) |
@@ -204,7 +204,7 @@ span are known.
    reversal (6,000,000). If a kind loses no step up to its own most,
    its limit is "at least that".
 
-6. Report as section 6 says, and write m into trainer/settings.toml,
+6. Report as section 6 says, and write m into __synthetic__/trainer/python/settings.toml,
    [drive] jump_limit.
 ```
 
@@ -259,7 +259,7 @@ steps. (Until 2026-10-27 this section used the DRV8825's 2.5 A: 98 N,
   training will use.
 - **The training model's top speed matches the rig.** The actuator
   asset (`Assets/Simulation/MuJoCo/03-Cart.Slider.Actuator.asset`) and
-  the MJCF training loads (`trainer/settings.toml` `[mjcf] model`) both
+  the MJCF training loads (`__synthetic__/trainer/python/settings.toml` `[mjcf] model`) both
   hold `ctrlrange` ±0.72 m/s, the 24 V row, 48,000 pulses/s (read
   2026-10-27). If either moves to another supply's row, `m` is measured
   again at that supply.
@@ -273,7 +273,7 @@ steps. (Until 2026-10-27 this section used the DRV8825's 2.5 A: 98 N,
   (homing).
 - The motor's figures: `motor-spec.md`, from the maker's datasheet and
   torque curve. The driver's: `control-design.md`, from Leadshine's
-  DM542 manual V1.0. The drive figures: `trainer/settings.toml`
+  DM542 manual V1.0. The drive figures: `__synthetic__/trainer/python/settings.toml`
   `[drive]`. The masses: `mujoco-plan.md`, from the MJCF.
 - The harness: `calibrate/README.md`, *The jump-limit experiment*;
   its settings: `calibrate/calibrate.toml` `[experiment]`.

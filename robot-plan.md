@@ -124,7 +124,7 @@ Proposed, not decided:
 Follows from rules already set:
 
 - **The Arduino's address and how long to wait for its answer are
-  settings** in the Orin's toml (`orin/settings.toml` holds the
+  settings** in the Orin's toml (`__synthetic__/orin/python/settings.toml` holds the
   detector's today).
 
 ## The Orin's modes (user, 2026-10-29)
@@ -136,7 +136,7 @@ The Orin's program has a `config.toml` that says which job it runs:
 - **`RobotBrain`** — the robot's real job: detect, keep the pool, run
   the policy, send the commands to the Arduino (later slices).
 
-`orin/settings.toml` (the detector's settings) is a separate file,
+`__synthetic__/orin/python/settings.toml` (the detector's settings) is a separate file,
 beside it.
 
 ## Slice 1 — the Orin sees the markers (user, 2026-10-29)
@@ -172,11 +172,11 @@ viewer.
    JPEG quality 90 (`synthetic-loop-dia.md`, *Contracts*, the frame).
    The real frame is made the same: halved to 728×544, turned to luma,
    JPEG-encoded at q90. Encoding to JPEG and decoding again costs time,
-   but it hands `orin/src/detector.py` the same input the synthetic
+   but it hands `__synthetic__/orin/python/src/detector.py` the same input the synthetic
    Orin gets, so the detection code is the loop's, unchanged.
-3. **Detect.** `Detector.detect(jpeg)` in `orin/src/detector.py`, on
+3. **Detect.** `Detector.detect(jpeg)` in `__synthetic__/orin/python/src/detector.py`, on
    an FP16 TensorRT engine (the model compiled for one GPU, at half
-   precision) built on the Orin by `orin/src/build_engine.py` from
+   precision) built on the Orin by `__synthetic__/orin/python/src/build_engine.py` from
    `training/runs/cp2-640-base/weights/best.onnx`. An engine works only
    on the GPU and TensorRT version that built it, so the Orin builds its
    own (`synthetic-orin-plan.md`, R2).
@@ -193,11 +193,11 @@ Follows from what is set:
   frame carries only each box's centre (`synthetic-loop-dia.md`,
   *Contracts*); the detector has the size in its output rows but drops
   it. Returning it beside the centre changes nothing the loop uses.
-- **The Orin's side is Python**, in `orin/`, beside the detector
+- **The Orin's side is Python**, in `__synthetic__/orin/python/`, beside the detector
   (`AGENTS.md`: detection on the robot is Python); its `websockets`
   library serves as well as it connects.
 - **The addresses are settings:** the Orin's listening port in
-  `orin/settings.toml`, the Orin's address in the viewer's toml.
+  `__synthetic__/orin/python/settings.toml`, the Orin's address in the viewer's toml.
 
 Proposed, not decided:
 
@@ -215,7 +215,7 @@ Proposed, not decided:
 stills with a box on each of the four markers, and one saved still's
 boxes can be checked by hand against the image.
 
-**Settings** (in `orin/settings.toml`): the camera's, the WebSocket's
+**Settings** (in `__synthetic__/orin/python/settings.toml`): the camera's, the WebSocket's
 port, and where saved stills go.
 
 **Not known yet; each blocks a part:**
@@ -228,9 +228,9 @@ port, and where saved stills go.
   (`unity-player-plan.md`, step 4), so there is no training-side method
   to copy; the placeholder *The real camera's greyscale* in
   `unity-player-plan.md` asks for the same.
-- **How the `orin/` uv project gets TensorRT on the Orin** (part 3).
+- **How the `__synthetic__/orin/python/` uv project gets TensorRT on the Orin** (part 3).
   It names NVIDIA's `tensorrt-cu12` pip wheels today
-  (`orin/pyproject.toml`); on the Orin TensorRT 10.3 comes with JetPack
+  (`__synthetic__/orin/python/pyproject.toml`); on the Orin TensorRT 10.3 comes with JetPack
   6.2.3. The 2026-10-23 test on the Orin ran Python with TensorRT
   (`detector-plan.md`, *Results*), but how it was installed is not
   recorded. Installing anything needs the user's permission.
@@ -238,7 +238,7 @@ port, and where saved stills go.
 ## To cover (from the records, not decided)
 
 - **Arduino:** the `arduino` crate's `live` build (planned in
-  `arduino/src/lib.rs`, not built); receiving the 4-byte command over
+  `__synthetic__/orchestrator/rust/crates/arduino/src/lib.rs`, not built); receiving the 4-byte command over
   UDP; STEP from `Stepper` (`unor4-hal` needs a run-time rate change and
   a pulse count); the DM542's ~5 µs STEP and DIR timing (not approved).
 - **Orin:** camera capture to the training frames' domain (728×544,

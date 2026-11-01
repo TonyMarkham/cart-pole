@@ -4,18 +4,18 @@ members           = [
                       "__live__/orin/wasm/arduino",
                       "__live__/orin/wasm/calibrate",
                       "__live__/orin/wasm/viewer",
-                      "arduino",
-                      "orchestrator",
-                      "physics"
+                      "__synthetic__/orchestrator/rust/crates/arduino",
+                      "__synthetic__/orchestrator/rust/crates/orchestrator",
+                      "__synthetic__/orchestrator/rust/crates/physics"
 ]
 # What a plain `cargo build` at the root builds. The __live__ members are left
 # out: the firmware compiles only for the board, from its own folder (its
 # .cargo/config.toml names the target), and the pages with `trunk`, from theirs.
 # Their READMEs have the commands.
 default-members   = [
-                      "arduino",
-                      "orchestrator",
-                      "physics"
+                      "__synthetic__/orchestrator/rust/crates/arduino",
+                      "__synthetic__/orchestrator/rust/crates/orchestrator",
+                      "__synthetic__/orchestrator/rust/crates/physics"
 ]
 # aruco-gen is the superseded DICT_4X4_50 generator, kept for reference
 # only (AGENTS.md); excluded so it builds standalone and stays untouched.
@@ -70,8 +70,8 @@ web-sys           = {
                       ]
 }
 
-arduino           = { path = "arduino" }                        # Synthetic Arduino
-physics           = { path = "physics" }                        # Custom MuJoCo ABI
+arduino           = { path = "__synthetic__/orchestrator/rust/crates/arduino" }  # Synthetic Arduino
+physics           = { path = "__synthetic__/orchestrator/rust/crates/physics" }  # Custom MuJoCo ABI
 unor4-hal         = { path = "../unor4-hal/crates/unor4-hal" }  # Custom HAL
 
 # The board's images. A profile of its own, because a workspace has one

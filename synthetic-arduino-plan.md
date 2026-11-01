@@ -90,10 +90,10 @@ diagram first:
 ## Steps
 
 1. **Creation** (A1). *Check:* Done-when 1. **Done (2026-10-24):** the
-   crate is `arduino/` (renamed from `firmware/`);
+   crate is `__synthetic__/orchestrator/rust/crates/arduino/` (renamed from `firmware/`);
    `SyntheticArduino::new(config)` takes no start position and holds
    only its `Config` (test `synthetic_is_created_with_its_config_alone`,
-   `arduino/src/tests.rs`).
+   `__synthetic__/orchestrator/rust/crates/arduino/src/tests.rs`).
 2. **Receive, clamp, signals** (A2–A5). *Check:* Done-when 2–3.
    **Done (2026-10-24):** `receive` decodes the 4-byte `i32`, clamps it
    with `Config::clamp_rate` (the clamp the board's step generator uses
@@ -110,7 +110,7 @@ diagram first:
 3. **The orchestrator's conversion** (`orchestrator-plan.md`, O8).
    *Check:* Done-when 4. **Done (2026-10-24):** test
    `cart_velocity_is_step_rate_times_15_um_signed_by_dir`
-   (`orchestrator/src/tests.rs`, at its test `Config`'s 15 µm a pulse:
+   (`__synthetic__/orchestrator/rust/crates/orchestrator/src/tests.rs`, at its test `Config`'s 15 µm a pulse:
    26,667 → ±0.400005 m/s), and the runs in `orchestrator-plan.md`
    step 5.
 4. **The ramp** (A1, A7). *Check:* Done-when 5: the shared ramp the

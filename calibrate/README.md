@@ -79,7 +79,7 @@ pauses and the baud. The board has
 no file system, so `build.rs` reads the file and compiles the values
 in: **a change takes effect at the next build and upload.** The mm in
 the report come from `[drive]` in
-[trainer/settings.toml](../trainer/settings.toml).
+[__synthetic__/trainer/python/settings.toml](../__synthetic__/trainer/python/settings.toml).
 
 Its `[wifi]` table sets the hostname the router lists (`cart-pole`) and
 the page's TCP port (80). The network's name and password are in
@@ -302,7 +302,7 @@ steps, and the trial failed.
    is the last `j` that passed. A kind that reaches the largest `j` it
    can make inside ±`trial_top` without a slip is "at least" that.
 3. **`m`** is the smallest of the four limits, so it is safe for all of
-   them. Write it into `trainer/settings.toml`, `[drive]
+   them. Write it into `__synthetic__/trainer/python/settings.toml`, `[drive]
    jump_limit`.
 
 **Timing.** A trial's pulses are timed on the processor's cycle counter

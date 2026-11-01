@@ -16,7 +16,7 @@ diagram's messages.
 
 Progress (2026-10-24, run on this PC; *Steps* has each check): steps
 1–7 are done. The
-code is `orchestrator/src/`; the trainer launches it (`train.py`,
+code is `__synthetic__/orchestrator/rust/crates/orchestrator/src/`; the trainer launches it (`train.py`,
 `env_check.py`).
 
 ## Done when
@@ -51,8 +51,13 @@ code is `orchestrator/src/`; the trainer launches it (`train.py`,
 - **O1 — the world in one process.** MuJoCo and the synthetic Arduino
   run in-process; the orchestrator is the only participant that sends
   MuJoCo anything.
+- **O2a — the calibration (C1–C10, user 2026-11-01).** Before anything in O2, one Orin
+  (`--calibrate FILE`) and one player, on instance 0's ports, measure the seven poses
+  the orchestrator reads from MuJoCo, and exit. `FILE` is `homography.json` in `--out`.
+  A failed fit fails the run. `src/calibration.rs` holds the poses, and `calibrate` in
+  `src/main.rs` the sequence.
 - **O2 — the start (1–10).** The trainer starts the run by launching the
-  orchestrator, with the command in `trainer/settings.toml` (1). Then:
+  orchestrator, with the command in `__synthetic__/trainer/python/settings.toml` (1). Then:
   load the MJCF the command names, with its joint and actuator names
   (the trainer's `[mjcf]`), and reset to the start: at rest, the pole
   hanging, θ = 0 (user, 2026-10-24; `--start`'s default, which the
@@ -63,7 +68,7 @@ code is `orchestrator/src/`; the trainer launches it (`train.py`,
   trainer's `[drive]`) and the cart top speed,
   the MJCF actuator's `ctrlrange` read from the loaded model; launch the
   synthetic Orin with `--orchestrator ws://… --frames-listen ADDR --out
-  DIR --pool-gaps d₁,…,d₆` (4) and wait for its control connection (5); launch the
+  DIR --pool-gaps d₁,…,d₆ --homography FILE` (4) and wait for its control connection (5); launch the
   Unity player with `-orin ws://ADDR` (6); wait for the Orin's "Unity
   has registered" (8), the trigger to start; read MuJoCo's time and pose
   (9–10), the first capture state.
@@ -155,11 +160,11 @@ code is `orchestrator/src/`; the trainer launches it (`train.py`,
 
 - **`orchestrator.toml` holds build inputs only.** Today that is
   `mujoco_dir`, the MuJoCo release tree the physics crate links; it is
-  read by `physics/build.rs` and never at run time, and any other key
+  read by `__synthetic__/orchestrator/rust/crates/physics/build.rs` and never at run time, and any other key
   fails the build. The MuJoCo a run uses is the one its binary was built
   with (`mujoco.dll` sits beside the binary).
 - **Everything about a run comes from the command line**, which the
-  trainer builds from its `trainer/settings.toml`: the MJCF and its
+  trainer builds from its `__synthetic__/trainer/python/settings.toml`: the MJCF and its
   names (`--model`, `--cart-joint`, `--pole-joint`, `--actuator`, and
   the twelve sites' `--left-site`, `--right-site`, `--pivot-site`,
   `--end-site`, `--target-site`, `--dynamic-target-site`, `--cart-site`,
@@ -232,7 +237,7 @@ in the diagram first:
    construction: `step_to` stops at the arrival step and the reply is
    awaited before anything steps again. The latency generator
    (SplitMix64, *Configuration*) matches the algorithm's published
-   outputs for seed 0 (`orchestrator/src/tests.rs`). The band comes
+   outputs for seed 0 (`__synthetic__/orchestrator/rust/crates/orchestrator/src/tests.rs`). The band comes
    from `--rnd-delay-min` and `--rnd-delay-max` (2026-10-24): at the
    trainer's 8 and 15, a seed-0 run's 250 latencies and the Orin's
    pre-warm ages match the run before the change exactly; a 2–4 ms band
