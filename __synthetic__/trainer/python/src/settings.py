@@ -308,8 +308,8 @@ def chosen(raw: dict, table_key: str, name_key: str, role: str, facts: RunFacts)
     """[observation] plugin = "x" with its table [observation.x], and the
     same for [action]. Tables for other plugins of the role may sit beside
     it, so variants can be kept side by side. [reward] scheme = "x" takes
-    the factor tables x names (plugins.py: TABLES), [reward.tip] and so
-    on, and ignores any other."""
+    the factor tables x names (plugins.py: TABLES), [reward.centered] and
+    so on, and ignores any other."""
     t = checks.table(raw, table_key, "")
     scalars(t, {name_key}, table_key)
     return plugins.load(role, checks.name(t, name_key, f"{table_key}."), t, table_key, facts)

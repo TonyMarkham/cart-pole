@@ -2,6 +2,7 @@ mod args;
 mod calibration;
 mod calibration_message;
 mod control;
+mod derived_state;
 mod joint_qpos;
 mod orin_reply;
 mod pole_message;
@@ -19,6 +20,7 @@ use crate::{
     calibration::{CalibrationPose, calibration_poses},
     calibration_message::{FitMessage, FittedReply, MeasureMessage, MeasuredReply},
     control::Control,
+    derived_state::DerivedState,
     joint_qpos::JointQpos,
     orin_reply::{OrinReply, POOL_ENTRIES, PoolRow},
     pole_message::PoleMessage,
@@ -161,6 +163,7 @@ async fn main() -> Result<()> {
             next_capture: 0.0,
             sent: Instant::now(),
             pool: Vec::new(),
+            state: DerivedState::default(),
             line: String::new(),
         });
     }
@@ -637,8 +640,8 @@ struct Instance {
     frames_url: String,
     // The current observation: its capture state and id (ids count on
     // across the instance's episodes), its latency, arrival time and the
-    // next capture's time, when its pose went out, and the pool its Orin
-    // replied with.
+    // next capture's time, when its pose went out, and the pool and five
+    // numbers its Orin replied with.
     capture: Capture,
     id: u32,
     latency_ms: f64,
@@ -646,6 +649,7 @@ struct Instance {
     next_capture: f64,
     sent: Instant,
     pool: Vec<PoolRow>,
+    state: DerivedState,
     line: String,
 }
 
@@ -665,12 +669,14 @@ impl Instance {
     // truth row (the note before 17).
     async fn collect(&mut self, timeout: Duration) -> Result<()> {
         self.sim.step_to(self.arrival)?;
-        self.pool = receive_pool(&mut self.orin, self.id, timeout).await?;
+        let reply = receive_reply(&mut self.orin, self.id, timeout).await?;
+        self.pool = reply.pool;
+        self.state = reply.state;
         let orin_ms = self.sent.elapsed().as_secs_f64() * 1000.0;
         self.sim.log(self.id, &self.capture, Some(&self.pool[0]))?;
         let n = &self.pool[0];
         self.line = format!(
-            "[{}] observation {:06}  t {:.3} s  latency {:.3} ms, arrival step t {:.3} s, next capture after t {:.3} s  cart {:+.3} m  pole {:.3} rad ({:.1}°)  orin {orin_ms:.1} ms  newest pivot ({:+.3}, {:+.3}) m, end ({:+.3}, {:+.3}) m",
+            "[{}] observation {:06}  t {:.3} s  latency {:.3} ms, arrival step t {:.3} s, next capture after t {:.3} s  cart {:+.3} m  pole {:.3} rad ({:.1}°)  orin {orin_ms:.1} ms  newest pivot ({:+.3}, {:+.3}) m, end ({:+.3}, {:+.3}) m  state {}",
             self.k,
             self.id,
             self.capture.time,
@@ -684,6 +690,7 @@ impl Instance {
             n[2],
             n[3],
             n[4],
+            self.state,
         );
         Ok(())
     }
@@ -1203,13 +1210,13 @@ async fn send_pose(
         .with_context(|| format!("sending pose {id} to the synthetic Orin"))
 }
 
-// 14: the Orin's one reply, the pool, newest first. A reply for another
-// id, a pool of the wrong shape, or failed ends the run.
-async fn receive_pool(
+// 14: the Orin's one reply, the pool, newest first, and the five numbers. A
+// reply for another id, a pool of the wrong shape, or failed ends the run.
+async fn receive_reply(
     orin: &mut WebSocketStream<TcpStream>,
     id: u32,
     timeout: Duration,
-) -> Result<Vec<PoolRow>> {
+) -> Result<OrinReply> {
     let reply = loop {
         let message = tokio::time::timeout(timeout, orin.next())
             .await
@@ -1255,7 +1262,7 @@ async fn receive_pool(
     if reply.failed {
         bail!("the run failed: 3 of pool {id}'s 6 entries are failed frames");
     }
-    Ok(reply.pool)
+    Ok(reply)
 }
 
 // R5–R7: tell the Orin to pre-warm its pool afresh at these gaps, and wait

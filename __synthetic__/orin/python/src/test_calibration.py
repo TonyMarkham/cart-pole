@@ -13,7 +13,7 @@ from pathlib import Path
 import cv2
 import numpy as np
 
-from fit import Homography, Pair, fit, store
+from fit import CENTRE_POINT, Homography, Pair, fit, store
 from lens import Optics, correct
 from measure import clipped_mean
 
@@ -48,7 +48,9 @@ def bent(u: float, v: float, k: float) -> tuple[float, float]:
 
 
 def pairs_seen(k: float = 0.0) -> list[Pair]:
-    return [Pair(f"point {i}", bent(*seen_through(CAMERA, place), k), place) for i, place in enumerate(PLACES)]
+    # PLACES[2] is Pivot at the centre stop.
+    names = [CENTRE_POINT if i == 2 else f"point {i}" for i in range(len(PLACES))]
+    return [Pair(name, bent(*seen_through(CAMERA, place), k), place) for name, place in zip(names, PLACES)]
 
 
 class ClippedMean(unittest.TestCase):
@@ -113,6 +115,17 @@ class StoredMatrix(unittest.TestCase):
             x, z = self.stored(k).to_metres(*bent(*seen_through(CAMERA, place), k))
             self.assertAlmostEqual(x, place[0], delta=0.001)
             self.assertAlmostEqual(z, place[1], delta=0.001)
+
+    def test_it_holds_the_centre_stop(self):
+        self.assertEqual(self.stored(0.0).centre_x, 0.0025)
+
+    def test_a_matrix_with_no_centre_stop_is_refused(self):
+        with tempfile.TemporaryDirectory() as folder:
+            path = Path(folder) / "homography.json"
+            pairs = [Pair(f"point {i}", pair.pixel, pair.metres) for i, pair in enumerate(pairs_seen())]
+            store(fit(pairs, CALIBRATION, OPTICS), FRAME, path)
+            with self.assertRaisesRegex(ValueError, "expected one point"):
+                Homography.load(path, FRAME)
 
     def test_a_matrix_for_other_frames_is_refused(self):
         with tempfile.TemporaryDirectory() as folder:

@@ -23,6 +23,12 @@ import numpy as np
 from lens import Optics, correct
 
 
+# The stored point whose x is the centre stop, from which the cart's position is
+# measured: the marker and pose names the calibration stores it under (calibration.py,
+# and the orchestrator's calibration.rs).
+CENTRE_POINT = "Pivot centre hanging"
+
+
 class FitError(ValueError):
     """The fit cannot run: the points do not fix a matrix."""
 
@@ -97,13 +103,19 @@ class Homography:
     matrix: np.ndarray
     lens_k: float
     optics: Optics
+    centre_x: float  # Pivot's x at the centre stop, m: MuJoCo's, from the calibration
 
     @staticmethod
     def load(path: Path, frame: tuple[int, int]) -> "Homography":
         record = json.loads(path.read_text())
         if tuple(record["frame"]) != frame:
             raise ValueError(f"{path}: fitted on {record['frame']} frames, and these are {frame}")
-        return Homography(np.asarray(record["matrix"], dtype=np.float64), record["lens_k"], Optics(**record["optics"]))
+        centre = [pair["metres"][0] for pair in record["pairs"] if pair["point"] == CENTRE_POINT]
+        if len(centre) != 1:
+            raise ValueError(f"{path}: expected one point named {CENTRE_POINT!r}, found {len(centre)}")
+        return Homography(
+            np.asarray(record["matrix"], dtype=np.float64), record["lens_k"], Optics(**record["optics"]), centre[0]
+        )
 
     def to_metres(self, u: float, v: float) -> tuple[float, float]:
         """A pixel's (x, z) in metres in the pole's plane: the lens's bend undone,

@@ -2,9 +2,12 @@ use crate::{
     await_close,
     calibration::stops,
     calibration_message::{FitMessage, MeasureMessage},
-    cart_velocity, drive_config,
+    cart_velocity,
+    derived_state::DerivedState,
+    drive_config,
     joint_qpos::JointQpos,
     meters_per_pulse,
+    orin_reply::OrinReply,
     pole_message::PoleMessage,
     ramp_tick,
     registered::ResetMessage,
@@ -475,6 +478,54 @@ fn a_measure_carries_the_pose_and_its_true_points() -> Result<()> {
         r#"{"type":"fit"}"#
     );
     Ok(())
+}
+
+// 14: the Orin's reply carries the five numbers, null where a marker was not
+// seen, as a frame with Pivot but no earlier Pivot has no speed.
+#[test]
+fn a_reply_carries_the_five_numbers() -> Result<()> {
+    let reply: OrinReply = serde_json::from_str(
+        r#"{"id":7,"pool":[],"failed":false,"state":{"cart":0.1,"cos_theta":-1.0,"sin_theta":0.0,"cart_speed":null,"pole_speed":-2.5}}"#,
+    )?;
+    assert_eq!(
+        reply.state,
+        DerivedState {
+            cart: Some(0.1),
+            cos_theta: Some(-1.0),
+            sin_theta: Some(0.0),
+            cart_speed: None,
+            pole_speed: Some(-2.5),
+        }
+    );
+    Ok(())
+}
+
+// A reply without them, or with a number the orchestrator does not know, fails
+// the run at the first frame rather than losing the values quietly.
+#[test]
+fn a_reply_with_the_wrong_numbers_is_refused() {
+    let without = serde_json::from_str::<OrinReply>(r#"{"id":7,"pool":[],"failed":false}"#);
+    assert!(without.is_err());
+    let unknown = serde_json::from_str::<OrinReply>(
+        r#"{"id":7,"pool":[],"failed":false,"state":{"angle":1.0}}"#,
+    );
+    assert!(unknown.is_err());
+}
+
+// The log line prints every number, and says which were not seen.
+#[test]
+fn the_five_numbers_print_with_their_units() {
+    let state = DerivedState {
+        cart: Some(0.1),
+        cos_theta: Some(-1.0),
+        sin_theta: None,
+        cart_speed: None,
+        pole_speed: Some(-2.5),
+    };
+    assert_eq!(
+        state.to_string(),
+        "cart +0.100 m, cos -1.000, sin none, cart speed none m/s, pole speed -2.500 rad/s"
+    );
 }
 
 // 17: a pool entry carries its capture's MuJoCo time, its twelve sites

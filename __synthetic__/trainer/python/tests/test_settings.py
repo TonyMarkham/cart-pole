@@ -41,9 +41,9 @@ class Loader(unittest.TestCase):
         self.assertEqual(settings.command(0, 1)[-12:-4], ["--full-steps-per-rev", "200", "--microsteps", "32",
                                                           "--belt-um-per-rev", "96000", "--jump-limit", "1000000"])
         self.assertEqual([p.name for p in gym.parts()],
-                         ["pool_and_commands", "linear_rate", "tip_speed_cart_centre", "strike_gap"])
-        self.assertEqual(gym.reward.impl.width, 0.2)
-        self.assertEqual(gym.reward.table["cart"], {"zone": 0.05, "width": 0.25, "floor": 0.667})
+                         ["pool_and_commands", "linear_rate", "dm_control_cartpole", "strike_gap"])
+        self.assertEqual(gym.reward.impl.centered_margin, 2.0)
+        self.assertEqual(gym.reward.table["centered"], {"margin": 2.0, "at_margin": 0.1, "floor": 0.5})
 
     def test_the_command_rates_reach_the_orchestrator(self):
         """The gym file's [env] rates are on the launch command, before --orin
@@ -85,7 +85,7 @@ class Loader(unittest.TestCase):
             Settings.load(path)
 
     def test_unknown_plugin(self):
-        self.refuses('scheme = "tip_speed_cart_centre"', 'scheme = "nothing"', r"reward: no reward plugin 'nothing'")
+        self.refuses('scheme = "dm_control_cartpole"', 'scheme = "nothing"', r"reward: no reward plugin 'nothing'")
 
     def test_missing_table(self):
         self.refuses("[end]\nplugins", "[ending]\nplugins", r"unknown key")
@@ -93,22 +93,23 @@ class Loader(unittest.TestCase):
                      r"env: a table is required")
 
     def test_out_of_range(self):
-        self.refuses("[reward.tip]\nwidth = 0.2", "[reward.tip]\nwidth = 0", r"reward\.tip\.width: in \(0\.0")
-        self.refuses("zone_dx = 0.154", "zone_dx = -0.01", r"reward\.target_speed\.zone_dx")
-        self.refuses("zone_dx = 0.154\n", "", r"reward\.target_speed.*zone_dx")
-        self.refuses("limit = 12.0", "limit = -1", r"reward\.speed\.limit")
-        self.refuses("zone = 0.050", "zone = -0.01", r"reward\.cart\.zone")
-        self.refuses("[reward.reach]\nwidth = 0.2", "[reward.reach]\nwidth = 0", r"reward\.reach\.width: in \(0\.0")
-        self.refuses("[reward.reach]\nwidth = 0.2\nfloor = 0.667", "[reward.reach]\nwidth = 0.2\nfloor = 1.5",
-                     r"reward\.reach\.floor")
-        self.refuses("[reward.cart]", "[reward.carts]", r"reward\.cart.*zone")
+        self.refuses("[reward.small_control]\nmargin = 1.0", "[reward.small_control]\nmargin = 0",
+                     r"reward\.small_control\.margin: in \(0\.0")
+        self.refuses("margin = 1.0\nfloor = 0.8", "margin = 1.0\nfloor = 1.5", r"reward\.small_control\.floor")
+        self.refuses("margin = 5.0\n", "", r"reward\.small_velocity.*margin")
+        self.refuses("margin = 5.0\nat_margin = 0.1", "margin = 5.0\nat_margin = 0", r"reward\.small_velocity\.at_margin")
+        self.refuses("margin = 5.0\nat_margin = 0.1", "margin = 5.0\nat_margin = 1.5",
+                     r"reward\.small_velocity\.at_margin")
+        self.refuses("[reward.centered]\nmargin = 2.0", "[reward.centered]\nmargin = -1", r"reward\.centered\.margin")
+        self.refuses("[reward.centered]", "[reward.centereds]", r"reward\.centered.*margin")
         self.refuses("buffer = 0.062", "buffer = 0.01", r"end\.strike_gap\.buffer: at least")
         self.refuses("command_rate_min = 20.0", "command_rate_min = 0.0", r"env\.command_rate_min")
         self.refuses("command_rate_min = 20.0", "command_rate_min = 40.0", r"command_rate_min 40\.0 is above")
         self.refuses("past_commands = 6", "past_commands = -1", r"observation\.pool_and_commands\.past_commands")
 
     def test_typo_in_plugin_table(self):
-        self.refuses("zone_dx = 0.154", "zone_dx = 0.154\nzone = 1", r"reward\.target_speed: unknown key\(s\) \['zone'\]")
+        self.refuses("margin = 1.0\nfloor = 0.8", "margin = 1.0\nfloor = 0.8\nzone = 1",
+                     r"reward\.small_control: unknown key\(s\) \['zone'\]")
 
     def test_real_gym_loads(self):
         """__synthetic__/trainer/python/gym.toml as committed loads on MuJoCo's run values for the
@@ -117,7 +118,7 @@ class Loader(unittest.TestCase):
         (jump-limit-results.md), which the orchestrator is passed."""
         settings = Settings.load(REAL_SETTINGS)
         gym = Gym.load(settings.gym, settings.facts(support.rig_values(settings)))
-        self.assertEqual(gym.reward.name, "tip_speed_cart_centre")
+        self.assertEqual(gym.reward.name, "dm_control_cartpole")
         self.assertEqual(settings.drive.jump_limit, 1_210_937)
         self.assertIn("--jump-limit", settings.command(0, 1))
 

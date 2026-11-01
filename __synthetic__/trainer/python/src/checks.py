@@ -2,7 +2,7 @@
 
 Every part checks its own table (rl-rewrite-plan.md, 3.2), so they share
 these readers; each refusal names the table and key as the toml spells
-them, e.g. `reward.tip.width`.
+them, e.g. `reward.centered.margin`.
 """
 
 import math

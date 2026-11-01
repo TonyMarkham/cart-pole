@@ -57,7 +57,7 @@ class Environment(unittest.TestCase):
             observations, rewards, dones, infos = env.step(np.zeros((2, 1), dtype=np.float32))
             for k in range(2):
                 self.assertTrue(env.observation_space.contains(observations[k]))
-                self.assertTrue(0 < rewards[k] <= 1)
+                self.assertTrue(0 <= rewards[k] <= 1)
         self.assertTrue(all(dones))
         self.assertTrue(all(info["TimeLimit.truncated"] for info in infos))
         self.assertEqual([info["end"] for info in infos], [None, None])

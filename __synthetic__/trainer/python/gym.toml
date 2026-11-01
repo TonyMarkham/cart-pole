@@ -4,8 +4,8 @@
 # file. Each plugin table is read and checked by its plugin alone
 # (__synthetic__/trainer/python/src/plugins.py): changing a plugin's logic is a new file and its
 # name here; tuning it is its table. The reward is the exception: its
-# values are one table per factor, [reward.tip] and so on, which the scheme
-# named in [reward] reads (user, 2026-10-29).
+# values are one table per factor, [reward.centered] and so on, which the
+# scheme named in [reward] reads (user, 2026-10-29).
 
 [env]
 # Hz: the band of the orchestrator's seeded command rate. Each capture, it
@@ -26,7 +26,7 @@ command_rate_max = 30.0
 # (synthetic-loop-dia.md, The time limit): a step is one command, so 460
 # steps is about 19 s of simulated time at the mean gap of 41.5 ms. A
 # truncation is not an end: SAC keeps valuing the state it stopped in.
-max_episode_steps = 460
+max_episode_steps = 500
 
 [observation]
 # What the policy sees (__synthetic__/trainer/python/src/observations/). Never a site: the
@@ -48,92 +48,51 @@ past_commands = 6
 plugin = "linear_rate"
 
 [reward]
-# The reward (__synthetic__/trainer/python/src/rewards/). tip_speed_cart_centre is
-# __synthetic__/trainer/python/reward-plan.md's calculation, which is the source of truth for
-# its terms and values:
-#   r = r_tip x r_target_speed x r_cart x r_reach x r_speed, in (0, 1],
-#   every input MuJoCo's: End, Dynamic Target, Target, Pivot, Cart and Cart
-#   Target from the sites, the pole's speed from its state
-#   (synthetic-loop-dia.md, The reward).
-# Each factor's values are its own table below, [reward.tip] for r_tip
-# and so on (user, 2026-10-29).
-# The commands are not scored: the drive's ramp holds the jump limit
-# (settings.toml [drive] jump_limit).
+# The reward (__synthetic__/trainer/python/src/rewards/). dm_control_cartpole is
+# DeepMind's cart-pole reward (__synthetic__/trainer/python/dm_control_reward.md):
+#   r = upright x small_control x small_velocity x centered, in [0, 1],
+#   every input MuJoCo's but the command: the pole's angle and speed from its
+#   state, Cart and Cart Target from the sites. The command is c_t, as a
+#   fraction of the top pulse rate.
+# Each factor's values are its own table below; upright has none. Each value is
+# DeepMind's own fixed number, from dm_control's cartpole.py, where it describes
+# a 1 m pole on a 3.6 m rail: none has been tuned for this rig.
 # A resume rescores every stored step through the scheme named here.
-scheme = "tip_speed_cart_centre"
+scheme = "dm_control_cartpole"
 
-[reward.tip]
-# w, metres: the tip distance |End - Dynamic Target| at which r_tip falls
-# to 1/e (__synthetic__/trainer/python/reward-plan.md section 1.1.2). Starting value 0.2 (the
-# DDPG rig's 5 per metre).
-width = 0.2
+[reward.small_control]
+# The fraction of the top pulse rate at which the score's part above the floor
+# reaches 0 (dm_control_reward.md section 2): 1, a full-rate command.
+margin = 1.0
 
-[reward.target_speed]
-# metres: how far along the rail End can be from Dynamic Target, with End
-# above Pivot, and still be in the zone where this speed counts
-# (__synthetic__/trainer/python/reward-plan.md section 2.1.2.2). Starting value 0.154: a lean of
-# 20 degrees, the band the training measures use.
-zone_dx = 0.154
+# small_control's lowest value, at that command (section 2.2). 0.8: a full-rate
+# command keeps four-fifths of the score.
+floor = 0.8
 
-# rad/s: the pole's turning speed up to which r_target_speed is 1 in the
-# zone (__synthetic__/trainer/python/reward-plan.md section 2.1.1.3). 0.5: End moving at about
-# 0.225 m/s (user, 2026-10-30).
-limit = 0.5
+[reward.small_velocity]
+# rad/s: the pole's turning speed at which the bell falls to at_margin
+# (dm_control_reward.md section 3.1.2).
+margin = 5.0
 
-# rad/s: past the limit, the speed at which the part of r_target_speed above
-# the floor falls to 1/e (__synthetic__/trainer/python/reward-plan.md section 2.1.3). Starting
-# value 1.
-width = 1.0
+# The bell's value at that speed: tolerance()'s default (section 3.1.3).
+at_margin = 0.1
 
-# r_target_speed's floor: the least it can cost, approached at high speed,
-# never reached (__synthetic__/trainer/python/reward-plan.md section 2.2.1). 0.667: a step keeps
-# at least two-thirds of its score however fast it passes (user, 2026-10-30).
-floor = 0.667
+# small_velocity's lower limit, approached at high speed, never reached (section
+# 3.2). 0.5: a step keeps at least half its score however fast the pole turns.
+floor = 0.5
 
-[reward.cart]
-# c_z, metres: the cart's free zone, either way from the middle (Cart
-# Target, where every episode starts), inside which r_cart is 1
-# (__synthetic__/trainer/python/reward-plan.md section 3.1.1.4). 0.050: 100 mm in all (user,
-# 2026-10-29).
-zone = 0.050
+[reward.centered]
+# metres from the middle of the rail: where the bell falls to at_margin
+# (dm_control_reward.md section 4.1.2). 2: longer than DeepMind's rail, and much
+# longer than this one, whose ends are about 0.44 m away, where this gives 0.947.
+margin = 2.0
 
-# c_w, metres: past the zone's edge, the distance at which the part of
-# r_cart above the floor falls to 1/e (__synthetic__/trainer/python/reward-plan.md section
-# 3.1.2). Starting value 0.25, so the nudge still pulls at the ends.
-width = 0.25
+# The bell's value at that distance: tolerance()'s default.
+at_margin = 0.1
 
-# r_cart's floor: the least it can cost, approached far out, never reached
-# (__synthetic__/trainer/python/reward-plan.md section 3.2.1). 0.667: a step keeps at least
-# two-thirds of its score wherever the cart is (user, 2026-10-29).
-floor = 0.667
-
-[reward.reach]
-# metres: the tip distance |End - Target| at which the part of r_reach
-# above the floor falls to 1/e (__synthetic__/trainer/python/reward-plan.md section 4.1.2).
-# Starting value 0.2, r_tip's w. Above w x (1 - floor), 0.067 m today, so
-# a lean never pays more than straight up (section 4).
-width = 0.2
-
-# r_reach's floor: the least it can cost, approached far out, never
-# reached (__synthetic__/trainer/python/reward-plan.md section 4.2.1). 0.667: a step keeps at
-# least two-thirds of its score wherever the tip is (user, 2026-10-29).
-floor = 0.667
-
-[reward.speed]
-# rad/s: the pole's turning speed up to which r_speed is 1, anywhere on the
-# circle (__synthetic__/trainer/python/reward-plan.md section 5.1.1.2). 12: End moving at about
-# 5.4 m/s, above the 10.5 rad/s a swing-up needs at the bottom (user,
-# 2026-10-30).
-limit = 10.0
-
-# rad/s: past the limit, the speed at which the part of r_speed above the
-# floor falls to 1/e (__synthetic__/trainer/python/reward-plan.md section 5.1.2). Starting value 1.
-width = 1.0
-
-# r_speed's floor: the least it can cost, approached at high speed, never
-# reached (__synthetic__/trainer/python/reward-plan.md section 5.2.1). 0.250: a step keeps at least
-# a quarter of its score however fast the pole turns (user, 2026-10-30).
-floor = 0.250
+# centered's lower limit, approached far out, never reached (section 4.2). 0.5: a
+# step keeps at least half its score wherever the cart is.
+floor = 0.5
 
 [end]
 # Which episode-end conditions are checked, each after the step's reward
@@ -176,7 +135,7 @@ device = "cuda"
 
 # Steps of random actions before learning starts, to fill the replay
 # buffer with varied motion: 10,000 is about 22 episodes of 460 steps.
-learning_starts = 10_000
+learning_starts = 1_200
 
 # The replay buffer: the most recent steps SAC learns from. Each step also
 # keeps its inputs (91 floats), so 1,000,000 steps hold about 1.2 GB.

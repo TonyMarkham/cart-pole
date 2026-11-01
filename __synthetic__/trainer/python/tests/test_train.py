@@ -50,13 +50,12 @@ class TrainingRun(unittest.TestCase):
         folder = self.folder()
         manifest = folder.read_manifest()
         self.assertEqual(manifest["steps"], 200)
-        self.assertEqual(manifest["plugins"]["reward"], {"name": "tip_speed_cart_centre",
-                                                         "table": {"tip": {"width": 0.2},
-                                                                   "target_speed": {"zone_dx": 0.154, "limit": 0.5,
-                                                                                    "width": 1.0, "floor": 0.667},
-                                                                   "cart": {"zone": 0.05, "width": 0.25, "floor": 0.667},
-                                                                   "reach": {"width": 0.2, "floor": 0.667},
-                                                                   "speed": {"limit": 12.0, "width": 1.0, "floor": 0.25}}})
+        self.assertEqual(manifest["plugins"]["reward"], {"name": "dm_control_cartpole",
+                                                         "table": {"small_control": {"margin": 1.0, "floor": 0.8},
+                                                                   "small_velocity": {"margin": 5.0, "at_margin": 0.1,
+                                                                                      "floor": 0.5},
+                                                                   "centered": {"margin": 2.0, "at_margin": 0.1,
+                                                                                "floor": 0.5}}})
         self.assertEqual([p["name"] for p in manifest["plugins"]["end"]], ["strike_gap"])
         self.assertEqual(manifest["run_values"], {"cart_top_speed": 0.9, "top_pulse_rate": 60000, "timestep": 0.002,
                                                   "pole_mass": POLE_MASS, "pole_com_distance": POLE_COM,
@@ -70,7 +69,7 @@ class TrainingRun(unittest.TestCase):
 
     def test_resume_rescores(self):
         self.session()
-        self.fixture.write_gym(width=0.5, total_steps=300)
+        self.fixture.write_gym(centered_margin=0.5, total_steps=300)
         gym = self.session(train.LATEST)
         buffer = load_from_pkl(self.folder().buffer)
         rows = buffer.stored()

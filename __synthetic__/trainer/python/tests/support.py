@@ -77,30 +77,21 @@ past_commands = {past_commands}
 plugin = "linear_rate"
 
 [reward]
-scheme = "tip_speed_cart_centre"
+scheme = "dm_control_cartpole"
 
-[reward.tip]
-width = {width}
+[reward.small_control]
+margin = 1.0
+floor = 0.8
 
-[reward.target_speed]
-zone_dx = 0.154
-limit = 0.5
-width = 1.0
-floor = 0.667
+[reward.small_velocity]
+margin = 5.0
+at_margin = 0.1
+floor = 0.5
 
-[reward.cart]
-zone = 0.050
-width = 0.25
-floor = 0.667
-
-[reward.reach]
-width = 0.2
-floor = 0.667
-
-[reward.speed]
-limit = 12.0
-width = 1.0
-floor = 0.250
+[reward.centered]
+margin = {centered_margin}
+at_margin = 0.1
+floor = 0.5
 
 [end]
 plugins = ["strike_gap"]
@@ -149,7 +140,7 @@ CART_TOP_SPEED = 0.9  # m/s
 METRES_A_PULSE = 15e-6  # m
 TIMESTEP = 0.002  # s
 
-GYM_DEFAULTS = {"max_episode_steps": 60, "past_commands": 6, "width": 0.2, "buffer": 0.062,
+GYM_DEFAULTS = {"max_episode_steps": 60, "past_commands": 6, "centered_margin": 2.0, "buffer": 0.062,
                 "total_steps": 200, "save_every": 100}
 
 

@@ -14,15 +14,16 @@ pattern:
 - the one method its role needs (the protocols below).
 
 A reward scheme is the exception (user, 2026-10-29): its values sit one
-table per factor, `[reward.tip]`, `[reward.cart]` and so on, which any
-scheme using that factor shares. The scheme names its factors in
+table per factor, `[reward.small_control]`, `[reward.centered]` and so on,
+which any scheme using that factor shares. The scheme names its factors in
 `TABLES`, and `from_table` gets exactly those tables, keyed by name.
 
 A plugin file goes when no run that can still resume names it (user,
 2026-10-28: the reward plugins before tip_energy went with the runs that
 lacked MuJoCo's pole state; 2026-10-29: tip_energy and tip_energy_cart
 went with the nine-site runs, whose stored steps the twelve sites no
-longer read).
+longer read; 2026-11-01: tip_energy_cart_centre and tip_speed_cart_centre
+went once dm_control_cartpole was the scheme in use).
 """
 
 import importlib

@@ -32,10 +32,13 @@ Messages, control socket (orchestrator):
                                                      pre-warm afresh at them
 - out text   {"type": "reset"}                       the pool is ready (R7)
 - out text   {"id": n, "pool": [[age_ms, pivot_x, pivot_z, end_x, end_z] x6],
-              "failed": bool}                        exactly one per pose,
+              "failed": bool, "state": {"cart", "cos_theta", "sin_theta",
+              "cart_speed", "pole_speed"}}           exactly one per pose,
                                                      in order (14): the
                                                      pool newest first;
-                                                     failed ends the run
+                                                     failed ends the run;
+                                                     state the five numbers
+                                                     (derived_state.py)
 Messages, frame socket (Unity):
 - out text   {"id": n, "joints": [...]}              the trigger (12): the
                                                      pose, forwarded as is
@@ -69,11 +72,15 @@ Rules:
 
 observations.jsonl, one line per frame:
   {"id", "time", "slots": [[x, y] x4], "confidences": [c x4], "detect_ms",
-   "pool": [[age_ms, x0, y0, x1, y1, x2, y2, x3, y3] x6], "failed"}
+   "pool": [[age_ms, pivot_x, pivot_z, end_x, end_z] x6], "failed",
+   "state": {"cart", "cos_theta", "sin_theta", "cart_speed", "pole_speed"}}
 plus "error" for a failed frame, whose confidences and detect_ms are null.
 `slots` are all four markers' detected positions, normalized to the frame;
-`pool` and `failed` are exactly what the reply carries; `confidences` and
-`detect_ms` are for checking. None of the first and last two reach the policy.
+`pool`, `failed` and `state` are exactly what the reply carries; `confidences`
+and `detect_ms` are for checking. `state` is the five numbers DeepMind's
+cart-pole policy reads, worked out from the pool (derived_state.py), each null
+where a marker it needs was not seen. It reaches the orchestrator and stops
+there: nothing of it reaches the policy yet. Nor do the first and last two.
 
 usage (from the repo root):
   uv run --project __synthetic__/orin/python python __synthetic__/orin/python/src/synthetic_orin.py
@@ -94,6 +101,7 @@ from typing import TextIO
 from websockets.sync.client import ClientConnection, connect
 
 import calibration
+from derived_state import derive
 from detector import Detector, FrameError
 from detector_config import DEFAULT_PATH, DetectorConfig
 from fit import Homography
@@ -273,8 +281,8 @@ def observe(
     capture: float,
     jpeg: bytes,
 ) -> None:
-    """Detects, maps Pivot and End to metres, appends to the window, logs the
-    line, and replies (14)."""
+    """Detects, maps Pivot and End to metres, appends to the window, works out
+    the five numbers, logs the line, and replies (14)."""
     started = time.perf_counter()
     observation: dict = {"id": frame_id, "time": capture}
     try:
@@ -300,9 +308,10 @@ def observe(
 
     pool = pool_rows(window)
     failed = sum(entry.failed for entry in window) >= FAILED_FRAMES_FAIL_RUN
-    observation |= {"pool": pool, "failed": failed}
+    state = derive(pool, homography.centre_x).to_json()
+    observation |= {"pool": pool, "failed": failed, "state": state}
     log.write(json.dumps(observation) + "\n")
-    ws.send(json.dumps({"id": frame_id, "pool": pool, "failed": failed}))
+    ws.send(json.dumps({"id": frame_id, "pool": pool, "failed": failed, "state": state}))
 
 
 if __name__ == "__main__":

@@ -1,5 +1,5 @@
 """The plugins against hand-computed values (rl-rewrite-plan.md, build
-steps 4 and 5): the reward against __synthetic__/trainer/python/reward-plan.md's tables, the
+steps 4 and 5): the reward against __synthetic__/trainer/python/dm_control_reward.md's tables, the
 strike gap at the measured gaps, the observation's shape and contents, the
 action's rounding and bound."""
 
@@ -13,19 +13,15 @@ from endings.strike_gap import StrikeGap
 from link.fake import Rig
 from observations.pool_and_commands import PoolAndCommands
 from actions.linear_rate import LinearRate
-from plugins import History
-from rewards.tip_energy_cart_centre import TipEnergyCartCentre
-from rewards.tip_speed_cart_centre import TipSpeedCartCentre
+from plugins import History, load
+from rewards.dm_control_cartpole import DmControlCartpole
 
 FACTS = support.facts(15.0)
 TOP = FACTS.top_pulse_rate  # 60,000 pulses/s at the tests' run values
-TABLES = {"tip": {"width": 0.2}, "energy": {"spare_max": 2.0}, "cart": {"zone": 0.050, "width": 0.25, "floor": 0.667},
-          "reach": {"width": 0.2, "floor": 0.667}}
-REWARD = TipEnergyCartCentre.from_table(TABLES, FACTS, "reward.")
-SPEED_TABLES = {"tip": {"width": 0.2}, "target_speed": {"zone_dx": 0.154, "limit": 0.5, "width": 1.0, "floor": 0.667},
-                "cart": {"zone": 0.050, "width": 0.25, "floor": 0.667}, "reach": {"width": 0.2, "floor": 0.667},
-                "speed": {"limit": 12.0, "width": 1.0, "floor": 0.250}}
-SPEED_REWARD = TipSpeedCartCentre.from_table(SPEED_TABLES, FACTS, "reward.")
+DM_TABLES = {"small_control": {"margin": 1.0, "floor": 0.8},
+             "small_velocity": {"margin": 5.0, "at_margin": 0.1, "floor": 0.5},
+             "centered": {"margin": 2.0, "at_margin": 0.1, "floor": 0.5}}
+DM_REWARD = DmControlCartpole.from_table(DM_TABLES, FACTS, "reward.")
 
 
 def rig(cart=0.0, pole=math.pi, speed=0.0):
@@ -40,232 +36,112 @@ def inputs(now, before=None, command=0, previous=0):
     return StepInputs(before.sites(), now.sites(), command, previous, 0, before.pole_state(), now.pole_state())
 
 
-class TipEnergyCartCentreReward(unittest.TestCase):
-    def test_tip_table(self):
-        """__synthetic__/trainer/python/reward-plan.md section 1, w = 0.2 m: the star rides the
-        cart, so straight up is 1 wherever the cart is."""
+class DmControlCartpoleReward(unittest.TestCase):
+    """Against the tables in __synthetic__/trainer/python/dm_control_reward.md, DeepMind's own
+    numbers, worked from its formulas."""
+
+    def factors(self, now, command=0):
+        return DM_REWARD.score(inputs(now, command=command))[1]
+
+    def test_section_0_table(self):
+        """Section 0's table. The fixture's cart runs past this rig's rail for the
+        1 m and 1.8 m rows, which are DeepMind's."""
+        lean = math.pi - math.radians(10)
         table = [
-            (rig(), 0.0, 1.00),
-            (rig(cart=0.2), 0.0, 1.00),
-            (rig(cart=-0.440), 0.0, 1.00),
-            (rig(pole=math.pi - math.radians(10)), 0.078, 0.68),
-            (rig(cart=0.2, pole=math.pi - math.radians(10)), 0.078, 0.68),
-            (rig(pole=math.pi / 2), 0.636, 0.042),
-            (rig(pole=0.0), 0.900, 0.011),
+            (rig(), 0, 1.0),
+            (rig(cart=1.0), 0, 0.781),
+            (rig(), TOP, 0.8),
+            (rig(speed=5.0), 0, 0.55),
+            (rig(cart=1.0, speed=5.0), TOP, 0.344),
+            (rig(pole=lean), 0, 0.992),
+            (rig(pole=math.pi / 2), 0, 0.5),
+            (rig(pole=0.0), 0, 0.0),
+            (rig(cart=1.8, pole=0.0, speed=10.0), TOP, 0.0),
         ]
-        for now, d, tip in table:
-            _, f = REWARD.score(inputs(now))
-            self.assertAlmostEqual(f["d"], d, places=3)
-            self.assertAlmostEqual(f["tip"], tip, places=2 if tip >= 0.1 else 3)
+        for now, command, score in table:
+            self.assertAlmostEqual(DM_REWARD.score(inputs(now, command=command))[0], score, places=3)
 
-    def test_energy_table(self):
-        """__synthetic__/trainer/python/reward-plan.md sections 2.1 and 2.2 at spare_max = 2: the
-        bell is 0.1 ** (spare / spare_max) ** 2. omega0 comes from the run's
-        values (the fixture's pole body here)."""
-        omega0 = REWARD.omega0
-        table = [
-            (rig(), 0.0, 1.0),                                       # upright, still
-            (rig(pole=0.0), -2.0, 0.1),                              # hanging, still
-            (rig(pole=math.pi / 2), -1.0, 0.1 ** 0.25),              # sideways, still
-            (rig(pole=0.0, speed=2 * omega0), 0.0, 1.0),             # passing the bottom with just enough
-            (rig(speed=omega0), 0.5, 0.1 ** (1 / 16)),               # passing straight up at omega0
-            (rig(speed=-omega0), 0.5, 0.1 ** (1 / 16)),              # either way round
-        ]
-        for now, spare, energy in table:
-            _, f = REWARD.score(inputs(now))
-            self.assertAlmostEqual(f["spare"], spare, places=12)
-            self.assertAlmostEqual(f["energy"], energy, places=12)
+    def test_upright_table(self):
+        """Section 1: the pole's angle alone, either side the same, wherever the cart is."""
+        table = [(0.0, 1.0, 1.0), (10.0, 0.985, 0.992), (45.0, 0.707, 0.854), (90.0, 0.0, 0.5), (135.0, -0.707, 0.146),
+                 (180.0, -1.0, 0.0)]
+        for degrees, cos_theta, upright in table:
+            for way in (1, -1):
+                for cart in (0.0, 0.3):
+                    f = self.factors(rig(cart=cart, pole=math.pi + way * math.radians(degrees)))
+                    self.assertAlmostEqual(f["cos_theta"], cos_theta, places=3)
+                    self.assertAlmostEqual(f["upright"], upright, places=3)
 
-    def test_omega0_from_the_run_values(self):
-        """omega0 = sqrt(m g l_c / I), MuJoCo's body values (the run's)."""
-        self.assertAlmostEqual(
-            REWARD.omega0,
-            math.sqrt(FACTS.pole_mass * FACTS.gravity * FACTS.pole_com_distance / FACTS.pole_inertia), places=15)
+    def test_a_pole_past_a_full_turn_scores_the_same(self):
+        """MuJoCo's angle counts on past a full turn (synthetic-loop-dia.md, the pole)."""
+        self.assertAlmostEqual(self.factors(rig(pole=math.pi + 4 * math.pi))["upright"], 1.0, places=12)
 
-    def test_cart_table(self):
-        """__synthetic__/trainer/python/reward-plan.md section 3, c_z 0.050 m, c_w 0.25 m, floor
-        0.667, from |Cart - Cart Target|; left and right count the same."""
-        table = [
-            (0.0, 0.0, 1.0),
-            (0.03, 0.0, 1.0),
-            (-0.05, 0.0, 1.0),
-            (0.1, 0.05, 0.940),
-            (-0.2, 0.15, 0.850),
-            (0.3, 0.25, 0.790),
-            (-0.44, 0.39, 0.737),
-        ]
-        for cart, c_d, score in table:
-            _, f = REWARD.score(inputs(rig(cart=cart)))
-            self.assertAlmostEqual(f["c_d"], c_d, places=12)
-            self.assertAlmostEqual(f["cart"], score, places=3)
+    def test_small_control_table(self):
+        """Section 2: u is the command over the top pulse rate; either way the same."""
+        for fraction, score in ((0.0, 1.0), (0.25, 0.9875), (0.5, 0.95), (0.75, 0.8875), (1.0, 0.8)):
+            for way in (1, -1):
+                f = self.factors(rig(), command=way * round(fraction * TOP))
+                self.assertAlmostEqual(f["u"], way * fraction, places=12)
+                self.assertAlmostEqual(f["small_control"], score, places=12)
 
-    def test_reach_table(self):
-        """__synthetic__/trainer/python/reward-plan.md section 4, width 0.2 m, floor 0.667, from
-        |End - Target|, Target fixed above the middle."""
-        table = [
-            (rig(), 0.0, 1.0),
-            (rig(cart=0.2), 0.2, 0.790),
-            (rig(cart=-0.44), 0.44, 0.704),
-            (rig(pole=0.0), 0.9, 0.671),
-        ]
-        for now, d_r, score in table:
-            _, f = REWARD.score(inputs(now))
-            self.assertAlmostEqual(f["d_r"], d_r, places=12)
-            self.assertAlmostEqual(f["reach"], score, places=3)
+    def test_small_control_stops_at_its_floor_past_the_margin(self):
+        """Section 2.1.1: the quadratic is cut off at 0, so it never turns back up."""
+        tables = {**DM_TABLES, "small_control": {"margin": 0.5, "floor": 0.8}}
+        reward = DmControlCartpole.from_table(tables, FACTS, "reward.")
+        self.assertEqual(reward.score(inputs(rig(), command=TOP))[1]["small_control"], 0.8)
 
-    def test_never_reaches_the_floors(self):
-        """Squeezed, not clamped: past the zone every step towards the middle
-        pays, out to the ends (sections 3.2 and 4.2)."""
-        for factor in ("cart", "reach"):
-            scores = [REWARD.score(inputs(rig(cart=-x / 100)))[1][factor] for x in range(5, 45)]
-            self.assertTrue(all(a > b for a, b in zip(scores, scores[1:])), factor)
-            self.assertGreater(scores[-1], 0.667, factor)
-
-    def test_straight_up_beats_any_lean(self):
-        """__synthetic__/trainer/python/reward-plan.md section 4: with the cart off the middle,
-        leaning the pole still towards the middle never pays more than
-        straight up, at reach_width > w (1 - reach_floor)."""
-        for cart in (0.05, 0.1, 0.2, 0.3, 0.44, -0.2, -0.44):
-            towards = 1 if cart > 0 else -1  # pole pi + a puts End at -sin(a): towards -x for a > 0
-            upright = REWARD.score(inputs(rig(cart=cart)))[0]
-            for tenths in range(1, 401):
-                lean = REWARD.score(inputs(rig(cart=cart, pole=math.pi + towards * math.radians(tenths / 10))))[0]
-                self.assertLess(lean, upright, f"cart {cart} m, lean {tenths / 10} deg")
-
-    def test_product_range_and_commands(self):
-        """r = r_tip x r_energy x r_cart x r_reach in (0, 1], whatever the
-        commands; 1 upright and still at centre."""
-        now, before = rig(cart=0.2, pole=1.0, speed=3.0), rig(cart=0.2, pole=0.8, speed=2.0)
-        r, f = REWARD.score(inputs(now, before))
-        jumped, _ = REWARD.score(inputs(now, before, command=20000, previous=-20000))
-        self.assertEqual(r, jumped)
-        self.assertAlmostEqual(r, f["tip"] * f["energy"] * f["cart"] * f["reach"], places=15)
-        self.assertTrue(0 < r <= 1)
-        self.assertAlmostEqual(REWARD.score(inputs(rig()))[0], 1.0, places=12)
-        self.assertEqual(REWARD.factors, ("d", "tip", "spare", "energy", "c_d", "cart", "d_r", "reach"))
-
-    def test_table_checks(self):
-        for factor, change, pattern in (("tip", {"width": 0.0}, r"reward\.tip\.width"),
-                                        ("energy", {"spare_max": 0.0}, r"reward\.energy\.spare_max"),
-                                        ("energy", {"spare_max": None}, r"reward\.energy.*spare_max"),
-                                        ("cart", {"zone": -0.01}, r"reward\.cart\.zone"),
-                                        ("cart", {"width": 0.0}, r"reward\.cart\.width"),
-                                        ("cart", {"floor": 1.5}, r"reward\.cart\.floor"),
-                                        ("reach", {"width": 0.0}, r"reward\.reach\.width"),
-                                        ("reach", {"floor": None}, r"reward\.reach.*floor"),
-                                        ("tip", {"speed": 5.0}, r"reward\.tip: unknown")):
-            changed = {k: v for k, v in {**TABLES[factor], **change}.items() if v is not None}
-            with self.assertRaisesRegex(ValueError, pattern):
-                TipEnergyCartCentre.from_table({**TABLES, factor: changed}, FACTS, "reward.")
-
-
-class TipSpeedCartCentreReward(unittest.TestCase):
-    def factors(self, now):
-        return SPEED_REWARD.score(inputs(now))[1]
-
-    def test_target_speed_table(self):
-        """__synthetic__/trainer/python/reward-plan.md section 2: 1 at or below the limit and outside
-        the zone; passing straight up it falls towards the floor."""
-        table = [
-            (rig(), 0.0, 1.0),                                  # straight up, still
-            (rig(speed=0.5), 0.0, 1.0),                         # at the limit
-            (rig(speed=1.0), 0.5, 0.869),
-            (rig(speed=-1.0), 0.5, 0.869),                      # either way round
-            (rig(speed=2.0), 1.5, 0.741),
-            (rig(speed=3.0), 2.5, 0.694),
-            (rig(speed=5.25), 4.75, 0.670),
-            (rig(speed=10.0), 9.5, 0.667),
-            (rig(pole=math.pi / 2, speed=7.4), 0.0, 1.0),       # sideways, outside the zone
-            (rig(pole=0.0, speed=10.5), 0.0, 1.0),              # passing the bottom
-            (rig(pole=0.0), 0.0, 1.0),                          # hanging, still
-        ]
-        for now, over, score in table:
-            f = self.factors(now)
-            self.assertAlmostEqual(f["over_target"], over, places=12)
-            self.assertAlmostEqual(f["target_speed"], score, places=3)
-
-    def test_the_zone(self):
-        """Section 2.1.2: d_x is the rail's part of the distance alone, it
-        rides the cart, and a hanging pole's d_x of 0 is not in the zone."""
-        for lean, x, charged in ((5.0, 0.039, True), (20.0, 0.154, True), (21.0, 0.161, False),
-                                 (-20.0, 0.154, True), (-21.0, 0.161, False)):
-            for cart in (0.0, 0.3):
-                f = self.factors(rig(cart=cart, pole=math.pi + math.radians(lean), speed=3.0))
-                self.assertAlmostEqual(f["d_x"], x, places=3)
-                self.assertEqual(f["over_target"] > 0, charged, f"lean {lean}, cart {cart}")
-        hanging = self.factors(rig(pole=0.0, speed=3.0))
-        self.assertAlmostEqual(hanging["d_x"], 0.0, places=12)
-        self.assertEqual(hanging["over_target"], 0.0)
-
-    def test_speed_table(self):
-        """Section 5: anywhere on the circle, with no zone."""
-        table = [(12.0, 0.0, 1.0), (13.0, 1.0, 0.526), (14.0, 2.0, 0.352), (15.0, 3.0, 0.287), (20.0, 8.0, 0.250),
-                 (33.0, 21.0, 0.250), (5.0, 0.0, 1.0)]
-        for turning, over, score in table:
-            for pole in (0.0, math.pi / 2, math.pi):
+    def test_small_velocity_table(self):
+        """Section 3: with no zone, at the top and the bottom alike."""
+        table = [(0.0, 1.0), (1.0, 0.956), (2.0, 0.846), (3.0, 0.718), (5.0, 0.55), (7.0, 0.505), (15.0, 0.5)]
+        for omega, score in table:
+            for pole in (0.0, math.pi):
                 for way in (1, -1):
-                    f = self.factors(rig(pole=pole, speed=way * turning))
-                    self.assertAlmostEqual(f["over_speed"], over, places=12)
-                    self.assertAlmostEqual(f["speed"], score, places=3)
+                    self.assertAlmostEqual(self.factors(rig(pole=pole, speed=way * omega))["small_velocity"], score,
+                                           places=3)
 
-    def test_the_other_factors(self):
-        """Sections 1, 3 and 4, the same tables as the other scheme's."""
-        for now, tip in ((rig(), 1.0), (rig(cart=0.2), 1.0), (rig(pole=math.pi / 2), 0.042), (rig(pole=0.0), 0.011)):
-            self.assertAlmostEqual(self.factors(now)["tip"], tip, places=3)
-        for cart, score in ((0.03, 1.0), (0.1, 0.940), (-0.2, 0.850), (-0.44, 0.737)):
-            self.assertAlmostEqual(self.factors(rig(cart=cart))["cart"], score, places=3)
-        for now, score in ((rig(), 1.0), (rig(cart=0.2), 0.790), (rig(pole=0.0), 0.671)):
-            self.assertAlmostEqual(self.factors(now)["reach"], score, places=3)
+    def test_centered_table(self):
+        """Section 4, from |Cart - Cart Target|; left and right the same. 0.44 m is
+        section 4.1.2's figure for this rig's rail."""
+        table = [(0.0, 1.0), (0.25, 0.982), (0.44, 0.947), (0.5, 0.933), (1.0, 0.781), (1.5, 0.637), (1.8, 0.577),
+                 (2.0, 0.55)]
+        for x, score in table:
+            for way in (1, -1):
+                f = self.factors(rig(cart=way * x))
+                self.assertAlmostEqual(f["x"], x, places=12)
+                self.assertAlmostEqual(f["centered"], score, places=3)
 
-    def test_section_0_examples(self):
-        """__synthetic__/trainer/python/reward-plan.md section 0, with the cart in the middle."""
-        for now, score in ((rig(), 1.0), (rig(speed=10.0), 0.667), (rig(pole=math.pi / 2), 0.028),
-                           (rig(pole=0.0), 0.0075), (rig(cart=0.2), 0.671)):
-            self.assertAlmostEqual(SPEED_REWARD.score(inputs(now))[0], score, places=3)
+    def test_the_product(self):
+        """r is exactly the four scores' product, and only this step's command counts."""
+        now = rig(cart=0.2, pole=2.5, speed=3.0)
+        r, f = DM_REWARD.score(inputs(now, command=TOP // 2, previous=-TOP))
+        self.assertAlmostEqual(r, f["upright"] * f["small_control"] * f["small_velocity"] * f["centered"], places=15)
+        self.assertEqual(r, DM_REWARD.score(inputs(now, command=TOP // 2, previous=TOP))[0])
+        self.assertEqual(DM_REWARD.factors, tuple(f))
 
-    def test_both_cuts_multiply(self):
-        """Section 5: at the floors, 0.667 x 0.250."""
-        self.assertAlmostEqual(SPEED_REWARD.score(inputs(rig(speed=30.0)))[0], 0.667 * 0.250, places=6)
+    def test_it_loads_by_name_from_its_tables_alone(self):
+        """The plugin pattern: the other schemes' tables beside it are ignored."""
+        part = load("reward", "dm_control_cartpole", {**DM_TABLES, "other_scheme": {"width": 0.2}}, "reward", FACTS)
+        self.assertEqual(part.impl, DM_REWARD)
+        self.assertEqual(set(part.table), set(DM_TABLES))
 
-    def test_never_reaches_the_floors(self):
-        """Squeezed, not clamped: every bit slower pays (sections 2.2 and 5.2)."""
-        for factor, floor, start in (("target_speed", 0.667, 1), ("speed", 0.250, 13)):
-            scores = [self.factors(rig(speed=start + x / 2))[factor] for x in range(40)]
-            self.assertTrue(all(a > b for a, b in zip(scores, scores[1:])), factor)
-            self.assertGreater(scores[-1], floor, factor)
-
-    def test_straight_up_beats_any_lean(self):
-        """Section 4's rule holds with the speed factors in the product."""
-        for cart in (0.05, 0.2, 0.44, -0.2, -0.44):
-            towards = 1 if cart > 0 else -1
-            upright = SPEED_REWARD.score(inputs(rig(cart=cart)))[0]
-            for tenths in range(1, 401):
-                pole = math.pi + towards * math.radians(tenths / 10)
-                self.assertLess(SPEED_REWARD.score(inputs(rig(cart=cart, pole=pole)))[0], upright)
-
-    def test_product_range_and_commands(self):
-        """r is the five factors' product in (0, 1], whatever the commands."""
-        now, before = rig(cart=0.2, pole=3.0, speed=13.0), rig(cart=0.2, pole=2.8, speed=12.0)
-        r, f = SPEED_REWARD.score(inputs(now, before))
-        jumped, _ = SPEED_REWARD.score(inputs(now, before, command=20000, previous=-20000))
-        self.assertEqual(r, jumped)
-        self.assertAlmostEqual(r, f["tip"] * f["target_speed"] * f["cart"] * f["reach"] * f["speed"], places=15)
-        self.assertTrue(0 < r <= 1)
-        self.assertEqual(SPEED_REWARD.factors, ("d", "tip", "d_x", "over_target", "target_speed", "c_d", "cart", "d_r",
-                                                "reach", "over_speed", "speed"))
+    def test_the_stored_step_rescores_the_same(self):
+        """A resume rescores stored steps from their flat form (buffer.py)."""
+        step = inputs(rig(cart=0.2, pole=2.5, speed=3.0), command=TOP // 2)
+        self.assertEqual(DM_REWARD.score(StepInputs.from_array(step.to_array()))[0], DM_REWARD.score(step)[0])
 
     def test_table_checks(self):
-        for factor, change, pattern in (("target_speed", {"zone_dx": -0.01}, r"reward\.target_speed\.zone_dx"),
-                                        ("target_speed", {"limit": None}, r"reward\.target_speed.*limit"),
-                                        ("target_speed", {"width": 0.0}, r"reward\.target_speed\.width"),
-                                        ("target_speed", {"floor": 1.5}, r"reward\.target_speed\.floor"),
-                                        ("speed", {"limit": -1.0}, r"reward\.speed\.limit"),
-                                        ("speed", {"width": 0.0}, r"reward\.speed\.width"),
-                                        ("speed", {"floor": None}, r"reward\.speed.*floor"),
-                                        ("speed", {"zone_dx": 0.1}, r"reward\.speed: unknown")):
-            changed = {k: v for k, v in {**SPEED_TABLES[factor], **change}.items() if v is not None}
+        for factor, change, pattern in (("small_control", {"margin": 0.0}, r"reward\.small_control\.margin"),
+                                        ("small_control", {"floor": 1.5}, r"reward\.small_control\.floor"),
+                                        ("small_control", {"floor": None}, r"reward\.small_control.*floor"),
+                                        ("small_velocity", {"margin": 0.0}, r"reward\.small_velocity\.margin"),
+                                        ("small_velocity", {"at_margin": 0.0}, r"reward\.small_velocity\.at_margin"),
+                                        ("small_velocity", {"at_margin": 1.5}, r"reward\.small_velocity\.at_margin"),
+                                        ("centered", {"margin": -1.0}, r"reward\.centered\.margin"),
+                                        ("centered", {"floor": None}, r"reward\.centered.*floor"),
+                                        ("centered", {"zone": 0.05}, r"reward\.centered: unknown")):
+            changed = {k: v for k, v in {**DM_TABLES[factor], **change}.items() if v is not None}
             with self.assertRaisesRegex(ValueError, pattern):
-                TipSpeedCartCentre.from_table({**SPEED_TABLES, factor: changed}, FACTS, "reward.")
+                DmControlCartpole.from_table({**DM_TABLES, factor: changed}, FACTS, "reward.")
 
 
 class StrikeGapEnd(unittest.TestCase):
