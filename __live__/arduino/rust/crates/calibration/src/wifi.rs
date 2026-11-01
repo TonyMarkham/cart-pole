@@ -202,17 +202,20 @@ impl Wifi {
             self.answer_levels(delay, pins);
             Ok(())
         } else if self.asked(IDLER_REQUEST) {
+            let at = self.at;
             self.travel(delay, pins, |rail, pins, delay| {
-                rail.seek(pins, delay, IDLER_END)
+                rail.seek(at, pins, delay, IDLER_END)
             })
         } else if self.asked(MOTOR_REQUEST) {
+            let at = self.at;
             self.travel(delay, pins, |rail, pins, delay| {
-                rail.seek(pins, delay, MOTOR_END)
+                rail.seek(at, pins, delay, MOTOR_END)
             })
         } else if let Some(rest) = self.request[..self.request_len].strip_prefix(CENTRE_REQUEST) {
             let speed = centre_speed(rest);
+            let at = self.at;
             self.travel(delay, pins, |rail, pins, delay| {
-                rail.centre(pins, delay, speed)
+                rail.centre(at, pins, delay, speed)
             })
         } else {
             Ok(())
@@ -265,8 +268,8 @@ impl Wifi {
 
     /// Makes one move, then tells whoever asked how it ended. The
     /// sender is read first, because no one being told is a reason not to
-    /// move. The pulses take all the processor's time, so datagrams that
-    /// arrive during the move are thrown away afterwards: a request left over
+    /// move. The pulses leave time only to listen for `Stop`, so every other
+    /// datagram that arrives during the move is thrown away: a request left over
     /// from then must not start another move.
     fn travel(
         &mut self,

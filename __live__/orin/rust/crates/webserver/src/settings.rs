@@ -18,6 +18,10 @@ pub(crate) struct ArduinoSettings {
     pub(crate) port: u16,
     pub(crate) timeout_ms: u64,
     pub(crate) poll_ms: u64,
+    pub(crate) move_timeout_ms: u64,
+    pub(crate) half_span_pulses: u64,
+    pub(crate) stop_sends: u32,
+    pub(crate) stop_gap_ms: u64,
 }
 
 impl Settings {

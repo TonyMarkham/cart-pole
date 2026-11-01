@@ -1,6 +1,6 @@
 # The Orin's Rust
 
-The Orin has no monitor, so this is how it shows things on a web browser. A command-line tool sends a PNG to a server on the Orin, and the server pushes it over a WebSocket to every open viewer page. The same server has a page showing the Arduino's pins. The browser side is written in Rust and compiled to WebAssembly. This began as the orin-cam proof of concept, which is why the Orin keeps it in `~/orin-cam`.
+The Orin has no monitor, so this is how it shows things on a web browser. A command-line tool sends a PNG to a server on the Orin, and the server pushes it over a WebSocket to every open viewer page. The same server has a page showing the Arduino's pins and a page that calibrates the rail. The browser side is written in Rust and compiled to WebAssembly. This began as the orin-cam proof of concept, which is why the Orin keeps it in `~/orin-cam`.
 
 ```text
 image-push  --HTTP POST /image-->  webserver  --WebSocket /ws-->  viewer (Rust WASM in the browser)
@@ -8,13 +8,14 @@ image-push  --HTTP POST /image-->  webserver  --WebSocket /ws-->  viewer (Rust W
 
 ## Crates
 
-This folder is the workspace pushed to the Orin and built there, so it can't depend on anything outside itself. The two browser pages are built on the PC, from `../wasm`, and only their output reaches this folder, in `pages/`.
+This folder is the workspace pushed to the Orin and built there, so it can't depend on anything outside itself. The browser pages are built on the PC, from `../wasm`, and only their output reaches this folder, in `pages/`.
 
 | Crate | Built on | What it does |
 |---|---|---|
 | `crates/image-push` | Orin | Command-line tool that sends a PNG to the server |
-| `crates/webserver` | Orin | Receives images, pushes them to viewers, serves both pages and asks the Arduino for its pins |
+| `crates/webserver` | Orin | Receives images, pushes them to viewers, serves the pages, asks the Arduino for its pins and asks it to move the cart |
 | `../wasm/arduino` (`arduino-page`) | PC | Runs in the browser, draws the Arduino and its pins, and updates them from each reading |
+| `../wasm/calibrate` (`calibrate-page`) | PC | Runs in the browser, draws the rail, and has the buttons that find its ends and the centre |
 | `../wasm/viewer` | PC | Runs in the browser, opens the WebSocket and shows each image |
 
 ## Server routes
@@ -29,7 +30,12 @@ The server listens on port `8080`. On the Orin, that's `http://192.168.0.215:808
 | `/image` | POST | Accepts a new PNG, up to 16 MB |
 | `/arduino` | GET | The Arduino's pins: a drawing of the board with each pin the rig uses and what it reads now |
 | `/arduino/pins` | GET | One reading of those pins, asked of the Arduino over UDP at that moment |
-| `/arduino/settings` | GET | `[arduino]` from `settings.toml`, for the page |
+| `/arduino/settings` | GET | `[arduino]` from `settings.toml`, for the pages |
+| `/calibrate` | GET | The calibration page: the rail, its switches and the moves |
+| `/calibrate/motor` | POST | **Moves the cart** to the motor's end, and answers when it has stopped |
+| `/calibrate/idler` | POST | **Moves the cart** to the idler's end, and answers when it has stopped |
+| `/calibrate/centre` | POST | **Moves the cart** to the rail's centre, and answers when it has stopped. `?speed=5000` asks for that many pulses per second |
+| `/calibrate/stop` | POST | Asks the board to end the move under way. 200 means only that the messages left; the move's own request gets the `stopped` answer |
 
 ## The Arduino page
 
@@ -46,13 +52,45 @@ The page is Rust compiled to WebAssembly, like the viewer, with no hand-written 
 
 `settings.toml`, in this folder, says where the Arduino is and how often to ask. The server reads it once at start, so restart the server after a change.
 
-A reading happens only while the page is open; the board sleeps otherwise. No firmware that moves the cart answers these messages yet.
+A reading happens only while the page is open; the board sleeps otherwise.
+
+## The calibration page
+
+The stepper can't report where the cart is, so the board has to find both ends of the rail before it can find the middle. `/calibrate` (on the Orin, <http://192.168.0.215:8080/calibrate>) is where a person asks for those moves and watches what comes back. It draws the rail and its two switches, has one button for each move and a full-width STOP, and lists every answer the board gave. **Each move button moves the real cart.** STOP is a message over WiFi, which can be lost, so stand at the e-stop as well.
+
+```text
+page in the browser  --POST /calibrate/motor-->  webserver  --UDP "CalibrateMotorTravelLimit"-->  Arduino
+                                                                       the cart moves
+                     <--the answer, same JSON--            <--UDP answer, once it has stopped--
+```
+
+The page's own text explains the order to press them in and how to read each answer. The firmware's README has every answer the board can give.
+
+**The HTTP status is the board's.** The webserver returns the board's JSON unchanged, under the `status` it holds: 200, 400, 408 or 409. Two more come from the webserver, with the same five keys:
+
+| Status | `result` | Meaning |
+|---|---|---|
+| 409 | `busy` | A move is already under way, so this one was not sent |
+| 504 | `no_answer` | No answer within the wait. The answer may have been lost on the WiFi, so the cart may have moved |
+| 502 | `no_answer` | The message could not be sent |
+
+**How long it waits.** `move_timeout_ms` in `settings.toml`, which must be longer than the firmware's `seek_timeout_ms`. A centring with a speed waits longer by half the rail (`half_span_pulses`) at that speed.
+
+**During a move** the board throws away every message except a stop. So the webserver holds one move at a time, even if the page that asked is closed, and `/arduino/pins` answers `503` without sending anything. A page refreshed during a move sees that, and leaves only STOP on until the move has ended.
+
+**One exchange at a time.** The board answers whoever sent the latest datagram, so a message that lands while it is answering another takes that answer. So a move waits for any reading on its way to finish before it is sent, and only a move's own answer, one with a `status`, ends the wait for it. On 2026-11-01, before this, a move sent during a reading got the pin levels as its answer, and the page put its buttons back while the cart was still moving.
+
+**STOP.** `/calibrate/stop` sends the board the `Stop` datagram `stop_sends` times, `stop_gap_ms` apart, because any one can be lost. The first to arrive ends the move, and the rest are ignored. It sends even if the server knows of no move, because a server restarted mid-move has forgotten the one under way.
+
+**What it doesn't know.** The board has no message that reports its span, so the span and the "what to do next" line on the page come from the answers that page has seen. A refreshed page starts knowing nothing, though the board remembers. The board decides every move all the same, and answers `not_ready` or `already_there` when it won't make one.
+
+The page is Rust compiled to WebAssembly, with no hand-written JavaScript. Its explanations and styling are in `../wasm/calibrate/index.html`, what it knows in `src/session.rs`, and its drawing in `src/render.rs`.
 
 ## Prerequisites
 
 ### On the development PC
 
-Rust, installed with [rustup](https://rustup.rs), plus the WebAssembly target and `trunk`, which builds the two browser pages:
+Rust, installed with [rustup](https://rustup.rs), plus the WebAssembly target and `trunk`, which builds the browser pages:
 
 ```bash
 rustup target add wasm32-unknown-unknown
@@ -86,7 +124,7 @@ The Orin keeps this folder's contents in `~/orin-cam`. Run every step, in this o
 cargo clippy --workspace --all-targets
 ```
 
-**2. Build the browser pages.** These are members of the repo's root workspace, not this one. Each writes its page and WebAssembly files to its own folder in `pages/`, and `pages/` is not in git, so both are needed the first time.
+**2. Build the browser pages.** These are members of the repo's root workspace, not this one. Each writes its page and WebAssembly files to its own folder in `pages/`, and `pages/` is not in git, so all three are needed the first time.
 
 ```bash
 cd ../wasm/viewer && trunk build --release && cd ../../rust
@@ -94,6 +132,10 @@ cd ../wasm/viewer && trunk build --release && cd ../../rust
 
 ```bash
 cd ../wasm/arduino && trunk build --release && cd ../../rust
+```
+
+```bash
+cd ../wasm/calibrate && trunk build --release && cd ../../rust
 ```
 
 **3. Pack the project.** In Git Bash, this writes `target/orin-calibration.tgz` at the repo's root. Build output stays behind, because the Orin builds its own.
@@ -148,7 +190,7 @@ You should see `Server started at http://0.0.0.0:8080`, on screen or in `webserv
 
 ### In the browser
 
-**10. Open or refresh the viewer** at <http://192.168.0.215:8080/viewer/>, and the Arduino page at <http://192.168.0.215:8080/arduino>.
+**10. Open or refresh the viewer** at <http://192.168.0.215:8080/viewer/>, the Arduino page at <http://192.168.0.215:8080/arduino>, and the calibration page at <http://192.168.0.215:8080/calibrate>.
 
 Refresh is required if a page was already open, because the viewer doesn't reconnect after a server restart. The viewer shows "waiting for image" until the first push. **Push one image to prove it works** (*Switch images*): the page can answer `200` and still be broken, because the browser only runs the script if it matches the checksum in `index.html`.
 
@@ -232,6 +274,8 @@ On the Orin, if the server is using its own terminal, run these in a second SSH 
 | `/viewer/` returns 404 | `pages/viewer` wasn't built or pushed, or the server was started outside `~/orin-cam` | Redo deployment steps 2 to 6, or step 9 from `~/orin-cam` |
 | A page stays blank, and the browser's console says `Failed to find a valid digest in the 'integrity' attribute` | Something has changed the script in that page's folder in `pages/`, or the browser has kept a bad copy | Press `Ctrl+F5`. If it persists, redo deployment steps 2 to 6 |
 | `/arduino/` returns 404 | `pages/arduino` wasn't built or pushed, or the server was started outside `~/orin-cam` | Redo deployment steps 2 to 6, or step 9 from `~/orin-cam` |
+| `/calibrate` returns 404 | `pages/calibrate` wasn't built or pushed, or the server was started outside `~/orin-cam` | Redo deployment steps 2 to 6, or step 9 from `~/orin-cam` |
+| The calibration page shows `no_answer` after a move | The answer was lost or the board is off. The cart may have moved | Look at the switches on the page and at the cart. Find both ends again if in doubt |
 | The server stops at start with `[IO Error]` or `[Settings Error]` | `settings.toml` is missing, or something in it is wrong | Start it from `~/orin-cam`, and check that file |
 | The Arduino page says "No answer from the board" | The board is off, on other firmware or at another address, or a message was lost | Check the firmware's README, *How it runs* |
 | The page stays on "waiting for image" after a push | The page has a dead connection | Refresh the page |
@@ -244,4 +288,4 @@ On the Orin, if the server is using its own terminal, run these in a second SSH 
 - **No reconnect:** a viewer has to be refreshed after a server restart.
 - **Server doesn't start on boot:** after the Orin restarts, it has to be started again (deployment step 9).
 - **PNG check is basic:** both `image-push` and the server only check the first 8 bytes of the file.
-- **Duplicated values:** `WS_ROUTE`, `IMAGE_ROUTE` and `PNG_SIGNATURE` are defined in more than one crate and must be kept in sync by hand. `VIEWER_ROUTE` must also match `public_url` in `../wasm/viewer/Trunk.toml`. `PINS_REQUEST` and the Arduino's UDP port must match the calibration firmware.
+- **Duplicated values:** `WS_ROUTE`, `IMAGE_ROUTE` and `PNG_SIGNATURE` are defined in more than one crate and must be kept in sync by hand. `VIEWER_ROUTE` must also match `public_url` in `../wasm/viewer/Trunk.toml`. `PINS_REQUEST`, the three move datagrams, `STOP_REQUEST` and the Arduino's UDP port must match the calibration firmware. The `CALIBRATE_*_ROUTE`s must match the page's `constants.rs`.

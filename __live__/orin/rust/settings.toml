@@ -16,3 +16,21 @@ timeout_ms = 1000
 # The pause between the page's readings, ms. A reading happens only while the
 # page is open; between readings the board sleeps.
 poll_ms = 1000
+
+# How long to wait for the board's answer to a move, ms. The board answers only
+# once the cart has stopped, and a seek stops by itself at the firmware's
+# seek_timeout_ms, 34,000, so this must be longer than that. If it runs out, the
+# answer was lost or the board is off, and the cart may still have moved.
+move_timeout_ms = 40000
+
+# The most pulses a move to the centre can take, for working out how long to wait
+# when the page asks for a slow one: half the rail, measured at 29,910 on
+# 2026-11-01, rounded up. Only the wait uses it; the board measures its own span.
+half_span_pulses = 30000
+
+# How many times to send the board a Stop, and the pause between them, ms. A
+# datagram can be lost on WiFi and nothing resends it, so one press sends several.
+# The first to arrive ends the move, and the board ignores the rest. Chosen, not
+# measured.
+stop_sends = 3
+stop_gap_ms = 50

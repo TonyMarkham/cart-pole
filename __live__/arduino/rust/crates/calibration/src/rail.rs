@@ -10,7 +10,7 @@ use crate::{
     switch::Switch,
 };
 
-use unor4_hal::delay::Delay;
+use unor4_hal::{delay::Delay, uart::UartIrq};
 
 /// What the board knows about the rail, which the stepper cannot report. It is
 /// lost at every reset, so both ends must be found again before a centring.
@@ -34,9 +34,15 @@ impl Rail {
     /// when this board saw it trip during a move: one that merely reads pressed
     /// may be a broken wire, not the cart. So the span needs the cart to start
     /// on a trip the board saw, still pressed, and to trip the other end.
-    pub fn seek(&mut self, pins: &mut Pins, delay: &mut Delay, end: End) -> AppResult<Moved> {
+    pub fn seek(
+        &mut self,
+        at: &'static UartIrq<ra4m1::SCI1>,
+        pins: &mut Pins,
+        delay: &mut Delay,
+        end: End,
+    ) -> AppResult<Moved> {
         let left_trip = self.resting_on.filter(|&last| pins.pressed_steady(last));
-        match seek(pins, delay, end) {
+        match seek(at, pins, delay, end) {
             Ok(Moved::Tripped { switch, pulses }) if switch == end.switch => {
                 if left_trip.is_some_and(|last| last != switch) {
                     self.span = Some(pulses);
@@ -54,6 +60,12 @@ impl Rail {
                 self.forget();
                 Err(error)
             }
+            // A stop loses no steps, so the span stands, but the cart may have
+            // left the switch it rested on.
+            Err(error @ AppError::Stopped { .. }) => {
+                self.resting_on = None;
+                Err(error)
+            }
             other => other,
         }
     }
@@ -64,6 +76,7 @@ impl Rail {
     /// switch tripping on the way ends the move: it means lost steps.
     pub fn centre(
         &mut self,
+        at: &'static UartIrq<ra4m1::SCI1>,
         pins: &mut Pins,
         delay: &mut Delay,
         speed: Option<u32>,
@@ -88,6 +101,7 @@ impl Rail {
 
         self.resting_on = None;
         let moved = creep(
+            at,
             pins,
             delay,
             away_from(switch),

@@ -21,6 +21,7 @@ mod pins;
 mod rail;
 mod seek;
 mod settings;
+mod stop_listener;
 mod stopwatch;
 mod switch;
 mod text;

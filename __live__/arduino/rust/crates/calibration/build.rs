@@ -302,6 +302,23 @@ fn main() -> Result<()> {
         "JOIN_TIMED_OUT",
         &format!("the join did not finish within {join_limit_ms} ms"),
     )?;
+    // Written here too, so a move's answer gives the numbers in force, never a
+    // setting's name, which means nothing to whoever is at the rig.
+    text_constant(
+        &mut out,
+        "A move's answer to a speed it cannot use.",
+        "BAD_SPEED_MESSAGE",
+        &format!("speed must be a whole number from 1 to {centre_speed_max} pulses per second"),
+    )?;
+    text_constant(
+        &mut out,
+        "A move's answer when a seek runs out of time.",
+        "TIMED_OUT_MESSAGE",
+        &format!(
+            "no switch tripped within {} s",
+            seek_timeout_ms as f64 / 1_000.0
+        ),
+    )?;
     end_constant(
         &mut out,
         "Where `CalibrateIdlerTravelLimit` goes: [idler].",

@@ -1003,6 +1003,7 @@ dependencies = [
  "axum",
  "error-location",
  "serde",
+ "serde_json",
  "thiserror",
  "tokio",
  "toml",

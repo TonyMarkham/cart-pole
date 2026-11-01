@@ -10,15 +10,23 @@ use axum::{
     response::{IntoResponse, Response},
 };
 use std::{io, sync::Arc, time::Duration};
-use tokio::{net::UdpSocket, sync::Mutex, time};
+use tokio::{
+    net::UdpSocket,
+    sync::{Mutex, Semaphore},
+    time,
+};
 
-/// The page's route state: the settings, and a lock that keeps readings one
-/// at a time. The board answers whoever sent the latest datagram, so two
-/// open pages asking at once could leave one with no answer.
+/// The pages' route state: the settings, a lock held for each reading, and the
+/// one permit a move holds until it has ended. The board answers whoever sent
+/// the latest datagram, so a datagram sent while it is answering another takes
+/// that answer. The lock and the permit keep this server's exchanges with the
+/// board one at a time. Worked failure, 2026-11-01: a move sent during a reading
+/// was handed the pin levels as its answer.
 #[derive(Clone)]
 pub(crate) struct ArduinoState {
-    settings: ArduinoSettings,
-    reading: Arc<Mutex<()>>,
+    pub(crate) settings: ArduinoSettings,
+    pub(crate) reading: Arc<Mutex<()>>,
+    pub(crate) moving: Arc<Semaphore>,
 }
 
 impl ArduinoState {
@@ -26,6 +34,7 @@ impl ArduinoState {
         Self {
             settings,
             reading: Arc::new(Mutex::new(())),
+            moving: Arc::new(Semaphore::new(1)),
         }
     }
 }
@@ -33,9 +42,17 @@ impl ArduinoState {
 /// One reading of the pins, for the page: the Arduino's JSON unchanged, or
 /// 502 with the reason it gave none. The browser asks here because a browser
 /// cannot send a datagram, and the board wakes only for one. One request is
-/// one reading, so with no page open the board sleeps undisturbed.
+/// one reading, so with no page open the board sleeps undisturbed. During a
+/// move the board throws datagrams away, so this says so without sending one.
+/// The check comes after the lock: a move takes its permit and then waits for
+/// this lock, so a reading that holds the lock and sees no move is finished
+/// before any move is sent.
 pub(crate) async fn pins(State(arduino): State<ArduinoState>) -> Response {
     let _one_at_a_time = arduino.reading.lock().await;
+    if arduino.moving.available_permits() == 0 {
+        let reason = "the cart is moving, and the board hears nothing until it stops";
+        return (StatusCode::SERVICE_UNAVAILABLE, reason).into_response();
+    }
 
     match read_pins(&arduino.settings).await {
         Ok(levels) => ([(header::CONTENT_TYPE, "application/json")], levels).into_response(),

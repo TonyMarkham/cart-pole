@@ -44,26 +44,46 @@ status  result         pin   the cart
 409     already_there  d3    did not move: that end's switch already reads pressed
 409     refused        null  did not move: both switches read pressed
 408     timed_out      null  stopped: no switch tripped in time
+409     stopped        null  stopped: a Stop datagram arrived
 ```
 
-- **`message`** says the same in words. Every failure's message is in `AppError`
-  ([src/error/mod.rs](src/error/mod.rs)). A failure also goes to the USB serial port,
-  with the place in the code it came from.
+- **`message`** says the same in words, for whoever is at the rig, so it gives
+  numbers and never a setting's name. Every failure's message is in `AppError`
+  ([src/error/mod.rs](src/error/mod.rs)), except the two that quote a setting, which
+  `build.rs` writes from [calibration.toml](calibration.toml). A failure also goes to
+  the USB serial port, with the place in the code it came from.
 
 - **`status`** is 200 when the cart did what was asked and 4xx when it did not, with
   HTTP's meanings: 400 a bad request, 408 out of time, 409 not possible as things
   stand. The board speaks UDP, so this is a number in the answer, not an HTTP
-  status. The Orin's webserver is meant to return it as one, once it has routes
-  for the moves.
+  status. The Orin's webserver returns it as one, for its
+  [calibration page](../../../../orin/rust/README.md).
 - **`pin`** is the switch that stopped the cart, whichever it is, so a wrong
   guess about which end is which shows here.
 - **`pulses`** is how far it went. From one switch to the other, that is the
   rail's span.
 - **`refused`** is what a USB cable left in from the Pi can cause, as can a
   broken switch wire: both read the same as a pressed switch.
-- **The board is busy during a move.** Datagrams that arrive meanwhile, `pins`
-  included, are thrown away and never answered, and there is no STOP. A move
-  ends at a switch or at the time limit, or when the rig's power is cut.
+- **The board is busy during a move.** It listens only for `Stop`. Other datagrams
+  that arrive meanwhile, `pins` included, are thrown away and never answered. A
+  move ends at a switch, at the time limit, at a `Stop`, or when the rig's power
+  is cut.
+
+**To stop a move,** send one more datagram:
+
+```text
+datagram "Stop"  ->  ends whichever move is under way
+```
+
+The board does not answer the `Stop` itself. The move it ended answers whoever
+asked for that move, `409`, `stopped`, with how far the cart got. The cart stops in
+one jump and the driver holds it. A `Stop` with no move under way is ignored, like
+any other datagram the board doesn't know. A datagram can be lost on the WiFi, so
+send it more than once, and don't rely on it in place of the e-stop.
+
+A stop loses no steps, so the board keeps its span, but it no longer counts the cart
+as resting on a switch. `MoveToCentre` then answers `not_ready` until a seek has
+tripped an end.
 
 **The move to the centre** is one more datagram, with an optional speed:
 
@@ -93,6 +113,7 @@ a slower speed takes longer, so whoever asks must wait for as long as it asked f
 status  result     pin   the cart
 200     centred    null  reached the centre
 409     tripped    d3    stopped: a switch tripped on the way, so steps were lost
+409     stopped    null  stopped: a Stop datagram arrived
 409     not_ready  null  did not move: no span yet, or the cart is not on a switch
 400     bad_speed  null  did not move: not a whole number from 1 to centre_speed_max
 409     refused    null  did not move: both switches read pressed

@@ -13,6 +13,7 @@ pushed whole to their computers, so each must build with nothing else from the r
 | Calibration firmware | `arduino/rust/crates/calibration` | Arduino | PC | the repo's root `Cargo.toml` |
 | Viewer page | `orin/wasm/viewer` | a browser | PC | the repo's root `Cargo.toml` |
 | Arduino page | `orin/wasm/arduino` | a browser | PC | the repo's root `Cargo.toml` |
+| Calibration page | `orin/wasm/calibrate` | a browser | PC | the repo's root `Cargo.toml` |
 | Webserver | `orin/rust/crates/webserver` | Orin | Orin | `orin/rust/Cargo.toml` |
 | `image-push` | `orin/rust/crates/image-push` | Orin | Orin | `orin/rust/Cargo.toml` |
 | `arduino-manager` | `rpi/rust/crates/arduino-manager` | Pi | Pi | `rpi/rust/Cargo.toml` |
@@ -20,7 +21,7 @@ pushed whole to their computers, so each must build with nothing else from the r
 
 A **workspace** is a group of Rust crates built together, with their dependencies'
 versions in one `Cargo.toml`. Cargo finds a crate's by walking up the folders from
-it. The two pages build on the PC into `orin/rust/pages/`, which is pushed with the
+it. The pages build on the PC into `orin/rust/pages/`, which is pushed with the
 rest of that folder, so the Orin gets their output and never their source.
 
 Each part's README:
@@ -34,7 +35,7 @@ The computers on this network, and what's on each since 2026-10-31:
 | Computer | Address | Login name | Where | Check it at |
 |---|---|---|---|---|
 | Pi (`robo-pi`) | `192.168.0.247` | `tony` | `~/arduino-manager` | <http://192.168.0.247:8080/> |
-| Orin (`robo-orin`) | `192.168.0.215` | `tony` | `~/orin-cam`, `~/live-orin-python` | <http://192.168.0.215:8080/arduino>, <http://192.168.0.215:8080/viewer/> |
+| Orin (`robo-orin`) | `192.168.0.215` | `tony` | `~/orin-cam`, `~/live-orin-python` | <http://192.168.0.215:8080/arduino>, <http://192.168.0.215:8080/calibrate>, <http://192.168.0.215:8080/viewer/> |
 | Arduino | `192.168.0.220`, UDP port 4210 | none | the calibration firmware | the Orin's `/arduino` page |
 
 Each computer's folder holds the contents of its `rust/` folder here, so

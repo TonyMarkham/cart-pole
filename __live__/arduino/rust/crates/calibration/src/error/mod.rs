@@ -9,6 +9,7 @@ use crate::{
         STATUS_BAD_REQUEST, STATUS_CONFLICT, STATUS_INTERNAL_ERROR, STATUS_REQUEST_TIMEOUT,
     },
     error::location::ErrorLocation,
+    settings::{BAD_SPEED_MESSAGE, TIMED_OUT_MESSAGE},
     switch::Switch,
 };
 
@@ -75,6 +76,14 @@ pub(crate) enum AppError {
         location: ErrorLocation,
     },
 
+    /// A `Stop` datagram ended the move after this many pulses.
+    #[error("[Stopped Error]: {message}{location}")]
+    Stopped {
+        pulses: u32,
+        message: &'static str,
+        location: ErrorLocation,
+    },
+
     /// A switch tripped during a centring, far from where any should: lost steps.
     #[error("[Switch On The Way Error]: {message}{location}")]
     SwitchOnTheWay {
@@ -135,7 +144,7 @@ impl AppError {
     #[track_caller]
     pub(crate) fn bad_speed() -> Self {
         Self::BadSpeed {
-            message: "speed must be a whole number from 1 to centre_speed_max",
+            message: BAD_SPEED_MESSAGE,
             location: ErrorLocation::from(Location::caller()),
         }
     }
@@ -157,6 +166,15 @@ impl AppError {
     }
 
     #[track_caller]
+    pub(crate) fn stopped(pulses: u32) -> Self {
+        Self::Stopped {
+            pulses,
+            message: "the move was stopped on request",
+            location: ErrorLocation::from(Location::caller()),
+        }
+    }
+
+    #[track_caller]
     pub(crate) fn switch_on_the_way(switch: Switch, pulses: u32) -> Self {
         Self::SwitchOnTheWay {
             switch,
@@ -170,7 +188,7 @@ impl AppError {
     pub(crate) fn timed_out(pulses: u32) -> Self {
         Self::TimedOut {
             pulses,
-            message: "no switch tripped within seek_timeout_ms",
+            message: TIMED_OUT_MESSAGE,
             location: ErrorLocation::from(Location::caller()),
         }
     }
@@ -199,6 +217,9 @@ impl AppError {
             Self::BadSpeed { message, .. } => (STATUS_BAD_REQUEST, "bad_speed", message, None, 0),
             Self::NotReady { message, .. } => (STATUS_CONFLICT, "not_ready", message, None, 0),
             Self::Refused { message, .. } => (STATUS_CONFLICT, "refused", message, None, 0),
+            Self::Stopped {
+                pulses, message, ..
+            } => (STATUS_CONFLICT, "stopped", message, None, pulses),
             Self::SwitchOnTheWay {
                 switch,
                 pulses,

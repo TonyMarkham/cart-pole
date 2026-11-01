@@ -15,6 +15,12 @@ pub(crate) const MOTOR_REQUEST: &[u8] = b"CalibrateMotorTravelLimit";
 /// pulses/s; with none it moves at `seek_speed`.
 pub(crate) const CENTRE_REQUEST: &[u8] = b"MoveToCentre";
 
+/// How the `Stop` datagram's frame ends, from the header's `|` to the line end:
+/// `+UDPRX: <sock>,4|Stop\r\n`. It ends whichever move is under way, which is
+/// then answered `stopped`. With no move under way, like any other datagram, it
+/// is ignored. `STOP_REQUEST` in the Orin's webserver is the `Stop`.
+pub(crate) const STOP_FRAME_END: &[u8] = b"|Stop\r\n";
+
 /// A frame's start, and the end of its header.
 pub(crate) const FRAME_PROMPT: &[u8] = b"+UDPRX: ";
 pub(crate) const FRAME_HEADER_END: u8 = b'|';
