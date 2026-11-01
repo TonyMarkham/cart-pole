@@ -7,6 +7,119 @@
 # messages, the bridge's version and the board's address.
 monitor_baud = 115200
 
+# The speed of the link to the WiFi chip, bits per second. It must match the
+# bridge firmware, which opens its AT server at 115,200 8N1
+# (uno-r4-wifi-usb-bridge, `UNOR4USBBridge.ino`, SERIAL_AT): change the two together.
+at_baud = 115200
+
+# The slow seek toward each limit switch, pulses/s, started from rest
+# and stopped in one jump. 2,000 pulses/s is 30 mm/s, about 30 s across
+# the rail: a jump that small cannot make the motor slip, and the cart
+# stops within a pulse or two of the switch tripping. Jogs run at it
+# too. Keep it slow: the seek has no ramp, so it cannot be a top speed
+# from the table.
+seek_speed = 2000
+
+# The fastest `MoveToCentre <pulses/s>` may ask for; a request above it is
+# answered bad_speed and the cart stays put. That move has no ramp either, so
+# it starts and stops in one jump. 10,000 pulses/s is 150 mm/s. A choice, not
+# a measurement: nobody has found how large a jump from rest this rig takes.
+centre_speed_max = 10000
+
+# The longest one seek may run before the program gives up, ms: past
+# it, no switch tripped (a wiring fault, a missed switch, or a motor
+# that is not stepping). Timed, not counted (user, 2026-10-27), so the
+# limit is the same at any seek_speed. 34,000 ms at seek_speed 2,000
+# is 68,000 pulses, 1,020 mm, longer than the ~1,000 mm slide, so a
+# working seek reaches a switch first from anywhere on the rail. Lower
+# seek_speed and this must rise with it.
+seek_timeout_ms = 34000
+
+# A switch the cart starts a slow move on counts again only after it has
+# read released for this many pulses in a row, so its contact bouncing
+# as the cart leaves is not taken for a trip. 100 pulses is 1.5 mm, 50 ms
+# at seek_speed. A choice, not a measurement of these switches.
+release_pulses = 100
+
+# A switch counts as pressed only after it reads pressed without a break
+# for this long, µs. It filters spikes on the switch wire (about 1 m of
+# it runs beside the motor leads) and the contact chattering as the rig
+# shakes; one such spike halted the first jump-limit run 143 mm from the
+# switch (2026-10-27). The wait is the same at every real trip, so it
+# cancels in the span and the noise floor: at seek_speed 2,000 it adds
+# about 2 pulses to each. The switches are read once a pulse, so it
+# takes at least two readings. A choice, not a measurement.
+trip_us = 1000
+
+# STEP's on time, D4 low, ns. The DM542 needs at least 2,500 on and
+# 2,500 off (manual, section 10, t3 and t4); 5,000 leaves room for the
+# PNP stage's switching delay. The build checks both at seek_speed.
+pulse_low_ns = 5000
+
+# DIR's setup before the next pulse, ns: at least 5,000, the DM542's t2.
+dir_setup_ns = 5000
+
+# The two ends of the rail, one table per datagram: the switch at that end
+# and the level on D5 (DIR) that leads to it, high or low. This is the
+# Arduino's pin: its PNP transistor means a low pin lights the driver's DIR
+# input, so the driver's own input is the reverse.
+# control-design.md wires D2 to the left switch and D3 to the right. Which
+# end the idler is at, and which way DIR moves the cart, are NOT yet checked
+# on the rig: these are a first guess. If the guess is wrong, the cart still
+# stops at whichever switch it reaches, and the answer names that pin.
+[idler]
+switch = "d3"
+dir = "high"
+
+[motor]
+switch = "d2"
+dir = "low"
+
+# How long the board waits on its WiFi chip, the ESP32-S3 that runs the bridge.
+# A try is one attempt at a command. These are the values the board joined the
+# network with on 2026-10-31 (the README, How it runs). They are not measured
+# limits: they have worked, and no one has looked for how far they can go.
+[timing]
+# The wait between looks at the receive ring while a reply is due, µs. The ring
+# holds what arrives meanwhile, so this only sets how finely a timeout is counted.
+poll_us = 100
+
+# How long a datagram's payload may take once its header has arrived, ms: far
+# longer than the few bytes take at 115,200 baud.
+frame_timeout_ms = 100
+
+# How long the line must stay quiet before stale bytes count as all thrown away, ms.
+drain_quiet_ms = 20
+
+# How long a command's reply may take, ms, for every command with no value of
+# its own below.
+reply_timeout_ms = 1000
+
+# The first `AT`, which any reply answers. The chip may still be booting, so it
+# is tried several times, with a pause between tries.
+handshake_tries = 10
+handshake_timeout_ms = 700
+handshake_pause_ms = 300
+
+# Clearing WiFi state left by an earlier program. Best-effort; 3 tries, as in
+# WiFiS3's ModemClass::begin.
+soft_reset_tries = 3
+soft_reset_timeout_ms = 500
+
+# Changing the chip's WiFi mode, and starting the join, ms.
+wifi_mode_timeout_ms = 2000
+begin_sta_timeout_ms = 3000
+
+# Asking whether the join has finished, which happens in the background. Tries
+# times pause is how long the join gets: 20 x 500 ms = 10 s.
+status_tries = 20
+status_pause_ms = 500
+
+# Asking for the address, which comes from the router after the join: 50 x 200 ms
+# = 10 s.
+address_tries = 50
+address_pause_ms = 200
+
 [wifi]
 # The file holding the network's name and password, which git ignores.
 credentials = "wifi.toml"

@@ -10,7 +10,8 @@ mod ws;
 
 pub(crate) use crate::constants::{
     ADDRESS, ARDUINO_PAGE_DIR, ARDUINO_PAGE_ROUTE, ARDUINO_PINS_ROUTE, ARDUINO_SETTINGS_ROUTE,
-    HELLO_ROUTE, IMAGE_ROUTE, MAX_IMAGE_BYTES, SETTINGS_PATH, VIEWER_DIR, VIEWER_ROUTE, WS_ROUTE,
+    CALIBRATE_ROUTE, HELLO_ROUTE, IMAGE_ROUTE, MAX_IMAGE_BYTES, SETTINGS_PATH, VIEWER_DIR,
+    VIEWER_ROUTE, WS_ROUTE,
 };
 
 // ---------------------------------------------------------------------------------------------- //
@@ -19,7 +20,7 @@ use crate::{
     arduino::{ArduinoState, pins, settings as arduino_settings},
     error::result::AppResult,
     images::push_image,
-    pages::hello::hello,
+    pages::{calibrate::calibrate, hello::hello},
     settings::Settings,
     ws::ws_handler,
 };
@@ -41,6 +42,7 @@ async fn main() -> AppResult<()> {
 
     let app = Router::new()
         .route(HELLO_ROUTE, routing::get(hello))
+        .route(CALIBRATE_ROUTE, routing::get(calibrate))
         .route(
             IMAGE_ROUTE,
             routing::post(push_image).layer(DefaultBodyLimit::max(MAX_IMAGE_BYTES)),

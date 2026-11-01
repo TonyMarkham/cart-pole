@@ -26,7 +26,11 @@ impl SyntheticArduino {
     /// stands in for the board's homing, so no start position is taken.
     /// At rest: command 0, sent rate 0.
     pub fn new(config: Config, tick_micros: u32) -> SyntheticArduino {
-        SyntheticArduino { config, tick_micros, ramp: Ramp::new() }
+        SyntheticArduino {
+            config,
+            tick_micros,
+            ramp: Ramp::new(),
+        }
     }
 
     /// One command packet (19: 4 bytes, `i32` LE, pulses/s), clamped to

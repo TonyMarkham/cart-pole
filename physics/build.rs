@@ -26,8 +26,11 @@ fn main() -> Result<()> {
     let config = root.join("orchestrator.toml");
     println!("cargo:rerun-if-changed={}", config.display());
 
-    let text = fs::read_to_string(&config).with_context(|| format!("reading {}", config.display()))?;
-    let table: toml::Table = text.parse().with_context(|| format!("parsing {}", config.display()))?;
+    let text =
+        fs::read_to_string(&config).with_context(|| format!("reading {}", config.display()))?;
+    let table: toml::Table = text
+        .parse()
+        .with_context(|| format!("parsing {}", config.display()))?;
     // mujoco_dir is the only key: a leftover key (model, [names]) would
     // look like it configures the run, and nothing reads it.
     if let Some(key) = table.keys().find(|key| *key != "mujoco_dir") {
@@ -39,7 +42,12 @@ fn main() -> Result<()> {
     let mujoco_dir = table
         .get("mujoco_dir")
         .and_then(|value| value.as_str())
-        .ok_or_else(|| anyhow!("{}: mujoco_dir (a path string) is missing", config.display()))?;
+        .ok_or_else(|| {
+            anyhow!(
+                "{}: mujoco_dir (a path string) is missing",
+                config.display()
+            )
+        })?;
     let mujoco_dir = root.join(mujoco_dir);
 
     let out_dir = PathBuf::from(env::var("OUT_DIR")?);

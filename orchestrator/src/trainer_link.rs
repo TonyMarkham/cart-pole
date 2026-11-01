@@ -120,7 +120,9 @@ pub fn check_answers(answers: &[Answer], pending: &[bool]) -> Result<()> {
         seen[k] = true;
         match (answer.next, answer.seed) {
             (Next::Reset, None) => bail!("instance {k}: a reset needs the next episode's seed"),
-            (Next::Continue | Next::Stop, Some(_)) => bail!("instance {k}: only a reset carries a seed"),
+            (Next::Continue | Next::Stop, Some(_)) => {
+                bail!("instance {k}: only a reset carries a seed")
+            }
             _ => {}
         }
     }
@@ -141,7 +143,9 @@ pub struct TrainerLink {
 
 impl TrainerLink {
     pub fn new() -> TrainerLink {
-        TrainerLink { line: String::new() }
+        TrainerLink {
+            line: String::new(),
+        }
     }
 
     /// Before the first pools line, once per run: reads the trainer's
@@ -149,13 +153,15 @@ impl TrainerLink {
     /// not the request fails the run.
     pub fn answer_request(&mut self, values: &RunValues) -> Result<()> {
         self.line.clear();
-        let read = tokio::task::block_in_place(|| std::io::stdin().lock().read_line(&mut self.line))
-            .context("reading the trainer's request")?;
+        let read =
+            tokio::task::block_in_place(|| std::io::stdin().lock().read_line(&mut self.line))
+                .context("reading the trainer's request")?;
         if read == 0 {
             bail!("the trainer closed the link before its request for the run's values");
         }
-        parse_request(self.line.trim_end())
-            .map_err(|error| anyhow!("the trainer's request, {:?}: {error}", self.line.trim_end()))?;
+        parse_request(self.line.trim_end()).map_err(|error| {
+            anyhow!("the trainer's request, {:?}: {error}", self.line.trim_end())
+        })?;
         let mut stdout = std::io::stdout().lock();
         writeln!(stdout, "{}", run_line(values)?)
             .and_then(|()| stdout.flush())
@@ -169,12 +175,15 @@ impl TrainerLink {
     pub fn exchange(&mut self, pools: &[PoolEntry], pending: &[bool]) -> Result<Vec<Answer>> {
         let message = serde_json::to_string(&PoolsMessage { pools })?;
         let mut stdout = std::io::stdout().lock();
-        writeln!(stdout, "{message}").and_then(|()| stdout.flush()).context("sending the pools to the trainer")?;
+        writeln!(stdout, "{message}")
+            .and_then(|()| stdout.flush())
+            .context("sending the pools to the trainer")?;
         drop(stdout);
 
         self.line.clear();
-        let read = tokio::task::block_in_place(|| std::io::stdin().lock().read_line(&mut self.line))
-            .context("reading the trainer's answers")?;
+        let read =
+            tokio::task::block_in_place(|| std::io::stdin().lock().read_line(&mut self.line))
+                .context("reading the trainer's answers")?;
         if read == 0 {
             bail!("the trainer closed the link before answering");
         }

@@ -22,104 +22,31 @@
 //!   `AT+UDPWRITE=<sock>,<n>` and exactly n bytes, then
 //!   `AT+UDPENDPACKET=<sock>`: one datagram out, each answered `OK`.
 
-use core::fmt::Write;
-
-use embedded_hal::delay::DelayNs;
-use unor4_hal::{delay::Delay, uart::UartIrq};
-
 use crate::{
     buffer::Buffer,
+    constants::{
+        AT_COMMAND_MAX, CENTRE_REQUEST, FRAME_HEADER_END, FRAME_PROMPT, IDLER_REQUEST,
+        MOTOR_REQUEST, PINS_ANSWER_MAX, PINS_REQUEST, REQUEST_MAX, RESP_MAX, SEEK_ANSWER_MAX,
+        WL_CONNECT_FAILED, WL_CONNECTED, WL_NETWORK_NOT_FOUND,
+    },
+    error::{AppError, result::AppResult},
+    joined::Joined,
+    moved::Moved,
     pins::Pins,
-    settings::{AT_BEGINSTA, AT_HOSTNAME, AT_UDPBEGIN},
+    rail::Rail,
+    settings::{
+        ADDRESS_PAUSE_MS, ADDRESS_TRIES, AT_BEGINSTA, AT_HOSTNAME, AT_UDPBEGIN,
+        BEGIN_STA_TIMEOUT_MS, DRAIN_QUIET_MS, FRAME_TIMEOUT_MS, HANDSHAKE_PAUSE_MS,
+        HANDSHAKE_TIMEOUT_MS, HANDSHAKE_TRIES, IDLER_END, JOIN_TIMED_OUT, MOTOR_END, POLL_US,
+        REPLY_TIMEOUT_MS, SOFT_RESET_TIMEOUT_MS, SOFT_RESET_TRIES, STATUS_PAUSE_MS, STATUS_TRIES,
+        WIFI_MODE_TIMEOUT_MS,
+    },
+    text::Text,
 };
 
-/// The one request answered, the whole datagram: `PINS_REQUEST` in the
-/// Orin's webserver. Anything else is ignored, so nothing sent here can
-/// move the cart.
-const PINS_REQUEST: &[u8] = b"pins";
-
-/// A frame's start, and the end of its header.
-const FRAME_PROMPT: &[u8] = b"+UDPRX: ";
-const FRAME_HEADER_END: u8 = b'|';
-
-/// The start of a request kept; longer than `PINS_REQUEST` so that a longer
-/// datagram does not pass for it.
-const REQUEST_MAX: usize = 16;
-
-/// Buffer for one AT reply.
-const RESP_MAX: usize = 256;
-
-/// Wait between looks at the receive ring while a command's reply is due,
-/// µs. The ring holds what arrives meanwhile, so this only sets how finely
-/// the reply's timeout is counted.
-const POLL_US: u32 = 100;
-
-/// How long a frame's payload may take once its header has arrived, ms: far
-/// longer than the few bytes take at 115,200 baud.
-const FRAME_TIMEOUT_MS: u32 = 100;
-
-/// "Connected": the bridge's `WIFI_ST_CONNECTED` (at_handler.h).
-const WL_CONNECTED: u32 = 3;
-
-/// Why the join failed.
-#[derive(Clone, Copy, Debug)]
-pub enum JoinError {
-    /// The bridge never answered `AT`.
-    NoBridge,
-    /// `+WIFIMODE` or `+BEGINSTA` answered ERROR.
-    Rejected,
-    /// The join never reached "connected"; the last status seen, if any:
-    /// 1 = network not found, 4 = connect failed (usually the password).
-    NotConnected(Option<u32>),
-    /// Joined, but no address arrived from the router.
-    NoAddress,
-    /// `+UDPBEGIN` answered ERROR.
-    NoSocket,
-    /// `+UDPPUSH` answered ERROR: the bridge is not the interrupt fork.
-    NoPushMode,
-}
-
-impl JoinError {
-    pub fn describe(&self) -> &'static str {
-        match self {
-            JoinError::NoBridge => "the ESP32-S3 bridge never answered AT",
-            JoinError::Rejected => "the bridge refused station mode or the join",
-            JoinError::NotConnected(Some(1)) => "network not found (out of range, or 5 GHz only: the radio is 2.4 GHz)",
-            JoinError::NotConnected(Some(4)) => "connect failed: usually a wrong password",
-            JoinError::NotConnected(_) => "the join did not finish within 10 s",
-            JoinError::NoAddress => "joined, but the router gave no address",
-            JoinError::NoSocket => "the bridge refused to open the UDP socket",
-            JoinError::NoPushMode => "this bridge has no push mode: flash the interrupt bridge (its docs/flash-interrupt-procedure.md)",
-        }
-    }
-}
-
-/// Short text from an AT reply: an address, a port or a version.
-pub struct Text {
-    bytes: [u8; 15],
-    len: usize,
-}
-
-impl Text {
-    fn new(text: &[u8]) -> Option<Self> {
-        if text.is_empty() || text.len() > 15 {
-            return None;
-        }
-        let mut bytes = [0; 15];
-        bytes[..text.len()].copy_from_slice(text);
-        Some(Self { bytes, len: text.len() })
-    }
-
-    pub fn as_str(&self) -> &str {
-        core::str::from_utf8(&self.bytes[..self.len]).unwrap_or("?")
-    }
-}
-
-/// What the join found, for the serial port.
-pub struct Joined {
-    pub address: Text,
-    pub bridge_version: Option<Text>,
-}
+use core::fmt::Write;
+use embedded_hal::delay::DelayNs;
+use unor4_hal::{delay::Delay, uart::UartIrq};
 
 pub struct Wifi {
     at: &'static UartIrq<ra4m1::SCI1>,
@@ -129,12 +56,13 @@ pub struct Wifi {
     request: [u8; REQUEST_MAX],
     request_len: usize,
     request_waiting: bool,
+    rail: Rail,
 }
 
 impl Wifi {
     /// Joins the network, opens the UDP socket and turns push mode on.
     /// `at` must be attached, with interrupts enabled.
-    pub fn join(at: &'static UartIrq<ra4m1::SCI1>, delay: &mut Delay) -> Result<(Self, Joined), JoinError> {
+    pub fn join(at: &'static UartIrq<ra4m1::SCI1>, delay: &mut Delay) -> AppResult<(Self, Joined)> {
         let mut wifi = Self {
             at,
             resp: [0; RESP_MAX],
@@ -142,53 +70,65 @@ impl Wifi {
             request: [0; REQUEST_MAX],
             request_len: 0,
             request_waiting: false,
+            rail: Rail::new(),
         };
 
         // Handshake: any reply means the AT server is up; the ESP32 may
         // still be booting, so retry.
         let mut alive = false;
-        for _ in 0..10 {
-            if wifi.command(delay, b"AT\r\n", 700).is_some() {
+        for _ in 0..HANDSHAKE_TRIES {
+            if wifi
+                .command(delay, b"AT\r\n", HANDSHAKE_TIMEOUT_MS)
+                .is_some()
+            {
                 alive = true;
                 break;
             }
-            delay.delay_ms(300);
+            delay.delay_ms(HANDSHAKE_PAUSE_MS);
         }
         if !alive {
-            return Err(JoinError::NoBridge);
+            return Err(AppError::bridge("the ESP32-S3 bridge never answered AT"));
         }
 
         // Clears WiFi state kept from an earlier sketch, push mode included,
         // which survives a reset of the processor (the release notes).
-        // Best-effort, as in WiFiS3's ModemClass::begin: 3 tries, the result
-        // gates nothing.
-        for _ in 0..3 {
-            if let Some((_, true)) = wifi.command(delay, b"AT+SOFTRESETWIFI\r\n", 500) {
+        // Best-effort, as in WiFiS3's ModemClass::begin: the result gates
+        // nothing.
+        for _ in 0..SOFT_RESET_TRIES {
+            if let Some((_, true)) =
+                wifi.command(delay, b"AT+SOFTRESETWIFI\r\n", SOFT_RESET_TIMEOUT_MS)
+            {
                 break;
             }
         }
 
-        let bridge_version = match wifi.command(delay, b"AT+FWVERSION?\r\n", 1_000) {
+        let bridge_version = match wifi.command(delay, b"AT+FWVERSION?\r\n", REPLY_TIMEOUT_MS) {
             Some((n, true)) => after(&wifi.resp[..n], b"+FWVERSION: ").and_then(Text::new),
             _ => None,
         };
 
         // The hostname takes effect when the mode changes into station
         // mode, so drop to mode 0 first. Both best-effort.
-        wifi.command(delay, b"AT+WIFIMODE=0\r\n", 2_000);
-        wifi.command(delay, AT_HOSTNAME.as_bytes(), 1_000);
-        if !matches!(wifi.command(delay, b"AT+WIFIMODE=1\r\n", 2_000), Some((_, true))) {
-            return Err(JoinError::Rejected);
+        wifi.command(delay, b"AT+WIFIMODE=0\r\n", WIFI_MODE_TIMEOUT_MS);
+        wifi.command(delay, AT_HOSTNAME.as_bytes(), REPLY_TIMEOUT_MS);
+        if !matches!(
+            wifi.command(delay, b"AT+WIFIMODE=1\r\n", WIFI_MODE_TIMEOUT_MS),
+            Some((_, true))
+        ) {
+            return Err(AppError::bridge("the bridge refused station mode"));
         }
-        if !matches!(wifi.command(delay, AT_BEGINSTA.as_bytes(), 3_000), Some((_, true))) {
-            return Err(JoinError::Rejected);
+        if !matches!(
+            wifi.command(delay, AT_BEGINSTA.as_bytes(), BEGIN_STA_TIMEOUT_MS),
+            Some((_, true))
+        ) {
+            return Err(AppError::bridge("the bridge refused the join"));
         }
 
-        // The bridge joins in the background: ask for up to 10 s.
+        // The bridge joins in the background, so keep asking.
         let mut status = None;
-        for _ in 0..20 {
-            delay.delay_ms(500);
-            if let Some((n, true)) = wifi.command(delay, b"AT+GETSTATUS?\r\n", 1_000) {
+        for _ in 0..STATUS_TRIES {
+            delay.delay_ms(STATUS_PAUSE_MS);
+            if let Some((n, true)) = wifi.command(delay, b"AT+GETSTATUS?\r\n", REPLY_TIMEOUT_MS) {
                 status = after(&wifi.resp[..n], b"+GETSTATUS: ").and_then(parse_u32);
                 if status == Some(WL_CONNECTED) {
                     break;
@@ -196,14 +136,20 @@ impl Wifi {
             }
         }
         if status != Some(WL_CONNECTED) {
-            return Err(JoinError::NotConnected(status));
+            return Err(AppError::join(match status {
+                Some(WL_NETWORK_NOT_FOUND) => {
+                    "network not found (out of range, or 5 GHz only: the radio is 2.4 GHz)"
+                }
+                Some(WL_CONNECT_FAILED) => "connect failed: usually a wrong password",
+                _ => JOIN_TIMED_OUT,
+            }));
         }
 
         // "Connected" comes before the router's lease: the address reads
         // 0.0.0.0 until then. `+IPSTA=0` reads the station's address.
         let mut address = None;
-        for _ in 0..50 {
-            if let Some((n, true)) = wifi.command(delay, b"AT+IPSTA=0\r\n", 1_000)
+        for _ in 0..ADDRESS_TRIES {
+            if let Some((n, true)) = wifi.command(delay, b"AT+IPSTA=0\r\n", REPLY_TIMEOUT_MS)
                 && let Some(text) = after(&wifi.resp[..n], b"+IPSTA: ")
                 && text.iter().any(|&byte| byte != b'0' && byte != b'.')
                 && let Some(text) = Text::new(text)
@@ -211,32 +157,70 @@ impl Wifi {
                 address = Some(text);
                 break;
             }
-            delay.delay_ms(200);
+            delay.delay_ms(ADDRESS_PAUSE_MS);
         }
-        let address = address.ok_or(JoinError::NoAddress)?;
+        let address =
+            address.ok_or_else(|| AppError::join("joined, but the router gave no address"))?;
 
-        wifi.socket = match wifi.command(delay, AT_UDPBEGIN.as_bytes(), 1_000) {
-            Some((n, true)) => after(&wifi.resp[..n], b"+UDPBEGIN: ").and_then(parse_i32).ok_or(JoinError::NoSocket)?,
-            _ => return Err(JoinError::NoSocket),
+        wifi.socket = match wifi.command(delay, AT_UDPBEGIN.as_bytes(), REPLY_TIMEOUT_MS) {
+            Some((n, true)) => after(&wifi.resp[..n], b"+UDPBEGIN: ")
+                .and_then(parse_i32)
+                .ok_or_else(|| AppError::bridge("the bridge refused to open the UDP socket"))?,
+            _ => {
+                return Err(AppError::bridge(
+                    "the bridge refused to open the UDP socket",
+                ));
+            }
         };
-        let mut push = Buffer::<32>::new();
-        write!(push, "AT+UDPPUSH={},1\r\n", wifi.socket).map_err(|_| JoinError::NoPushMode)?;
-        if !matches!(wifi.command(delay, push.as_bytes(), 1_000), Some((_, true))) {
-            return Err(JoinError::NoPushMode);
+        let mut push = Buffer::<AT_COMMAND_MAX>::new();
+        write!(push, "AT+UDPPUSH={},1\r\n", wifi.socket)?;
+        if !matches!(
+            wifi.command(delay, push.as_bytes(), REPLY_TIMEOUT_MS),
+            Some((_, true))
+        ) {
+            return Err(AppError::bridge(
+                "this bridge has no push mode: flash the interrupt bridge (its docs/flash-interrupt-procedure.md)",
+            ));
         }
-        Ok((wifi, Joined { address, bridge_version }))
+        Ok((
+            wifi,
+            Joined {
+                address,
+                bridge_version,
+            },
+        ))
     }
 
-    /// Sleeps until a datagram has arrived, then answers it if it asks for
-    /// the levels. Only the UART's interrupt wakes the processor.
-    pub fn serve(&mut self, delay: &mut Delay, pins: &Pins) {
+    /// Sleeps until a datagram has arrived, then does what it asks. Only the
+    /// UART's interrupt wakes the processor.
+    pub fn serve(&mut self, delay: &mut Delay, pins: &mut Pins) -> AppResult<()> {
         if !self.request_waiting {
             self.sleep_until_frame(delay);
         }
         self.request_waiting = false;
-        if &self.request[..self.request_len] == PINS_REQUEST {
-            self.answer(delay, pins);
+        if self.asked(PINS_REQUEST) {
+            self.answer_levels(delay, pins);
+            Ok(())
+        } else if self.asked(IDLER_REQUEST) {
+            self.travel(delay, pins, |rail, pins, delay| {
+                rail.seek(pins, delay, IDLER_END)
+            })
+        } else if self.asked(MOTOR_REQUEST) {
+            self.travel(delay, pins, |rail, pins, delay| {
+                rail.seek(pins, delay, MOTOR_END)
+            })
+        } else if let Some(rest) = self.request[..self.request_len].strip_prefix(CENTRE_REQUEST) {
+            let speed = centre_speed(rest);
+            self.travel(delay, pins, |rail, pins, delay| {
+                rail.centre(pins, delay, speed)
+            })
+        } else {
+            Ok(())
         }
+    }
+
+    fn asked(&self, request: &[u8]) -> bool {
+        &self.request[..self.request_len] == request
     }
 
     /// Sleeps while the receive ring is empty, and returns once a frame has
@@ -271,35 +255,87 @@ impl Wifi {
         }
     }
 
-    /// One datagram out: the levels, to whoever sent the last datagram. Any
-    /// step's failure drops the answer, and the Orin's wait for it times out.
-    /// A frame arriving meanwhile is kept by `reply`, for the next `serve`.
-    fn answer(&mut self, delay: &mut Delay, pins: &Pins) -> Option<()> {
+    /// The levels, to whoever asked.
+    fn answer_levels(&mut self, delay: &mut Delay, pins: &Pins) -> Option<()> {
+        let (address, port) = self.sender(delay)?;
+        let mut levels = Buffer::<PINS_ANSWER_MAX>::new();
+        pins.write_levels(&mut levels).ok()?;
+        self.send(delay, &address, &port, levels.as_bytes())
+    }
+
+    /// Makes one move, then tells whoever asked how it ended. The
+    /// sender is read first, because no one being told is a reason not to
+    /// move. The pulses take all the processor's time, so datagrams that
+    /// arrive during the move are thrown away afterwards: a request left over
+    /// from then must not start another move.
+    fn travel(
+        &mut self,
+        delay: &mut Delay,
+        pins: &mut Pins,
+        make_move: impl FnOnce(&mut Rail, &mut Pins, &mut Delay) -> AppResult<Moved>,
+    ) -> AppResult<()> {
+        let Some((address, port)) = self.sender(delay) else {
+            return Ok(());
+        };
+        let moved = make_move(&mut self.rail, pins, delay);
+        self.drain(delay);
+        self.request_waiting = false;
+
+        let mut answer = Buffer::<SEEK_ANSWER_MAX>::new();
+        match &moved {
+            Ok(moved) => moved.write_answer(&mut answer)?,
+            Err(error) => error.write_answer(&mut answer)?,
+        }
+        self.send(delay, &address, &port, answer.as_bytes());
+        moved.map(|_| ())
+    }
+
+    /// The address and port of whoever sent the last datagram.
+    fn sender(&mut self, delay: &mut Delay) -> Option<(Text, Text)> {
         let socket = self.socket;
 
-        let mut cmd = Buffer::<64>::new();
+        let mut cmd = Buffer::<AT_COMMAND_MAX>::new();
         write!(cmd, "AT+UDPREMOTEIP={socket}\r\n").ok()?;
         let (n, _) = self.ask(delay, cmd.as_bytes()).filter(|&(_, ok)| ok)?;
         let address = after(&self.resp[..n], b"+UDPREMOTEIP: ").and_then(Text::new)?;
 
-        let mut cmd = Buffer::<64>::new();
+        let mut cmd = Buffer::<AT_COMMAND_MAX>::new();
         write!(cmd, "AT+UDPREMOTEPORT={socket}\r\n").ok()?;
         let (n, _) = self.ask(delay, cmd.as_bytes()).filter(|&(_, ok)| ok)?;
         let port = after(&self.resp[..n], b"+UDPREMOTEPORT: ").and_then(Text::new)?;
 
-        let mut cmd = Buffer::<64>::new();
-        write!(cmd, "AT+UDPBEGINPACKETIP={socket},{},{}\r\n", port.as_str(), address.as_str()).ok()?;
+        Some((address, port))
+    }
+
+    /// One datagram out. Any step's failure drops it, and the Orin's wait for
+    /// it times out. A frame arriving meanwhile is kept by `reply`, for the
+    /// next `serve`.
+    fn send(
+        &mut self,
+        delay: &mut Delay,
+        address: &Text,
+        port: &Text,
+        payload: &[u8],
+    ) -> Option<()> {
+        let socket = self.socket;
+
+        let mut cmd = Buffer::<AT_COMMAND_MAX>::new();
+        write!(
+            cmd,
+            "AT+UDPBEGINPACKETIP={socket},{},{}\r\n",
+            port.as_str(),
+            address.as_str()
+        )
+        .ok()?;
         self.ask(delay, cmd.as_bytes()).filter(|&(_, ok)| ok)?;
 
-        let mut levels = Buffer::<64>::new();
-        pins.write_levels(&mut levels).ok()?;
-        let mut cmd = Buffer::<64>::new();
-        write!(cmd, "AT+UDPWRITE={socket},{}\r\n", levels.as_bytes().len()).ok()?;
+        let mut cmd = Buffer::<AT_COMMAND_MAX>::new();
+        write!(cmd, "AT+UDPWRITE={socket},{}\r\n", payload.len()).ok()?;
         self.at.write_all(cmd.as_bytes());
-        self.at.write_all(levels.as_bytes());
-        self.reply(delay, 1_000).filter(|&(_, ok)| ok)?;
+        self.at.write_all(payload);
+        self.reply(delay, REPLY_TIMEOUT_MS).filter(|&(_, ok)| ok)?;
 
-        let mut cmd = Buffer::<64>::new();
+        let mut cmd = Buffer::<AT_COMMAND_MAX>::new();
         write!(cmd, "AT+UDPENDPACKET={socket}\r\n").ok()?;
         self.ask(delay, cmd.as_bytes()).filter(|&(_, ok)| ok)?;
         Some(())
@@ -316,7 +352,7 @@ impl Wifi {
     /// throw away a frame.
     fn ask(&mut self, delay: &mut Delay, cmd: &[u8]) -> Option<(usize, bool)> {
         self.at.write_all(cmd);
-        self.reply(delay, 1_000)
+        self.reply(delay, REPLY_TIMEOUT_MS)
     }
 
     /// Collects a reply until `OK\r\n` or `ERROR\r\n`: `(length, ok)`, or
@@ -358,7 +394,9 @@ impl Wifi {
     /// request, and returns where the header began. The payload is counted,
     /// not scanned, so a datagram holding `|` or `OK` cannot end it early.
     fn read_frame(&mut self, delay: &mut Delay, n: usize) -> Option<usize> {
-        let start = self.resp[..n].windows(FRAME_PROMPT.len()).position(|window| window == FRAME_PROMPT)?;
+        let start = self.resp[..n]
+            .windows(FRAME_PROMPT.len())
+            .position(|window| window == FRAME_PROMPT)?;
         let header = &self.resp[start + FRAME_PROMPT.len()..n - 1];
         let comma = header.iter().position(|&byte| byte == b',')?;
         let len = parse_u32(&header[comma + 1..])? as usize;
@@ -379,7 +417,7 @@ impl Wifi {
     /// The next byte of a frame whose header has arrived.
     fn frame_byte(&mut self, delay: &mut Delay) -> Option<u8> {
         let mut waited_us = 0;
-        while waited_us < FRAME_TIMEOUT_MS * 1_000 {
+        while waited_us < FRAME_TIMEOUT_MS.saturating_mul(1_000) {
             if let Some(byte) = self.at.read_byte() {
                 return Some(byte);
             }
@@ -389,10 +427,10 @@ impl Wifi {
         None
     }
 
-    /// Discards stale bytes until the line has been quiet for 20 ms.
+    /// Discards stale bytes until the line has been quiet for `drain_quiet_ms`.
     fn drain(&mut self, delay: &mut Delay) {
         let mut quiet_us = 0;
-        while quiet_us < 20_000 {
+        while quiet_us < DRAIN_QUIET_MS.saturating_mul(1_000) {
             if self.at.read_byte().is_some() {
                 quiet_us = 0;
             } else {
@@ -403,15 +441,31 @@ impl Wifi {
     }
 }
 
+/// The speed after `MoveToCentre`: None with nothing after it. Anything that is
+/// not a space and a whole number becomes 0, which `Rail::centre` answers
+/// bad_speed, so a mistyped speed never moves the cart.
+fn centre_speed(rest: &[u8]) -> Option<u32> {
+    if rest.is_empty() {
+        return None;
+    }
+    Some(rest.strip_prefix(b" ").and_then(parse_u32).unwrap_or(0))
+}
+
 fn ends_with(bytes: &[u8], needle: &[u8]) -> bool {
     bytes.len() >= needle.len() && &bytes[bytes.len() - needle.len()..] == needle
 }
 
 /// The value after `prompt`, up to the line end.
 fn after<'a>(reply: &'a [u8], prompt: &[u8]) -> Option<&'a [u8]> {
-    let start = reply.windows(prompt.len()).position(|window| window == prompt)? + prompt.len();
+    let start = reply
+        .windows(prompt.len())
+        .position(|window| window == prompt)?
+        + prompt.len();
     let rest = &reply[start..];
-    let stop = rest.iter().position(|&byte| byte == b'\r').unwrap_or(rest.len());
+    let stop = rest
+        .iter()
+        .position(|&byte| byte == b'\r')
+        .unwrap_or(rest.len());
     Some(&rest[..stop])
 }
 

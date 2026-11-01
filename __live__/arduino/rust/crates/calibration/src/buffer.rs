@@ -9,7 +9,10 @@ pub struct Buffer<const N: usize> {
 
 impl<const N: usize> Buffer<N> {
     pub const fn new() -> Self {
-        Self { bytes: [0; N], len: 0 }
+        Self {
+            bytes: [0; N],
+            len: 0,
+        }
     }
 
     pub fn as_bytes(&self) -> &[u8] {

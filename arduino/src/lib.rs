@@ -25,6 +25,8 @@ mod stepper;
 #[cfg(feature = "synthetic")]
 mod synthetic;
 
+#[cfg(feature = "synthetic")]
+pub use crate::synthetic::SyntheticArduino;
 pub use crate::{
     command::{COMMAND_LEN, decode_command, encode_command},
     config::Config,
@@ -32,8 +34,6 @@ pub use crate::{
     signals::{Direction, Dm542Signals},
     stepper::Stepper,
 };
-#[cfg(feature = "synthetic")]
-pub use crate::synthetic::SyntheticArduino;
 
 #[cfg(test)]
 mod tests;

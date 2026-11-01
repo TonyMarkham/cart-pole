@@ -37,7 +37,13 @@ impl Stepper {
     /// envelope of ±`travel` pulses, `travel` ≥ 0 (`position` is clamped
     /// to it).
     pub fn new(config: Config, travel: i32, position: i32) -> Stepper {
-        Stepper { config, travel, position: position.clamp(-travel, travel), ramp: Ramp::new(), remainder: 0 }
+        Stepper {
+            config,
+            travel,
+            position: position.clamp(-travel, travel),
+            ramp: Ramp::new(),
+            remainder: 0,
+        }
     }
 
     /// Takes one command: the Orin's pulse rate in pulses/s (sign =

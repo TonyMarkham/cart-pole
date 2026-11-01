@@ -11,14 +11,40 @@ const BOARD_PARTS: &str = include_str!("board_parts.svg");
 /// The header holes' x positions, in the board's units: the 0.1 inch spacing of
 /// the header, with the wider gap the Uno shape has in the middle of each row.
 const TOP_ROW: [(&str, i32); 18] = [
-    ("SCL", 245), ("SDA", 272), ("AREF", 300), ("GND", 327), ("D13", 355), ("D12", 382),
-    ("D11", 409), ("D10", 437), ("D9", 464), ("D8", 491), ("D7", 536), ("D6", 563),
-    ("D5", 590), ("D4", 618), ("D3", 645), ("D2", 673), ("D1", 700), ("D0", 728),
+    ("SCL", 245),
+    ("SDA", 272),
+    ("AREF", 300),
+    ("GND", 327),
+    ("D13", 355),
+    ("D12", 382),
+    ("D11", 409),
+    ("D10", 437),
+    ("D9", 464),
+    ("D8", 491),
+    ("D7", 536),
+    ("D6", 563),
+    ("D5", 590),
+    ("D4", 618),
+    ("D3", 645),
+    ("D2", 673),
+    ("D1", 700),
+    ("D0", 728),
 ];
 const BOTTOM_ROW: [(&str, i32); 14] = [
-    ("BOOT", 344), ("IOREF", 372), ("RESET", 399), ("3.3V", 427), ("5V", 454), ("GND", 481),
-    ("GND", 509), ("VIN", 536), ("A0", 590), ("A1", 618), ("A2", 645), ("A3", 673),
-    ("A4", 700), ("A5", 727),
+    ("BOOT", 344),
+    ("IOREF", 372),
+    ("RESET", 399),
+    ("3.3V", 427),
+    ("5V", 454),
+    ("GND", 481),
+    ("GND", 509),
+    ("VIN", 536),
+    ("A0", 590),
+    ("A1", 618),
+    ("A2", 645),
+    ("A3", 673),
+    ("A4", 700),
+    ("A5", 727),
 ];
 
 /// The whole drawing, as SVG. Everything written here comes from the constants
@@ -56,7 +82,10 @@ pub(crate) fn board(levels: Option<&Levels>) -> Result<String, std::fmt::Error> 
             tx = x + 12,
         )?;
     }
-    write!(out, "<g transform=\"translate({BOARD_X} {BOARD_Y})\">{BOARD_PARTS}")?;
+    write!(
+        out,
+        "<g transform=\"translate({BOARD_X} {BOARD_Y})\">{BOARD_PARTS}"
+    )?;
     for column in 0..12 {
         for row in 0..8 {
             write!(
@@ -102,7 +131,11 @@ fn header_row(
             x - 7,
             y - 7
         )?;
-        let (label_y, anchor) = if label_below { (y + 21, "end") } else { (y - 21, "start") };
+        let (label_y, anchor) = if label_below {
+            (y + 21, "end")
+        } else {
+            (y - 21, "start")
+        };
         let label_x = f64::from(*x) + 4.5;
         write!(
             out,
@@ -170,11 +203,19 @@ mod tests {
     #[test]
     fn every_used_hole_is_on_a_header_under_its_own_name() {
         let on_row = |name: &str, hole: &(i32, i32)| {
-            let row: &[(&str, i32)] = if hole.1 == TOP_Y { &TOP_ROW } else { &BOTTOM_ROW };
+            let row: &[(&str, i32)] = if hole.1 == TOP_Y {
+                &TOP_ROW
+            } else {
+                &BOTTOM_ROW
+            };
             row.contains(&(name, hole.0))
         };
         for pin in &PINS {
-            assert!(pin.holes.iter().all(|hole| on_row(pin.name, hole)), "{}", pin.name);
+            assert!(
+                pin.holes.iter().all(|hole| on_row(pin.name, hole)),
+                "{}",
+                pin.name
+            );
         }
     }
 

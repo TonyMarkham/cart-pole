@@ -2,7 +2,7 @@
 name              = "calibration"
 version           = { workspace = true }
 edition           = { workspace = true }
-description       = "The live calibration's firmware for the rig's Arduino UNO R4 WiFi. For now it sleeps until a UDP datagram asks for its pins' levels; it moves nothing"
+description       = "The live calibration's firmware for the rig's Arduino UNO R4 WiFi. It sleeps until a UDP datagram asks for its pins' levels or a slow move to one end of the rail"
 publish           = false
 
 [dependencies]
@@ -14,6 +14,9 @@ cortex-m-rt       = { workspace = true }
 embedded-hal      = { workspace = true }
 panic-halt        = { workspace = true }
 ra4m1             = { workspace = true }
+# Not the workspace's: its entry keeps the default features, which need the
+# standard library, and the board has none.
+thiserror         = { version = "2.0.21", default-features = false }
 
 [build-dependencies]
 anyhow            = { workspace = true }

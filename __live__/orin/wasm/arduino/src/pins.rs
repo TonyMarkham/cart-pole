@@ -236,14 +236,23 @@ mod tests {
     #[test]
     fn a_switch_reads_as_the_wiring_says() {
         let d2 = pin("D2");
-        assert_eq!(d2.map(|pin| pin.shown(Some(&levels(0))).text), Some("Released"));
-        assert_eq!(d2.map(|pin| pin.shown(Some(&levels(1))).text), Some("Pressed, or wire open"));
+        assert_eq!(
+            d2.map(|pin| pin.shown(Some(&levels(0))).text),
+            Some("Released")
+        );
+        assert_eq!(
+            d2.map(|pin| pin.shown(Some(&levels(1))).text),
+            Some("Pressed, or wire open")
+        );
     }
 
     #[test]
     fn no_reading_never_shows_a_level() {
         let shown = pin("D2").map(|pin| pin.shown(None));
-        assert_eq!(shown.map(|shown| (shown.text, shown.tone)), Some(("No reading", Tone::None)));
+        assert_eq!(
+            shown.map(|shown| (shown.text, shown.tone)),
+            Some(("No reading", Tone::None))
+        );
     }
 
     #[test]

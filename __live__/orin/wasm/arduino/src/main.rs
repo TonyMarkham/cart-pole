@@ -6,7 +6,8 @@ mod render;
 // ---------------------------------------------------------------------------------------------- //
 
 pub(crate) use crate::constants::{
-    BOARD_ELEMENT_ID, CONNECTION_ELEMENT_ID, PINS_ROUTE, POLL_ELEMENT_ID, ROWS_ELEMENT_ID, SETTINGS_ROUTE,
+    BOARD_ELEMENT_ID, CONNECTION_ELEMENT_ID, PINS_ROUTE, POLL_ELEMENT_ID, ROWS_ELEMENT_ID,
+    SETTINGS_ROUTE,
 };
 
 // ---------------------------------------------------------------------------------------------- //
@@ -61,7 +62,10 @@ async fn run() -> AppResult<()> {
     let settings = match fetch_text(&page.window, SETTINGS_ROUTE).await {
         Ok(text) => serde_json::from_str::<Settings>(&text)?,
         Err(error) => {
-            page.say("warn", "The webserver didn't answer. Refresh this page to try again.");
+            page.say(
+                "warn",
+                "The webserver didn't answer. Refresh this page to try again.",
+            );
             return Err(error);
         }
     };
@@ -75,7 +79,11 @@ async fn run() -> AppResult<()> {
                 page.show(Some(&levels))?;
                 page.say(
                     "ok",
-                    &format!("Reading from the board at {}, taken at {}.", settings.address, time_now()),
+                    &format!(
+                        "Reading from the board at {}, taken at {}.",
+                        settings.address,
+                        time_now()
+                    ),
                 );
             }
             Err(error) => {
@@ -120,7 +128,9 @@ fn element(document: &Document, id: &str) -> AppResult<Element> {
 }
 
 async fn read_levels(window: &Window) -> AppResult<Levels> {
-    Ok(serde_json::from_str(&fetch_text(window, PINS_ROUTE).await?)?)
+    Ok(serde_json::from_str(
+        &fetch_text(window, PINS_ROUTE).await?,
+    )?)
 }
 
 /// The body of one GET, never from the browser's cache, because a reading has
@@ -148,7 +158,8 @@ async fn sleep(window: &Window, milliseconds: u32) -> AppResult<()> {
     let milliseconds = i32::try_from(milliseconds).unwrap_or(i32::MAX);
     let mut timer = Ok(0);
     let promise = Promise::new(&mut |resolve, _reject| {
-        timer = window.set_timeout_with_callback_and_timeout_and_arguments_0(&resolve, milliseconds);
+        timer =
+            window.set_timeout_with_callback_and_timeout_and_arguments_0(&resolve, milliseconds);
     });
     timer?;
     JsFuture::from(promise).await?;
@@ -157,7 +168,12 @@ async fn sleep(window: &Window, milliseconds: u32) -> AppResult<()> {
 
 fn time_now() -> String {
     let now = Date::new_0();
-    format!("{:02}:{:02}:{:02}", now.get_hours(), now.get_minutes(), now.get_seconds())
+    format!(
+        "{:02}:{:02}:{:02}",
+        now.get_hours(),
+        now.get_minutes(),
+        now.get_seconds()
+    )
 }
 
 fn report(error: &AppError) {

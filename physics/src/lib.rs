@@ -131,7 +131,12 @@ impl Physics {
             site_ids: [0; SITES],
             nbody: 0,
             pole_body_id: 0,
-            pole_body: PoleBody { mass: 0.0, com_distance: 0.0, inertia: 0.0, gravity: 0.0 },
+            pole_body: PoleBody {
+                mass: 0.0,
+                com_distance: 0.0,
+                inertia: 0.0,
+                gravity: 0.0,
+            },
         };
         let names = &config.names;
         let cart = physics.id(ffi::mjOBJ_JOINT, "joint", &names.cart_joint)?;
@@ -188,7 +193,10 @@ impl Physics {
         physics.timestep = physics.time();
         physics.reset_data();
         if !physics.timestep.is_finite() || physics.timestep <= 0.0 {
-            bail!("{path}: measured timestep {} s is not positive", physics.timestep);
+            bail!(
+                "{path}: measured timestep {} s is not positive",
+                physics.timestep
+            );
         }
         physics.max_speed = physics.check_model(path, &names.actuator)?;
         physics.check_pole(path, &names.pole_joint)?;
@@ -277,7 +285,10 @@ impl Physics {
     /// The two joints' `qpos`.
     pub fn pose(&self) -> Pose {
         let qpos = self.get_state::<QPOS_LEN>(ffi::mjSTATE_QPOS);
-        Pose { cart: qpos[self.cart], pole: qpos[self.pole] }
+        Pose {
+            cart: qpos[self.cart],
+            pole: qpos[self.pole],
+        }
     }
 
     /// The twelve sites' world positions for the current `qpos`, by role.
@@ -294,10 +305,33 @@ impl Physics {
         let xpos = unsafe { slice::from_raw_parts(self.data.as_ref().site_xpos, 3 * self.nsite) };
         let (positions, _) = xpos.as_chunks::<3>();
         // Each id came from mj_name2id at load, so it is below nsite.
-        let [left, right, pivot, end, target, dynamic_target, cart, cart_target, left_rail, left_cart, right_rail, right_cart] =
-            self.site_ids.map(|id| positions[id]);
+        let [
+            left,
+            right,
+            pivot,
+            end,
+            target,
+            dynamic_target,
+            cart,
+            cart_target,
+            left_rail,
+            left_cart,
+            right_rail,
+            right_cart,
+        ] = self.site_ids.map(|id| positions[id]);
         Sites {
-            left, right, pivot, end, target, dynamic_target, cart, cart_target, left_rail, left_cart, right_rail, right_cart,
+            left,
+            right,
+            pivot,
+            end,
+            target,
+            dynamic_target,
+            cart,
+            cart_target,
+            left_rail,
+            left_cart,
+            right_rail,
+            right_cart,
         }
     }
 
@@ -322,10 +356,19 @@ impl Physics {
         // pole_body_id < nbody and pole < njnt.
         let (com, hinge) = unsafe {
             let data = self.data.as_ref();
-            let point = |p: *const f64, i: usize| [*p.add(3 * i), *p.add(3 * i + 1), *p.add(3 * i + 2)];
-            (point(data.subtree_com, self.pole_body_id), point(data.xanchor, self.pole))
+            let point =
+                |p: *const f64, i: usize| [*p.add(3 * i), *p.add(3 * i + 1), *p.add(3 * i + 2)];
+            (
+                point(data.subtree_com, self.pole_body_id),
+                point(data.xanchor, self.pole),
+            )
         };
-        PoleState { speed, angle, com, hinge }
+        PoleState {
+            speed,
+            angle,
+            com,
+            hinge,
+        }
     }
 
     /// MuJoCo warnings since the process started (P3: any fails a run).
@@ -334,7 +377,8 @@ impl Physics {
     }
 
     fn id(&self, kind: c_int, label: &str, name: &str) -> Result<usize> {
-        let c_name = CString::new(name).with_context(|| format!("{label} name {name:?} contains a NUL"))?;
+        let c_name =
+            CString::new(name).with_context(|| format!("{label} name {name:?} contains a NUL"))?;
         // SAFETY: model is live; c_name is NUL-terminated.
         let id = unsafe { ffi::mj_name2id(self.model.as_ptr(), kind, c_name.as_ptr()) };
         usize::try_from(id).map_err(|_| anyhow!("the model has no {label} named {name:?}"))
@@ -347,7 +391,11 @@ impl Physics {
     // number, or an address outside the buffer. Pointers are bounds-checked
     // before any is followed. Leaves a probe state behind; load resets.
     fn check_layout(&mut self, path: &str) -> Result<usize> {
-        let mismatch = || anyhow!("{path}: physics/src/ffi.rs's mjModel/mjData layout does not match this mujoco.dll");
+        let mismatch = || {
+            anyhow!(
+                "{path}: physics/src/ffi.rs's mjModel/mjData layout does not match this mujoco.dll"
+            )
+        };
 
         // SAFETY: model is live and the fields are inside the mirrored prefix.
         let (nq, nu, nsite) = unsafe {
@@ -359,7 +407,8 @@ impl Physics {
         {
             return Err(mismatch().context(format!("mjModel nq {nq}, nu {nu} vs mj_stateSize")));
         }
-        let nsite = usize::try_from(nsite).map_err(|_| mismatch().context(format!("mjModel nsite {nsite}")))?;
+        let nsite = usize::try_from(nsite)
+            .map_err(|_| mismatch().context(format!("mjModel nsite {nsite}")))?;
 
         // Distinct values, so a misread number cannot match by chance.
         let probe_time = 1.5;
@@ -372,15 +421,26 @@ impl Physics {
         // prefix; nothing is dereferenced here.
         let (time, nbuffer, buffer, qpos, site_xpos) = unsafe {
             let data = self.data.as_ref();
-            (data.time, data.nbuffer, data.buffer as usize, data.qpos, data.site_xpos)
+            (
+                data.time,
+                data.nbuffer,
+                data.buffer as usize,
+                data.qpos,
+                data.site_xpos,
+            )
         };
-        let nbuffer = usize::try_from(nbuffer).map_err(|_| mismatch().context(format!("mjData nbuffer {nbuffer}")))?;
+        let nbuffer = usize::try_from(nbuffer)
+            .map_err(|_| mismatch().context(format!("mjData nbuffer {nbuffer}")))?;
         let inside = |start: usize, len: usize| {
-            buffer.checked_add(nbuffer).is_some_and(|end| start >= buffer && start.checked_add(len).is_some_and(|stop| stop <= end))
+            buffer.checked_add(nbuffer).is_some_and(|end| {
+                start >= buffer && start.checked_add(len).is_some_and(|stop| stop <= end)
+            })
         };
         let number = size_of::<f64>();
         if time != probe_time {
-            return Err(mismatch().context(format!("mjData time reads {time}, mj_setState wrote {probe_time}")));
+            return Err(mismatch().context(format!(
+                "mjData time reads {time}, mj_setState wrote {probe_time}"
+            )));
         }
         if !inside(qpos as usize, QPOS_LEN * number) {
             return Err(mismatch().context("mjData qpos points outside MuJoCo's buffer"));
@@ -392,7 +452,9 @@ impl Physics {
         // numbers (nq = QPOS_LEN, checked by load and above).
         let read = unsafe { [*qpos, *qpos.add(1)] };
         if read != probe_qpos {
-            return Err(mismatch().context(format!("mjData qpos reads {read:?}, mj_setState wrote {probe_qpos:?}")));
+            return Err(mismatch().context(format!(
+                "mjData qpos reads {read:?}, mj_setState wrote {probe_qpos:?}"
+            )));
         }
 
         // site_xpos can only be checked against MuJoCo's own use of it:
@@ -404,15 +466,31 @@ impl Physics {
         for id in 0..nsite {
             // SAFETY: site_xpos lies inside the buffer with nsite x 3
             // numbers (checked above); id < nsite.
-            let point = unsafe { [*site_xpos.add(3 * id), *site_xpos.add(3 * id + 1), *site_xpos.add(3 * id + 2)] };
+            let point = unsafe {
+                [
+                    *site_xpos.add(3 * id),
+                    *site_xpos.add(3 * id + 1),
+                    *site_xpos.add(3 * id + 2),
+                ]
+            };
             let away = [point[0] + 1.0, point[1], point[2]];
             let c_id = c_int::try_from(id)?;
             // SAFETY: model and data are live; id < nsite; each point is
             // three numbers.
             let (at, off) = unsafe {
                 (
-                    ffi::mj_insideSite(self.model.as_ptr(), self.data.as_ptr(), c_id, point.as_ptr()),
-                    ffi::mj_insideSite(self.model.as_ptr(), self.data.as_ptr(), c_id, away.as_ptr()),
+                    ffi::mj_insideSite(
+                        self.model.as_ptr(),
+                        self.data.as_ptr(),
+                        c_id,
+                        point.as_ptr(),
+                    ),
+                    ffi::mj_insideSite(
+                        self.model.as_ptr(),
+                        self.data.as_ptr(),
+                        c_id,
+                        away.as_ptr(),
+                    ),
                 )
             };
             if at != 1 || off != 0 {
@@ -431,7 +509,9 @@ impl Physics {
     // order); qpos0 with the qpos mj_resetData copies from it; and the
     // ctrlrange read with MuJoCo's own clamp of ctrl.
     fn check_model(&mut self, path: &str, actuator: &str) -> Result<f64> {
-        let mismatch = || anyhow!("{path}: physics/src/ffi.rs's mjModel layout does not match this mujoco.dll");
+        let mismatch = || {
+            anyhow!("{path}: physics/src/ffi.rs's mjModel layout does not match this mujoco.dll")
+        };
 
         // SAFETY: model is live; every field read is inside the mirrored
         // prefix, and the fields from buffer to actuator_ctrlrange are
@@ -452,18 +532,28 @@ impl Physics {
             )
         };
         if timestep != self.timestep {
-            return Err(mismatch().context(format!("mjModel opt.timestep reads {timestep}, measured {}", self.timestep)));
+            return Err(mismatch().context(format!(
+                "mjModel opt.timestep reads {timestep}, measured {}",
+                self.timestep
+            )));
         }
-        let nbuffer = usize::try_from(nbuffer).map_err(|_| mismatch().context(format!("mjModel nbuffer {nbuffer}")))?;
+        let nbuffer = usize::try_from(nbuffer)
+            .map_err(|_| mismatch().context(format!("mjModel nbuffer {nbuffer}")))?;
         let buffer = addresses[0];
         let end = buffer
             .checked_add(nbuffer)
             .ok_or_else(|| mismatch().context("mjModel buffer passes the address space"))?;
-        if let Some(i) = (1..addresses.len()).find(|&i| addresses[i] < addresses[i - 1] || addresses[i] > end) {
-            return Err(mismatch().context(format!("mjModel pointer {i} after buffer is outside MuJoCo's buffer or out of order")));
+        if let Some(i) =
+            (1..addresses.len()).find(|&i| addresses[i] < addresses[i - 1] || addresses[i] > end)
+        {
+            return Err(mismatch().context(format!(
+                "mjModel pointer {i} after buffer is outside MuJoCo's buffer or out of order"
+            )));
         }
         let number = size_of::<f64>();
-        let inside = |start: usize, len: usize| start >= buffer && start.checked_add(len).is_some_and(|stop| stop <= end);
+        let inside = |start: usize, len: usize| {
+            start >= buffer && start.checked_add(len).is_some_and(|stop| stop <= end)
+        };
         if !inside(qpos0 as usize, QPOS_LEN * number)
             || !inside(limited as usize, CTRL_LEN)
             || !inside(range as usize, 2 * CTRL_LEN * number)
@@ -477,23 +567,34 @@ impl Physics {
         let read = unsafe { [*qpos0, *qpos0.add(1)] };
         let reset = self.get_state::<QPOS_LEN>(ffi::mjSTATE_QPOS);
         if read != reset {
-            return Err(mismatch().context(format!("mjModel qpos0 reads {read:?}, mj_resetData set qpos {reset:?}")));
+            return Err(mismatch().context(format!(
+                "mjModel qpos0 reads {read:?}, mj_resetData set qpos {reset:?}"
+            )));
         }
 
         // A mirror shifted by one pointer still passes the buffer checks
         // (MuJoCo pads every array to 64 bytes), and reads a neighbouring
         // array here, so a refusal names that cause too.
-        const SHIFTED: &str = " (if the MJCF says otherwise, physics/src/ffi.rs's mjModel mirror is wrong)";
+        const SHIFTED: &str =
+            " (if the MJCF says otherwise, physics/src/ffi.rs's mjModel mirror is wrong)";
         // The actuator's id is 0 (P2). SAFETY: both lie inside MuJoCo's
         // buffer with room for the actuator's entries (checked above).
         let (limited, [lo, hi]) = unsafe { (*limited, [*range, *range.add(1)]) };
         match limited {
             1 => {}
-            0 => bail!("{path}: actuator {actuator:?} reads as not ctrllimited: the cart top speed is its ctrlrange{SHIFTED}"),
-            _ => return Err(mismatch().context(format!("mjModel actuator_ctrllimited reads {limited}, not a bool"))),
+            0 => bail!(
+                "{path}: actuator {actuator:?} reads as not ctrllimited: the cart top speed is its ctrlrange{SHIFTED}"
+            ),
+            _ => {
+                return Err(mismatch().context(format!(
+                    "mjModel actuator_ctrllimited reads {limited}, not a bool"
+                )));
+            }
         }
         if !hi.is_finite() || hi <= 0.0 || lo != -hi {
-            bail!("{path}: actuator {actuator:?} ctrlrange reads [{lo}, {hi}]; the cart top speed needs it symmetric, lo = -hi > 0{SHIFTED}");
+            bail!(
+                "{path}: actuator {actuator:?} ctrlrange reads [{lo}, {hi}]; the cart top speed needs it symmetric, lo = -hi > 0{SHIFTED}"
+            );
         }
 
         // MuJoCo's own clamp: one step from rest at ctrl hi and at ctrl
@@ -533,7 +634,11 @@ impl Physics {
     // against the parallel-axis floor, mass x distance². Leaves MuJoCo's
     // reset state.
     fn check_pole(&mut self, path: &str, joint: &str) -> Result<()> {
-        let mismatch = || anyhow!("{path}: physics/src/ffi.rs's mjModel/mjData layout does not match this mujoco.dll");
+        let mismatch = || {
+            anyhow!(
+                "{path}: physics/src/ffi.rs's mjModel/mjData layout does not match this mujoco.dll"
+            )
+        };
         let number = size_of::<f64>();
         let int = size_of::<c_int>();
         // Rounding between two summation orders of the same numbers.
@@ -555,10 +660,18 @@ impl Physics {
                 model.opt.gravity,
             )
         };
-        let count = |n: i64, what: &str| usize::try_from(n).map_err(|_| mismatch().context(format!("mjModel {what} {n}")));
-        let (nbody, njnt, nbuffer) = (count(nbody, "nbody")?, count(njnt, "njnt")?, count(nbuffer, "nbuffer")?);
+        let count = |n: i64, what: &str| {
+            usize::try_from(n).map_err(|_| mismatch().context(format!("mjModel {what} {n}")))
+        };
+        let (nbody, njnt, nbuffer) = (
+            count(nbody, "nbody")?,
+            count(njnt, "njnt")?,
+            count(nbuffer, "nbuffer")?,
+        );
         let inside = |start: usize, len: usize| {
-            buffer.checked_add(nbuffer).is_some_and(|end| start >= buffer && start.checked_add(len).is_some_and(|stop| stop <= end))
+            buffer.checked_add(nbuffer).is_some_and(|end| {
+                start >= buffer && start.checked_add(len).is_some_and(|stop| stop <= end)
+            })
         };
         if !inside(parentid as usize, nbody * int)
             || !inside(body_mass as usize, nbody * number)
@@ -580,20 +693,28 @@ impl Physics {
         };
         // MuJoCo numbers every body after its parent; the world, body 0, is
         // its own parent.
-        let parent: Vec<usize> = parent.iter().map(|&p| usize::try_from(p).unwrap_or(usize::MAX)).collect();
+        let parent: Vec<usize> = parent
+            .iter()
+            .map(|&p| usize::try_from(p).unwrap_or(usize::MAX))
+            .collect();
         if nbody == 0 || parent[0] != 0 || (1..nbody).any(|b| parent[b] >= b) {
-            return Err(mismatch().context("mjModel body_parentid does not list each body after its parent"));
+            return Err(mismatch()
+                .context("mjModel body_parentid does not list each body after its parent"));
         }
         // SAFETY: model is live.
         let total = unsafe { ffi::mj_getTotalmass(self.model.as_ptr()) };
         let sum: f64 = mass.iter().sum();
         if !close(sum, total, total) {
-            return Err(mismatch().context(format!("mjModel body_mass adds up to {sum} kg, mj_getTotalmass gives {total}")));
+            return Err(mismatch().context(format!(
+                "mjModel body_mass adds up to {sum} kg, mj_getTotalmass gives {total}"
+            )));
         }
         let body = usize::try_from(body)
             .ok()
             .filter(|&b| b > 0 && b < nbody)
-            .ok_or_else(|| mismatch().context(format!("mjModel jnt_bodyid of {joint} reads {body}")))?;
+            .ok_or_else(|| {
+                mismatch().context(format!("mjModel jnt_bodyid of {joint} reads {body}"))
+            })?;
 
         // A probe pose off the reset one, so a centre that ignored the
         // pose could not match. mj_forward computes poses, subtree_com and
@@ -606,26 +727,40 @@ impl Physics {
         // prefix; nothing is dereferenced here.
         let (dbuffer, dnbuffer, xipos, xanchor, xaxis, subtree_com) = unsafe {
             let data = self.data.as_ref();
-            (data.buffer as usize, data.nbuffer, data.xipos, data.xanchor, data.xaxis, data.subtree_com)
+            (
+                data.buffer as usize,
+                data.nbuffer,
+                data.xipos,
+                data.xanchor,
+                data.xaxis,
+                data.subtree_com,
+            )
         };
-        let dnbuffer = usize::try_from(dnbuffer).map_err(|_| mismatch().context(format!("mjData nbuffer {dnbuffer}")))?;
+        let dnbuffer = usize::try_from(dnbuffer)
+            .map_err(|_| mismatch().context(format!("mjData nbuffer {dnbuffer}")))?;
         let in_data = |start: usize, len: usize| {
-            dbuffer.checked_add(dnbuffer).is_some_and(|end| start >= dbuffer && start.checked_add(len).is_some_and(|stop| stop <= end))
+            dbuffer.checked_add(dnbuffer).is_some_and(|end| {
+                start >= dbuffer && start.checked_add(len).is_some_and(|stop| stop <= end)
+            })
         };
         if !in_data(xipos as usize, 3 * nbody * number)
             || !in_data(subtree_com as usize, 3 * nbody * number)
             || !in_data(xanchor as usize, 3 * njnt * number)
             || !in_data(xaxis as usize, 3 * njnt * number)
         {
-            return Err(mismatch().context("mjData xipos, subtree_com, xanchor or xaxis runs past MuJoCo's buffer"));
+            return Err(mismatch()
+                .context("mjData xipos, subtree_com, xanchor or xaxis runs past MuJoCo's buffer"));
         }
         // SAFETY: each lies inside MuJoCo's buffer with 3 x nbody (3 x
         // njnt) numbers, checked above; pole < njnt.
         let (xipos, subtree_com, anchor, axis) = unsafe {
-            let point = |p: *const f64, i: usize| [*p.add(3 * i), *p.add(3 * i + 1), *p.add(3 * i + 2)];
+            let point =
+                |p: *const f64, i: usize| [*p.add(3 * i), *p.add(3 * i + 1), *p.add(3 * i + 2)];
             (
                 (0..nbody).map(|b| point(xipos, b)).collect::<Vec<_>>(),
-                (0..nbody).map(|b| point(subtree_com, b)).collect::<Vec<_>>(),
+                (0..nbody)
+                    .map(|b| point(subtree_com, b))
+                    .collect::<Vec<_>>(),
                 point(xanchor, self.pole),
                 point(xaxis, self.pole),
             )
@@ -662,19 +797,28 @@ impl Physics {
 
         let pole_mass = subtreemass[body];
         if !pole_mass.is_finite() || pole_mass <= 0.0 {
-            bail!("{path}: everything that swings on {joint} weighs {pole_mass} kg; the pole's energy needs a mass");
+            bail!(
+                "{path}: everything that swings on {joint} weighs {pole_mass} kg; the pole's energy needs a mass"
+            );
         }
         // The centre's distance from the axis: the part of the hinge-to-centre
         // arrow at right angles to the axis.
         let length = axis.iter().map(|v| v * v).sum::<f64>().sqrt();
         if !close(length, 1.0, 1.0) {
-            return Err(mismatch().context(format!("mjData xaxis of {joint} reads {axis:?}, not a unit vector")));
+            return Err(mismatch().context(format!(
+                "mjData xaxis of {joint} reads {axis:?}, not a unit vector"
+            )));
         }
         let arm: [f64; 3] = std::array::from_fn(|i| subtree_com[body][i] - anchor[i]);
         let along: f64 = (0..3).map(|i| arm[i] * axis[i]).sum();
-        let com_distance = (0..3).map(|i| (arm[i] - along * axis[i]).powi(2)).sum::<f64>().sqrt();
+        let com_distance = (0..3)
+            .map(|i| (arm[i] - along * axis[i]).powi(2))
+            .sum::<f64>()
+            .sqrt();
         if !com_distance.is_finite() || com_distance <= 0.0 {
-            bail!("{path}: the centre of mass of what swings on {joint} lies on its axis; the pole's height energy needs it off the axis");
+            bail!(
+                "{path}: the centre of mass of what swings on {joint} lies on its axis; the pole's height energy needs it off the axis"
+            );
         }
 
         // The joint's diagonal entry of the inertia matrix: M times the
@@ -685,7 +829,14 @@ impl Physics {
         let mut product = [0.0; QVEL_LEN];
         // SAFETY: model and data are live and belong together; both
         // vectors hold nv numbers; mj_forward made the inertia matrix.
-        unsafe { ffi::mj_mulM(self.model.as_ptr(), self.data.as_ptr(), product.as_mut_ptr(), unit.as_ptr()) };
+        unsafe {
+            ffi::mj_mulM(
+                self.model.as_ptr(),
+                self.data.as_ptr(),
+                product.as_mut_ptr(),
+                unit.as_ptr(),
+            )
+        };
         let inertia = product[self.pole];
         let floor = pole_mass * com_distance * com_distance;
         if !inertia.is_finite() || inertia < floor * (1.0 - 1e-9) {
@@ -696,13 +847,20 @@ impl Physics {
 
         let [gx, gy, gz] = gravity;
         if gx != 0.0 || gy != 0.0 || !gz.is_finite() || gz >= 0.0 {
-            bail!("{path}: gravity reads {gravity:?} m/s²; the pole's height energy needs it straight down, -z");
+            bail!(
+                "{path}: gravity reads {gravity:?} m/s²; the pole's height energy needs it straight down, -z"
+            );
         }
 
         self.reset_data();
         self.nbody = nbody;
         self.pole_body_id = body;
-        self.pole_body = PoleBody { mass: pole_mass, com_distance, inertia, gravity: -gz };
+        self.pole_body = PoleBody {
+            mass: pole_mass,
+            com_distance,
+            inertia,
+            gravity: -gz,
+        };
         Ok(())
     }
 
@@ -723,7 +881,14 @@ impl Physics {
         let mut state = [0.0; N];
         // SAFETY: model and data are live; state holds the N numbers
         // mj_getState writes for sig.
-        unsafe { ffi::mj_getState(self.model.as_ptr(), self.data.as_ptr(), state.as_mut_ptr(), sig) };
+        unsafe {
+            ffi::mj_getState(
+                self.model.as_ptr(),
+                self.data.as_ptr(),
+                state.as_mut_ptr(),
+                sig,
+            )
+        };
         state
     }
 

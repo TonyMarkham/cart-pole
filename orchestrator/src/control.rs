@@ -52,9 +52,14 @@ impl FromStr for Control {
                 if period <= 0.0 {
                     return Err(format!("sine period must be positive, got {period}"));
                 }
-                Ok(Control::Sine { amplitude: number(amplitude)?, period })
+                Ok(Control::Sine {
+                    amplitude: number(amplitude)?,
+                    period,
+                })
             }
-            _ => Err(format!("{text:?}: expected zero, speed:<m_s>, or sine:<amp_m_s>,<period_s>")),
+            _ => Err(format!(
+                "{text:?}: expected zero, speed:<m_s>, or sine:<amp_m_s>,<period_s>"
+            )),
         }
     }
 }

@@ -6,13 +6,113 @@ firmware does home the cart, but it was built to measure how hard the motor can
 be driven before the belt skips teeth. This crate is the firmware for the
 calibration the robot actually operates with.
 
-**Today it only reports its pins.** It joins the WiFi, sleeps, and when a
-message asks, answers with the level of every pin the rig uses, for the
-[page on the Orin's webserver](../../../../orin/rust/README.md).
-It moves nothing: it sends no pulses, keeps the driver's three outputs
-high, and acts on no message. The homing moves are not in it yet, so while
-this firmware is on the board the older `calibrate` firmware's page and
-buttons are gone; upload `calibrate` again to get them back.
+**Today it reports its pins and moves the cart to either end of the rail.** It
+joins the WiFi and sleeps. When a message asks, it answers with the level of
+every pin the rig uses, for the
+[page on the Orin's webserver](../../../../orin/rust/README.md), or moves the
+cart slowly to a limit switch or the rail's centre (*The moves*). While this firmware is on the board the older `calibrate`
+firmware's page and buttons are gone; upload `calibrate` again to get them back.
+
+## The moves
+
+The camera calibration needs the cart standing at a known place, and the two
+limit switches are the places the board can find by itself
+([the plan](../../../../../calibrate-w-homography.md), *The calibration
+sequence*). So the Orin asks for each move with one datagram:
+
+```text
+datagram "CalibrateIdlerTravelLimit"  ->  the cart seeks to the idler's end
+datagram "CalibrateMotorTravelLimit"  ->  the cart seeks to the motor's end
+```
+
+The cart moves at `seek_speed`, 30 mm/s, until a switch trips, then stops and
+the driver holds it. Only then does the board answer, so the wait can be as long
+as `seek_timeout_ms`, 34 s. Whoever asks should wait a little longer than that.
+
+Every answer has the same five keys, for example:
+
+```text
+{"status":200,"result":"tripped","message":"the cart stopped at that end's switch","pin":"d3","pulses":59828}
+```
+
+The outcomes of a seek:
+
+```text
+status  result         pin   the cart
+200     tripped        d3    stopped at that end's switch
+409     tripped        d2    stopped at the other end's switch
+409     already_there  d3    did not move: that end's switch already reads pressed
+409     refused        null  did not move: both switches read pressed
+408     timed_out      null  stopped: no switch tripped in time
+```
+
+- **`message`** says the same in words. Every failure's message is in `AppError`
+  ([src/error/mod.rs](src/error/mod.rs)). A failure also goes to the USB serial port,
+  with the place in the code it came from.
+
+- **`status`** is 200 when the cart did what was asked and 4xx when it did not, with
+  HTTP's meanings: 400 a bad request, 408 out of time, 409 not possible as things
+  stand. The board speaks UDP, so this is a number in the answer, not an HTTP
+  status. The Orin's webserver is meant to return it as one, once it has routes
+  for the moves.
+- **`pin`** is the switch that stopped the cart, whichever it is, so a wrong
+  guess about which end is which shows here.
+- **`pulses`** is how far it went. From one switch to the other, that is the
+  rail's span.
+- **`refused`** is what a USB cable left in from the Pi can cause, as can a
+  broken switch wire: both read the same as a pressed switch.
+- **The board is busy during a move.** Datagrams that arrive meanwhile, `pins`
+  included, are thrown away and never answered, and there is no STOP. A move
+  ends at a switch or at the time limit, or when the rig's power is cut.
+
+**The move to the centre** is one more datagram, with an optional speed:
+
+```text
+datagram "MoveToCentre"        ->  to the centre at seek_speed
+datagram "MoveToCentre 5000"   ->  to the centre at 5,000 pulses/s (75 mm/s)
+```
+
+The centre is halfway between the two switches' trip points, so the board has to
+measure that distance first. A switch counts only when the board saw it trip
+during a move: one that merely reads pressed may be a broken wire, not the cart.
+So the calibration is always the same, wherever the cart starts:
+
+1. A seek that trips one end. If the cart starts on that end's switch the answer
+   is `already_there` and nothing counts, so seek to the other end instead.
+2. A seek that trips the other end. Its `pulses` is the span.
+
+From a cart resting on a switch after a reset, that takes one seek off the switch
+and one back: the first seek's start proves nothing. Until the span is measured,
+`MoveToCentre` is answered `not_ready` and the cart stays put. The board forgets
+the span at every reset, when a seek times out, and when a seek trips the wrong
+switch. The cart then moves half the span from the switch it rests on, and the
+board answers when it has stopped. At `seek_speed` from an end that takes about 15 s;
+a slower speed takes longer, so whoever asks must wait for as long as it asked for.
+
+```text
+status  result     pin   the cart
+200     centred    null  reached the centre
+409     tripped    d3    stopped: a switch tripped on the way, so steps were lost
+409     not_ready  null  did not move: no span yet, or the cart is not on a switch
+400     bad_speed  null  did not move: not a whole number from 1 to centre_speed_max
+409     refused    null  did not move: both switches read pressed
+```
+
+Like the seeks it has no ramp: it starts and stops in one jump. That is why
+`centre_speed_max` limits the speed.
+
+**The ends are a first guess.** `[idler]` and `[motor]` in
+[calibration.toml](calibration.toml) say which switch and direction each datagram
+uses. Which end the idler is at, and which way DIR moves the cart, have not been
+checked on the rig. Start the first run with the cart mid-rail, with no USB cable
+in: a cart already resting on a switch, sent the wrong way, could not see that
+switch again and would push on against the end of the rail until the time limit.
+
+**To try one,** from the Orin, with the cart mid-rail and clear:
+
+```bash
+python3 -c "import socket; s=socket.socket(socket.AF_INET,socket.SOCK_DGRAM); s.settimeout(40); s.sendto(b'CalibrateIdlerTravelLimit',('192.168.0.220',4210)); print(s.recv(256).decode())"
+```
 
 ## What it answers
 
@@ -27,7 +127,7 @@ guarantee it arrives:
 datagram "pins"  ->  datagram {"d2":0,"d3":0,"d4":1,"d5":1,"d6":1}
 ```
 
-Any other datagram is ignored. D2 and D3 are inputs, measured on the pin;
+Any datagram that is neither this nor one of the moves is ignored. D2 and D3 are inputs, measured on the pin;
 D4, D5 and D6 are outputs, reported as the level the firmware sets.
 [control-design.md](../../../../../control-design.md) has the wiring.
 
@@ -50,8 +150,9 @@ failed. A failed join is tried again only by resetting the board.
 
 ## Settings
 
-[calibration.toml](calibration.toml) holds the serial speed, the hostname
-and the UDP port. The board has no file system, so `build.rs` compiles them
+[calibration.toml](calibration.toml) holds the serial speed, the slow seek's
+values, each with where it comes from, the two ends of the rail, how long the
+board waits on its WiFi chip, the hostname and the UDP port. The board has no file system, so `build.rs` compiles them
 in: a change takes effect at the next build and upload. The network's name
 and password are in `wifi.toml`, which git ignores;
 [wifi.example.toml](wifi.example.toml) is its template.

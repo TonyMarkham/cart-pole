@@ -20,7 +20,10 @@ const TEST: Config = Config {
 };
 
 // The ramp's tests: 1,000,000 pulses/s² × 2 ms = 2,000 pulses/s a tick.
-const RAMP: Config = Config { jump_limit: 1_000_000, ..TEST };
+const RAMP: Config = Config {
+    jump_limit: 1_000_000,
+    ..TEST
+};
 
 const STEP_US: u32 = 2_000;
 
@@ -33,7 +36,14 @@ fn config_derived_values() {
     assert_eq!(TEST.max_rate(), 24_000); // 360,000 × 6,400 / 96,000
     // Rounded down, so the cart never passes max_speed_um_per_s:
     // 850,000 × 6,400 / 96,000 = 56,666.7.
-    assert_eq!(Config { max_speed_um_per_s: 850_000, ..TEST }.max_rate(), 56_666);
+    assert_eq!(
+        Config {
+            max_speed_um_per_s: 850_000,
+            ..TEST
+        }
+        .max_rate(),
+        56_666
+    );
 }
 
 #[test]
@@ -140,8 +150,20 @@ fn synthetic_receive_returns_dir_and_step_rate() {
     // A fresh one each time: from rest, TEST's ramp reaches any rate in
     // the one tick receive takes.
     let signals = |rate| SyntheticArduino::new(TEST, STEP_US).receive(encode_command(rate));
-    assert_eq!(signals(20_000), Dm542Signals { dir: Direction::Positive, step_rate: 20_000 });
-    assert_eq!(signals(-20_000), Dm542Signals { dir: Direction::Negative, step_rate: 20_000 });
+    assert_eq!(
+        signals(20_000),
+        Dm542Signals {
+            dir: Direction::Positive,
+            step_rate: 20_000
+        }
+    );
+    assert_eq!(
+        signals(-20_000),
+        Dm542Signals {
+            dir: Direction::Negative,
+            step_rate: 20_000
+        }
+    );
     assert_eq!(signals(0).step_rate, 0);
 }
 
@@ -153,16 +175,47 @@ fn synthetic_receive_clamps_to_the_top_rate() {
     // 24,000, DIR from the sign; i32::MIN has no positive i32 twin, the
     // clamp's edge.
     let signals = |rate| SyntheticArduino::new(TEST, STEP_US).receive(encode_command(rate));
-    assert_eq!(signals(24_001), Dm542Signals { dir: Direction::Positive, step_rate: 24_000 });
-    assert_eq!(signals(i32::MAX), Dm542Signals { dir: Direction::Positive, step_rate: 24_000 });
-    assert_eq!(signals(i32::MIN), Dm542Signals { dir: Direction::Negative, step_rate: 24_000 });
-    assert_eq!(signals(-24_000), Dm542Signals { dir: Direction::Negative, step_rate: 24_000 });
+    assert_eq!(
+        signals(24_001),
+        Dm542Signals {
+            dir: Direction::Positive,
+            step_rate: 24_000
+        }
+    );
+    assert_eq!(
+        signals(i32::MAX),
+        Dm542Signals {
+            dir: Direction::Positive,
+            step_rate: 24_000
+        }
+    );
+    assert_eq!(
+        signals(i32::MIN),
+        Dm542Signals {
+            dir: Direction::Negative,
+            step_rate: 24_000
+        }
+    );
+    assert_eq!(
+        signals(-24_000),
+        Dm542Signals {
+            dir: Direction::Negative,
+            step_rate: 24_000
+        }
+    );
 }
 
 #[test]
 fn ramp_limit_rounds_down() {
     // m × the tick, rounded down: the rig's 1,210,937 × 2 ms = 2,421.874.
-    assert_eq!(Config { jump_limit: 1_210_937, ..TEST }.ramp_limit(STEP_US), 2_421);
+    assert_eq!(
+        Config {
+            jump_limit: 1_210_937,
+            ..TEST
+        }
+        .ramp_limit(STEP_US),
+        2_421
+    );
     assert_eq!(RAMP.ramp_limit(STEP_US), 2_000);
 }
 

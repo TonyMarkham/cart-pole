@@ -342,6 +342,9 @@ adds repo structure around them, never overrides them.
   to and built on that computer, so nothing in them points outside them. Only
   the firmware (`__live__/arduino/rust/crates/calibration`) and the browser
   pages (`__live__/orin/wasm`) are built on the PC, as root workspace members.
+  The firmware crate keeps one type per file, each file named after its type
+  (user, 2026-11-01), and its `use` statements put `use crate::…` first, then a
+  blank line, then the external crates.
 - `orin/` — the synthetic Orin, a `uv` project: Python + TensorRT
   detection, the 6-entry pool, the WebSocket client (`synthetic-orin-plan.md`).
   The root holds the uv files and `settings.toml` (the detector's

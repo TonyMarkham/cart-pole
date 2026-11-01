@@ -936,8 +936,12 @@ pub type mjfLogHandler = Option<unsafe extern "C" fn(*const mjLogMessage)>;
 
 unsafe extern "C" {
     /// mujoco.h:132
-    pub fn mj_loadXML(filename: *const c_char, vfs: *const mjVFS, error: *mut c_char, error_sz: c_int)
-    -> *mut mjModel;
+    pub fn mj_loadXML(
+        filename: *const c_char,
+        vfs: *const mjVFS,
+        error: *mut c_char,
+        error_sz: c_int,
+    ) -> *mut mjModel;
     /// mujoco.h:189
     pub fn mj_step(m: *const mjModel, d: *mut mjData);
     /// mujoco.h:198
@@ -969,7 +973,12 @@ unsafe extern "C" {
     pub fn mj_name2id(m: *const mjModel, type_: c_int, name: *const c_char) -> c_int;
     /// mujoco.h:646; 1 when `point` (world frame) is inside the site's
     /// volume, read from MuJoCo's own copy of the site pose.
-    pub fn mj_insideSite(m: *const mjModel, d: *const mjData, siteid: c_int, point: *const f64) -> c_int;
+    pub fn mj_insideSite(
+        m: *const mjModel,
+        d: *const mjData,
+        siteid: c_int,
+        point: *const f64,
+    ) -> c_int;
     /// mujoco.h:684
     pub fn mj_version() -> c_int;
     /// mujoco.h:1007; returns the previous handler.

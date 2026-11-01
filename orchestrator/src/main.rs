@@ -96,7 +96,10 @@ async fn main() -> Result<()> {
     }
 
     let ports = instance_ports(&args, count)?;
-    let command = args.orin.as_deref().ok_or_else(|| anyhow!("--orin is required unless --no-render"))?;
+    let command = args
+        .orin
+        .as_deref()
+        .ok_or_else(|| anyhow!("--orin is required unless --no-render"))?;
     let connect_timeout = Duration::from_secs(args.connect_timeout);
 
     // 2–5 for every instance (synthetic-loop-dia.md, Training instances):
@@ -109,16 +112,20 @@ async fn main() -> Result<()> {
         let out = instance_folder(&args.out, k)?;
         let seed = args.seed.wrapping_add(k as u64);
         let sim = Simulation::new(&args, &out, seed, k)?;
-        let (listener, url) = bind(orin_port, &format!("[{k}] control socket (synthetic Orin)")).await?;
+        let (listener, url) =
+            bind(orin_port, &format!("[{k}] control socket (synthetic Orin)")).await?;
         let frames_listen = SocketAddr::from((Ipv4Addr::LOCALHOST, unity_port));
         let orin_child = launch_orin(k, command, &url, frames_listen, &out, &sim.pool_gaps)?;
         launched.push((sim, listener, orin_child, frames_listen));
     }
     let mut instances = Vec::with_capacity(count);
-    for (k, (mut sim, listener, mut orin_child, frames_listen)) in launched.into_iter().enumerate() {
+    for (k, (mut sim, listener, mut orin_child, frames_listen)) in launched.into_iter().enumerate()
+    {
         let who = format!("synthetic Orin {k}");
         let stream = accept(&listener, &mut orin_child, &who, connect_timeout).await?;
-        let orin = accept_async(stream).await.with_context(|| format!("{who} WebSocket handshake"))?;
+        let orin = accept_async(stream)
+            .await
+            .with_context(|| format!("{who} WebSocket handshake"))?;
         eprintln!("[{k}] synthetic Orin connected");
         let capture = sim.capture();
         instances.push(Instance {
@@ -144,12 +151,19 @@ async fn main() -> Result<()> {
     for instance in &mut instances {
         instance.player = match (&args.player, args.no_launch) {
             (Some(player), false) => {
-                let window =
-                    size.map(|size| (grid_position(instance.k, args.instance_columns, size, args.window_origin), size));
+                let window = size.map(|size| {
+                    (
+                        grid_position(instance.k, args.instance_columns, size, args.window_origin),
+                        size,
+                    )
+                });
                 Some(launch(instance.k, player, &instance.frames_url, window)?)
             }
             _ => {
-                eprintln!("[{}] --no-launch: enter Play mode in the editor; it connects to {}", instance.k, instance.frames_url);
+                eprintln!(
+                    "[{}] --no-launch: enter Play mode in the editor; it connects to {}",
+                    instance.k, instance.frames_url
+                );
                 None
             }
         };
@@ -157,10 +171,18 @@ async fn main() -> Result<()> {
 
     // 7–8: each Unity connects to its Orin, and the Orin says so.
     for instance in &mut instances {
-        wait_registered(&mut instance.orin, &mut instance.orin_child, instance.player.as_mut(), connect_timeout)
-            .await
-            .with_context(|| format!("instance {}", instance.k))?;
-        eprintln!("[{}] Unity has registered with the synthetic Orin", instance.k);
+        wait_registered(
+            &mut instance.orin,
+            &mut instance.orin_child,
+            instance.player.as_mut(),
+            connect_timeout,
+        )
+        .await
+        .with_context(|| format!("instance {}", instance.k))?;
+        eprintln!(
+            "[{}] Unity has registered with the synthetic Orin",
+            instance.k
+        );
     }
 
     let result = run(&mut instances, &args).await;
@@ -202,8 +224,12 @@ fn instance_ports(args: &Args, count: usize) -> Result<Vec<(u16, u16)>> {
     for k in 0..count {
         let offset = u16::try_from(2 * k)?;
         let pair = (
-            args.orin_port.checked_add(offset).ok_or_else(|| anyhow!("instance {k}'s control port passes 65535"))?,
-            args.unity_port.checked_add(offset).ok_or_else(|| anyhow!("instance {k}'s frame port passes 65535"))?,
+            args.orin_port
+                .checked_add(offset)
+                .ok_or_else(|| anyhow!("instance {k}'s control port passes 65535"))?,
+            args.unity_port
+                .checked_add(offset)
+                .ok_or_else(|| anyhow!("instance {k}'s frame port passes 65535"))?,
         );
         if !seen.insert(pair.0) || !seen.insert(pair.1) {
             bail!(
@@ -263,7 +289,10 @@ impl Simulation {
     fn new(args: &Args, out: &Path, seed: u64, k: usize) -> Result<Simulation> {
         // The cart always starts at the rail's center, 50% (2): only the
         // pole's angle is the run's to choose.
-        let start = Pose { cart: 0.0, pole: args.start };
+        let start = Pose {
+            cart: 0.0,
+            pole: args.start,
+        };
         let physics_config = physics_config(args);
         let mut physics = Physics::load(&physics_config)?;
         // The reset zeroes ctrl: the cart is at rest until the first
@@ -293,7 +322,10 @@ impl Simulation {
         let path = out.join("states.csv");
         let file = File::create(&path).with_context(|| format!("creating {}", path.display()))?;
         let mut csv = BufWriter::new(file);
-        writeln!(csv, "episode,id,time,cart,pole,left_x,left_y,right_x,right_y,pivot_x,pivot_y,end_x,end_y")?;
+        writeln!(
+            csv,
+            "episode,id,time,cart,pole,left_x,left_y,right_x,right_y,pivot_x,pivot_y,end_x,end_y"
+        )?;
         let driver = match args.no_render {
             true => format!("--control {:?}", args.control),
             false => "the trainer's commands".to_string(),
@@ -415,7 +447,11 @@ impl Simulation {
     // files.
     fn log(&mut self, id: u32, capture: &Capture, newest: Option<&PoolRow>) -> Result<()> {
         let observed = match newest {
-            Some(row) => row[1..].iter().map(|v| v.to_string()).collect::<Vec<_>>().join(","),
+            Some(row) => row[1..]
+                .iter()
+                .map(|v| v.to_string())
+                .collect::<Vec<_>>()
+                .join(","),
             None => ",".repeat(7),
         };
         writeln!(
@@ -525,10 +561,16 @@ async fn run(instances: &mut [Instance], args: &Args) -> Result<()> {
     let mut advance: Vec<usize> = (0..instances.len()).collect();
     loop {
         for &k in &advance {
-            instances[k].send().await.with_context(|| format!("instance {k}"))?;
+            instances[k]
+                .send()
+                .await
+                .with_context(|| format!("instance {k}"))?;
         }
         for &k in &advance {
-            instances[k].collect(reply_timeout).await.with_context(|| format!("instance {k}"))?;
+            instances[k]
+                .collect(reply_timeout)
+                .await
+                .with_context(|| format!("instance {k}"))?;
             pending[k] = true;
         }
         let asked = Instant::now();
@@ -552,7 +594,10 @@ async fn run(instances: &mut [Instance], args: &Args) -> Result<()> {
         }
         if answers.iter().any(|answer| answer.next == Next::Stop) {
             let observations: u32 = instances.iter().map(|instance| instance.id + 1).sum();
-            eprintln!("the trainer stopped the run after {observations} observations -> {}", args.out.display());
+            eprintln!(
+                "the trainer stopped the run after {observations} observations -> {}",
+                args.out.display()
+            );
             break;
         }
         advance.clear();
@@ -573,7 +618,9 @@ async fn run(instances: &mut [Instance], args: &Args) -> Result<()> {
                 // next capture is the new episode's first, with ids
                 // counting on.
                 Next::Reset => {
-                    let seed = answer.seed.ok_or_else(|| anyhow!("a reset without a seed reached the run"))?;
+                    let seed = answer
+                        .seed
+                        .ok_or_else(|| anyhow!("a reset without a seed reached the run"))?;
                     instance.sim.reset(seed)?;
                     reset_orin(&mut instance.orin, instance.sim.pool_gaps, reply_timeout)
                         .await
@@ -601,7 +648,10 @@ async fn run(instances: &mut [Instance], args: &Args) -> Result<()> {
         }
     }
     if !warned.is_empty() {
-        bail!("MuJoCo warned ({}); the states cannot be trusted", warned.join(", "));
+        bail!(
+            "MuJoCo warned ({}); the states cannot be trusted",
+            warned.join(", ")
+        );
     }
     Ok(())
 }
@@ -692,17 +742,31 @@ fn drive_config(
     max_speed: f64,
 ) -> Result<Config> {
     if full_steps_per_rev.checked_mul(microsteps).is_none() {
-        bail!("--full-steps-per-rev {full_steps_per_rev} × --microsteps {microsteps} does not fit a u32");
+        bail!(
+            "--full-steps-per-rev {full_steps_per_rev} × --microsteps {microsteps} does not fit a u32"
+        );
     }
     let um_per_s = (max_speed * 1e6).round();
     if !(1.0..=f64::from(u32::MAX)).contains(&um_per_s) {
-        bail!("the cart top speed {max_speed} m/s is not a whole number of µm/s from 1 to {}", u32::MAX);
+        bail!(
+            "the cart top speed {max_speed} m/s is not a whole number of µm/s from 1 to {}",
+            u32::MAX
+        );
     }
-    let config =
-        Config { full_steps_per_rev, microsteps, belt_um_per_rev, max_speed_um_per_s: um_per_s as u32, jump_limit };
-    let rate = u64::from(config.max_speed_um_per_s) * u64::from(config.pulses_per_rev()) / u64::from(belt_um_per_rev);
+    let config = Config {
+        full_steps_per_rev,
+        microsteps,
+        belt_um_per_rev,
+        max_speed_um_per_s: um_per_s as u32,
+        jump_limit,
+    };
+    let rate = u64::from(config.max_speed_um_per_s) * u64::from(config.pulses_per_rev())
+        / u64::from(belt_um_per_rev);
     if rate < 1 || rate > i32::MAX as u64 {
-        bail!("the top pulse rate {rate} pulses/s (cart top speed {max_speed} m/s ÷ metres per pulse) is not from 1 to {}", i32::MAX);
+        bail!(
+            "the top pulse rate {rate} pulses/s (cart top speed {max_speed} m/s ÷ metres per pulse) is not from 1 to {}",
+            i32::MAX
+        );
     }
     Ok(config)
 }
@@ -713,7 +777,10 @@ fn drive_config(
 fn ramp_tick(config: &Config, timestep: f64) -> Result<u32> {
     let micros = (timestep * 1e6).round();
     if !(1.0..=f64::from(u32::MAX)).contains(&micros) {
-        bail!("the timestep {timestep} s is not a whole number of µs from 1 to {}", u32::MAX);
+        bail!(
+            "the timestep {timestep} s is not a whole number of µs from 1 to {}",
+            u32::MAX
+        );
     }
     let tick = micros as u32;
     if config.ramp_limit(tick) < 1 {
@@ -748,7 +815,8 @@ fn screen_window_size(args: &Args) -> Result<Option<Pixels>> {
     let (Some(x), Some(y)) = (args.screen_width, args.screen_height) else {
         return Ok(None);
     };
-    let size = window_size(Pixels { x, y }, args.instance_rows, args.instance_columns).map_err(|error| anyhow!(error))?;
+    let size = window_size(Pixels { x, y }, args.instance_rows, args.instance_columns)
+        .map_err(|error| anyhow!(error))?;
     Ok(Some(size))
 }
 
@@ -757,11 +825,23 @@ fn screen_window_size(args: &Args) -> Result<Option<Pixels>> {
 // instances, The windows). kill_on_drop: an early error return drops the
 // handle, and the player must not outlive the orchestrator that launched
 // it.
-fn launch(k: usize, player: &Path, frames_url: &str, window: Option<(Pixels, Pixels)>) -> Result<Child> {
+fn launch(
+    k: usize,
+    player: &Path,
+    frames_url: &str,
+    window: Option<(Pixels, Pixels)>,
+) -> Result<Child> {
     let mut command = Command::new(player);
     command.arg("-orin").arg(frames_url);
     let mut shown = format!("{} -orin {frames_url}", player.display());
-    if let Some((Pixels { x, y }, Pixels { x: width, y: height })) = window {
+    if let Some((
+        Pixels { x, y },
+        Pixels {
+            x: width,
+            y: height,
+        },
+    )) = window
+    {
         command
             .arg("-popupwindow")
             .arg("-window-position")
@@ -770,7 +850,9 @@ fn launch(k: usize, player: &Path, frames_url: &str, window: Option<(Pixels, Pix
             .arg(width.to_string())
             .arg("-screen-height")
             .arg(height.to_string());
-        shown.push_str(&format!(" -popupwindow -window-position {x},{y} -screen-width {width} -screen-height {height}"));
+        shown.push_str(&format!(
+            " -popupwindow -window-position {x},{y} -screen-width {width} -screen-height {height}"
+        ));
     }
     eprintln!("[{k}] launching {shown}");
     command
@@ -794,8 +876,14 @@ fn launch_orin(
     out: &Path,
     pool_gaps: &[f64; POOL_ENTRIES],
 ) -> Result<Child> {
-    let (program, rest) = command.split_first().ok_or_else(|| anyhow!("--orin needs a command"))?;
-    let gaps = pool_gaps.iter().map(|gap| gap.to_string()).collect::<Vec<_>>().join(",");
+    let (program, rest) = command
+        .split_first()
+        .ok_or_else(|| anyhow!("--orin needs a command"))?;
+    let gaps = pool_gaps
+        .iter()
+        .map(|gap| gap.to_string())
+        .collect::<Vec<_>>()
+        .join(",");
     eprintln!(
         "[{k}] launching synthetic Orin: {} --orchestrator {url} --frames-listen {frames_listen} --out {} --pool-gaps {gaps}",
         command.join(" "),
@@ -838,16 +926,24 @@ async fn bind(port: u16, what: &str) -> Result<(TcpListener, String)> {
 
 // Waits for the next connection; a launched process that exits before
 // connecting fails the wait at once instead of after the timeout.
-async fn accept(listener: &TcpListener, child: &mut Child, who: &str, timeout: Duration) -> Result<TcpStream> {
+async fn accept(
+    listener: &TcpListener,
+    child: &mut Child,
+    who: &str,
+    timeout: Duration,
+) -> Result<TcpStream> {
     let wait = async {
         tokio::select! {
             accepted = listener.accept() => Ok(accepted?.0),
             status = child.wait() => Err(anyhow!("{who} exited before connecting: {status:?}")),
         }
     };
-    tokio::time::timeout(timeout, wait)
-        .await
-        .map_err(|_| anyhow!("no connection from the {who} within {} s", timeout.as_secs()))?
+    tokio::time::timeout(timeout, wait).await.map_err(|_| {
+        anyhow!(
+            "no connection from the {who} within {} s",
+            timeout.as_secs()
+        )
+    })?
 }
 
 // 8: the Orin's {"type": "registered"}, its first message. The Orin or the
@@ -890,19 +986,33 @@ async fn wait_registered(
             }
         }
     };
-    tokio::time::timeout(timeout, wait)
-        .await
-        .map_err(|_| anyhow!("Unity did not register with the synthetic Orin within {} s", timeout.as_secs()))?
+    tokio::time::timeout(timeout, wait).await.map_err(|_| {
+        anyhow!(
+            "Unity did not register with the synthetic Orin within {} s",
+            timeout.as_secs()
+        )
+    })?
 }
 
 // 11: one capture state to the synthetic Orin.
-async fn send_pose(orin: &mut WebSocketStream<TcpStream>, id: u32, capture: &Capture, names: &Names) -> Result<()> {
+async fn send_pose(
+    orin: &mut WebSocketStream<TcpStream>,
+    id: u32,
+    capture: &Capture,
+    names: &Names,
+) -> Result<()> {
     let message = PoseMessage {
         id,
         time: capture.time,
         joints: vec![
-            JointQpos { name: names.cart_joint.clone(), qpos: capture.pose.cart },
-            JointQpos { name: names.pole_joint.clone(), qpos: capture.pose.pole },
+            JointQpos {
+                name: names.cart_joint.clone(),
+                qpos: capture.pose.cart,
+            },
+            JointQpos {
+                name: names.pole_joint.clone(),
+                qpos: capture.pose.pole,
+            },
         ],
     };
     orin.send(Message::text(serde_json::to_string(&message)?))
@@ -912,29 +1022,46 @@ async fn send_pose(orin: &mut WebSocketStream<TcpStream>, id: u32, capture: &Cap
 
 // 14: the Orin's one reply, the pool, newest first. A reply for another
 // id, a pool of the wrong shape, or failed ends the run.
-async fn receive_pool(orin: &mut WebSocketStream<TcpStream>, id: u32, timeout: Duration) -> Result<Vec<PoolRow>> {
+async fn receive_pool(
+    orin: &mut WebSocketStream<TcpStream>,
+    id: u32,
+    timeout: Duration,
+) -> Result<Vec<PoolRow>> {
     let reply = loop {
         let message = tokio::time::timeout(timeout, orin.next())
             .await
-            .map_err(|_| anyhow!("no reply from the synthetic Orin for pose {id} within {} s", timeout.as_secs()))?
+            .map_err(|_| {
+                anyhow!(
+                    "no reply from the synthetic Orin for pose {id} within {} s",
+                    timeout.as_secs()
+                )
+            })?
             .ok_or_else(|| anyhow!("synthetic Orin disconnected"))??;
         match message {
             Message::Text(text) => {
                 break serde_json::from_str::<OrinReply>(text.as_str())
                     .with_context(|| format!("synthetic Orin reply {:?}", text.as_str()))?;
             }
-            Message::Binary(_) => bail!("synthetic Orin sent binary data for pose {id}, expected its reply"),
+            Message::Binary(_) => {
+                bail!("synthetic Orin sent binary data for pose {id}, expected its reply")
+            }
             Message::Close(frame) => bail!("synthetic Orin closed the socket: {frame:?}"),
             _ => {}
         }
     };
     if reply.id != id {
-        bail!("synthetic Orin replied for pose {}, expected {id}", reply.id);
+        bail!(
+            "synthetic Orin replied for pose {}, expected {id}",
+            reply.id
+        );
     }
     // The pool's shape (Contracts): 6 entries, newest first, the newest at
     // age 0 and every older one strictly older.
     if reply.pool.len() != POOL_ENTRIES {
-        bail!("pool {id} has {} entries, expected {POOL_ENTRIES}", reply.pool.len());
+        bail!(
+            "pool {id} has {} entries, expected {POOL_ENTRIES}",
+            reply.pool.len()
+        );
     }
     let ages: Vec<f64> = reply.pool.iter().map(|row| row[0]).collect();
     if ages[0] != 0.0 || ages.windows(2).any(|pair| pair[1] >= pair[0]) {
@@ -950,27 +1077,46 @@ async fn receive_pool(orin: &mut WebSocketStream<TcpStream>, id: u32, timeout: D
 
 // R5–R7: tell the Orin to pre-warm its pool afresh at these gaps, and wait
 // for its {"type": "reset"}, so the next pose meets the new episode's pool.
-async fn reset_orin(orin: &mut WebSocketStream<TcpStream>, gaps: [f64; POOL_ENTRIES], timeout: Duration) -> Result<()> {
-    let message = ResetMessage { kind: "reset", gaps };
+async fn reset_orin(
+    orin: &mut WebSocketStream<TcpStream>,
+    gaps: [f64; POOL_ENTRIES],
+    timeout: Duration,
+) -> Result<()> {
+    let message = ResetMessage {
+        kind: "reset",
+        gaps,
+    };
     orin.send(Message::text(serde_json::to_string(&message)?))
         .await
         .context("sending the reset to the synthetic Orin")?;
     loop {
         let message = tokio::time::timeout(timeout, orin.next())
             .await
-            .map_err(|_| anyhow!("no reset reply from the synthetic Orin within {} s", timeout.as_secs()))?
+            .map_err(|_| {
+                anyhow!(
+                    "no reset reply from the synthetic Orin within {} s",
+                    timeout.as_secs()
+                )
+            })?
             .ok_or_else(|| anyhow!("synthetic Orin disconnected during the reset"))??;
         match message {
             Message::Text(text) => {
                 let reply = serde_json::from_str::<Registered>(text.as_str())
                     .with_context(|| format!("synthetic Orin reset reply {:?}", text.as_str()))?;
                 if reply.kind != "reset" {
-                    bail!("synthetic Orin sent {:?}, expected its reset reply", text.as_str());
+                    bail!(
+                        "synthetic Orin sent {:?}, expected its reset reply",
+                        text.as_str()
+                    );
                 }
                 return Ok(());
             }
-            Message::Binary(_) => bail!("synthetic Orin sent binary data, expected its reset reply"),
-            Message::Close(frame) => bail!("synthetic Orin closed the socket during the reset: {frame:?}"),
+            Message::Binary(_) => {
+                bail!("synthetic Orin sent binary data, expected its reset reply")
+            }
+            Message::Close(frame) => {
+                bail!("synthetic Orin closed the socket during the reset: {frame:?}")
+            }
             _ => {}
         }
     }
@@ -1001,7 +1147,10 @@ async fn stop(mut child: Child, who: &str) -> Result<()> {
     match tokio::time::timeout(CLIENT_EXIT_GRACE, child.wait()).await {
         Ok(status) => eprintln!("{who} exited: {}", status?),
         Err(_) => {
-            child.kill().await.with_context(|| format!("killing the {who}"))?;
+            child
+                .kill()
+                .await
+                .with_context(|| format!("killing the {who}"))?;
             eprintln!("{who} killed after {} s", CLIENT_EXIT_GRACE.as_secs());
         }
     }

@@ -23,7 +23,14 @@ impl Dm542Signals {
     /// is `Negative` only for a negative rate; at rate 0 no pulse is sent,
     /// so DIR has no effect.
     pub const fn from_rate(rate: i32) -> Dm542Signals {
-        let dir = if rate < 0 { Direction::Negative } else { Direction::Positive };
-        Dm542Signals { dir, step_rate: rate.unsigned_abs() }
+        let dir = if rate < 0 {
+            Direction::Negative
+        } else {
+            Direction::Positive
+        };
+        Dm542Signals {
+            dir,
+            step_rate: rate.unsigned_abs(),
+        }
     }
 }

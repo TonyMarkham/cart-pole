@@ -1,7 +1,7 @@
 use crate::{
-    await_close, cart_velocity, drive_config,
-    meters_per_pulse, ramp_tick,
+    await_close, cart_velocity, drive_config, meters_per_pulse,
     pole_message::PoleMessage,
+    ramp_tick,
     registered::ResetMessage,
     sites_message::SitesMessage,
     timing::Timing,
@@ -33,8 +33,14 @@ fn an_answer_is_continue_reset_or_stop() {
         &all,
     )
     .unwrap();
-    assert_eq!((answers[0].instance, answers[0].command, answers[0].next), (0, -26_667, Next::Continue));
-    assert_eq!((answers[1].instance, answers[1].next, answers[1].seed), (2, Next::Reset, Some(u64::MAX)));
+    assert_eq!(
+        (answers[0].instance, answers[0].command, answers[0].next),
+        (0, -26_667, Next::Continue)
+    );
+    assert_eq!(
+        (answers[1].instance, answers[1].next, answers[1].seed),
+        (2, Next::Reset, Some(u64::MAX))
+    );
     let stop = r#"{"instance": 0, "command": 0, "next": "stop"}, {"instance": 1, "command": 0, "next": "stop"}"#;
     assert!(parse_answers(&line(stop), &[true, true]).is_ok());
 }
@@ -79,9 +85,22 @@ fn the_request_is_the_run_and_the_answer_holds_its_values() -> Result<()> {
 fn a_line_may_answer_some_pending_instances() {
     let answer = |k| format!(r#"{{"instance": {k}, "command": 5, "next": "continue"}}"#);
     assert!(parse_answers(&line(&answer(1)), &[true, true, true]).is_ok());
-    assert!(parse_answers(&line(&answer(1)), &[true, false, true]).is_err(), "not pending");
-    assert!(parse_answers(&line(&answer(3)), &[true, true, true]).is_err(), "no such instance");
-    assert!(parse_answers(&line(&format!("{}, {}", answer(0), answer(0))), &[true, true]).is_err(), "twice");
+    assert!(
+        parse_answers(&line(&answer(1)), &[true, false, true]).is_err(),
+        "not pending"
+    );
+    assert!(
+        parse_answers(&line(&answer(3)), &[true, true, true]).is_err(),
+        "no such instance"
+    );
+    assert!(
+        parse_answers(
+            &line(&format!("{}, {}", answer(0), answer(0))),
+            &[true, true]
+        )
+        .is_err(),
+        "twice"
+    );
     assert!(parse_answers(&line(""), &[true]).is_err(), "no answer");
 }
 
@@ -100,9 +119,15 @@ fn a_bad_answer_is_refused() {
         r#"{"instance": 0, "command": 0, "next": "stop"}"#,
         r#"{"instance": 0, "command": 0, "next": "stop"}, {"instance": 1, "command": 0, "next": "continue"}"#,
     ] {
-        assert!(parse_answers(&line(answers), &pending).is_err(), "{answers} was accepted");
+        assert!(
+            parse_answers(&line(answers), &pending).is_err(),
+            "{answers} was accepted"
+        );
     }
-    assert!(parse_answers(r#"{"command": 0, "next": "continue"}"#, &[true]).is_err(), "the one-instance line");
+    assert!(
+        parse_answers(r#"{"command": 0, "next": "continue"}"#, &[true]).is_err(),
+        "the one-instance line"
+    );
 }
 
 // SplitMix64's published outputs for seed 0 (the reference
@@ -122,7 +147,10 @@ fn latencies_lie_in_the_band() {
         let mut timing = Timing::new(42, (min, max), (20.0, 30.0)).unwrap();
         for _ in 0..10_000 {
             let ms = timing.next_latency_ms();
-            assert!((min..max).contains(&ms), "{ms} ms is outside [{min}, {max})");
+            assert!(
+                (min..max).contains(&ms),
+                "{ms} ms is outside [{min}, {max})"
+            );
         }
     }
 }
@@ -134,7 +162,10 @@ fn gaps_follow_the_command_rate() {
     let mut timing = Timing::new(42, (8.0, 15.0), (20.0, 30.0)).unwrap();
     for _ in 0..10_000 {
         let ms = timing.next_gap_ms();
-        assert!(1000.0 / 30.0 < ms && ms <= 50.0, "{ms} ms is outside (33.33, 50]");
+        assert!(
+            1000.0 / 30.0 < ms && ms <= 50.0,
+            "{ms} ms is outside (33.33, 50]"
+        );
     }
 }
 
@@ -145,10 +176,16 @@ fn gaps_follow_the_command_rate() {
 fn the_band_scales_the_same_draw() {
     let timing = |latency, rate| Timing::new(0, latency, rate).unwrap();
     let u = (0xE220_A839_7B1D_CDAF_u64 >> 11) as f64 / 9_007_199_254_740_992.0;
-    assert_eq!(timing((8.0, 15.0), (20.0, 30.0)).next_latency_ms(), 8.0 + 7.0 * u);
+    assert_eq!(
+        timing((8.0, 15.0), (20.0, 30.0)).next_latency_ms(),
+        8.0 + 7.0 * u
+    );
     assert!((timing((8.0, 15.0), (20.0, 30.0)).next_latency_ms() - 14.183).abs() < 5e-4);
     assert_eq!(timing((10.0, 10.0), (20.0, 30.0)).next_latency_ms(), 10.0);
-    assert_eq!(timing((8.0, 15.0), (20.0, 30.0)).next_gap_ms(), 1000.0 / (20.0 + 10.0 * u));
+    assert_eq!(
+        timing((8.0, 15.0), (20.0, 30.0)).next_gap_ms(),
+        1000.0 / (20.0 + 10.0 * u)
+    );
     assert!((timing((8.0, 15.0), (20.0, 30.0)).next_gap_ms() - 34.682).abs() < 5e-4);
     assert_eq!(timing((8.0, 15.0), (25.0, 25.0)).next_gap_ms(), 40.0);
 }
@@ -161,7 +198,10 @@ fn the_latency_and_the_gap_are_drawn_in_turn_from_one_stream() {
     let mut outputs = Timing::new(0, (8.0, 15.0), (20.0, 30.0)).unwrap();
     let unit = |output: u64| (output >> 11) as f64 / 9_007_199_254_740_992.0;
     assert_eq!(timing.next_latency_ms(), unit(outputs.next_u64()));
-    assert_eq!(timing.next_gap_ms(), 1000.0 / (1000.0 + 1000.0 * unit(outputs.next_u64())));
+    assert_eq!(
+        timing.next_gap_ms(),
+        1000.0 / (1000.0 + 1000.0 * unit(outputs.next_u64()))
+    );
 }
 
 #[test]
@@ -173,7 +213,10 @@ fn a_band_outside_its_limits_is_refused() {
     assert!(Timing::new(0, (f64::NAN, 8.0), rate).is_err());
     let latency = (8.0, 15.0);
     assert!(Timing::new(0, latency, (30.0, 20.0)).is_err());
-    assert!(Timing::new(0, latency, (0.0, 30.0)).is_err(), "a rate of 0 is no gap at all");
+    assert!(
+        Timing::new(0, latency, (0.0, 30.0)).is_err(),
+        "a rate of 0 is no gap at all"
+    );
     assert!(Timing::new(0, latency, (20.0, f64::INFINITY)).is_err());
     assert!(Timing::new(0, latency, (f64::NAN, 30.0)).is_err());
 }
@@ -196,7 +239,10 @@ fn the_same_seed_gives_the_same_draws() {
         assert_eq!(a.next_latency_ms().to_bits(), b.next_latency_ms().to_bits());
         assert_eq!(a.next_gap_ms().to_bits(), b.next_gap_ms().to_bits());
     }
-    assert_eq!(a.next_pool_gaps().map(f64::to_bits), b.next_pool_gaps().map(f64::to_bits));
+    assert_eq!(
+        a.next_pool_gaps().map(f64::to_bits),
+        b.next_pool_gaps().map(f64::to_bits)
+    );
 }
 
 // R4: a reseeded generator keeps its bands and repeats a fresh one, so an
@@ -208,15 +254,27 @@ fn a_reseed_repeats_a_fresh_start() {
     used.next_latency_ms();
     let mut reseeded = used.reseeded(7);
     let mut fresh = Timing::new(7, (8.0, 15.0), (20.0, 30.0)).unwrap();
-    assert_eq!(reseeded.next_pool_gaps().map(f64::to_bits), fresh.next_pool_gaps().map(f64::to_bits));
-    assert_eq!(reseeded.next_latency_ms().to_bits(), fresh.next_latency_ms().to_bits());
+    assert_eq!(
+        reseeded.next_pool_gaps().map(f64::to_bits),
+        fresh.next_pool_gaps().map(f64::to_bits)
+    );
+    assert_eq!(
+        reseeded.next_latency_ms().to_bits(),
+        fresh.next_latency_ms().to_bits()
+    );
 }
 
 // R5 on the wire: the new pool's six gaps, no seed: the Orin draws nothing.
 #[test]
 fn a_reset_carries_the_pools_gaps() -> Result<()> {
-    let message = ResetMessage { kind: "reset", gaps: [40.0, 41.0, 42.0, 43.0, 44.0, 45.5] };
-    assert_eq!(serde_json::to_string(&message)?, r#"{"type":"reset","gaps":[40.0,41.0,42.0,43.0,44.0,45.5]}"#);
+    let message = ResetMessage {
+        kind: "reset",
+        gaps: [40.0, 41.0, 42.0, 43.0, 44.0, 45.5],
+    };
+    assert_eq!(
+        serde_json::to_string(&message)?,
+        r#"{"type":"reset","gaps":[40.0,41.0,42.0,43.0,44.0,45.5]}"#
+    );
     Ok(())
 }
 
@@ -225,8 +283,13 @@ fn a_reset_carries_the_pools_gaps() -> Result<()> {
 // 32) = 15 µm a pulse: 26,667 × 15 µm = 0.400005; 56,666 × 15 µm = 0.84999.
 #[test]
 fn cart_velocity_is_step_rate_times_15_um_signed_by_dir() {
-    let config =
-        Config { full_steps_per_rev: 200, microsteps: 32, belt_um_per_rev: 96_000, max_speed_um_per_s: 850_000, jump_limit: 1 };
+    let config = Config {
+        full_steps_per_rev: 200,
+        microsteps: 32,
+        belt_um_per_rev: 96_000,
+        max_speed_um_per_s: 850_000,
+        jump_limit: 1,
+    };
     let m = meters_per_pulse(&config);
     assert_eq!(m, 15e-6);
     let velocity = |dir, step_rate| cart_velocity(Dm542Signals { dir, step_rate }, m);
@@ -245,9 +308,18 @@ fn the_drive_config_takes_the_cart_top_speed_from_mujoco() -> Result<()> {
     let config = drive_config(200, 32, 96_000, 1, 2.01)?;
     assert_eq!(config.max_speed_um_per_s, 2_010_000);
     let config = drive_config(200, 32, 96_000, 1, 0.36)?;
-    assert_eq!((config.max_speed_um_per_s, config.max_rate()), (360_000, 24_000));
-    assert!(drive_config(200, 32, 96_000, 1, 0.000_01).is_err(), "rounds to a top pulse rate of 0");
-    assert!(drive_config(200, 32, 1, 1, 1.0).is_err(), "a top pulse rate past an i32");
+    assert_eq!(
+        (config.max_speed_um_per_s, config.max_rate()),
+        (360_000, 24_000)
+    );
+    assert!(
+        drive_config(200, 32, 96_000, 1, 0.000_01).is_err(),
+        "rounds to a top pulse rate of 0"
+    );
+    assert!(
+        drive_config(200, 32, 1, 1, 1.0).is_err(),
+        "a top pulse rate past an i32"
+    );
     assert!(drive_config(200, 32, 96_000, 1, f64::NAN).is_err());
     Ok(())
 }
@@ -277,8 +349,14 @@ fn the_windows_fill_the_grid_row_by_row() {
         .map(|k| grid_position(k, 4, step, origin))
         .map(|p| (p.x, p.y))
         .collect();
-    assert_eq!(places, [(0, 0), (960, 0), (1920, 0), (2880, 0), (0, 752), (960, 752)]);
-    assert_eq!(grid_position(5, 4, step, Pixels { x: -100, y: 40 }), Pixels { x: 860, y: 792 });
+    assert_eq!(
+        places,
+        [(0, 0), (960, 0), (1920, 0), (2880, 0), (0, 752), (960, 752)]
+    );
+    assert_eq!(
+        grid_position(5, 4, step, Pixels { x: -100, y: 40 }),
+        Pixels { x: 860, y: 792 }
+    );
 }
 
 // Filling the screen (synthetic-loop-dia.md, Training instances, The
@@ -293,10 +371,16 @@ fn the_windows_fill_the_screen() {
     let last = grid_position(5, 3, size, Pixels { x: 0, y: 0 });
     assert_eq!((last.x + size.x, last.y + size.y), (3840, 2112));
     // 4 columns × 3 rows, and 1 × 1, env_check's one window.
-    assert_eq!(window_size(screen, 3, 4).unwrap(), Pixels { x: 960, y: 704 });
+    assert_eq!(
+        window_size(screen, 3, 4).unwrap(),
+        Pixels { x: 960, y: 704 }
+    );
     assert_eq!(window_size(screen, 1, 1).unwrap(), screen);
     // A division that does not come out whole rounds down: 1000 ÷ 3 = 333.
-    assert_eq!(window_size(Pixels { x: 1000, y: 1000 }, 3, 3).unwrap(), Pixels { x: 333, y: 333 });
+    assert_eq!(
+        window_size(Pixels { x: 1000, y: 1000 }, 3, 3).unwrap(),
+        Pixels { x: 333, y: 333 }
+    );
 }
 
 // A window under 1 pixel leaves nothing to watch.
@@ -364,8 +448,20 @@ fn a_pool_entry_carries_its_captures_time_sites_and_pole() -> Result<()> {
         right_cart: [0.025, -0.045, 0.05],
     };
     let pool = [[0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8]];
-    let pole = PoleMessage { speed: -1.5, angle: 7.0, com: [0.1, 0.2, 0.3], hinge: [0.4, 0.5, 0.6] };
-    let entry = PoolEntry { instance: 2, id: 7, time: 0.014, pool: &pool, sites: &sites, pole: &pole };
+    let pole = PoleMessage {
+        speed: -1.5,
+        angle: 7.0,
+        com: [0.1, 0.2, 0.3],
+        hinge: [0.4, 0.5, 0.6],
+    };
+    let entry = PoolEntry {
+        instance: 2,
+        id: 7,
+        time: 0.014,
+        pool: &pool,
+        sites: &sites,
+        pole: &pole,
+    };
     assert_eq!(
         serde_json::to_string(&entry)?,
         concat!(

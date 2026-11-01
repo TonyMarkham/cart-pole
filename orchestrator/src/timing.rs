@@ -29,18 +29,30 @@ impl Timing {
     pub fn new(seed: u64, latency_ms: (f64, f64), rate_hz: (f64, f64)) -> Result<Timing> {
         let (low, high) = latency_ms;
         if !(low.is_finite() && high.is_finite() && 0.0 <= low && low <= high) {
-            bail!("the latency band is 0 ≤ --rnd-delay-min ≤ --rnd-delay-max ms, finite; got {low} and {high}");
+            bail!(
+                "the latency band is 0 ≤ --rnd-delay-min ≤ --rnd-delay-max ms, finite; got {low} and {high}"
+            );
         }
         let (low, high) = rate_hz;
         if !(low.is_finite() && high.is_finite() && 0.0 < low && low <= high) {
-            bail!("the command rate's band is 0 < --command-rate-min ≤ --command-rate-max Hz, finite; got {low} and {high}");
+            bail!(
+                "the command rate's band is 0 < --command-rate-min ≤ --command-rate-max Hz, finite; got {low} and {high}"
+            );
         }
-        Ok(Timing { state: seed, latency_ms, rate_hz })
+        Ok(Timing {
+            state: seed,
+            latency_ms,
+            rate_hz,
+        })
     }
 
     /// The same bands from a new seed (R4).
     pub fn reseeded(&self, seed: u64) -> Timing {
-        Timing { state: seed, latency_ms: self.latency_ms, rate_hz: self.rate_hz }
+        Timing {
+            state: seed,
+            latency_ms: self.latency_ms,
+            rate_hz: self.rate_hz,
+        }
     }
 
     /// The next 64-bit SplitMix64 output.

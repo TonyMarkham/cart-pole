@@ -23,7 +23,10 @@ pub struct Ramp {
 impl Ramp {
     /// At rest: command 0, sent rate 0.
     pub const fn new() -> Ramp {
-        Ramp { command: 0, rate: 0 }
+        Ramp {
+            command: 0,
+            rate: 0,
+        }
     }
 
     /// Takes one command, pulses/s (sign = direction), clamped to the top

@@ -3,6 +3,7 @@ pub(crate) const VIEWER_DIR: &str = "pages/viewer";
 pub(crate) const ARDUINO_PAGE_DIR: &str = "pages/arduino";
 pub(crate) const SETTINGS_PATH: &str = "settings.toml";
 pub(crate) const HELLO_ROUTE: &str = "/";
+pub(crate) const CALIBRATE_ROUTE: &str = "/calibrate";
 pub(crate) const VIEWER_ROUTE: &str = "/viewer";
 pub(crate) const WS_ROUTE: &str = "/ws";
 pub(crate) const IMAGE_ROUTE: &str = "/image";

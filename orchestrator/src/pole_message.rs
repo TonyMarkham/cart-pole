@@ -17,6 +17,11 @@ pub struct PoleMessage {
 
 impl From<PoleState> for PoleMessage {
     fn from(pole: PoleState) -> PoleMessage {
-        PoleMessage { speed: pole.speed, angle: pole.angle, com: pole.com, hinge: pole.hinge }
+        PoleMessage {
+            speed: pole.speed,
+            angle: pole.angle,
+            com: pole.com,
+            hinge: pole.hinge,
+        }
     }
 }

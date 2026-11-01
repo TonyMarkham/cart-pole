@@ -32,7 +32,8 @@ impl Config {
     /// The top pulse rate, pulses/s (rounded down, so the cart never
     /// exceeds `max_speed_um_per_s`).
     pub const fn max_rate(&self) -> i32 {
-        (self.max_speed_um_per_s as u64 * self.pulses_per_rev() as u64 / self.belt_um_per_rev as u64) as i32
+        (self.max_speed_um_per_s as u64 * self.pulses_per_rev() as u64
+            / self.belt_um_per_rev as u64) as i32
     }
 
     /// The most the sent rate may change in a tick of `micros` µs,

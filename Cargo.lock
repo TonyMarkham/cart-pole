@@ -122,6 +122,7 @@ dependencies = [
  "embedded-hal 1.0.0",
  "panic-halt",
  "ra4m1",
+ "thiserror",
  "toml",
  "unor4-hal",
 ]
