@@ -435,9 +435,16 @@ swing-up, Gymnasium's `CartPole-v1`) to 40 s (`InvertedPendulum-v5`).
 
 **The policy sees its last commands** (user, 2026-10-24, from NFQ2.0's
 real cart-pole, `reward-research.md`; run 2 on). The observation is the
-pool's 30 floats, then the actions a of the last 6 commands, newest
-first: 36 floats. Before an episode's first command they are 0, the
-command for standing still, as a reset leaves the cart. Why:
+pool's 30 floats, each age divided by `[observation.pool_and_commands]
+age_unit_ms` (1,000 today, so in seconds; user, 2026-11-01), then the
+actions a of the last 6 commands, newest first: 36 floats. The pool on the
+wire keeps its ages in −ms. Why the division: a network multiplies each
+input by a weight, so one input hundreds of times larger than the rest
+swamps them. In run `20261101_154007` the ages reached −246 while the
+marker positions stayed within ±1, and the actor's randomness sat pinned at
+its top limit for its first 80,000 steps (`trainer-observations.md`). Before an
+episode's first command the actions are 0, the
+command for standing still, as a reset leaves the cart. Why the commands:
 - **The commands say how the cart is moving.** The command is the
   stepper's pulse rate, so the newest command sets the cart's speed now,
   and the ones before it say how it got there. The markers show that only
@@ -573,6 +580,17 @@ redraws made SAC's update wait; with the players drawing only when asked,
 the trainer's turn is about 17 ms for 1 or 6 instances. A time-limit truncation is
 not an end: SAC keeps valuing the state it stopped in, and only the
 episode end (*The episode end*) ends the value.
+
+**The randomness bonus** (user, 2026-11-01). SAC pays the policy for acting
+randomly, on top of the reward. Each step's value is
+`Q_target = r + γ (Q_next − α log π)` while the episode continues and
+`Q_target = r` at an episode end: `Q` is the critic's score for the situation,
+`r` the reward, `γ` the discount, `α` the bonus's weight, and `log π` how sure
+the policy was of its action, high when very sure. So when `α log π` is larger
+than the reward, each step alive costs more than it earns, and ending the
+episode is the better deal. The reward here averages about 0.06 a step, so `α`
+starts small, at `[sac] ent_coef`: `"auto_0.1"`, tuned as usual from 0.1.
+Stable-Baselines3's own `"auto"` starts at 1.0.
 
 **The discount** (user, 2026-10-24, `reward-research.md`; run 2 on; the
 value moved with the command rate, 2026-10-30): γ = 0.9934, `gym.toml`'s

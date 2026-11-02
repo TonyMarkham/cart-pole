@@ -2038,3 +2038,114 @@ fix.
 ```
 uv run --project trainer python trainer/src/train.py
 ```
+
+## Run `20261101_154007`: the policy learned to hit the wall on purpose
+
+The first long run on DeepMind's reward (`__synthetic__/trainer/python/gym.toml`,
+12 instances), stopped at 247,572 steps. By the end every episode drove right
+at about 0.65 m/s and hit the strike gap in about 22 steps.
+
+| Steps | Episode length | Score per episode | Near upright (within 20°) |
+|---|---|---|---|
+| 0-80,000 | about 155 steps, both walls | 7-12 (best 93) | up to 0.8% of steps |
+| 80,000-90,000 | 315 | 20.6 (best 141) | 0.66% |
+| 130,000 | 81, right wall only | 0.8 | 0 |
+| 190,000+ | 22, right wall only | 0.12 | 0 |
+
+### Why ending the episode paid
+
+SAC pays the policy for acting randomly, on top of the reward:
+
+- While the episode continues: `Q_target = r + γ (Q_next − α log π)`
+- When it ends: `Q_target = r`
+
+`Q` is the critic's score for the situation, `r` the reward, `γ` the discount,
+`α` the weight on randomness, and `log π` how sure the policy was of its action,
+high when very sure. When `α log π` is larger than the reward, each step alive
+costs more than it earns, and an episode's end stops the cost.
+
+Read from the run's snapshots, on the same observations:
+
+| Steps | α | log π | `−α log π` a step | Critic, hanging still | Critic, at the wall |
+|---|---|---|---|---|---|
+| 10,008 | 1.08 | +4.62 | −4.97 | −26 | −26 |
+| 80,004 | 1.92 | +4.59 | −8.83 | −186 | −183 |
+| 90,000 | 1.86 | −0.68 | +1.26 | −163 | −159 |
+| 190,008 | 0.90 | +0.45 | −0.40 | −57 | −27 |
+
+The reward was about 0.06 a step, so at step 80,004 the penalty was about 150
+times larger. This run says nothing either way about DeepMind's reward.
+
+### Why the actor was so sure
+
+It wasn't sure: its randomness was stuck at the top limit. The actor's command
+is a bell curve squashed into [−1, 1], and Stable-Baselines3 (SB3) limits
+`log_std`, the setting for the curve's width, to at most 2. A curve that wide
+squashes nearly every command to full speed, either way, which looks like great
+certainty: 84% of actions were beyond ±0.9.
+
+The cause is the inputs' scale. The pool's ages reached the network in
+milliseconds, down to −246, beside markers and actions within ±1. An untrained
+actor's raw `log_std`, before the limit, on those inputs, across six seeds:
+
+| Ages given in | Raw `log_std` range |
+|---|---|
+| milliseconds | −4.35 to +12.06 |
+| seconds | −0.17 to +0.11 |
+
+So the seed decides whether a run starts pinned. In this run the raw value was
+5.27 at step 10,008 and dropped below 2 only around step 80,000, when full-rate
+actions fell from 85% to 10% within about 4,000 steps. By then the critic's
+scores were deeply negative, and `α` was slow to fall: at a learning rate of
+0.0001, `log α` moves about 0.0001 an update, and one update per 12 samples made
+only 15,733 updates by step 190,008.
+
+## Change 6: ages in seconds, a smaller randomness weight, more updates (2026-11-01)
+
+| Value | Was | Now | Why |
+|---|---|---|---|
+| `[observation.pool_and_commands] age_unit_ms` | none (raw ms) | 1000 | ages arrive in seconds, on the other inputs' scale |
+| `[sac] ent_coef` | none (SB3's `"auto"`, starting at 1.0) | `"auto_0.1"` | tuned as before, from a start near the reward's size |
+| `[sac] gradient_steps` | 1 | 2 | one update per 6 samples instead of per 12 |
+
+The pool on the wire keeps its ages in ms. A run saved before this cannot
+resume: the observation changed.
+
+### Checked before a run
+
+- **Offline, the old settings against the new, 733 updates, four seeds:** an
+  environment that only draws observations at the run's scales and pays 0.06 a
+  step, no physics. Old: three of four seeds pinned, seed 0 at α 1.0754, log π
+  +4.58 (the run itself: 1.0754, +4.62); the fourth was not. New: none pinned,
+  raw `log_std` −0.09 to −0.12, log π −0.68.
+- **The real loop, 6,000 steps, 12 instances, the same values:** every process
+  exited cleanly. Commands at 95%+ of full rate:
+
+  | Steps | Commands at 95%+ | Mean reward | Mean upright |
+  |---|---|---|---|
+  | 1-1,200 (random) | 5% | 0.010 | 0.011 |
+  | 1,201-2,400 | 4% | 0.028 | 0.035 |
+  | 2,401-3,600 | 3% | 0.037 | 0.045 |
+  | 3,601-4,800 | 4% | 0.048 | 0.061 |
+  | 4,801-6,000 | 3% | 0.067 | 0.088 |
+
+  The trial before this change, with the same random start, showed 79-82% from
+  step 1,201. At step 6,000 (798 updates): α 0.0923, raw `log_std` −0.11, log π
+  −0.68, so the randomness term was +0.063 a step, a small reward for staying
+  alive rather than a cost. 8 of the 12 first episodes reached the time limit.
+
+### What this does not show
+
+798 updates is too few to show balancing. And the wall can still pay: SAC tunes
+`α` until `log π` is about +1 (SB3's target entropy, −1 for one action), so at
+that point `−α log π` is about −α a step. Whether `α` is small by then, against
+the reward, is for a long run to show. Watch for episodes shortening towards one
+wall, and compare `α` (`measure.py`'s entropy table) with the reward per step.
+
+### The command
+
+From the repo root:
+
+```
+uv run --project __synthetic__/trainer/python python __synthetic__/trainer/python/src/train.py
+```

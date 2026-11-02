@@ -168,7 +168,8 @@ class StrikeGapEnd(unittest.TestCase):
 
 class ObservationAndAction(unittest.TestCase):
     def test_observation(self):
-        observation = PoolAndCommands.from_table({"past_commands": 6}, FACTS, "observation.pool_and_commands.")
+        observation = PoolAndCommands.from_table({"past_commands": 6, "age_unit_ms": 1000.0}, FACTS,
+                                                 "observation.pool_and_commands.")
         self.assertEqual(observation.space().shape, (36,))
         self.assertEqual(list(inspect.signature(observation.build).parameters), ["pool", "history"])
         capture = support.fake(1, 0).next_captures()[0]
@@ -180,9 +181,31 @@ class ObservationAndAction(unittest.TestCase):
 
     def test_observation_ages_follow_the_slowest_command_rate(self):
         """The oldest age's bound is 5 of the longest gap: 50 ms at 20 Hz,
-        rounded to the first 2 ms step later."""
-        space = PoolAndCommands.from_table({"past_commands": 0}, FACTS, "observation.pool_and_commands.").space()
-        self.assertAlmostEqual(float(space.low[0]), -5 * 52.0, places=4)
+        rounded to the first 2 ms step later; 0.26 of the 1,000 ms unit."""
+        space = PoolAndCommands.from_table({"past_commands": 0, "age_unit_ms": 1000.0}, FACTS,
+                                           "observation.pool_and_commands.").space()
+        self.assertAlmostEqual(float(space.low[0]), -5 * 52.0 / 1000, places=4)
+
+    def test_observation_divides_every_age_and_nothing_else(self):
+        """Each entry's first float is its age, and a unit of 1,000 divides only
+        those: the markers and the commands stay as they were."""
+        table = {"past_commands": 2, "age_unit_ms": 1000.0}
+        observation = PoolAndCommands.from_table(table, FACTS, "observation.pool_and_commands.")
+        capture = support.fake(1, 0).next_captures()[0]
+        raw = capture.pool.flat()
+        values = observation.build(capture.pool, History.empty(2).push(0.5, TOP // 2))
+        self.assertTrue(observation.space().contains(values))
+        for i, value in enumerate(raw):
+            expected = value / 1000 if i % 5 == 0 else value
+            self.assertAlmostEqual(float(values[i]), expected, places=5)
+        self.assertEqual(float(values[30]), 0.5)
+        self.assertLess(float(values[25]), 0.0)  # the oldest entry's age, not left at 0
+
+    def test_observation_refuses_a_bad_unit(self):
+        for unit in (0.0, -1000.0):
+            with self.assertRaisesRegex(ValueError, "observation.pool_and_commands.age_unit_ms"):
+                PoolAndCommands.from_table({"past_commands": 0, "age_unit_ms": unit}, FACTS,
+                                           "observation.pool_and_commands.")
 
     def test_action(self):
         action = LinearRate.from_table({}, FACTS, "action.linear_rate.")

@@ -94,7 +94,8 @@ structure. Element numbers below are the diagram's messages.
   (20 and 30 Hz by default, user 2026-10-30) set how far apart they are,
   and the trainer sees nothing between them (the diagram's *Nothing happens
   between commands*). A run saved with other rates cannot resume.
-- **T8b — the observation:** the pool's 30 floats, then the actions a of
+- **T8b — the observation:** the pool's 30 floats, each age divided by
+  `age_unit_ms` (1,000 today, so in seconds), then the actions a of
   the last `past_commands` (6) commands, newest first, 0 before an
   episode's first. Never a site (`rl-rewrite-plan.md`, R1).
 - **T8c — the action:** a ∈ [−1, 1], clipped; command = round(a × the
@@ -102,7 +103,8 @@ structure. Element numbers below are the diagram's messages.
 - **T9 — the policy learns by SAC** (the diagram's section of that
   name): Stable-Baselines3's `SAC` with its `MlpPolicy`, on the 3090,
   γ = 0.998 (*The discount*). A truncation is not an end: only an
-  episode end ends the value.
+  episode end ends the value. The randomness weight starts at `[sac]
+  ent_coef`'s value (the diagram's section).
 - **T10 — four plugins on one pattern** (`rl-rewrite-plan.md`, 3.1; the
   diagram's *The trainer's parts*). The reward, the episode end, the
   observation and the action are each one file holding one class, named

@@ -3,6 +3,7 @@ it saves, where) and [sac] (Stable-Baselines3 SAC's arguments by their SB3
 names; synthetic-loop-dia.md, The policy learns by SAC).
 """
 
+import math
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -42,9 +43,27 @@ class Sac:
     train_freq: int
     gradient_steps: int  # >= 1, or -1: one per sample the step took
     net_arch: tuple[int, ...]
+    ent_coef: str | float  # "auto", "auto_<start>" (tuned from that start), or a fixed weight
 
     KEYS = {"device", "learning_starts", "buffer_size", "batch_size", "learning_rate", "gamma", "tau",
-            "train_freq", "gradient_steps", "net_arch"}
+            "train_freq", "gradient_steps", "net_arch", "ent_coef"}
+
+    @staticmethod
+    def read_ent_coef(t: dict) -> str | float:
+        """SB3's three forms; SB3 itself only fails on a bad one at the first update."""
+        value = checks.present(t, "ent_coef", "sac.")
+        if isinstance(value, str):
+            start = value.removeprefix("auto_")
+            if value == "auto":
+                return value
+            if start != value:
+                try:
+                    if math.isfinite(float(start)) and float(start) > 0:
+                        return value
+                except ValueError:
+                    pass
+            raise ValueError(f'sac.ent_coef: "auto", "auto_<start above 0>" or a number, got {value!r}')
+        return checks.number(t, "ent_coef", "sac.", 0.0, None, low_open=True)
 
     @staticmethod
     def from_table(t: dict) -> "Sac":
@@ -70,6 +89,7 @@ class Sac:
             train_freq=checks.whole(t, "train_freq", "sac.", 1),
             gradient_steps=gradient_steps,
             net_arch=tuple(net_arch),
+            ent_coef=Sac.read_ent_coef(t),
         )
 
     def arguments(self) -> dict:
@@ -83,5 +103,6 @@ class Sac:
             "tau": self.tau,
             "train_freq": self.train_freq,
             "gradient_steps": self.gradient_steps,
+            "ent_coef": self.ent_coef,
             "policy_kwargs": {"net_arch": list(self.net_arch)},
         }

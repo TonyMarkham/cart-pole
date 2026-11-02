@@ -72,6 +72,7 @@ plugin = "pool_and_commands"
 
 [observation.pool_and_commands]
 past_commands = {past_commands}
+age_unit_ms = 1000.0
 
 [action]
 plugin = "linear_rate"
@@ -115,6 +116,7 @@ tau = 0.005
 train_freq = 1
 gradient_steps = 1
 net_arch = [16, 16]
+ent_coef = "auto_0.1"
 """
 
 MEASURES = """

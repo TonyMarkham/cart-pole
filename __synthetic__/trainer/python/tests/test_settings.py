@@ -106,6 +106,12 @@ class Loader(unittest.TestCase):
         self.refuses("command_rate_min = 20.0", "command_rate_min = 0.0", r"env\.command_rate_min")
         self.refuses("command_rate_min = 20.0", "command_rate_min = 40.0", r"command_rate_min 40\.0 is above")
         self.refuses("past_commands = 6", "past_commands = -1", r"observation\.pool_and_commands\.past_commands")
+        self.refuses("age_unit_ms = 1000.0", "age_unit_ms = 0", r"observation\.pool_and_commands\.age_unit_ms")
+        self.refuses('ent_coef = "auto_0.1"', 'ent_coef = "auto_"', r"sac\.ent_coef")
+        self.refuses('ent_coef = "auto_0.1"', 'ent_coef = "auto_-1"', r"sac\.ent_coef")
+        self.refuses('ent_coef = "auto_0.1"', 'ent_coef = "manual"', r"sac\.ent_coef")
+        self.refuses('ent_coef = "auto_0.1"', "ent_coef = 0", r"sac\.ent_coef")
+        self.refuses('ent_coef = "auto_0.1"', "", r"sac\.ent_coef: required")
 
     def test_typo_in_plugin_table(self):
         self.refuses("margin = 1.0\nfloor = 0.8", "margin = 1.0\nfloor = 0.8\nzone = 1",
@@ -119,6 +125,7 @@ class Loader(unittest.TestCase):
         settings = Settings.load(REAL_SETTINGS)
         gym = Gym.load(settings.gym, settings.facts(support.rig_values(settings)))
         self.assertEqual(gym.reward.name, "dm_control_cartpole")
+        self.assertEqual(gym.sac.arguments()["ent_coef"], "auto_0.1")
         self.assertEqual(settings.drive.jump_limit, 1_210_937)
         self.assertIn("--jump-limit", settings.command(0, 1))
 

@@ -41,6 +41,13 @@ plugin = "pool_and_commands"
 # real cart-pole needed at least 2 and used 6 (reward-research.md).
 past_commands = 6
 
+# ms: each of the pool's ages is divided by this before the network sees it.
+# 1000 is seconds: the oldest age, about -250 ms, arrives as -0.25, on the scale
+# of the markers (within 1 m) and the actions (within 1). As raw ms the ages pinned
+# the actor's randomness at its limit for 80,000 steps
+# (synthetic-loop-dia.md, The policy sees its last commands).
+age_unit_ms = 1000.0
+
 [action]
 # The policy's action a in [-1, 1] to the command (__synthetic__/trainer/python/src/actions/).
 # linear_rate: a x the top pulse rate (the run's values, from the MJCF and
@@ -128,7 +135,8 @@ runs_dir = "runs"
 
 [sac]
 # Stable-Baselines3's SAC (synthetic-loop-dia.md, The policy learns by
-# SAC). Values are SB3's defaults except learning_starts, device and gamma.
+# SAC). Values are SB3's defaults except device, learning_starts, buffer_size,
+# learning_rate, gamma, gradient_steps and ent_coef.
 
 # "cuda" (the 3090) or "cpu". Both measured the same step time.
 device = "cuda"
@@ -156,11 +164,23 @@ gamma = 0.9934
 # How fast the target critics follow the critics.
 tau = 0.005
 
-# One update (gradient_steps) after every step (train_freq). A step is one
-# step of every training instance; gradient_steps = -1 (SB3: as many
-# updates as samples) keeps one per sample.
+# gradient_steps updates after every train_freq steps. A step is one step of
+# every training instance, so on 12 instances 2 updates are one per 6 samples,
+# about 101 steps/s and 17 updates/s (trainer-observations.md, How many instances
+# to train with, an estimate). 1 was one per 12 samples, 15,733 updates by step
+# 190,008, too few for the randomness weight to move. gradient_steps = -1 (SB3: as
+# many updates as samples) keeps one per sample.
 train_freq = 1
-gradient_steps = 1
+# !!!!! gradient_steps = 1 // Original Value !!!!!
+gradient_steps = 2
+
+# The weight on SAC's randomness bonus. "auto_0.1": tuned as usual, starting at
+# 0.1. SB3's "auto" starts at 1.0, and the reward here is about 0.06 a step, so the
+# bonus outweighed it about 150 to 1 at its worst in run 20261101_154007. A step
+# alive then cost more than an episode's end, so the policy learned to hit the wall
+# (synthetic-loop-dia.md, The randomness bonus). Read only by a new run: a resume
+# keeps the saved model's.
+ent_coef = "auto_0.1"
 
 # The policy's and critics' hidden layers.
 net_arch = [256, 256]
