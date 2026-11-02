@@ -2149,3 +2149,147 @@ From the repo root:
 ```
 uv run --project __synthetic__/trainer/python python __synthetic__/trainer/python/src/train.py
 ```
+
+## Run `20261101_163458`: the policy swings the pole up and balances it
+
+The first run on Change 6's settings, and the first to balance. By the end,
+every episode swung the pole up from hanging in about 2.2 s and then held it
+upright for the rest of the episode, about 18.5 s, without letting it drop.
+The run took all 4,000,008 steps, with no stops and no strikes after its
+first 55 episodes.
+
+### The command
+
+From the repo root:
+
+```
+uv run --project __synthetic__/trainer/python python __synthetic__/trainer/python/src/train.py
+```
+
+It ran from 2026-11-01 16:35 to 2026-11-02 05:28, about **12 h 53 min**
+(read from the run folder's file times), so about 86 steps a second. The
+code was commit `9087b8fd`, with no uncommitted changes (`latest.json`).
+Settings, as copied into the run's folder (`gym_from_0.toml`, the same as
+today's `gym.toml`):
+
+- **Group:** 12 training instances (a 3 x 4 grid), seed 0.
+- **The reward:** DeepMind's (`dm_control_reward.md`), each step
+  r = upright x small_control x small_velocity x centered, between 0 and 1.
+- **The episode:** starts with the pole hanging; ends at a strike gap or at
+  the time limit, which was **500 steps** in this run, about 20.8 s at the
+  mean gap of 41.5 ms (Change 5 and `gym.toml`'s comment still say 460). So
+  an episode's score is at most 500.
+- **SAC:** Change 6's values (ages in seconds, `ent_coef = "auto_0.1"`,
+  `gradient_steps = 2`), with `learning_rate = 0.0001`, `buffer_size =
+  2,000,000`, `learning_starts = 1,200` and `gamma = 0.9934`.
+
+### What happened
+
+8,018 episodes. Measured with `measure.py episodes` (its columns are
+defined at the top of `src/measures/episodes.py`): **Ends** are episodes
+stopped by a strike gap; **Full turns** how far the pole went round, in
+whole turns; **Spinning** episodes of 15 turns or more; **Within** the share
+of all captures with the pole within 20° of upright; **Longest hold** the
+longest unbroken time within 20°, in any episode of the band. A selection of
+the 50,000-step bands:
+
+| Steps | Episodes | Ends | Mean score | Full turns | Spinning | Within 20° | Longest hold |
+|---|---|---|---|---|---|---|---|
+| 0-50k | 116 | 55 | 69.4 | 18.5 | 52 | 6.2% | 1.03 s |
+| 50k-100k | 102 | 0 | 124.7 | 35.5 | 102 | 12.0% | 0.92 s |
+| 100k-150k | 101 | 0 | 162.9 | 20.8 | 72 | 16.7% | 1.41 s |
+| 150k-200k | 97 | 0 | 190.3 | 5.7 | 2 | 10.6% | 1.10 s |
+| 250k-300k | 101 | 0 | 234.6 | 7.5 | 0 | 26.3% | 2.18 s |
+| 350k-400k | 102 | 0 | 264.1 | 7.1 | 0 | 35.5% | 3.41 s |
+| 400k-450k | 101 | 0 | 329.0 | 5.7 | 0 | 55.8% | 10.46 s |
+| 450k-500k | 97 | 0 | 394.9 | 2.5 | 0 | 74.7% | 17.75 s |
+| 500k-550k | 102 | 0 | 415.4 | 1.2 | 0 | 80.2% | 17.95 s |
+| 950k-1,000k | 102 | 0 | 436.2 | 0.9 | 0 | 86.6% | 18.70 s |
+| 1,950k-2,000k | 97 | 0 | 444.9 | 0.8 | 0 | 88.6% | 18.76 s |
+| 2,950k-3,000k | 101 | 0 | 450.7 | 0.8 | 0 | 89.0% | 18.78 s |
+| 3,950k-4,000k | 102 | 0 | 451.9 | 0.8 | 0 | 89.3% | 18.78 s |
+
+In short:
+
+- **No wall-hitting this time.** The strike gap ended 55 episodes, all in
+  the first 50,000 steps; after that, every episode ran to the time limit.
+  This is what run `20261101_154007` lacked: with α (SAC's weight on staying
+  random) starting at 0.1, staying alive never cost more than it earned.
+- **First it spun, then it learned to stop.** Up to 150,000 steps the pole
+  was driven round and round (up to 35.5 turns an episode). By 150,000 the
+  spinning had stopped, and the time near upright grew steadily.
+- **It learned to balance between 400,000 and 500,000 steps.** The longest
+  hold jumped from 3.4 s to 10.5 s and then to 17.8 s, nearly the whole
+  episode after the swing-up. The first episode to score over 400 was
+  episode 924, at 453,852 steps.
+- **After 500,000 steps it only polished.** The score rose slowly from 415
+  to 452, and the full turns fell from 1.2 to 0.8: the swing-up stopped
+  going round and became one swing back and then up.
+
+### What one episode looks like now
+
+Read from MuJoCo's state in the capture record (`captures_from_0.csv`), for
+the 252 whole episodes in its last 200 MB, about the last 120,000 steps
+(median, with the range in brackets):
+
+| What | Value |
+|---|---|
+| Swing-up: time until the pole is first within 20° of upright | 2.25 s (2.18-2.32), 54 steps |
+| After that, share of the episode within 20° | 100% in every episode |
+| Worst tilt from 1 s after arriving to the end | 2.1° (1.4-3.5°) |
+| Worst tilt in the last 10 s | 1.9° (1.2-3.5°) |
+| Cart's farthest from the rail's middle in the last 10 s | 44 mm (23-89 mm) |
+| Commands at 95% of full rate or more | 6.8% (5.8-7.6%) |
+
+So the pole doesn't just stay within 20°: within a second of arriving it
+settles to within about 2-3° of straight up and stays there, and the cart
+stays within a few centimetres of the middle. The ends of the rail are about
+0.44 m away.
+
+### Why the score stops near 452, not 500
+
+The score is now limited by the swing-up, not by the balancing. In those
+same 252 episodes:
+
+- **The 54 swing-up steps** earn about 9 points (7.4-10.4) in all, because
+  the upright factor is small while the pole is low.
+- **The about 446 held steps** earn 0.993 each (0.991-0.995). The factors
+  while held: upright 1.000, small_control 0.996, small_velocity 0.998,
+  centered 1.000. The small loss is the commands and the pole's small
+  movements.
+
+446 x 0.993 + 9 is about 452. A faster swing-up is the only room left
+worth more than a few points.
+
+### How random the actor is
+
+SAC's weight on staying random (α), from `measure.py entropy`:
+
+| Steps | α |
+|---|---|
+| 10,008 | 0.0864 |
+| 100,008 | 0.0216 |
+| 500,004 | 0.0256 |
+| 1,000,008 | 0.0307 |
+| 2,000,004 | 0.0202 |
+| 3,000,000 | 0.0127 |
+| 4,000,008 | 0.0135 |
+
+Change 6 asked whether α would be small, against the reward, once it had
+tuned itself. It was: about 0.013 at the end, against about 0.9 of reward a
+step, so the randomness term is roughly 1.5% of the reward, not the 150
+times of the last run.
+
+### What this does not show
+
+- **Only the synthetic loop.** Every number here is from simulation: the
+  MJCF, the rendered frames and the synthetic detector. Nothing has run on
+  the real rig.
+- **Only seed 0.** One run, one seed. Whether every seed learns to balance,
+  and by about 500,000 steps, is not tested.
+- **The policy was not tested apart from training.** All the numbers are
+  from training episodes, where SAC still picks its commands with some
+  randomness. A run of the saved actor alone, choosing its most likely
+  command each time, has not been made.
+- **The 2-3° hold was measured from MuJoCo's true angle**, which the policy
+  never sees: it acts on the detected markers, with the detector's delay.
