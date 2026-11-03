@@ -3,6 +3,8 @@ members           = [
                       "__live__/arduino/rust/crates/calibration",
                       "__live__/orin/wasm/arduino",
                       "__live__/orin/wasm/calibrate",
+                      "__live__/orin/wasm/lens",
+                      "__live__/orin/wasm/live",
                       "__live__/orin/wasm/viewer",
                       "__synthetic__/orchestrator/rust/crates/arduino",
                       "__synthetic__/orchestrator/rust/crates/orchestrator",

@@ -259,7 +259,7 @@ impl Session {
         }
         match (self.span, self.last_trip) {
             (Some(span), _) if self.centred => format!(
-                "The rail's span is {} pulses, and the cart is at the centre. Measure each stop to fit the camera.",
+                "The rail's span is {} pulses, and the cart is at the centre. Measure its pose, and                  the three at each end, to fit the camera.",
                 grouped(span)
             ),
             (Some(span), Some(_)) => format!(

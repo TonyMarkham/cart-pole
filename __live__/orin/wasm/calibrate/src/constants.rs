@@ -11,11 +11,23 @@ pub(crate) const SPEED_ELEMENT_ID: &str = "speed";
 pub(crate) const STOP_BUTTON_ID: &str = "stop";
 pub(crate) const MEASURE_BUTTON_ID: &str = "measure-here";
 
+/// The pose buttons in each end's box, by stop and pole.
+pub(crate) const POSE_IDLER_HANGING_ID: &str = "pose-idler-hanging";
+pub(crate) const POSE_IDLER_HORIZONTAL_ID: &str = "pose-idler-horizontal";
+pub(crate) const POSE_IDLER_UPRIGHT_ID: &str = "pose-idler-upright";
+pub(crate) const POSE_MOTOR_HANGING_ID: &str = "pose-motor-hanging";
+pub(crate) const POSE_MOTOR_HORIZONTAL_ID: &str = "pose-motor-horizontal";
+pub(crate) const POSE_MOTOR_UPRIGHT_ID: &str = "pose-motor-upright";
+pub(crate) const POSE_CENTRE_HANGING_ID: &str = "pose-centre-hanging";
+
 /// The modal's elements, in `index.html`.
 pub(crate) const MODAL_ID: &str = "modal";
 pub(crate) const MODAL_TITLE_ID: &str = "modal-title";
 pub(crate) const MODAL_STEADY_ID: &str = "modal-steady";
-pub(crate) const MODAL_FORM_ID: &str = "modal-form";
+pub(crate) const MODAL_STEADY_TEXT_ID: &str = "modal-steady-text";
+pub(crate) const MODAL_LIVE_IMAGE_ID: &str = "modal-live-image";
+pub(crate) const MODAL_LIVE_BOXES_ID: &str = "modal-live-boxes";
+pub(crate) const MODAL_LIVE_TEXT_ID: &str = "modal-live-text";
 pub(crate) const MODAL_RUNNING_ID: &str = "modal-running";
 pub(crate) const MODAL_SUMMARY_ID: &str = "modal-summary";
 pub(crate) const MODAL_FIT_ID: &str = "modal-fit";
@@ -32,9 +44,9 @@ pub(crate) const MODAL_IMAGE_ID: &str = "modal-image";
 pub(crate) const MODAL_BOXES_ID: &str = "modal-boxes";
 pub(crate) const MODAL_SUMMARY_TEXT_ID: &str = "modal-summary-text";
 pub(crate) const MODAL_FIT_TEXT_ID: &str = "modal-fit-text";
+pub(crate) const MODAL_ACCEPT_FIT_ID: &str = "modal-accept-fit";
 pub(crate) const MODAL_PROBLEM_TEXT_ID: &str = "modal-problem-text";
-pub(crate) const MODAL_NEXT_ID: &str = "modal-next";
-pub(crate) const MODAL_START_ID: &str = "modal-start";
+pub(crate) const MODAL_CALIBRATE_ID: &str = "modal-calibrate";
 pub(crate) const MODAL_DONE_ID: &str = "modal-done";
 pub(crate) const MODAL_RETRY_ID: &str = "modal-retry";
 pub(crate) const MODAL_CANCEL_ID: &str = "modal-cancel";
@@ -54,6 +66,19 @@ pub(crate) const MEASURE_STATUS_ROUTE: &str = "/calibrate/measure/status";
 pub(crate) const MEASURE_CANCEL_ROUTE: &str = "/calibrate/measure/cancel";
 pub(crate) const MEASURE_ACCEPT_ROUTE: &str = "/calibrate/measure/accept";
 pub(crate) const FIT_ROUTE: &str = "/calibrate/fit";
+pub(crate) const FIT_ACCEPT_ROUTE: &str = "/calibrate/fit/accept";
+pub(crate) const LIVE_START_ROUTE: &str = "/live/start";
+pub(crate) const LIVE_STOP_ROUTE: &str = "/live/stop";
+pub(crate) const LIVE_STATUS_ROUTE: &str = "/live/status";
+
+/// The detector's classes in slot order (`[detector] classes` in the Orin's Python
+/// settings), each with the class of its box in `index.html`.
+pub(crate) const MARKERS: [(&str, &str); 4] = [
+    ("Left", "box-left"),
+    ("Right", "box-right"),
+    ("Pivot", "box-pivot"),
+    ("End", "box-end"),
+];
 
 /// HTTP's "service unavailable", which `/arduino/pins` answers during a move.
 pub(crate) const STATUS_SERVICE_UNAVAILABLE: u16 = 503;

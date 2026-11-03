@@ -31,6 +31,29 @@ pub(crate) const CALIBRATE_MEASURE_STATUS_ROUTE: &str = "/calibrate/measure/stat
 pub(crate) const CALIBRATE_MEASURE_CANCEL_ROUTE: &str = "/calibrate/measure/cancel";
 pub(crate) const CALIBRATE_MEASURE_ACCEPT_ROUTE: &str = "/calibrate/measure/accept";
 pub(crate) const CALIBRATE_FIT_ROUTE: &str = "/calibrate/fit";
+pub(crate) const CALIBRATE_FIT_ACCEPT_ROUTE: &str = "/calibrate/fit/accept";
+
+/// Must match the live page's `public_url`, in its `Trunk.toml`.
+pub(crate) const LIVE_PAGE_ROUTE: &str = "/live";
+pub(crate) const LIVE_PAGE_DIR: &str = "pages/live";
+
+/// Must match the live page's routes, in its `constants.rs`.
+pub(crate) const LIVE_START_ROUTE: &str = "/live/start";
+pub(crate) const LIVE_STOP_ROUTE: &str = "/live/stop";
+pub(crate) const LIVE_STATUS_ROUTE: &str = "/live/status";
+
+/// Must match the lens page's `public_url`, in its `Trunk.toml`.
+pub(crate) const LENS_PAGE_ROUTE: &str = "/lens";
+pub(crate) const LENS_PAGE_DIR: &str = "pages/lens";
+
+/// Must match the lens page's routes, in its `constants.rs`.
+pub(crate) const LENS_START_ROUTE: &str = "/lens/start";
+pub(crate) const LENS_STOP_ROUTE: &str = "/lens/stop";
+pub(crate) const LENS_STATUS_ROUTE: &str = "/lens/status";
+pub(crate) const LENS_SKIP_ROUTE: &str = "/lens/skip";
+pub(crate) const LENS_RESTART_ROUTE: &str = "/lens/restart";
+pub(crate) const LENS_SOLVE_ROUTE: &str = "/lens/solve";
+pub(crate) const LENS_STILL_ROUTE: &str = "/lens/still";
 
 /// The datagram that asks the Arduino for its pin levels: must match the
 /// firmware's `PINS_REQUEST`.

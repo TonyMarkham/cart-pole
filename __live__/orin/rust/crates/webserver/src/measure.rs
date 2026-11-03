@@ -50,6 +50,11 @@ pub(crate) async fn fit(State(arduino): State<ArduinoState>) -> Response {
     forward(&arduino.calibration, true, format!("/fit?span={span}")).await
 }
 
+/// Marks the latest fit as the one to use, though a point is over the limit.
+pub(crate) async fn accept_fit(State(arduino): State<ArduinoState>) -> Response {
+    forward(&arduino.calibration, true, "/fit/accept".to_string()).await
+}
+
 /// What the moves have found, so a refreshed page knows it too, and how often the
 /// page should look at a measurement.
 pub(crate) async fn state(State(arduino): State<ArduinoState>) -> Json<Value> {
@@ -71,7 +76,11 @@ pub(crate) async fn is_measuring(calibration: &CalibrationSettings) -> bool {
     }
 }
 
-async fn forward(calibration: &CalibrationSettings, post: bool, path: String) -> Response {
+pub(crate) async fn forward(
+    calibration: &CalibrationSettings,
+    post: bool,
+    path: String,
+) -> Response {
     match ask(calibration, post, path).await {
         Ok((status, body)) => {
             (status, [(header::CONTENT_TYPE, "application/json")], body).into_response()

@@ -16,6 +16,8 @@ This folder is the workspace pushed to the Orin and built there, so it can't dep
 | `crates/webserver` | Orin | Receives images, pushes them to viewers, serves the pages, asks the Arduino for its pins and asks it to move the cart |
 | `../wasm/arduino` (`arduino-page`) | PC | Runs in the browser, draws the Arduino and its pins, and updates them from each reading |
 | `../wasm/calibrate` (`calibrate-page`) | PC | Runs in the browser, draws the rail, and has the buttons that find its ends and the centre |
+| `../wasm/lens` (`lens-page`) | PC | Runs in the browser: measures the lens with the printed board, held where a red box shows, flat and then turned |
+| `../wasm/live` (`live-page`) | PC | Runs in the browser: the camera's live picture with a box on every marker the detector finds, for aiming the camera |
 | `../wasm/viewer` | PC | Runs in the browser, opens the WebSocket and shows each image |
 
 ## Server routes
@@ -37,11 +39,21 @@ The server listens on port `8080`. On the Orin, that's `http://192.168.0.215:808
 | `/calibrate/centre` | POST | **Moves the cart** to the rail's centre, and answers when it has stopped. `?speed=5000` asks for that many pulses per second |
 | `/calibrate/stop` | POST | Asks the board to end the move under way. 200 means only that the messages left; the move's own request gets the `stopped` answer |
 | `/calibrate/state` | GET | What the moves have found: the span and the stop the cart is at, so a refreshed page knows them too |
-| `/calibrate/measure` | POST | Starts measuring a stop: `?stop=motor&count=30&gap_mm=5`. The centre takes no gap. Refused while the cart is moving |
+| `/calibrate/measure` | POST | Starts measuring a pose: `?stop=motor&pole=horizontal&count=30&gap_mm=5`. The centre takes no gap and has only `pole=hanging`. Refused while the cart is moving. Stops the live view, which has the camera until then |
 | `/calibrate/measure/status` | GET | How the measurement is going, with the latest frame and its boxes |
-| `/calibrate/measure/accept` | POST | Keeps the finished measurement for its stop |
+| `/calibrate/measure/accept` | POST | Keeps the finished measurement for its pose |
 | `/calibrate/measure/cancel` | POST | Ends any measurement, and throws its result away |
-| `/calibrate/fit` | POST | Fits the matrix from the three kept stops and the span, and stores it if it passes |
+| `/calibrate/fit` | POST | Fits the matrix from the seven kept poses and the span, and stores it if it passes |
+| `/live` | GET | The live view: the camera's picture with every marker the detector finds, for aiming the camera |
+| `/live/start` | POST | Starts the live view. Refused while a measurement is running |
+| `/live/stop` | POST | Stops the live view |
+| `/lens` | GET | The lens measurement: a red box over the live picture, with the board's shape dashed inside it, shows where and how to hold the printed board |
+| `/lens/start`, `/lens/stop` | POST | Starts or stops the lens view. Starting stops the live view; refused while a measurement is running |
+| `/lens/status` | GET | The latest frame, the box to fill and the board's shape there, the markers and corners found, and the stills kept. Asking keeps the view on |
+| `/lens/skip` | POST | Moves the box on without keeping a still |
+| `/lens/restart` | POST | Forgets every kept still |
+| `/lens/solve` | POST | OpenCV's `calibrateCamera` on the kept stills; stores `lens.json` |
+| `/live/status` | GET | The latest frame, its boxes, and how often each marker was found lately. Asking keeps the view on: it stops by itself when no page has asked for `[live] idle_stop_s` |
 
 ## The Arduino page
 
@@ -147,7 +159,7 @@ The Orin keeps this folder's contents in `~/orin-cam`. Run every step, in this o
 cargo clippy --workspace --all-targets
 ```
 
-**2. Build the browser pages.** These are members of the repo's root workspace, not this one. Each writes its page and WebAssembly files to its own folder in `pages/`, and `pages/` is not in git, so all three are needed the first time.
+**2. Build the browser pages.** These are members of the repo's root workspace, not this one. Each writes its page and WebAssembly files to its own folder in `pages/`, and `pages/` is not in git, so all five are needed the first time.
 
 ```bash
 cd ../wasm/viewer && trunk build --release && cd ../../rust
@@ -159,6 +171,14 @@ cd ../wasm/arduino && trunk build --release && cd ../../rust
 
 ```bash
 cd ../wasm/calibrate && trunk build --release && cd ../../rust
+```
+
+```bash
+cd ../wasm/live && trunk build --release && cd ../../rust
+```
+
+```bash
+cd ../wasm/lens && trunk build --release && cd ../../rust
 ```
 
 **3. Pack the project.** In Git Bash, this writes `target/orin-calibration.tgz` at the repo's root. Build output stays behind, because the Orin builds its own.

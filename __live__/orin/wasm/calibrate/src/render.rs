@@ -1,8 +1,9 @@
 use crate::{
-    constants::{CART_AT_CENTRE_X, CART_AT_IDLER_X, CART_AT_MOTOR_X, CART_WIDTH},
+    constants::{CART_AT_CENTRE_X, CART_AT_IDLER_X, CART_AT_MOTOR_X, CART_WIDTH, MARKERS},
     entry::Entry,
     fit_report::FitReport,
     frame_boxes::FrameBoxes,
+    live_status::LiveStatus,
     marker_box::MarkerBox,
     marker_summary::MarkerSummary,
     measure_summary::MeasureSummary,
@@ -161,7 +162,51 @@ fn one_box(out: &mut String, class: &str, marker: MarkerBox) -> std::fmt::Result
     )
 }
 
-/// One stop's result. Only numbers are written here.
+/// The live view's boxes: every found marker, named above its box, so the person can
+/// see the whole rig is in the picture. Only this crate's names and numbers are
+/// written here.
+pub(crate) fn live_boxes(status: &LiveStatus) -> Result<String, std::fmt::Error> {
+    let mut out = String::new();
+    write!(
+        out,
+        "<svg viewBox=\"0 0 {} {}\" role=\"img\" \
+         aria-label=\"The boxes the detector found\">",
+        status.width, status.height
+    )?;
+    for (name, class) in MARKERS {
+        if let Some(marker) = live_box(status, name) {
+            one_box(&mut out, class, marker)?;
+            write!(
+                out,
+                "<text class=\"{class}\" x=\"{:.1}\" y=\"{:.1}\">{name}</text>",
+                marker.cx - marker.w / 2.0,
+                marker.cy - marker.h / 2.0 - 4.0
+            )?;
+        }
+    }
+    write!(out, "</svg>")?;
+    Ok(out)
+}
+
+/// The line under the live view: how often each marker was found lately.
+pub(crate) fn live_line(status: &LiveStatus) -> String {
+    let found: Vec<String> = MARKERS
+        .iter()
+        .map(|(name, _)| format!("{name} {}", status.found.get(*name).copied().unwrap_or(0)))
+        .collect();
+    format!(
+        "Live, {:.0} frames a second. Found in the last {} frames: {}.",
+        status.per_s,
+        status.window,
+        found.join(", ")
+    )
+}
+
+fn live_box(status: &LiveStatus, name: &str) -> Option<MarkerBox> {
+    status.boxes.as_ref()?.get(name).copied().flatten()
+}
+
+/// One pose's result. Only numbers are written here.
 pub(crate) fn summary(summary: &MeasureSummary) -> Result<String, std::fmt::Error> {
     let mut out = String::new();
     write!(
@@ -195,12 +240,21 @@ fn marker_row(out: &mut String, name: &str, marker: &MarkerSummary) -> std::fmt:
 /// The fit. What came from outside this crate is escaped.
 pub(crate) fn fit(report: &FitReport) -> Result<String, std::fmt::Error> {
     let mut out = String::new();
-    let (class, words) = if report.ok {
-        ("good", "The fit passed.")
+    // Over the limit is not a failure: whether the matrix is good enough is settled
+    // by the robot balancing with it (user, 2026-11-02), so the person can accept it.
+    let (class, words) = if report.within_limit {
+        ("good", "Every point is within the limit.")
+    } else if report.accepted {
+        (
+            "good",
+            "A point is over the limit, and you accepted this fit, so it is the one to use.",
+        )
     } else {
         (
             "bad",
-            "The fit failed: nothing was stored. Measure the stops again.",
+            "A point is over the limit. That is not a failure: whether the matrix is good enough is \
+             decided by the robot balancing with it. The fit is stored either way; press Accept this \
+             fit to mark it as the one to use, or measure poses again.",
         )
     };
     write!(
@@ -235,17 +289,28 @@ pub(crate) fn fit(report: &FitReport) -> Result<String, std::fmt::Error> {
     }
     write!(
         out,
-        "<p>Lens correction: {:+.3}, found from these points. Without it the worst point would be \
+        "<p>Lens: every point's bend was undone first with the lens calibration of {} \
+         (average error {:.2} px, from the /lens page). Without it the worst point would be \
          {:.3} px off.</p>",
-        report.lens_k, report.worst_uncorrected_px
+        escaped(&report.lens.date),
+        report.lens.rms_px,
+        report.worst_uncorrected_px
     )?;
-    write!(out, "<p>The stops were measured:")?;
-    for (stop, minutes) in &report.kept_minutes_ago {
-        write!(out, " {} {minutes} min ago.", escaped(stop))?;
+    write!(out, "<p>The poses were measured:")?;
+    for (pose, minutes) in &report.kept_minutes_ago {
+        write!(out, " {} {minutes} min ago.", escaped(pose))?;
     }
     write!(out, "</p>")?;
     if let Some(saved_to) = &report.saved_to {
-        write!(out, "<p>Stored in <code>{}</code>.</p>", escaped(saved_to))?;
+        write!(out, "<p>Stored in <code>{}</code>", escaped(saved_to))?;
+        if let Some(dated) = &report.dated_copy {
+            write!(
+                out,
+                ", and kept for good in <code>{}</code>",
+                escaped(dated)
+            )?;
+        }
+        write!(out, ".</p>")?;
     }
     Ok(out)
 }
@@ -260,7 +325,7 @@ fn escaped(text: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{answer::Answer, reading::Reading, travel::Travel};
+    use crate::{answer::Answer, lens_used::LensUsed, reading::Reading, travel::Travel};
 
     #[test]
     fn the_drawing_says_when_the_cart_is_not_known() {
@@ -306,29 +371,73 @@ mod tests {
     }
 
     #[test]
-    fn a_failed_fit_says_nothing_was_stored() {
+    fn the_live_view_names_every_found_marker() {
+        let marker = MarkerBox {
+            cx: 100.0,
+            cy: 50.0,
+            w: 20.0,
+            h: 10.0,
+        };
+        let status = LiveStatus {
+            on: true,
+            message: String::new(),
+            per_s: 43.6,
+            window: 60,
+            found: [("Left".to_string(), 60), ("End".to_string(), 12)].into(),
+            frame: None,
+            boxes: Some(
+                [
+                    ("Left".to_string(), Some(marker)),
+                    ("End".to_string(), None),
+                ]
+                .into(),
+            ),
+            width: 728,
+            height: 544,
+        };
+        let svg = live_boxes(&status).unwrap_or_default();
+        assert!(svg.contains("class=\"box-left\" x=\"90.0\" y=\"45.0\""));
+        assert!(svg.contains(">Left</text>") && !svg.contains(">End</text>"));
+        assert_eq!(
+            live_line(&status),
+            "Live, 44 frames a second. Found in the last 60 frames: Left 60, Right 0, Pivot 0, End 12."
+        );
+    }
+
+    #[test]
+    fn a_fit_over_the_limit_is_stored_and_can_be_accepted() {
         let report = FitReport {
-            ok: false,
+            within_limit: false,
+            accepted: false,
             residuals: Vec::new(),
             worst_px: 8.0,
             limit_px: 1.0,
-            lens_k: 0.44,
+            lens: LensUsed {
+                date: "2026-11-03T00:13:38Z".to_string(),
+                rms_px: 0.26,
+            },
             worst_uncorrected_px: 1.6,
-            kept_minutes_ago: [("motor".to_string(), 3)].into(),
+            kept_minutes_ago: [("motor upright".to_string(), 3)].into(),
             gaps_mm: [("motor".to_string(), 5.0), ("idler".to_string(), 7.5)].into(),
             span_pulses: 59_822,
             span_m: 0.89733,
             cad_length_m: 0.873,
             difference_m: 0.02433,
-            saved_to: None,
+            saved_to: Some("~/live-orin-python/homography.json".to_string()),
+            dated_copy: Some(
+                "~/live-orin-python/saved/homography-20261103-004500.json".to_string(),
+            ),
         };
         let text = fit(&report).unwrap_or_default();
-        assert!(text.contains("nothing was stored") && !text.contains("Stored in"));
+        assert!(text.contains("over the limit") && text.contains("not a failure"));
+        assert!(text.contains("Stored in <code>~/live-orin-python/homography.json</code>"));
+        assert!(text.contains("saved/homography-20261103-004500.json"));
         assert!(text.contains("897.3 mm") && text.contains("873.0 mm"));
         assert!(text.contains("-24.3 mm"));
         assert!(text.contains("5 mm at the motor") && text.contains("7.5 mm at the idler"));
-        assert!(text.contains("+0.440") && text.contains("1.600 px"));
-        assert!(text.contains("motor 3 min ago"));
+        assert!(text.contains("2026-11-03T00:13:38Z") && text.contains("0.26 px"));
+        assert!(text.contains("1.600 px"));
+        assert!(text.contains("motor upright 3 min ago"));
     }
 
     #[test]

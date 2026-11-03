@@ -1,10 +1,9 @@
 /// What the modal is showing. Each has its own part of `index.html`.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub(crate) enum ModalScreen {
-    /// Asks the person to steady the pole.
+    /// The live view, while the person holds the pole in the pose; the gap and the
+    /// number of images; Calibrate now.
     Steady,
-    /// Asks how many images to measure from.
-    Form,
     /// The progress bar and the slide show.
     Running,
     /// How the stop's measurement went.

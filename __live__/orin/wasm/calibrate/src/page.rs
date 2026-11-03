@@ -1,11 +1,14 @@
 use crate::{
     constants::{
         CENTRE_BUTTON_ID, IDLER_BUTTON_ID, MEASURE_BUTTON_ID, MOTOR_BUTTON_ID, NEXT_ELEMENT_ID,
-        RAIL_ELEMENT_ID, RESULT_ELEMENT_ID, ROWS_ELEMENT_ID, SPEED_ELEMENT_ID, STATUS_ELEMENT_ID,
-        STOP_BUTTON_ID, WHERE_ELEMENT_ID,
+        POSE_CENTRE_HANGING_ID, POSE_IDLER_HANGING_ID, POSE_IDLER_HORIZONTAL_ID,
+        POSE_IDLER_UPRIGHT_ID, POSE_MOTOR_HANGING_ID, POSE_MOTOR_HORIZONTAL_ID,
+        POSE_MOTOR_UPRIGHT_ID, RAIL_ELEMENT_ID, RESULT_ELEMENT_ID, ROWS_ELEMENT_ID,
+        SPEED_ELEMENT_ID, STATUS_ELEMENT_ID, STOP_BUTTON_ID, WHERE_ELEMENT_ID,
     },
     error::{AppError, result::AppResult},
     modal::Modal,
+    pole::Pole,
     render,
     session::Session,
     tone::Tone,
@@ -32,6 +35,8 @@ pub(crate) struct Page {
     buttons: [(Travel, HtmlButtonElement); 3],
     stop: HtmlButtonElement,
     measure: HtmlButtonElement,
+    /// Each stop's pose buttons, which open the modal for that pose.
+    poses: [(Travel, Pole, HtmlButtonElement); 7],
     /// What was last written to `rail` and `rows`. Writing the drawing again
     /// restarts the belt's animation, and the table's text could not be selected.
     drawn: RefCell<(String, String)>,
@@ -56,6 +61,43 @@ impl Page {
             ],
             stop: button(document, STOP_BUTTON_ID)?,
             measure: button(document, MEASURE_BUTTON_ID)?,
+            poses: [
+                (
+                    Travel::Idler,
+                    Pole::Hanging,
+                    button(document, POSE_IDLER_HANGING_ID)?,
+                ),
+                (
+                    Travel::Idler,
+                    Pole::Horizontal,
+                    button(document, POSE_IDLER_HORIZONTAL_ID)?,
+                ),
+                (
+                    Travel::Idler,
+                    Pole::Upright,
+                    button(document, POSE_IDLER_UPRIGHT_ID)?,
+                ),
+                (
+                    Travel::Motor,
+                    Pole::Hanging,
+                    button(document, POSE_MOTOR_HANGING_ID)?,
+                ),
+                (
+                    Travel::Motor,
+                    Pole::Horizontal,
+                    button(document, POSE_MOTOR_HORIZONTAL_ID)?,
+                ),
+                (
+                    Travel::Motor,
+                    Pole::Upright,
+                    button(document, POSE_MOTOR_UPRIGHT_ID)?,
+                ),
+                (
+                    Travel::Centre,
+                    Pole::Hanging,
+                    button(document, POSE_CENTRE_HANGING_ID)?,
+                ),
+            ],
             drawn: RefCell::new((String::new(), String::new())),
             window,
         })
@@ -71,6 +113,10 @@ impl Page {
 
     pub(crate) fn measure_button(&self) -> &HtmlButtonElement {
         &self.measure
+    }
+
+    pub(crate) fn pose_buttons(&self) -> &[(Travel, Pole, HtmlButtonElement); 7] {
+        &self.poses
     }
 
     /// The typed speed, for a centring. None when the box is empty.
@@ -101,6 +147,11 @@ impl Page {
         self.stop.set_disabled(!session.is_busy());
         self.measure
             .set_disabled(session.is_busy() || session.stop_here().is_none());
+        // A pose can only be measured where the last move left the cart: nothing here
+        // moves the cart to it.
+        for (stop, _, button) in &self.poses {
+            button.set_disabled(session.is_busy() || session.stop_here() != Some(*stop));
+        }
 
         let rail = render::rail(&session)?;
         let rows = render::rows(&session.entries)?;

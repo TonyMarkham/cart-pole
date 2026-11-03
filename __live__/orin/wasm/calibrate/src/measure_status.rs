@@ -17,7 +17,9 @@ pub(crate) struct MeasureStatus {
     pub(crate) boxes: Option<FrameBoxes>,
     pub(crate) width: u32,
     pub(crate) height: u32,
-    /// The stops with a kept measurement.
+    /// Every pose the fit needs, by `Pole::pose_key`.
+    pub(crate) poses: Vec<String>,
+    /// The poses with a kept measurement.
     pub(crate) measured: Vec<String>,
     pub(crate) min_images: u32,
     pub(crate) max_images: u32,

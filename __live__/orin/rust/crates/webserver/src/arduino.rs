@@ -75,14 +75,21 @@ pub(crate) async fn settings(State(arduino): State<ArduinoState>) -> Json<Arduin
 /// nowhere rather than passing for this one.
 async fn read_pins(arduino: &ArduinoSettings) -> io::Result<String> {
     let socket = UdpSocket::bind(("0.0.0.0", 0)).await?;
-    socket.connect((arduino.address.as_str(), arduino.port)).await?;
+    socket
+        .connect((arduino.address.as_str(), arduino.port))
+        .await?;
     socket.send(PINS_REQUEST).await?;
 
     let mut answer = [0; PINS_ANSWER_MAX];
     let wait = Duration::from_millis(arduino.timeout_ms);
     let length = time::timeout(wait, socket.recv(&mut answer))
         .await
-        .map_err(|_| io::Error::new(io::ErrorKind::TimedOut, format!("no answer within {} ms", arduino.timeout_ms)))??;
+        .map_err(|_| {
+            io::Error::new(
+                io::ErrorKind::TimedOut,
+                format!("no answer within {} ms", arduino.timeout_ms),
+            )
+        })??;
 
     Ok(String::from_utf8_lossy(&answer[..length]).into_owned())
 }

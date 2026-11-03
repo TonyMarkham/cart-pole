@@ -6,6 +6,8 @@ mod error;
 mod fit_report;
 mod frame_boxes;
 mod heading;
+mod lens_used;
+mod live_status;
 mod marker_box;
 mod marker_summary;
 mod measure_status;
@@ -15,6 +17,7 @@ mod modal;
 mod modal_screen;
 mod page;
 mod place;
+mod pole;
 mod reading;
 mod render;
 mod residual;
@@ -107,19 +110,15 @@ fn start(page: Rc<Page>, travel: Travel) {
     }
     spawn_local(async move {
         let answer = board::ask_for_move(&page.window, travel, speed.as_deref()).await;
-        // Where a move ended as asked, the cart is ready to be measured.
-        let arrived = answer.succeeded();
         page.session
             .borrow_mut()
             .finish(answer, Date::now(), time_now());
         // At once, so the drawing shows where the cart stopped, not a pause later.
+        // Nothing opens by itself: the pose buttons and Measure this stop do that.
         let reading = board::read_switches(&page.window).await;
         page.session.borrow_mut().read(reading, time_now());
         if let Err(error) = page.draw() {
             report(&error);
-        }
-        if arrived {
-            measuring::open(Rc::clone(&page), travel);
         }
     });
 }

@@ -62,8 +62,12 @@ jpeg_quality = 90
 exposure_ns = 1_000_000
 
 # The sensor's gain, locked. A 1 ms shutter lets in little light, and this makes up
-# for it, at the cost of a noisier picture. Set on the rig against detection.
-gain = 8
+# for it, at the cost of a noisier picture. The Orin's IMX296 driver takes it as a
+# plain number from 0 to 480 (its device tree: gain_factor 1, max_gain_val 480),
+# taken to be tenths of a decibel, so 180 is 18 dB, x8: the Pi's gain 8. The old
+# value 8 was 0.8 dB here. On 2026-11-02, 1 ms, room light on: gain 8 found no
+# marker in 5 stills, gain 180 all four in 5 of 5.
+gain = 180
 
 # Frames thrown away after the camera starts, while it settles.
 settle_frames = 30
@@ -102,6 +106,160 @@ port = 8090
 
 
 
+[live]
+# The live view (the webserver's /live page): the camera stream with every
+# frame's detections, for aiming the camera and in the calibration page's window.
+# It uses the camera the way a measurement does, with [stream]'s shutter and gain, so
+# the two never run together: a measurement stops it.
+
+# How many of the latest frames each marker's found count covers. 60 is one
+# second of the camera's 60 frames/s.
+window_frames = 60
+
+# The live view stops itself when no page has asked for a frame for this long, s,
+# so a closed page cannot keep the camera from the calibration.
+idle_stop_s = 10
+
+
+
+[lens_board]
+# The ChArUco board that measures the lens (src/charuco_board.py makes it): a
+# chessboard with an ArUco marker in each white square, so OpenCV can tell which
+# corner is which even when only part of the board is in the picture. Sized for
+# letter paper on a laser printer, the largest board available (user, 2026-11-02).
+
+# Squares across and down. 6 x 4 has 5 x 3 = 15 inner corners, the points the lens
+# is measured from.
+squares_x = 6
+squares_y = 4
+
+# A square's side and its marker's side, mm. 6 x 42 = 252 mm across and 4 x 42 =
+# 168 mm down fit landscape letter, 279.4 x 215.9 mm, inside a laser printer's
+# unprintable edge. The marker is 3/4 of its square, leaving a white ring for the
+# chessboard's corners. Each is rounded to whole printer dots.
+square_mm = 42.0
+marker_mm = 31.5
+
+# The white border around the board, mm. The PDF's page is the board and this
+# border only, so nothing reaches a printer's unprintable edge. A first print on a
+# full letter page came out at 40 mm squares, 95%, with the printer at 100%
+# (2026-11-02).
+border_mm = 5.0
+
+# The markers' dictionary: OpenCV's DICT_4X4_50, ids 0 to 11. The rig's own tags
+# are DICT_4X4_1000 376, 596, 920 and 937, so nothing on the board is a rig marker.
+dictionary = "DICT_4X4_50"
+
+# The resolution the board is drawn at, dots per inch.
+dpi = 600
+
+# Where the PDF and PNG are written, beside this file.
+out_dir = "lens-board"
+
+# A square's side as printed, measured with a ruler, mm. The print came out at 43 mm
+# across (user, 2026-11-02), not the file's 42: the print path scales the page. The
+# lens measurement needs only the real size, and the squares square; the marker is
+# taken to be the same 3/4 of its square.
+printed_square_mm = 43.0
+
+
+
+[lens]
+# The lens measurement (the webserver's /lens page): a red box, with the board's
+# shape inside it, is drawn over the live picture; the person holds the board
+# there, a still is kept, and the box moves on, first flat across the whole
+# picture, then with the board turned. Then OpenCV's calibrateCamera. It uses
+# nothing from the rig's earlier measurements (user, 2026-11-02). Frames are the
+# sensor's full size, [camera] width and height, at [stream]'s shutter and gain.
+# Kept stills remember their position by number, so after changing anything that
+# changes the positions, press Start over; the service reads this file only when
+# it starts.
+
+# How far from the camera the board is held, mm: 1 m (user, 2026-11-02). At 2 m the
+# board's markers measured 18.5 px a side in the stills, under the 32 px OpenCV gives
+# for reading a marker's code reliably ("tau_c=16-32 pixels", DetectorParameters,
+# from Romero-Ramirez et al. 2018), and only 8 to 11 of 12 were read; 32 px needs
+# about 2000 x 18.5 / 32 = 1.16 m.
+distance_mm = 1000
+
+# The camera's scale, measured from the board itself: its markers (3/4 of a 43 mm
+# square, 32.25 mm) measured 18.5 px a side, the mean of the 47 read in five stills
+# held 2 m away (2026-11-02). The lens and sensor specs predicted 28 px there, so
+# they are not used. On this scale the board's printed squares, 6 x 43 = 258 by
+# 4 x 43 = 172 mm, are 296 x 197 px at 1 m.
+measured_marker_px = 18.5
+measured_at_mm = 2000
+
+# How much larger than the board the box is, as a share of the board: 0.2 makes it
+# 296 x 1.2 = 355 by 197 x 1.2 = 237 px at 1 m, and 5 x 5 = 25 flat positions. With
+# no margin (until 2026-11-02) the board filled the box exactly, its edge markers
+# fell a few pixels outside, and no still was ever kept. A choice, not a measurement.
+box_margin = 0.2
+
+# After the flat positions, the board turned so one side is farther from the
+# camera: each of tilts at each of tilt_spots. Stills of a flat board, wherever it
+# is held, tell calibrateCamera nothing new about the lens; it needs the board at
+# different angles (Zhang, "A Flexible New Technique for Camera Calibration", 2000,
+# which calibrateCamera is built on). The sides are named as the picture shows
+# them: "left", "right", "top", "bottom". The spots are "centre", "top left",
+# "top right", "bottom left", "bottom right". 5 spots x 4 sides = 20 positions.
+tilts = ["left", "right", "top", "bottom"]
+tilt_spots = ["centre", "top left", "top right", "bottom left", "bottom right"]
+
+# The turn to aim for, degrees: the page draws the board's shape turned this far
+# for the person to match, and fills its turn bar at it. A choice, not from a
+# source.
+tilt_deg = 30
+
+# The least turn a tilted still is kept at, degrees. Lower than tilt_deg because a
+# turn judged by eye falls short: aiming for 30, the board measured about 22 to 26
+# degrees inside the box (2026-11-02), and with the bar at 30 no turned still was
+# ever kept. The turn is measured with OpenCV's solvePnP from the corners found,
+# on the camera's scale measured from the board (1147 px focal length), so it does
+# not depend on how far away the board is held. A choice, not from a source.
+min_tilt_deg = 20
+
+# A frame counts towards a still when at least this many of the board's 15 corners
+# are found, all inside the box. A corner is found only when both markers beside it
+# are (OpenCV's CharucoParameters.minMarkers, 2 by default), and a marker in the
+# board's middle touches 4 corners, so one missed marker leaves 15 - 4 = 11. Until
+# 2026-11-02 all 12 markers were needed, and one missed marker reset the hold.
+min_corners = 11
+
+# A still is kept once this many frames in a row have counted, so a board still
+# moving into place is not kept.
+hold_frames = 10
+
+# Solve needs at least this many kept stills. OpenCV's calibration tutorial: "we
+# need at least 10 test patterns".
+min_views = 10
+
+# OpenCV's CLAHE, contrast-limited adaptive histogram equalisation, run on each frame
+# before the board is looked for: it stretches contrast tile by tile. The board's
+# black squares came out mid-grey, about 84 of 255, with whites near 200, and only
+# 3 to 5 of its 12 markers were read (2026-11-02). clip_limit caps how far a tile's
+# contrast is stretched, so noise is not blown up; OpenCV's defaults are 40 and 8 x 8,
+# and 2.0 is the value its own tutorial uses.
+clahe_clip_limit = 2.0
+clahe_tiles = 8
+
+# The lens view stops itself when no page has asked for a frame for this long, s.
+idle_stop_s = 10
+
+# Where the kept views are saved as they are kept, and where a solve is stored. A
+# dated copy of each solve goes to saved/ beside this file. The calibration's fit
+# reads the solve from lens_path at every fit, and refuses to fit without one.
+views_path = "~/live-orin-python/lens_views.json"
+lens_path = "~/live-orin-python/lens.json"
+
+# Where the page's Still button saves the current frame, with the rectangle and the
+# markers drawn in as the page shows them. Inside the webserver's lens page folder,
+# so each is served at /lens/stills/<name>. Every press is its own file, named to
+# the millisecond, with the number of markers found written on it.
+stills_dir = "~/orin-cam/pages/lens/stills"
+
+
+
 [calibration]
 # How many images a stop's measurement may be asked for. An image counts only if
 # it has both Pivot and End in it.
@@ -113,20 +271,15 @@ max_images = 9999
 clip_k = 3
 
 # The largest distance, in pixels, between a measured point and where the fitted
-# matrix puts it. Any point over this fails the fit, and nothing is stored. On
+# matrix puts it. Any point over this fails the fit; the fit is stored anyway,
+# marked "ok": false (user, 2026-11-02: not passing must not mean not kept). On
 # 2026-11-01 the rig's worst point was 1.600 px with no lens correction and 0.166 px
 # with one, so this leaves room for the corrected fit and would catch the other.
 residual_px = 1.0
 
-# The lens and sensor, to express the lens's bend (ArUco.md, Camera; lens.py).
-lens_focal_mm = 6.0        # Raspberry Pi 6 mm wide angle, SC0124
-sensor_pixel_um = 3.45     # IMX296. Halving the frame makes it 6.9 um
-
-# The range searched for the lens number at each fit, and the search's step. The
-# number itself is measured, and stored with the matrix. On 2026-11-01 it was +0.44.
-lens_k_min = -0.2
-lens_k_max = 1.2
-lens_k_step = 0.005
+# The lens's bend is undone with the lens calibration, [lens] lens_path, before the
+# matrix is fitted (lens.py). Until 2026-11-02 one number for it was searched for at
+# each fit instead, from the lens and sensor specs and these points.
 
 # Where the fitted matrix is stored. It belongs to one camera position on one rig,
 # so it stays on the Orin, out of git.

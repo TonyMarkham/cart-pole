@@ -1,16 +1,19 @@
-//! The modal's steps: steady the pole, say how many images, measure, keep or retry.
-//! Only `calibrate_service.py` measures; this asks and shows.
+//! The modal's steps: watch the live detections while holding the pole in the pose,
+//! Calibrate now, then keep or retry. Only `calibrate_service.py` runs the camera and
+//! measures; this asks and shows.
 
 use crate::{
     board,
     constants::{
-        FIT_ROUTE, MEASURE_ACCEPT_ROUTE, MEASURE_CANCEL_ROUTE, MEASURE_ROUTE, MEASURE_STATUS_ROUTE,
+        FIT_ACCEPT_ROUTE, FIT_ROUTE, LIVE_START_ROUTE, LIVE_STATUS_ROUTE, LIVE_STOP_ROUTE,
+        MEASURE_ACCEPT_ROUTE, MEASURE_CANCEL_ROUTE, MEASURE_ROUTE, MEASURE_STATUS_ROUTE,
     },
     error::result::AppResult,
     fit_report::FitReport,
+    live_status::LiveStatus,
     measure_status::MeasureStatus,
-    modal_screen::ModalScreen,
     page::Page,
+    pole::Pole,
     report,
     travel::Travel,
 };
@@ -21,9 +24,6 @@ use wasm_bindgen::{JsCast, closure::Closure};
 use wasm_bindgen_futures::spawn_local;
 use web_sys::{Event, HtmlButtonElement};
 
-/// All three stops have a kept measurement once this many are listed.
-const STOPS_TO_FIT: usize = 3;
-
 /// What the webserver or the service says when it refuses something.
 #[derive(Deserialize)]
 struct Refusal {
@@ -33,12 +33,20 @@ struct Refusal {
 /// The modal's buttons, and the page's button that opens it without a move.
 pub(crate) fn wire(page: &Rc<Page>) -> AppResult<()> {
     let modal = &page.modal;
-    on_click(&modal.next, page, next)?;
-    on_click(&modal.start, page, start)?;
+    on_click(&modal.calibrate, page, calibrate_now)?;
     on_click(&modal.done, page, done)?;
     on_click(&modal.retry, page, retry)?;
     on_click(&modal.cancel, page, cancel)?;
     on_click(&modal.close, page, |page| page.modal.dismiss())?;
+    on_click(&modal.accept_fit, page, accept_fit)?;
+    for (stop, pole, button) in page.pose_buttons() {
+        let (stop, pole) = (*stop, *pole);
+        let clicked = Rc::clone(page);
+        let click = Closure::<dyn FnMut()>::new(move || open_pose(Rc::clone(&clicked), stop, pole));
+        button.add_event_listener_with_callback("click", click.as_ref().unchecked_ref())?;
+        // The buttons last as long as the page, so this is never to be freed.
+        click.forget();
+    }
     on_click(page.measure_button(), page, |page| {
         let stop = page.session.borrow().stop_here();
         if let Some(stop) = stop {
@@ -63,49 +71,77 @@ fn on_click(button: &HtmlButtonElement, page: &Rc<Page>, action: fn(Rc<Page>)) -
     Ok(())
 }
 
-/// The modal's first screen, for this stop.
-pub(crate) fn open(page: Rc<Page>, stop: Travel) {
-    if let Err(error) = page.modal.open(stop) {
-        report(&error);
-        return;
-    }
-    let generation = page.modal.generation();
+/// The modal for this stop's first pose not yet measured, or its first pose when
+/// all are: Measure this stop's window.
+fn open(page: Rc<Page>, stop: Travel) {
     spawn_local(async move {
-        if let Ok(status) = read_status(&page).await
-            && page.modal.generation() == generation
-            && let Some(&gap_mm) = status.gaps_mm.get(stop.key())
-        {
-            page.modal.offer_gap(gap_mm);
-        }
+        let pole = match read_status(&page).await {
+            Ok(status) => unmeasured(stop, &status.measured).unwrap_or(Pole::Hanging),
+            Err(_) => Pole::Hanging,
+        };
+        open_pose(page, stop, pole);
     });
 }
 
-/// The person has measured the gap, if this stop has one, and says the pole is
-/// steady. The limits are the service's, so asking them now also shows at once if
-/// the service is not running.
-fn next(page: Rc<Page>) {
+/// The modal for one pose, on the live view. The service's limits and the kept gap
+/// come with its status, so a service that is not running shows at once.
+pub(crate) fn open_pose(page: Rc<Page>, stop: Travel, pole: Pole) {
     spawn_local(async move {
         let status = match read_status(&page).await {
             Ok(status) => status,
             Err(message) => {
                 page.modal.show_problem(&message);
+                if !page.modal.dialog.open() {
+                    let _ = page.modal.dialog.show_modal();
+                }
                 return;
             }
         };
-        let modal = &page.modal;
-        let gap_mm = match modal.stop() {
-            Some(Travel::Centre) | None => None,
-            Some(_) => match parse_gap(&modal.typed_gap(), status.max_gap_mm) {
-                Ok(gap_mm) => Some(gap_mm),
-                Err(words) => {
-                    modal.say_gap_error(&words);
-                    return;
-                }
-            },
-        };
-        modal.keep_gap(gap_mm);
-        modal.show_form((status.min_images, status.max_images));
+        if let Err(error) = page.modal.open(stop, pole, &status) {
+            report(&error);
+            return;
+        }
+        let generation = page.modal.generation();
+        if let Err(message) = post(&page, LIVE_START_ROUTE).await {
+            page.modal.show_problem(&message);
+            return;
+        }
+        watch_live(&page, generation).await;
     });
+}
+
+/// Shows the live view until the modal moves on. Looking also keeps the view on:
+/// the service stops it once no page has looked for a while.
+async fn watch_live(page: &Rc<Page>, generation: u32) {
+    while page.modal.generation() == generation {
+        let status = read_live(page).await;
+        if page.modal.generation() != generation {
+            return;
+        }
+        let shown = match status {
+            Ok(status) => page.modal.show_live(&status),
+            Err(message) => {
+                page.modal.show_problem(&message);
+                return;
+            }
+        };
+        if let Err(error) = shown {
+            report(&error);
+            return;
+        }
+        if let Err(error) = board::sleep(&page.window, page.modal.poll_ms()).await {
+            report(&error);
+            return;
+        }
+    }
+}
+
+/// The first of this stop's poses with no kept measurement.
+fn unmeasured(stop: Travel, measured: &[String]) -> Option<Pole> {
+    Pole::at(stop)
+        .iter()
+        .copied()
+        .find(|pole| !measured.contains(&pole.pose_key(stop)))
 }
 
 /// A number of millimetres inside the limit, or what to tell the person. Written
@@ -139,8 +175,24 @@ fn parse_count(typed: &str, (low, high): (u32, u32)) -> Result<u32, String> {
     }
 }
 
-fn start(page: Rc<Page>) {
+/// Calibrate now: the person has the pole in the pose and the gap typed, if this
+/// stop has one. The measurement takes the camera from the live view by itself.
+fn calibrate_now(page: Rc<Page>) {
     let modal = &page.modal;
+    let Some(stop) = modal.stop() else {
+        return;
+    };
+    modal.clear_errors();
+    let gap_mm = match stop {
+        Travel::Centre => None,
+        Travel::Motor | Travel::Idler => match parse_gap(&modal.typed_gap(), modal.max_gap_mm()) {
+            Ok(gap_mm) => Some(gap_mm),
+            Err(words) => {
+                modal.say_gap_error(&words);
+                return;
+            }
+        },
+    };
     let count = match parse_count(&modal.typed_count(), modal.limits()) {
         Ok(count) => count,
         Err(words) => {
@@ -148,13 +200,14 @@ fn start(page: Rc<Page>) {
             return;
         }
     };
-    let Some(stop) = modal.stop() else {
-        return;
-    };
-    modal.start.set_disabled(true);
+    modal.calibrate.set_disabled(true);
     spawn_local(async move {
-        let mut route = format!("{MEASURE_ROUTE}?stop={}&count={count}", stop.key());
-        if let Some(gap_mm) = page.modal.gap_mm() {
+        let mut route = format!(
+            "{MEASURE_ROUTE}?stop={}&pole={}&count={count}",
+            stop.key(),
+            page.modal.pole().key()
+        );
+        if let Some(gap_mm) = gap_mm {
             route.push_str(&format!("&gap_mm={gap_mm}"));
         }
         match post(&page, &route).await {
@@ -164,7 +217,7 @@ fn start(page: Rc<Page>) {
                 watch(&page, generation).await;
             }
             Err(message) => {
-                page.modal.start.set_disabled(false);
+                page.modal.calibrate.set_disabled(false);
                 page.modal.say_count_error(&message);
             }
         }
@@ -225,7 +278,8 @@ fn show_status(page: &Rc<Page>, status: &MeasureStatus) -> AppResult<bool> {
     }
 }
 
-/// Keeps this stop's result. With all three stops kept, the fit runs.
+/// Keeps this pose's result. With all seven poses kept, the fit runs; otherwise the
+/// modal closes, and the stop's pose buttons choose the next.
 fn done(page: Rc<Page>) {
     spawn_local(async move {
         if let Err(message) = post(&page, MEASURE_ACCEPT_ROUTE).await {
@@ -233,7 +287,7 @@ fn done(page: Rc<Page>) {
             return;
         }
         match read_status(&page).await {
-            Ok(status) if status.measured.len() == STOPS_TO_FIT => fit(&page).await,
+            Ok(status) if status.measured.len() == status.poses.len() => fit(&page).await,
             Ok(_) => page.modal.dismiss(),
             Err(message) => page.modal.show_problem(&message),
         }
@@ -261,29 +315,61 @@ async fn fit(page: &Rc<Page>) {
     }
 }
 
-/// Throws this stop's result away, and starts it again: the pole may have been
-/// nudged, so that means steadying it again.
-fn retry(page: Rc<Page>) {
-    let generation = page.modal.move_on();
-    page.modal.show(ModalScreen::Steady);
+/// Marks the fit just shown as the one to use, though a point is over the limit:
+/// the robot balancing decides whether it is good enough, not the limit.
+fn accept_fit(page: Rc<Page>) {
+    page.modal.accept_fit.set_disabled(true);
     spawn_local(async move {
-        if let Err(message) = post(&page, MEASURE_CANCEL_ROUTE).await
-            && page.modal.generation() == generation
-        {
-            page.modal.show_problem(&message);
+        let outcome = match post(&page, FIT_ACCEPT_ROUTE).await {
+            Ok(text) => {
+                Ok(serde_json::from_str::<Refusal>(&text).map_or(text, |said| said.message))
+            }
+            Err(message) => Err(message),
+        };
+        if let Err(error) = page.modal.show_fit_accepted(outcome) {
+            report(&error);
         }
     });
 }
 
-/// Closes the modal at once, and ends any measurement behind it. The cart stays
-/// where it is, and `Measure this stop` opens the modal again.
+/// Throws this pose's result away, and goes back to the live view: the pole may
+/// have been nudged, so that means holding it in the pose again.
+fn retry(page: Rc<Page>) {
+    let (Some(stop), pole) = (page.modal.stop(), page.modal.pole()) else {
+        return;
+    };
+    page.modal.move_on();
+    spawn_local(async move {
+        if let Err(message) = post(&page, MEASURE_CANCEL_ROUTE).await {
+            page.modal.show_problem(&message);
+            return;
+        }
+        open_pose(page, stop, pole);
+    });
+}
+
+/// Closes the modal at once, and ends any measurement or live view behind it. The
+/// cart stays where it is, and the pose buttons open the modal again.
 fn cancel(page: Rc<Page>) {
     page.modal.dismiss();
     spawn_local(async move {
-        if let Err(message) = post(&page, MEASURE_CANCEL_ROUTE).await {
-            report(&crate::error::AppError::answer(message));
+        for route in [MEASURE_CANCEL_ROUTE, LIVE_STOP_ROUTE] {
+            if let Err(message) = post(&page, route).await {
+                report(&crate::error::AppError::answer(message));
+            }
         }
     });
+}
+
+async fn read_live(page: &Rc<Page>) -> Result<LiveStatus, String> {
+    let (ok, _, text) = board::request(&page.window, LIVE_STATUS_ROUTE, "GET")
+        .await
+        .map_err(|error| error.to_string())?;
+    if ok {
+        serde_json::from_str(&text).map_err(|error| error.to_string())
+    } else {
+        Err(refusal_words(&text))
+    }
 }
 
 async fn read_status(page: &Rc<Page>) -> Result<MeasureStatus, String> {

@@ -59,10 +59,12 @@ asks this. It only listens to the Orin itself, and it can't move the cart.
 
 | File | What it does |
 |---|---|
-| `src/calibrate_service.py` | Runs one measurement at a time, and keeps each stop's result until the fit |
-| `src/measure.py` | Turns a stop's many detections of a marker into one point: drops the far-off ones, averages the rest |
-| `src/lens.py` | Undoes the lens's bend, which the matrix alone can't follow |
-| `src/fit.py` | Works out where the stops are in metres, finds the lens number, fits the matrix, checks it and stores it |
+| `src/calibrate_service.py` | Runs one measurement at a time, and keeps each pose's result until the fit. Also runs the live view for the webserver's `/live` page, never at the same time as a measurement |
+| `src/lens_calibration.py` | The lens measurement's arithmetic: the red box's size, the flat and turned positions, the board's shape at each, whether it is turned, and OpenCV's `calibrateCamera` on the kept stills |
+| `src/charuco_board.py` | Makes the printable ChArUco board the lens is measured with (run on the PC, with `training/.venv`) |
+| `src/measure.py` | Turns a pose's many detections of a marker into one point: drops the far-off ones, averages the rest |
+| `src/lens.py` | Undoes the lens's bend, which the matrix alone can't follow, with the lens calibration in `lens.json`, halved for the detector's frames |
+| `src/fit.py` | Works out where the seven poses put Pivot and End in metres, undoes their bend, fits the matrix, checks it and stores it |
 | `src/test_calibration.py` | Checks that arithmetic with known answers, with no camera or GPU |
 
 **Start it,** after replacing the `.venv` as above. It carries on after the SSH session
@@ -91,11 +93,20 @@ cd ~/live-orin-python && .venv/bin/python src/test_calibration.py
 you measure the gap from the cart's face to the rail support it faces, and type it into
 the calibration page. A measurement at an end won't start without one.
 
-**What survives a restart:** each stop's result and gap are saved to `kept_stops.json`,
-at `kept_path` in `settings.toml`. The settings are read afresh at each fit, so a changed
-limit needs no restart either. The fit screen says how long ago each stop was measured,
-because a stop kept from before the camera moved would spoil the fit: measure all three
-again after moving it.
+**The seven poses** are the synthetic loop's (`synthetic-loop-dia.md`, *The seven
+poses*): the pole hanging at each end and at the centre, and at each end also held
+level, pointing away from the centre, and held straight up. The hanging poses alone
+cover only the rail and the hanging pole, while a swinging End reaches the pole's
+length, 0.450 m, past them on either side and above. Pivot is at its stop's `x` in
+every pose; End is 0.450 m below it hanging, above it upright, and to the left of it
+(idler) or the right (motor) held level.
+
+**What survives a restart:** each pose's result and each end's gap are saved to
+`kept_stops.json`, at `kept_path` in `settings.toml`. A file from before the seven poses
+is not read, so they are all measured again. The settings are read afresh at each fit,
+so a changed limit needs no restart either. The fit screen says how long ago each pose
+was measured, because a pose kept from before the camera moved would spoil the fit:
+measure all seven again after moving it.
 
 **Where the stops come from:** real measurements win over the CAD. The gaps correct
 where the stops sit against the CAD's walls, which gives the rail's centre, and the
@@ -104,17 +115,98 @@ length is from the measured one, and that difference never affects the result. T
 idler's end is on the left as the camera sees it, and the motor's on the right.
 
 **The lens:** a wide-angle lens bows straight lines outward from the middle of the
-picture, and the matrix can only map straight lines to straight lines. The six points'
-real positions are known, three columns the span apart and two rows the pole's length
-apart, so each fit also finds the one number for that bend that leaves the matrix
-closest to them. On 2026-11-01 the worst point went from 1.600 px to 0.166 px, about
-0.4 mm, with the number at +0.44. Those 9 fitted numbers come from 12 measurements, so
-the six points look good partly because they were fitted. Any later frame must have
-the same correction applied before the matrix.
+picture, and the matrix can only map straight lines to straight lines. So each fit
+first undoes every point's bend with the lens calibration (*Lens calibration*, below),
+`lens.json`, halved for the detector's 728 x 544 frames (`src/lens.py`), and fits the
+matrix to the straightened points. The fit refuses to run without `lens.json`. The 14
+points then give the matrix's 8 numbers from 28 measurements, leaving 20 to check the
+fit. Any later frame must have its bend undone with the same numbers before the matrix.
+Until 2026-11-02 each fit instead searched for one number for the bend from these same
+points, with the picture's centre standing in for the lens's; the seven-pose fit with it
+failed, its worst point 3.59 px.
 
 **What it writes:** `homography.json`, at `matrix_path` in `settings.toml`, with the
-lens number, the matrix, each point and its residual, the span, and the date. It is written only when
-every point is within `residual_px` of where the matrix puts it.
+lens calibration used (its camera matrix and bend numbers, halved for the detector's
+frames, its file and date), the matrix, each point and its residual, the span, and the
+date. **Every fit is written, passed or not** (user, 2026-11-02): `"ok"` in the file says
+whether every point is within `residual_px` of where the matrix puts it, so whatever
+uses the matrix must check it. `homography.json` is the latest fit; a dated copy of each,
+`saved/homography-<date>-<time>.json`, is never overwritten, so a passing fit is never
+lost to a later failing one.
+
+## Lens calibration
+
+The camera's lens bends the picture, most at its edges: straight lines bow outward.
+The matrix that turns pixels into metres can only map straight lines to straight
+lines, so the bend has to be measured and undone first. Measuring it once, on its
+own, is OpenCV's way: hold a printed board whose layout is known in many places and
+at many angles, and OpenCV's `calibrateCamera` works out the lens from where the
+board's corners land in each picture. The result holds until the lens or its focus
+ring changes; moving the camera doesn't change it (OpenCV, "Calibration with ArUco
+and ChArUco": the parameters "remain fixed unless the camera optic is modified").
+
+**The board** is a ChArUco board: a chessboard with an ArUco marker in each white
+square, so OpenCV knows which corner is which even when part of it is hidden. It has
+6 x 4 squares, 15 inside corners, and its squares printed at 43 mm. `src/charuco_board.py`
+makes it from `[lens_board]` in `settings.toml`; the printable files are in
+[lens-board/](lens-board/).
+
+**How it is done,** on a tablet at the rig, with the calibration service running:
+
+1. Open <http://192.168.0.215:8080/lens/> and press **Start**.
+2. Hold the board over the dashed white shape inside the red box, about 1 m from the
+   camera. The box turns green when at least 11 of the 15 corners are found and all
+   are inside it. Held green for 10 frames, the picture is kept as a *still* and the
+   box moves on by itself.
+3. The first 25 positions tile the whole picture with the board flat, facing the
+   camera. The next 20 put the box at the centre and at each corner, and ask for the
+   board turned so its left, right, top or bottom side, as the tablet shows it, is
+   farther from the camera. The **Turn** bar shows the turn: 20 degrees counts, 30 is
+   the aim. Turned stills are needed because flat ones, wherever they are held, all
+   tell OpenCV the same thing about the lens (Zhang, "A Flexible New Technique for
+   Camera Calibration", 2000, the method `calibrateCamera` is built on).
+4. Press **Solve** once at least 10 stills are kept.
+
+**Save picture** only saves what the camera sees, for looking at from elsewhere: it
+keeps no still. **Skip this position** moves on without one. **Start over** forgets
+every kept still.
+
+**The files.** The service writes them on the Orin; copies of the 2026-11-02 run are
+in [saved/](saved/) here, because nothing else on the PC holds them:
+
+| File | On the Orin | What it is for |
+|---|---|---|
+| `lens.json` | `~/live-orin-python/lens.json` (`[lens] lens_path`) | **The result**, the file the rest of the calibration will read: the focal lengths and the lens's centre (`camera_matrix`, in full-sensor pixels, 1456 x 1088), the five bend numbers k1, k2, p1, p2, k3 (`dist`), the average error (`rms_px`), each still's error (`per_view_rms_px`), whether the bend grows steadily to the corners (`monotonic`), the board's printed square and the date |
+| `lens-<date>-<time>.json` | `~/live-orin-python/saved/` | A dated copy of each Solve's result, never overwritten, so an earlier result can be gone back to |
+| `lens_views.json` | `~/live-orin-python/lens_views.json` (`[lens] views_path`) | **The kept stills**: for each, the position it was kept at, how the board was turned, and every corner's pixel position and number. Saved as each still is kept, so a closed page or a restart loses none; Solve reads them, so it can be run again without the board. **Start over** empties it |
+
+**The result on 2026-11-02**, from all 45 stills:
+
+| | Value | What it means |
+|---|---|---|
+| Average error | 0.26 px; worst still 0.65 px | How far the board's corners are from where the result puts them. OpenCV gives no pass mark beyond closer to zero |
+| Bend grows steadily | yes | OpenCV's calib3d reference: a bend that doesn't "should be considered a calibration failure" |
+| Focal lengths fx, fy | 1846.9, 1837.6 px | Within 0.5% of each other, as square pixels should be |
+| Lens centre cx, cy | 679.1, 468.4 px | 49 px left of and 76 px above the picture's centre, 728, 544 |
+| Bend k1, k2, p1, p2, k3 | -0.519, +0.452, +0.014, +0.003, -0.417 | A strong barrel bend: lines bow outward, most at the edges |
+
+**How the rig's calibration uses it:** each fit reads `lens.json` afresh, so a new
+Solve is used at the next fit. The result is halved for the detector's 728 x 544
+frames: fx, fy, cx and cy halved, while the bend numbers act on distances measured in
+focal lengths, which halving leaves the same, so they stay. Pivot and End are
+straightened with it before the matrix is fitted (*The calibration service*, *The
+lens*), and the numbers used are stored in `homography.json` beside the matrix.
+
+**`[lens] measured_marker_px` is wrong.** The 18.5 px it gives for the board's 32.25 mm
+markers at 2 m means a focal length of 1147 px, and the solve found 1847, about 30 px
+at 2 m. So the box, sized from it, fits the board held about 1.6 m away rather than
+1 m, and the Turn bar's angles, worked out with 1147 px, were not exact. Neither goes
+into the result: `calibrateCamera` uses only the corners.
+
+**Moving this folder to the Orin** (*Move it to the Orin*) also carries `saved/` and
+these copies into the Orin's `~/live-orin-python/saved/`. That changes nothing the
+service reads, since it reads `lens.json` and `lens_views.json` from
+`~/live-orin-python/` itself.
 
 ## What it needs on the Orin
 
