@@ -100,7 +100,7 @@ sequenceDiagram
     participant A as Arduino (UNO R4 WiFi)
     participant R as Rig (DM542, stepper, cart, pole)
 
-    Note over P,R: Before any run: the firmware with Run is on the board (not built),<br/>the brain and the policy file are on the Orin (not built), the camera's matrix is fitted (built)
+    Note over P,R: Before any run: the firmware with Run is on the board (not built),<br/>the brain is on the Orin (not built), the policy file is with it (built), the camera's matrix is fitted (built)
     P->>W: opens the Orin's page
     W->>A: datagram "pins"
     A-->>W: the pins' levels: the board is on the network and answers
@@ -181,9 +181,11 @@ On the rig the actor gives its best guess every time: a = tanh(mean), where
 `mean` is the middle of the bell curve and tanh squeezes it into [−1, 1]. In
 Stable-Baselines3 this is `predict(observation, deterministic=True)`.
 
-**Open: how the policy reaches the Orin** (`trainer-plan.md`, *Not decided by the diagram*).
-**Proposed:** save the actor's weights to a numpy file, then work out the action
-with numpy on the Orin. The actor is two matrix multiplications, so the Orin
+**How the policy reaches the Orin: a numpy file** (built as proposed,
+2026-11-02, on the user's "build a policy file for the Orin"). The trainer's
+`export_policy.py` saves the actor's weights to `policy.npz`, and the Orin works
+out the action with numpy (`__live__/orin/python/src/policy.py`; its README, *The
+policy*). The actor is three matrix multiplications, so the Orin
 needs no PyTorch. That matters because installing anything needs the user's
 permission (`AGENTS.md`, *Python policy*).
 
@@ -197,7 +199,8 @@ the ones the policy trained with:
 
 All four are in the run's manifest, `runs/<run>/latest.json` (`run_values` and
 `gym_toml`). If the brain reads them from the copy shipped beside the weights,
-they cannot drift from what the policy learned. 44,600 is the 24 V row of
+they cannot drift from what the policy learned. `policy.npz` carries all four,
+copied from the manifest by the export. 44,600 is the 24 V row of
 `motor-spec.md` (*The top pulse rate per supply*): 0.669 m/s at 15 µm a pulse,
 the rig's supply today.
 
@@ -427,7 +430,7 @@ board.
 | Seeks, centre, Stop on the board | built, `__live__/arduino/rust/crates/calibration` |
 | Camera calibration, lens and matrix | built, the `/calibrate` page and `calibrate_service.py` |
 | A trained policy | trained in the synthetic loop, run `20261101_163458` (`trainer-observations.md`) |
-| The policy file on the Orin | not built; how is open |
+| The policy file | built on the PC, the numpy file, `__live__/orin/python/saved/policy.npz` with `src/policy.py` (2026-11-02); goes to the Orin with the folder |
 | The brain: timer, pool, policy, sender, end checks, record | not built |
 | The board's Run: command, ramp, timer, pulse count, soft limit | not built |
 | The Run button and how the webserver starts the brain | not built; where it sits is open |

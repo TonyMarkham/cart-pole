@@ -1,5 +1,6 @@
 # The measures' values (__synthetic__/trainer/python/src/measures/, run by measure.py). Each
-# table belongs to the measure of the same name.
+# table belongs to the measure of the same name, and [export_policy] to
+# export_policy.py.
 
 [episodes]
 # Episodes are grouped by the run's step count when they ended, in bands
@@ -26,4 +27,12 @@ visit_seconds = 0.3
 # Observations drawn from the run's latest replay buffer for each
 # snapshot's actor (trainer-observations.md: 20,000), and the draw's seed.
 samples = 20000
+seed = 0
+
+[export_policy]
+# Not a measure: export_policy.py's values. The policy file carries
+# check_samples inputs drawn at random (seeded by `seed`) from the run's latest
+# replay buffer, with Stable-Baselines3's answer to each, so the Orin can check
+# its own arithmetic against them with numpy alone.
+check_samples = 1000
 seed = 0

@@ -466,6 +466,13 @@ The roles and per-class figures are in `training/05-POST_TRAINING.md`
   `calibrate` firmware predates this and polls: never copy its WiFi
   loop. Worked failure: the agent copied it for the pin page, with a note
   about the bridge already in front of it.
+- **The policy file is in git and only ever changes whole** (user,
+  2026-11-02). `__live__/orin/python/saved/policy.npz` is the trained actor
+  for the Orin, written by the trainer's `export_policy.py` from a run folder
+  that git ignores, so it is tracked. A new policy replaces the file
+  entirely with a fresh export; it is never edited, patched or merged a part
+  at a time. The root `.gitattributes` marks `*.npz` binary, so git never
+  diffs or merges two versions.
 - **Each diagram participant's real counterpart:**
 
   | Participant | On the real robot |

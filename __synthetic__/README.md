@@ -50,6 +50,14 @@ stops there. [The diagram](../synthetic-loop-dia.md) has the sequence, under
 uv run --project __synthetic__/orin/python python __synthetic__/orin/python/src/test_calibration.py
 ```
 
+**To write a trained policy for the real robot,** as one numpy file the Orin runs
+without PyTorch (`policy.npz` in the run's folder; the live Orin's README, *The
+policy*, says what is in it and where it goes):
+
+```bash
+uv run --project __synthetic__/trainer/python python __synthetic__/trainer/python/src/export_policy.py __synthetic__/trainer/python/runs/20261101_163458
+```
+
 These stay outside this folder: the Unity project and its sim-loop package
 (`unity/`, which dataset generation shares), the detector's training (`training/`,
 `datasets/`), and the plans at the repo's root. `synthetic-loop-dia.md` is the

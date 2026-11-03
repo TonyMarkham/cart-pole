@@ -3,7 +3,8 @@
 The Orin has no monitor, so the only way to see what its camera sees is to send
 a picture to a browser. `src/capture_push.py` takes one picture with the Global
 Shutter camera and pushes it to every open viewer page. The same folder holds what
-measures the calibration's stops and fits the camera's matrix.
+measures the calibration's stops and fits the camera's matrix, and the trained
+policy (*The policy*).
 
 It reads [settings.toml](settings.toml), and runs on the Orin only, because the
 capture uses NVIDIA's camera software.
@@ -207,6 +208,77 @@ into the result: `calibrateCamera` uses only the corners.
 these copies into the Orin's `~/live-orin-python/saved/`. That changes nothing the
 service reads, since it reads `lens.json` and `lens_views.json` from
 `~/live-orin-python/` itself.
+
+## The policy
+
+**Why:** the policy is the small network that training learned in the synthetic
+loop: it reads what the camera saw and picks the cart's next command. The Orin runs
+it to balance the real pole, but training saved it in Stable-Baselines3's format,
+which needs PyTorch, and nothing is installed on the Orin without asking. So the
+trainer writes the part the rig needs into one numpy file, `saved/policy.npz`, and
+`src/policy.py` works out the command from it with numpy alone, which the Orin
+already has.
+
+**What the rig needs of it.** Training used SAC, which trains two kinds of network:
+the **actor**, which picks the command, and the **critics**, which only teach the
+actor. The rig keeps the actor, and only its best guess, with no randomness:
+
+```text
+h1   = relu(W1 x + b1)      x: the 36 inputs; W1 is 256 x 36
+h2   = relu(W2 h1 + b2)     W2 is 256 x 256
+mean = W3 h2 + b3           W3 is 1 x 256
+a    = tanh(mean)           a is in [-1, 1]
+command = round(a x 44,600) pulses/s
+```
+
+`relu(v)` is max(v, 0), for each number on its own; `tanh` squeezes any number
+into [-1, 1]. The 36 inputs are the pool's 6 entries, newest first, each its age
+in ms ÷ 1,000 and Pivot's and End's (x, z) in metres, (-1, -1) for a marker not
+found, then the last 6 values of a, newest first ([real-loop-dia.md](../../../real-loop-dia.md),
+*The pool on the rig*).
+
+**What is in the file:**
+
+| Name | What it is |
+|---|---|
+| `hidden_1_weight`, `hidden_1_bias`, `hidden_2_weight`, `hidden_2_bias`, `output_weight`, `output_bias` | W1, b1, W2, b2, W3, b3 above |
+| `top_pulse_rate` | 44,600 pulses/s: a = 1 asks for it |
+| `age_unit_ms` | 1,000: each age is divided by it |
+| `past_commands` | 6: how many past values of a the inputs end with |
+| `command_rate_min_hz`, `command_rate_max_hz` | 20 and 30: the band of command rates it trained with |
+| `check_inputs`, `check_actions` | 1,000 inputs from the run, with Stable-Baselines3's own a for each |
+| `source` | the run, the save and the commit it came from |
+
+The values come from the trained run's manifest, so the brain cannot build the
+inputs or the command differently from training.
+
+**Today's file** is run `20261101_163458`'s last save, 4,000,008 steps, commit
+`9087b8fd`: the run that swings the pole up and balances it in the synthetic loop
+([trainer-observations.md](../../../trainer-observations.md)). Before writing it,
+the export worked out a for all 1,999,992 inputs in the run's replay buffer both
+with Stable-Baselines3 and with the formula above; the worst difference was
+0.0000043 (2026-11-02).
+
+**To write it again,** from the repo root on the PC, then copy it here:
+
+```bash
+uv run --project __synthetic__/trainer/python python __synthetic__/trainer/python/src/export_policy.py __synthetic__/trainer/python/runs/20261101_163458
+```
+
+```bash
+cp __synthetic__/trainer/python/runs/20261101_163458/policy.npz __live__/orin/python/saved/policy.npz
+```
+
+**To check it,** here or on the Orin. This works out the 1,000 stored inputs with
+numpy and compares them with Stable-Baselines3's answers; the PC gave a worst
+difference of 0.000001:
+
+```bash
+uv run python src/test_policy.py
+```
+
+Nothing runs the policy yet: the brain, which times the commands, builds the
+inputs and sends the commands, is not built.
 
 ## What it needs on the Orin
 

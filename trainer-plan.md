@@ -146,7 +146,9 @@ look.
 
 ## Not decided by the diagram
 
-- **How the trained policy reaches the Orin** for production.
+- **How the trained policy reaches the Orin** for production. Built
+  2026-11-02 as `real-loop-dia.md` proposed: `src/export_policy.py` writes the
+  actor as a numpy file (`real-loop-dia.md`, *The policy on the Orin*).
 
 ## Steps
 
