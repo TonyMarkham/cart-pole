@@ -7,9 +7,18 @@ the Arduino and the motor. It is the real counterpart of
 `synthetic-loop-dia.md`, and it is a **plan**: most of it is not built
 (*What exists today*, at the end).
 
+**This diagram is the single source of truth for the real loop** (user,
+2026-11-03). Three plans are written from it alone, one per computer:
+`real-orin-plan.md` (the brain, the webserver and its pages),
+`real-arduino-plan.md` (the board's firmware) and `real-pi-plan.md`
+(`arduino-manager`). Where a plan disagrees with this diagram, the diagram is
+right and the plan is out of date. A change to the real loop's design lands
+here first.
+
 The **policy** is the small neural network that training produced: it reads
 36 numbers and answers with one, the command for the cart. On the rig nothing
-learns. The policy is fixed, and the run only uses it.
+learns. The policy is fixed, and the run only uses it. **A real run is not a
+training run** (user, 2026-11-03): there is no reward and no trainer.
 
 Every statement below is marked by where it stands:
 
@@ -33,7 +42,7 @@ The synthetic loop's participants each stand in for something real
 | Synthetic Arduino | the Arduino | The UNO R4 WiFi and its firmware. |
 | Trainer | nothing | Training happens only in the synthetic loop (`AGENTS.md`). The trained policy runs inside the brain. |
 
-Two more take part on the rig:
+Three more take part on the rig:
 
 - **The person:** someone at the rig with a browser. They start and stop
   each run and can stop the cart at any time. They also have the rig's power
@@ -44,6 +53,12 @@ Two more take part on the rig:
   serves the pages and passes the person's buttons on to the Arduino and the
   Orin's Python. It already does this for the calibration
   (`__live__/orin/rust/README.md`, *Server routes*).
+- **The Pi's `arduino-manager`:** the Rust service in
+  `__live__/rpi/rust/crates/arduino-manager`, on the Pi plugged into the
+  Arduino by USB. It uploads the firmware (`POST /flash`, its README) and,
+  once built, the board's settings (*The Uno's settings*). It takes no part in
+  a run: the USB cable is kept out while the rig runs (its README: with it in,
+  both limit-switch inputs have read open).
 
 **The brain** is this diagram's name for the program on the Orin that
 runs the loop. `robot-plan.md` calls it the `RobotBrain` mode (user,
@@ -60,10 +75,12 @@ between commands*). So on the rig, frames that arrive between two commands
 are dropped unread, and the pool is filled only from the frames the brain
 acts on (follows, `robot-plan.md`).
 
-**Open: whether the rig draws its rate.** The synthetic loop draws a new
-rate for every command, because the policy has to cope with any gap in the
-band. Any gap inside 33.3–50 ms is one the policy has seen, so a fixed rate
-inside the band would also do. Neither is decided.
+**Decided: the wait after each command is a setting** (user, 2026-11-02).
+The brain takes an image, gets the points from detection, builds the inputs,
+asks the policy for a command and sends it at once. Then it waits `delay_ms`
+(`__live__/orin/python/settings.toml` `[brain]`, 0 by default) before taking
+the next image. At 0 the loop runs as fast as the Orin can, about one command
+per camera frame; the policy trained with 33.3–50 ms between commands.
 
 **Follows: the camera's own clock.** The camera runs by itself at 60 frames
 a second, a frame every 16.7 ms (`__live__/orin/python/settings.toml`
@@ -71,8 +88,8 @@ a second, a frame every 16.7 ms (`__live__/orin/python/settings.toml`
 between the frames the brain uses are whole numbers of frames: 33.3 ms (2
 frames) or 50 ms (3 frames) inside the trained band. The synthetic loop has
 the same kind of grid, but finer: its gaps sit on MuJoCo's 2 ms step.
-**Open:** how a drawn gap becomes a frame (the next frame after the drawn
-time, or the nearest one), and whether the camera can be triggered instead.
+**Follows:** the next image is the camera's next frame after the wait.
+**Open:** whether the camera can be triggered instead.
 
 **The delay D** is the time from the moment a frame is exposed to the moment
 its command reaches the Arduino. It is made of the camera's transfer, the
@@ -94,48 +111,87 @@ sequenceDiagram
     participant P as Person (browser)
     participant W as Orin webserver (Rust)
     box transparent The Orin's brain (Python, not built)
-        participant B as Brain: timer, detector, pool, policy
+        participant B as Brain: run/idle, timer, detector, pool, policy, log
         participant C as Camera (IMX296, 60 frames/s)
     end
     participant A as Arduino (UNO R4 WiFi)
     participant R as Rig (DM542, stepper, cart, pole)
 
-    Note over P,R: Before any run: the firmware with Run is on the board (not built),<br/>the brain is on the Orin (not built), the policy file is with it (built), the camera's matrix is fitted (built)
+    Note over P,R: Before any run: the firmware with Run is on the board (not built), its runtime_end_margin in the data flash,<br/>the brain is on the Orin (not built), idle, the policy file is with it (built), the camera's matrix is fitted (built)
     P->>W: opens the Orin's page
     W->>A: datagram "pins"
     A-->>W: the pins' levels: the board is on the network and answers
 
-    Note over P,A: the calibration (calibrate-w-homography.md, built): seek to one switch, then the other<br/>(the second seek's pulses are the rail's span), then MoveToCentre.<br/>The camera's matrix is measured and fitted again only when the camera has moved.<br/>The board forgets the span at every reset, so every session starts with the seeks.
-    Note over R: the cart rests at the centre, the pole hangs still<br/>(who judges "still" is open)
+    Note over P,A: the calibration (calibrate-w-homography.md, built): seek to one switch, then the other<br/>(the second seek's pulses are the rail's span), then MoveToCentre.<br/>The board caches both trip positions and the centre (decided 2026-11-02, not built).<br/>The camera's matrix is measured and fitted again only when the camera has moved.<br/>The board forgets the span at every reset, so every session starts with the seeks.
+    Note over R: the cart rests at the centre, the pole hanging still is optional (decided 2026-11-03)
 
-    P->>W: Run (where the button sits and how W reaches B are open)
-    W->>B: start one episode
-    Note over B: reads the matrix (homography.json), the policy and its run's values<br/>pre-warms the pool: six entries, no detection (−1, −1),<br/>at gaps before the first frame, the last 6 actions all 0
+    P->>W: Run (on a page of W, which page is open)
+    W->>B: request: run (as W does for calibrate_service.py)
+    Note over B: idle → run. Opens the run's log folder in runs/, named by the Run press's timestamp<br/>reads the matrix (homography.json), the lens, the policy and its run's values<br/>pre-warms the pool: six entries, no detection (−1, −1),<br/>at gaps before the first frame, the last 6 actions all 0
     B->>C: opens the camera, drops the settling frames
-    B->>A: enter Run (the message is open)
-    Note over A: refuses without a finished calibration (follows, robot-plan.md)
-    A-->>B: ready
 
-    loop every command n, until the episode ends
-        C-->>B: the frame for this tick: 1456×1088, halved to 728×544 greyscale,<br/>and its capture time (where that time comes from is open)
-        Note over B: JPEG q90, then decode (as the training frames were made)<br/>detect: 4 slots, (x, y) or (−1, −1)<br/>Pivot and End: the lens's bend undone, then through the matrix: (x, z) in metres<br/>push onto the pool at age 0, every older entry ages by the time since the last capture
-        Note over B: the episode end? (The episode end, below): if so, leave the loop
+    loop every command n, until STOP
+        C-->>B: the camera's next frame: 1456×1088, halved to 728×544 greyscale,<br/>and its capture time, GStreamer's stamp (do-timestamp)
+        Note over B: JPEG q90, then decode (as the training frames were made)<br/>detect: per class the model's box, (x, y) or (−1, −1)<br/>Pivot and End: the lens's bend undone, then through the matrix: (x, z) in metres<br/>push onto the pool at age 0, every older entry ages by the time since the last capture
         Note over B: the 36 inputs: the pool's 30 numbers, ages ÷ 1000,<br/>then the last 6 actions, newest first<br/>the policy: a = tanh(mean), in [−1, 1], no randomness<br/>the command: c = round(a × 44,600) pulses/s
         B->>A: datagram, 4 bytes: c as an i32, little-endian
-        Note over A: clamp c to ±44,600, every tick the sent rate moves towards c<br/>by at most m × the tick (m = 1,210,937 pulses/s²),<br/>DIR from the sign, STEP from the size, count every pulse<br/>the soft limit: heading for an end, the sent rate is at most √(v_slow² + 2 × m × d),<br/>d the pulses left to that end's cached trip position<br/>a limit switch trips: stop in one jump, from at most v_slow
+        Note over A: clamp c to ±44,600, every tick the sent rate moves towards c<br/>by at most m × the tick (m = 1,210,937 pulses/s²),<br/>DIR from the sign, STEP from the size, count every pulse<br/>the soft limit: heading for an end, the sent rate is at most √(2 × m × d),<br/>d the pulses left to that end's stop point, runtime_end_margin short of its cached trip position:<br/>the ramp reaches 0 before the switch. A switch tripping (a fault): stop in one jump
         A->>R: DIR and STEP pulses
         Note over R: the cart moves on c until the next command lands, the pole swings
-        Note over B: one log row, frames before the next tick are dropped unread,<br/>the next tick is the next drawn gap later
+        Note over B: one log line: the model's boxes, the coordinates after the homography,<br/>the 36 inputs sent to the policy<br/>waits delay_ms, frames before the next one after the wait are dropped unread
     end
 
-    B->>A: command 0: the cart ramps to rest (about 12 mm from top speed)
-    B->>A: leave Run (the message is open)
+    P->>W: STOP
+    W->>A: command 0, several times: the cart ramps to rest (about 12 mm from top speed)
+    W->>B: request: idle, so no command follows (the Orin is the brain, user 2026-11-02)
     B->>C: closes the camera
-    B-->>W: the episode is over: how it ended, and its log
+    Note over B: run → idle, the log folder closed
+    B-->>W: idle
     W-->>P: shows it
 
-    Note over P,R: At any time: P presses STOP, and W sends the board Stop, several times (as /calibrate/stop does)<br/>and tells B to end the episode. A Stop is a datagram: it can be lost on the WiFi.<br/>The power switch is the stop that needs no software.
+    Note over P,R: A command is a datagram: it can be lost on the WiFi. The power switch is the stop that needs no software.
 ```
+
+## The run and idle states
+
+**Decided: the brain holds a run/idle state** (user, 2026-11-03). A page on
+the Orin's webserver sends it requests to change state, as the webserver
+already does for `calibrate_service.py`: the webserver forwards the page's
+request to the Python program on the Orin's own address
+(`__live__/orin/rust/crates/webserver/src/live.rs`, `measure::forward`).
+
+**Decided: "Run means RUN and do not stop until stop is requested"** (user,
+2026-11-03). One Run press starts one run, and only STOP ends it. There is no
+time limit, and no episodes inside a run.
+
+**Decided: the gap to the rail's ends is a Uno guardrail, not a run-ending
+event** (user, 2026-11-03). The brain does not measure it and ends nothing on
+it; the board's soft limit keeps the cart from the switches (*The soft limit*).
+
+**Follows: what no longer ends a run.** The synthetic loop's ends are not the
+rig's:
+
+- **The strike gap** (b = 0.046 m in training): not checked on the rig, by the
+  decision above.
+- **The time limit** (500 commands in training, `gym.toml` `[env]
+  max_episode_steps`): none, by the decision above. The policy has no clock
+  among its inputs, so it needs none.
+- **Failed frames:** in the synthetic loop, 3 failed frames among the pool's 6
+  fail the whole run (`__synthetic__/orin/python/src/synthetic_orin.py`, the
+  rules). On the rig a failed frame's entry is (−1, −1), as in the synthetic
+  loop, and the run goes on until STOP.
+
+**Follows: STOP is the only way out of run.** The webserver sends the board
+the command 0 several times, since a datagram can be lost, and asks the brain
+for idle. The brain sends no command after it is idle.
+
+**Open:**
+
+- **Which page carries Run and STOP.**
+- **Whether the brain is its own program or part of `calibrate_service.py`.**
+  The service runs the camera for the live view, the lens measurement and the
+  calibration's measurements, and keeps them from using it together (its
+  routes, `live.rs`'s header). The brain needs the camera too.
 
 ## The calibration on the rig
 
@@ -189,7 +245,7 @@ policy*). The actor is three matrix multiplications, so the Orin
 needs no PyTorch. That matters because installing anything needs the user's
 permission (`AGENTS.md`, *Python policy*).
 
-**Proposed: the run's values come from the trained run.** Some values must be
+**Follows: the run's values come from `policy.npz` alone.** Some values must be
 the ones the policy trained with:
 
 - the top pulse rate, 44,600 pulses/s;
@@ -197,10 +253,10 @@ the ones the policy trained with:
 - the 6 past commands;
 - the command band, 20–30 Hz.
 
-All four are in the run's manifest, `runs/<run>/latest.json` (`run_values` and
-`gym_toml`). If the brain reads them from the copy shipped beside the weights,
-they cannot drift from what the policy learned. `policy.npz` carries all four,
-copied from the manifest by the export. 44,600 is the 24 V row of
+`policy.npz` carries all four, copied by the export from the run's manifest,
+`runs/<run>/latest.json` (`run_values` and `gym_toml`), and `policy.py` already
+loads them (`__live__/orin/python/src/policy.py:44-48`, `:65-66`). So they
+cannot drift from what the policy learned. 44,600 is the 24 V row of
 `motor-spec.md` (*The top pulse rate per supply*): 0.669 m/s at 15 µm a pulse,
 the rig's supply today.
 
@@ -218,21 +274,24 @@ differences at the edge.
   (`synthetic-loop-dia.md`, *Each frame*).
 - **The 36 inputs:** the pool's 30 numbers with every age divided by 1,000,
   so in seconds, then the actions of the last 6 commands, newest first, 0
-  before the episode's first (`observations/pool_and_commands.py`). On the
+  before the run's first (`observations/pool_and_commands.py`). On the
   rig the brain sends the commands, so it has them.
-- **Difference 1, the ages come from the camera's capture times**, not from
-  MuJoCo's clock (follows, `robot-plan.md`, *To cover*). **Open:** where
-  that time comes from. `camera.py` reads raw frames down a pipe and carries no
-  time. The camera software's own timestamp is the candidate, and the Orin's
-  clock when a frame arrives is the fallback.
+- **Difference 1, the ages come from GStreamer's timestamp**, not from
+  MuJoCo's clock (follows, `robot-plan.md`, *To cover*). **Decided: the brain
+  uses GStreamer's timestamp** (`nvarguscamerasrc` with `do-timestamp`), not
+  Argus's sensor timestamp (user, 2026-11-03). `do-timestamp` is the Orin's own
+  pipeline clock, read just before GStreamer passes the frame on, so it is not
+  the moment of exposure. **Follows:** `camera.py` must carry that stamp with
+  each frame; today it reads raw pixels from `gst-launch-1.0` down a pipe,
+  which drops it.
 - **Difference 2, the frame comes from the camera.** It is halved from
   1456×1088 to 728×544 greyscale, then encoded as JPEG quality 90 and decoded
   again (`__live__/orin/python/settings.toml` `[stream]`), so the detector gets
   what it was trained on. The detector found all four markers in 120 of 120
   real frames on 2026-11-01 (`__live__/orin/python/README.md`).
-- **The pre-warm and the failed frames are as in the synthetic loop.** Before
-  the first frame, six entries have no detection. 3 failed frames among the 6
-  end the episode.
+- **The pre-warm is as in the synthetic loop.** Before the first frame, six
+  entries have no detection. A failed frame is an entry of (−1, −1) and ends
+  nothing (*The run and idle states*).
 
 ## The command and the Arduino's Run
 
@@ -256,6 +315,25 @@ kept apart, so the rule is copied and not shared (decided, `AGENTS.md`,
 It is one fixed rule per tick, because the Uno makes as few decisions as
 possible (decided, `AGENTS.md`, 2026-10-28).
 
+**Decided: the board does not know whether a run is going** (user,
+2026-11-02: "Orin is the brain, uno is the dumb muscle"). There is no message
+to enter or leave a run: the board applies each command as it arrives, and the
+command 0 brings the cart to rest. **Follows: STOP during a run sends the
+command 0,** not the text `Stop`. `Stop` is 4 bytes, the length of a command,
+and as an `i32` it reads 1,886,352,467, which the clamp would turn into full
+speed to the right.
+
+**Follows: the same is true of `pins`.** The webserver's pin reading is the
+4 bytes `pins` (`__live__/orin/rust/crates/webserver/src/constants.rs`,
+`PINS_REQUEST`), and as an `i32` it reads 1,936,615,792: full speed to the
+right. **Open:** how the board tells a command from a 4-byte text message.
+
+**One firmware holds the seeks and Run** (follows). Every session starts with
+the seeks (*The calibration on the rig*), and the USB cable that uploads
+firmware is kept out while the rig runs, so the firmware on the board during a
+run is the one that did the seeks. Today that is the `calibration` firmware
+(`__live__/arduino/rust/crates/calibration`).
+
 **Follows: the board's edge, which the synthetic Arduino never had** (its
 crate's header; `robot-plan.md`, *To cover*):
 
@@ -269,38 +347,47 @@ crate's header; `robot-plan.md`, *To cover*):
 - **The interrupt bridge:** the board sleeps until a datagram arrives and is
   never polled (decided, `AGENTS.md`, 2026-10-31).
 
-**The soft limit** (decided, user 2026-11-02). The cart may reach a limit
-switch during a live run, but only slowly, never at top speed. The board does
-this on its own from its pulse count, so neither the camera nor the WiFi can
-make it late. Every tick, while the cart is moving towards an end, the sent
-rate is capped at
+**The soft limit** (decided, user 2026-11-02 and 2026-11-03). During a balance
+run the Uno never lets the cart hit a limit switch: it forces a ramp to zero
+before the cart reaches one, using the cached positions of each end of the rail
+and its count of every pulse ("a software ramp to zero as the cart approaches",
+user 2026-11-02; 2026-11-03: the Uno is responsible for it). The board does this
+on its own, so neither the camera nor the WiFi can make it late. Every tick,
+while the cart is moving towards an end, the sent rate is capped at
 
-  v_cap = √(v_slow² + 2 × m × d)
+  v_cap = √(2 × m × d)
 
 - **v_cap:** the fastest the cart may go now, in pulses/s;
-- **v_slow:** the speed at which the cart may meet a switch, in pulses/s;
 - **m:** the jump limit, 1,210,937 pulses/s²;
-- **d:** the pulses left to that end's cached trip position.
+- **d:** the pulses left to that end's **stop point**, `runtime_end_margin`
+  pulses short of the end's cached trip position; 0 once the cart is there.
 
-This is the curve along which the ramp, braking as hard as m allows, arrives at
-the switch at exactly v_slow. Moving away from an end is never capped. It is
-one fixed rule per tick, as the Uno's rules must be (`AGENTS.md`, *The real
-robot*). v_slow is a value in the firmware's toml (`AGENTS.md`: tunable values
-live in a toml).
+This is the curve along which the ramp, braking as hard as m allows, reaches 0
+exactly at the stop point, so the switch is never reached. Moving away from an
+end is never capped. It is one fixed rule per tick, as the Uno's rules must be
+(`AGENTS.md`, *The real robot*).
 
-- **Proposed: v_slow = `seek_speed`, 2,000 pulses/s (30 mm/s).** The seeks
-  already meet the switches at that speed and stop in one jump, and
-  `calibration.toml` gives the reason this is safe: "a jump that small cannot
-  make the motor slip".
-- **Follows: where the slow-down starts.** From the top speed, (44,600² −
-  2,000²) ÷ (2 × 1,210,937) = 820 pulses before the trip, 12.3 mm. A switch
-  trips about 5 mm from its base (`__synthetic__/trainer/python/settings.toml`,
-  `calibration_stop_gap`), so the slow-down begins about 17 mm from the base.
-  That is inside the brain's 46 mm episode end (*The episode end*), so a normal
-  episode ends before the policy meets the cap. The synthetic Arduino has no cap,
-  so the policy has never felt it.
-- **Follows: the switch is the final stop.** A switch tripping during Run
-  stops the cart in one jump, as in a seek, from at most v_slow.
+**Decided: `runtime_end_margin`** (user, 2026-11-03) is the soft limit's gap,
+in pulses, short of each switch's cached trip position. It is set from an
+Arduino Settings page on the Orin's webserver and saved in the Uno's data
+flash, so it survives a reset (*The Uno's settings*). It is the only setting
+handled this way for now. It binds balance runs only: calibration's seeks must
+violate it to reach the switches. **Open:** its value, found on the rig
+through the settings page.
+
+- **Follows: where the slow-down starts.** From the top speed, 44,600² ÷
+  (2 × 1,210,937) = 821 pulses before the stop point, 12.3 mm, plus
+  `runtime_end_margin` before the trip. A switch trips about 5 mm from its base
+  (`__synthetic__/trainer/python/settings.toml`, `calibration_stop_gap`). With
+  no margin the slow-down begins about 17 mm from the base.
+- **Follows: the policy will meet the cap.** In training an episode ended at
+  b = 0.046 m from a base, before the slow-down began, and the synthetic
+  Arduino has no cap. On the rig nothing ends a run at the gap (*The run and
+  idle states*), so near an end the cart answers the policy's commands more
+  slowly than it ever has.
+- **Follows: the switch stays the last stop, for a fault** (lost pulses, a
+  wrong cache). A switch tripping during a run stops the cart in one jump, as
+  in a seek.
 
 **Open:**
 
@@ -311,77 +398,77 @@ live in a toml).
   chose a Left / Right toggle that sets it at run time (`robot-plan.md`, user
   2026-10-29). The calibration firmware's `[idler]` and `[motor]` guesses have
   not been checked on the rig.
-- **The messages that enter and leave Run.** One fact constrains them:
-  `Stop` is 4 bytes long, the same length as a command. As an `i32` it reads
-  1,886,352,467, which the clamp would turn into full speed to the right. So
-  during Run the board cannot tell `Stop` from a command by length alone.
 - **What the board does when commands stop coming** (the Orin crashes, or the
-  WiFi drops). Today the board would hold the last command until the soft
-  limit slowed the cart and the switch stopped it.
-- **What STOP can stop during Run** (`robot-plan.md`, *STOP during Run*): if
-  the timer makes the pulses, the board can read a datagram without pausing
-  them. Not checked on the board.
+  WiFi drops). Today's rule would hold the last command until the soft
+  limit brought the cart to rest at a stop point.
+- **Whether a command reaches the board during a fast move** (`robot-plan.md`,
+  *STOP during Run*): if the timer makes the pulses, the board can read a
+  datagram without pausing them. Not checked on the board.
+- **What the board does with a command after a switch has tripped**, and with
+  a command before a calibration has cached the trip positions, when there is
+  no soft limit to apply.
 
-## The episode start
+## The Uno's settings
 
-**Follows: the start pose is the synthetic one.** Every synthetic episode
-starts with the cart at rest at the centre and the pole hanging still (θ = 0,
-user 2026-10-24). The policy has only ever started from there. On the rig:
+**Decided** (user, 2026-11-03): `runtime_end_margin` is held in the Uno's data
+flash, set from an Arduino Settings page on the Orin's webserver, and it is the
+only setting handled this way for now (*The soft limit*). **Decided:
+`arduino-manager` gains three options:**
 
-- **The cart at the centre:** after the seeks, by `MoveToCentre`. **Open:** how
-  the cart gets back there after an episode. `MoveToCentre` today answers
-  `not_ready` unless the cart rests on a switch, so it needs a seek first, or a
-  return to the centre by the pulse count in Run.
-- **The pole hanging still:** after an episode it swings for a while.
-  **Open:** who judges that it has stopped. In the calibration the person
-  steadies the pole by hand (`calibrate-w-homography.md`). The brain could also
-  wait until End stops moving in its frames.
+- pull the settings the Uno holds now;
+- upload firmware and settings;
+- upload firmware only, leaving the saved settings in flash alone.
 
-**Proposed: one Run press is one episode,** so the person checks the cart and
-the pole before each.
+**The data flash, as `unor4-hal` reports it** (its reply on current main,
+pasted by the user on 2026-11-03; the HAL itself was not read):
 
-## The episode end
+- `unor4_hal::dflash::DataFlash` writes the data flash: `take(&Clocks)` once
+  per boot, then `read`, `blank_check`, `write`, `erase_block` (blocks 0–7),
+  `erase_all`. The caller writes no registers. One flash command at a time is
+  enforced by the API (`&mut self`).
+- Verified on the UNO R4 WiFi on 2026-10-21: program and read back with 0
+  mismatches, a second write to a used byte refused (`NotBlank`), data kept
+  across resets, and a firmware upload (`arduino-cli upload`) left the data
+  flash intact.
+- For the firmware: a byte is written once per erase of its 1 KB block; every
+  call blocks for its whole run (measured: 1,024 bytes in 44 ms, one block
+  erase in 6 ms); after a power loss or reset during a write or erase, erase
+  that area again before trusting it; test erased bytes with `blank_check()`,
+  not `read()`.
+- Not yet run in the HAL: retention across power-off. Still to test on the
+  rig: `arduino-manager`'s firmware-only upload keeping the settings.
 
-The synthetic episode ends when a **strike gap**, the cart's clearance to the
-end of the rail, falls under b = 0.046 m, or it is cut off at the **time
-limit**, 500 commands (`gym.toml`). On the rig there are no MuJoCo sites to
-measure the gap.
+**Follows: a setting is changed only when no run is going.** A write blocks the
+board for its whole run (44 ms for a block, plus 6 ms to erase it), and while it
+blocks the board makes no ramp step.
 
-**Proposed, the brain's check (the note after 9):** the cart's position is Pivot's `x`
-through the matrix. From it and the wall and cart-face numbers the calibration
-already holds (`left_wall_x`, `right_wall_x`, `left_face_to_pivot`,
-`right_face_to_pivot`), the brain works out the same two gaps and ends the
-episode under b. b was chosen for the synthetic loop's longest gap plus its
-longest delay, 68 ms at 0.669 m/s. **Follows:** if D turns out longer, b must
-grow with it.
+**Follows: `arduino-manager` reaches the board only by USB**, which is kept out
+while the rig runs, so its three options are used with the rig idle.
 
-**Proposed: the same time limit,** 500 commands, about 20.8 s. The policy has
-no clock among its inputs, so the limit is the experiment's choice, not
-something the policy needs.
+**Open:**
 
-**Also ends the episode:** 3 failed frames in the pool (as in the synthetic
-loop); the person's STOP; a limit switch tripping, which stops the cart
-(*The soft limit*).
+- **The messages** that set and read `runtime_end_margin` over WiFi, and how the
+  board answers them.
+- **How `arduino-manager` pulls and uploads the settings.** It speaks to the
+  board over the USB serial line; the `calibration` firmware speaks no command
+  protocol there today (the manager's README, *What it still needs*).
+- **What the board uses when the data flash holds no setting** (a blank flash,
+  or one erased by a reset during a write).
 
-**At every end, the command 0 (12).** The ramp brings the cart to rest. From
-the top speed that takes 0.669 ÷ 18.2 = 37 ms and 0.669² ÷ (2 × 18.2) = 12 mm,
-inside b.
+## The log
 
-## The record
+**Decided** (user, 2026-11-03): each real run is logged on the Orin, in a
+`runs` directory, one folder per run named by the timestamp of the Run press.
+It holds, per frame:
 
-**Proposed:** per episode, a folder on the Orin with one line per command:
+- the raw boxes that come from the object detection model;
+- the coordinates after the homography;
+- the array sent to the policy.
 
-- the id;
-- the capture time;
-- the pool;
-- the four detected slots in pixels;
-- the 36 inputs;
-- the action a and the command c;
-- how long each part took: detection, policy, and sending.
+Nothing on the rig knows the true state, so unlike the synthetic record there
+is no truth in it (follows).
 
-Also each frame's JPEG, as the synthetic Orin saves them. Nothing on the rig
-knows the true state, so unlike the synthetic `states.csv` there is no truth
-column. The frames are the only record of what really happened.
+**Open:** the log's file format, and the timestamp's form in the folder name.
 
 ## Measuring D
 
@@ -396,19 +483,34 @@ The rest cannot:
 Those need either the camera software's exposure time, or a reply from the
 board.
 
+**Measured: the WiFi round trip** (2026-11-02, `__live__/orin/python/README.md`,
+*The WiFi round trip to the Arduino*). The board's `pins` answer, 1,000 times:
+median 33.0 ms, 99% within 112.5 ms, 4.2% lost. It is an upper bound for a
+command's hop to the board. Pings put the delay at the board's WiFi chip (3.5–125
+ms) and not the Orin's side (1.1–2.4 ms to the router).
+
+**Future feature, not now (user, 2026-11-02): turn off the WiFi chip's power
+saving.** The bridge firmware (`D:\git\unor4-wifi-interrupt-bridge`, branch
+`feature/interrupt`) never sets it, so the chip keeps the ESP32 library's
+default, `WIFI_PS_MIN_MODEM`: its radio sleeps between the router's beacons. The
+feature is a call to `WiFi.setSleep(false)` in the bridge (or an AT command for
+it), the bridge flashed again, and `wifi_round_trip.py` and the pings run again
+to show whether the delay and the losses came from the sleep.
+
 ## Contracts
 
 - **The frame:** 728×544 greyscale, JPEG quality 90, from the camera's
   1456×1088 halved on each side (`__live__/orin/python/settings.toml`
   `[stream]`; `src/camera.py`). The exposure is locked at 1 ms and the gain at
-  8, to keep the swinging End sharp.
+  18 dB (`gain = 180`), to keep the swinging End sharp. Each frame carries
+  GStreamer's timestamp.
 - **The detection:** 4 slots in class order, 0 Left (tag 376), 1 Right (596),
   2 Pivot (920), 3 End (937), each a box centre (x, y) normalized to [0, 1]
   or (−1, −1) (`AGENTS.md`, *Verified contracts*; `synthetic-loop-dia.md`,
   *Contracts*).
 - **The points:** Pivot and End, (x, z) in metres in the pole's plane, the
-  lens's bend undone with the stored number and then through the stored
-  matrix (`calibrate-w-homography.md`, *Per frame*), or (−1, −1).
+  lens's bend undone with the stored lens calibration and then through the
+  stored matrix (`calibrate-w-homography.md`, *Per frame*), or (−1, −1).
 - **The pool:** 6 entries, newest first, each [age_ms, pivot_x, pivot_z,
   end_x, end_z], 30 floats. The ages are from the capture times, 0 for the
   newest.
@@ -418,6 +520,9 @@ board.
 - **The command:** one `i32`, pulses/s, sign = direction, 4 bytes
   little-endian, one UDP datagram to `192.168.0.220:4210`. Fixed length, no
   id.
+- **`runtime_end_margin`:** pulses, in the Uno's data flash.
+- **The log:** `runs/<the Run press's timestamp>/` on the Orin; per frame the
+  model's boxes, the coordinates after the homography and the 36 inputs.
 - **The cart speed:** 15 µm per pulse: 96 mm per pulley turn ÷ (200 full steps
   × 32 microsteps) (`__synthetic__/trainer/python/settings.toml` `[drive]`).
 
@@ -425,19 +530,24 @@ board.
 
 | Part | State |
 |---|---|
-| Camera to 728×544 greyscale frames | built, `__live__/orin/python/src/camera.py` |
+| Camera to 728×544 greyscale frames | built, `__live__/orin/python/src/camera.py`; it does not carry GStreamer's stamp |
 | Detector on the Orin | built, 120 of 120 frames with all four markers (2026-11-01) |
 | Seeks, centre, Stop on the board | built, `__live__/arduino/rust/crates/calibration` |
-| Camera calibration, lens and matrix | built, the `/calibrate` page and `calibrate_service.py` |
+| Camera calibration, lens and matrix | built, the `/calibrate` and `/lens` pages and `calibrate_service.py` |
 | A trained policy | trained in the synthetic loop, run `20261101_163458` (`trainer-observations.md`) |
 | The policy file | built on the PC, the numpy file, `__live__/orin/python/saved/policy.npz` with `src/policy.py` (2026-11-02); goes to the Orin with the folder |
-| The brain: timer, pool, policy, sender, end checks, record | not built |
-| The board's Run: command, ramp, timer, pulse count, soft limit | not built |
-| The Run button and how the webserver starts the brain | not built; where it sits is open |
+| The brain: run/idle, timer, pool, policy, sender, log | not built (`real-orin-plan.md`) |
+| The Run and STOP buttons and how the webserver reaches the brain | not built; which page is open (`real-orin-plan.md`) |
+| The Arduino Settings page | not built (`real-orin-plan.md`) |
+| The board's Run: command, ramp, timer, pulse count, cached rail, soft limit | not built (`real-arduino-plan.md`) |
+| `runtime_end_margin` in the Uno's data flash | not built (`real-arduino-plan.md`) |
+| `arduino-manager`'s three settings options | not built (`real-pi-plan.md`) |
 | D measured | not done |
 
 ## References
 
+- `real-orin-plan.md`, `real-arduino-plan.md`, `real-pi-plan.md`: the plans
+  written from this diagram, one per computer.
 - `synthetic-loop-dia.md`: the synthetic loop, whose contracts this keeps.
 - `robot-plan.md`: the user's 2026-10-29 decisions for the two real
   computers. It predates the 2026-11-01 split of live and synthetic code: its

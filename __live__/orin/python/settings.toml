@@ -305,3 +305,40 @@ pole_length = 0.450           # Pivot to End
 # Metres of cart travel per pulse: __synthetic__/trainer/python/settings.toml [drive], a 96,000 um belt
 # turn over 200 full steps x 32 microsteps.
 metres_per_pulse = 0.000_015
+
+
+
+[round_trip]
+# The WiFi round trip between the Orin and the Arduino (wifi_round_trip.py): the
+# Orin sends the board's "pins" request and times its answer, `count` times.
+# address and port are where the board listens, the same as [arduino] in the
+# webserver's settings.toml (../rust/settings.toml); they must match it.
+address = "192.168.0.220"
+port = 4210
+
+# How many requests, and the pause between one answer and the next request, ms.
+# 40 ms is about the policy's command gap, 33.3-50 ms (real-loop-dia.md, Timing).
+count = 1000
+gap_ms = 40
+
+# How long to wait for an answer before counting it lost, ms. An answer arriving
+# later is thrown away before the next request, so it is never taken for the
+# next one's.
+timeout_ms = 500
+
+# Where each request's time is written, one line each, relative to this folder.
+out = "round_trip.csv"
+
+
+
+[brain]
+# The brain runs the balance loop (real-loop-dia.md, The sequence): it takes an
+# image, gets the points from detection, builds the inputs, asks the policy for a
+# command and sends it at once. Then it waits delay_ms before taking the next
+# image (user, 2026-11-02). The next image is the camera's next frame after the
+# wait; the camera makes one every 16.7 ms.
+#
+# At 0 the loop runs as fast as the Orin can, about one command per camera frame.
+# The policy in saved/policy.npz trained with 33.3-50 ms between commands
+# (its command_rate_min_hz and command_rate_max_hz, 20 and 30).
+delay_ms = 0

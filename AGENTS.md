@@ -73,6 +73,21 @@ adds repo structure around them, never overrides them.
 
 ## Working with the user
 
+- **The user's word is the record** (user, 2026-11-03: "NEVER, EVER TREAT ME
+  AS A LIAR AGAIN"). When the user says what they decided or asked for, it is
+  written down as they say it now. Never look for proof, never set their
+  earlier words against them, never ask them to pick between them. Worked
+  failure: told that the no-hit limit had been asked for the day before, the
+  agent searched the user's session transcripts for it and asked them to choose
+  between two of their own messages.
+- **Read nothing on the user's computer outside this repo** (user,
+  2026-11-03: "YOU NEVER HAVE MY PERMISSION TO READ ANYTHING ON MY COMPUTER
+  EXCEPT THE REPO YOU ARE IN"). This includes Claude Code's own session
+  transcripts, the sibling checkouts (`D:\git\greyhound-snake`,
+  `D:\git\unor4-wifi-interrupt-bridge`, `unor4-hal`) and any other folder.
+  Where a question needs something outside the repo, ask the user. Worked
+  failure: the agent searched six session transcripts for the user's earlier
+  words, and before that read the bridge fork's code, unasked.
 - Follow the scope of the user's explicit request. Do not assume permission
   to perform additional work merely because it would advance the project.
 - **Unity validation is the user's.** Compilation, scene behavior,
@@ -376,7 +391,12 @@ adds repo structure around them, never overrides them.
   planned sequence of one run, the source of truth for the loop plans),
   one plan per diagram participant, named after it: `orchestrator-plan.md`, `mujoco-plan.md`,
   `trainer-plan.md`, `synthetic-arduino-plan.md`,
-  `synthetic-orin-plan.md`, `unity-player-plan.md`; `detector-plan.md`
+  `synthetic-orin-plan.md`, `unity-player-plan.md`; `real-loop-dia.md`
+  (the planned sequence of one run on the real rig, the single source of
+  truth for the real plans, user 2026-11-03) and its plans, one per
+  computer: `real-orin-plan.md` (the brain, the webserver and its pages),
+  `real-arduino-plan.md` (the board's firmware) and `real-pi-plan.md`
+  (`arduino-manager`); `detector-plan.md`
   (the retired Rust detector crate's plan, kept for its *Results*: the
   measurements that chose the Orin and Python); `DATASETS.md` (the one dataset format) and
   `GENERATOR.md` (the generator's binding directives, which win over

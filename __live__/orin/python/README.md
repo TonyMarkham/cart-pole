@@ -280,6 +280,59 @@ uv run python src/test_policy.py
 Nothing runs the policy yet: the brain, which times the commands, builds the
 inputs and sends the commands, is not built.
 
+## The WiFi round trip to the Arduino
+
+**Why:** each command reaches the board over WiFi, and that hop is part of the delay
+D the policy must live with, from a frame's exposure to its command reaching the
+board ([real-loop-dia.md](../../../real-loop-dia.md), *Measuring D*). The Orin's
+clock cannot time a one-way hop, but it can time a question and its answer.
+
+`src/wifi_round_trip.py` sends the board its existing `pins` request (the one the
+`/arduino` page uses, which moves nothing) `count` times, `gap_ms` apart, and times
+each answer. Its settings are `[round_trip]` in `settings.toml`, and it writes each
+request's time to `round_trip.csv`. Close the `/arduino` page first: it asks for the
+pins every second, and the board answers one request at a time. On the Orin:
+
+```bash
+cd ~/live-orin-python && .venv/bin/python src/wifi_round_trip.py
+```
+
+The round trip is more than a command's hop: the board's answer costs it 5
+exchanges with its WiFi chip, and a command in Run gets no answer. So it is an upper
+bound for the hop.
+
+**2026-11-02, the calibration firmware, the board at rest:** 1,000 requests 40 ms
+apart.
+
+| | ms |
+|---|---|
+| Fastest | 4.8 |
+| Median | 33.0 |
+| 90% within | 41.1 |
+| 99% within | 112.5 |
+| Slowest answered | 149.6 |
+
+958 were answered and 42 got no answer within 500 ms, 4.2%. 777 of the 958 took
+30–35 ms.
+
+**Where the time goes,** from pinging each device from the Orin, 50 pings 0.2 s
+apart. A ping is answered by the WiFi chip itself, with no part for the board's
+processor:
+
+| Pinged | Fastest | Average | Slowest |
+|---|---|---|---|
+| The router, 192.168.0.1 | 1.1 ms | 1.3 ms | 2.4 ms |
+| The board's WiFi chip, 192.168.0.220 | 3.5 ms | 66.4 ms | 125.0 ms |
+
+So the Orin's side of the WiFi is fast and steady, and the delay is at the board's
+WiFi chip. The likely reason is the chip's power saving. The bridge firmware never
+sets it, so it keeps the ESP32 library's default, `WIFI_PS_MIN_MODEM`
+(`WiFiGeneric.cpp` in the bridge fork's patched ESP32 core). With that setting the
+chip's radio sleeps and wakes only at the router's beacons to collect what is
+waiting for it. That fits pings arriving anywhere from 3.5 to 125 ms. It is not
+proven: that needs the same measurement with power saving off. Why most round trips
+sit at 30–35 ms is not explained.
+
 ## What it needs on the Orin
 
 - `uv`, which is at `~/.local/bin/uv` on `robo-orin`.
