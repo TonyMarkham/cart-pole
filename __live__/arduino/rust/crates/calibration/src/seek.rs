@@ -11,85 +11,123 @@ use crate::{
     limit::Limit,
     moved::Moved,
     pins::Pins,
-    settings::{RELEASE_PULSES, SEEK_PERIOD_NS, SEEK_TIMEOUT_MS},
+    settings::{RELEASE_PULSES, SEEK_SPEED, SEEK_TIMEOUT_MS},
+    sleep,
     stop_listener::StopListener,
     stopwatch::Stopwatch,
     switch::Switch,
     trip::TripFilter,
 };
 
-use unor4_hal::{delay::Delay, uart::UartIrq};
+use unor4_hal::uart::UartIrq;
 
 /// Moves to `end` at `seek_speed`.
-pub fn seek(
-    at: &'static UartIrq<ra4m1::SCI1>,
-    pins: &mut Pins,
-    delay: &mut Delay,
-    end: End,
-) -> AppResult<Moved> {
-    let [d2, d3] = Switch::ALL.map(|switch| pins.pressed_steady(switch));
+pub fn seek(at: &'static UartIrq<ra4m1::SCI1>, pins: &mut Pins, end: End) -> AppResult<Moved> {
+    let d2 = pins.pressed_steady(Switch::D2)?;
+    let d3 = pins.pressed_steady(Switch::D3)?;
     if d2 && d3 {
         return Err(AppError::refused());
     }
-    if pins.pressed_steady(end.switch) {
+    if pins.pressed_steady(end.switch)? {
         return Err(AppError::already_there(end.switch));
     }
     creep(
         at,
         pins,
-        delay,
         end.direction,
-        SEEK_PERIOD_NS,
+        SEEK_SPEED,
         Limit::Time(SEEK_TIMEOUT_MS),
     )
 }
 
-/// Pulses `direction`, one every `period_ns`, until a switch trips, `limit` is
-/// reached or a `Stop` datagram arrives. A switch released when the move starts
-/// is watched at once. One pressed at the start, the end the cart is leaving, is
-/// watched only after it has read released for `release_pulses` in a row, so its
-/// contact bouncing as the cart leaves is not a trip.
+/// Runs `direction` at `speed` pulses/s, from rest and with no ramp, until a
+/// switch trips, `limit` is reached or a `Stop` datagram arrives. The step
+/// generator makes and counts the pulses in hardware, so the board sleeps
+/// through the move. It wakes at each 2 ms tick, at a press on either switch,
+/// when the wake timer ends a pressed switch's `trip_us`, at the count stop
+/// and at each byte from the WiFi chip, and looks only then.
+/// A switch released when the move starts is watched at once. One pressed at
+/// the start, the end the cart is leaving, is watched only after no press of
+/// it has been seen for `release_pulses`, so its contact bouncing as the cart
+/// leaves is not a trip. A pulse limit is a count stop: the generator stops
+/// in hardware after exactly that many pulses, and the answer gives the count
+/// the cart really made.
 pub fn creep(
     at: &'static UartIrq<ra4m1::SCI1>,
     pins: &mut Pins,
-    delay: &mut Delay,
     direction: Direction,
-    period_ns: u32,
+    speed: u32,
     limit: Limit,
 ) -> AppResult<Moved> {
-    pins.set_direction(delay, direction);
+    let count = match limit {
+        // Already there: a count stop must be at least 1 ahead.
+        Limit::Pulses(0) => return Ok(Moved::Centred { pulses: 0 }),
+        Limit::Pulses(count) => Some(count),
+        Limit::Time(_) => None,
+    };
     let sysclk = pins.sysclk();
-    let mut clock = Stopwatch::start(sysclk);
     let mut trip = TripFilter::new(u64::from(sysclk / 1_000_000));
-    // None: watched. Some(n): pressed at the start, released for n pulses since.
+    // None: watched. Some(n): pressed at the start; n is the pulse count at
+    // the latest press seen.
     let mut waiting: [Option<u32>; 2] = Switch::ALL.map(|switch| pins.pressed(switch).then_some(0));
+    pins.clear_edges();
     let mut stop = StopListener::new(at);
-    let mut pulses = 0;
+    let start = pins.start(direction, speed, count)?;
+    let mut clock = Stopwatch::start(sysclk);
+    // The `trip.due()` the wake timer was last started for; None: not armed.
+    let mut armed: Option<u64> = None;
     loop {
-        if stop.heard() {
-            return Err(AppError::stopped(pulses));
+        let (wake, heard) = sleep::until(|| {
+            let wake = pins.woke();
+            let heard = stop.heard();
+            (heard || wake.any()).then_some((wake, heard))
+        });
+        if heard {
+            return Err(AppError::stopped(pins.halt(start)));
         }
+        let pulses = pins.moved(start);
         let now = clock.cycles();
-        for (state, switch) in waiting.iter_mut().zip(Switch::ALL) {
+        for ((state, switch), edge) in waiting.iter_mut().zip(Switch::ALL).zip(wake.edges) {
             let pressed = pins.pressed(switch);
             match state {
-                None if trip.tripped(switch, pressed, now) => {
-                    return Ok(Moved::Tripped { switch, pulses });
+                None if trip.tripped(switch, pressed, edge, now) => {
+                    return Ok(Moved::Tripped {
+                        switch,
+                        pulses: pins.halt(start),
+                    });
                 }
                 None => {}
-                Some(_) if pressed => *state = Some(0),
-                Some(released) if *released + 1 >= RELEASE_PULSES => *state = None,
-                Some(released) => *released += 1,
+                Some(since) if pressed || edge => *since = pulses,
+                Some(since) if pulses.wrapping_sub(*since) >= RELEASE_PULSES => *state = None,
+                Some(_) => {}
             }
         }
-        match limit {
-            Limit::Pulses(count) if pulses >= count => return Ok(Moved::Centred { pulses }),
-            Limit::Time(ms) if clock.ms() >= u64::from(ms) => {
-                return Err(AppError::timed_out(pulses));
-            }
-            _ => {}
+        if wake.counted {
+            return Ok(Moved::Centred {
+                pulses: pins.halt(start),
+            });
         }
-        pins.pulse(delay, period_ns);
-        pulses += 1;
+        if let Limit::Time(ms) = limit
+            && clock.ms() >= u64::from(ms)
+        {
+            return Err(AppError::timed_out(pins.halt(start)));
+        }
+        // One wake timer serves both switches: it is started for the earlier
+        // `due`, again whenever that changes, and again after each end, which
+        // lands on or after `due` (the timer rounds up) unless the two clocks
+        // part by a count; then it starts once more for what is left.
+        let due = trip.due();
+        if wake.timer || due != armed {
+            match due {
+                Some(due) => {
+                    if let Err(error) = pins.wake_in(due.saturating_sub(now)) {
+                        pins.halt(start);
+                        return Err(error);
+                    }
+                }
+                None => pins.cancel_wake(),
+            }
+            armed = due;
+        }
     }
 }

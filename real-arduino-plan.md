@@ -3,7 +3,7 @@
 The policy's commands only balance the pole if the board turns each one into
 pulses the way the synthetic Arduino did in training, and keeps the cart off the
 limit switches while doing it. So the rig's Arduino (an UNO R4 WiFi driving the
-DM542 stepper driver) needs a **Run**: it takes each 4-byte command from the
+DM542 stepper driver) needs a **Run**: it takes each 3-byte command from the
 Orin, ramps towards it, counts every pulse, and slows the cart to rest before
 either end of the rail. It also keeps one setting, `runtime_end_margin`, in its
 data flash.
@@ -14,12 +14,13 @@ Section names in *italics* are the diagram's.
 
 ## Done when
 
-1. **A command moves the cart as in training.** A 4-byte datagram of `+r`
+1. **A command moves the cart as in training.** A 3-byte datagram of `+r`
    drives DIR for the positive direction and, after the ramp, STEP at `r`;
    `−r` the other DIR at the same rate; 0 brings the cart to rest. Anything
    beyond ±44,600 runs at 44,600.
-2. **The ramp holds the ceiling.** Each tick moves the sent rate towards the
-   command by at most m × the tick, rounded down (m = 1,210,937 pulses/s²).
+2. **The ramp holds the ceiling.** Each 2 ms tick moves the sent rate towards
+   the command by at most m × 2 ms, rounded down: 2,421 pulses/s at today's
+   m = 1,210,937 pulses/s², read from `calibration.toml`.
 3. **Every pulse is counted**, so the cart's position in pulses is known
    between the two cached trip positions.
 4. **The soft limit holds.** Sent towards an end at top speed, the cart comes
@@ -39,11 +40,17 @@ Section names in *italics* are the diagram's.
 - **A1: one firmware for the seeks and Run** (*The command and the Arduino's
   Run*, follows). The seeks and Run are in the same firmware, today's
   `calibration` crate (`__live__/arduino/rust/crates/calibration`).
-- **A2: the command.** One UDP datagram of 4 bytes, an `i32` little-endian, in
-  pulses per second, sign = direction, to port 4210 (*Contracts*).
+- **A2: the command** (decided 2026-11-03, *The command and the Arduino's
+  Run*). One UDP datagram of 3 bytes to port 4210: byte 0 the sign (0
+  negative, 1 positive), bytes 1–2 the rate's size in pulses per second as a
+  `u16`, little-endian. A rate of 0 is rest whatever the sign. A datagram is a
+  command by its length alone: no text message is 3 bytes.
 - **A3: the clamp, ±44,600** (*The command and the Arduino's Run*).
-- **A4: the ramp.** Every tick the sent rate moves towards the command by at
-  most m × the tick, rounded down. It is the synthetic Arduino's `Ramp`
+- **A4: the ramp.** Every tick, 2 ms (decided 2026-11-03, as in training), the
+  sent rate moves towards the command by at most m × the tick, rounded down.
+  m is a setting in `calibration.toml`, compiled in, never a constant in code
+  (decided 2026-11-03); it must equal the trainer's `[drive] jump_limit`, the
+  m the policy trained with. It is the synthetic Arduino's `Ramp`
   (`__synthetic__/orchestrator/rust/crates/arduino`), **copied, not shared**
   (`AGENTS.md`: live and synthetic share no code).
 - **A5: DIR and STEP.** DIR from the sign, STEP's rate from the size of the
@@ -78,10 +85,6 @@ Section names in *italics* are the diagram's.
 
 Each lands in the diagram first (`real-loop-dia.md`, the *Open* lists):
 
-- **How a command is told from a 4-byte text message.** `pins` and `Stop` are
-  both 4 bytes; read as commands they are full speed to the right. This blocks
-  step 5.
-- **The tick's length.** It sets m × the tick (2,421 pulses/s at 2 ms).
 - **DIR's level for a positive command.**
 - **What the board does when commands stop coming.**
 - **Whether a datagram is read during a fast move** without pausing the
@@ -111,8 +114,9 @@ is clean before any step is called done.
    the user, not read. *Check:* Done-when 3: a known pulse count sent away from
    and back to a switch trips it at the same count.
 3. **The ramp** (A3, A4). A copy of the synthetic `Ramp` in its own file, with
-   its clamp and its rule, ticked by the timer at the tick's length (blocked on
-   *the tick's length*). *Check:* Done-when 2, in host tests copied from the
+   its clamp and its rule, ticked by a timer every 2 ms, a named constant citing
+   the decision. m is a new `calibration.toml` key, `jump_limit`, which
+   `build.rs` reads and compiles in as it does `pulse_low_ns`. *Check:* Done-when 2, in host tests copied from the
    synthetic crate's.
 4. **The soft limit** (A8, A9). Its own type: given the sent rate, its
    direction, the pulse count, the cached trip positions and
@@ -120,9 +124,12 @@ is clean before any step is called done.
    the ramp, every tick. A trip stops the cart in one jump. *Check:* Done-when
    4–5: host tests for the cap at and around the stop point; on the rig, top
    speed towards each end stops short of the switch.
-5. **The command datagram** (A2, A10). The main loop hands each 4-byte command
-   to the ramp (blocked on *how a command is told from a 4-byte text
-   message*). *Check:* Done-when 1.
+5. **The command datagram** (A2, A10). The main loop takes any 3-byte
+   datagram as a command, turns its sign byte and `u16` into a signed rate, and
+   hands it to the ramp; every other length goes to the text messages as
+   today. *Check:* Done-when 1, and host tests for the unpacking: `[1, 0x38,
+   0xAE]` is +44,600, `[0, 0x38, 0xAE]` is −44,600, `[0, 0, 0]` and `[1, 0, 0]`
+   are 0.
 6. **The setting in the data flash** (A11). One type holds
    `runtime_end_margin`: at boot it takes `DataFlash`, reads the setting's
    block, and uses it if the block is not blank (the blank case is blocked on

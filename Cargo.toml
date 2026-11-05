@@ -80,7 +80,7 @@ unor4-hal         = { path = "../unor4-hal/crates/unor4-hal" }  # Custom HAL
 # [profile.release] and this one would change every PC crate's build.
 [profile.firmware]
 inherits          = "release"
-opt-level         = 3    # the pulse loop's overhead slows the fast move
+opt-level         = 3
 lto               = true
 codegen-units     = 1
 debug             = true # keeps cargo size and backtraces readable

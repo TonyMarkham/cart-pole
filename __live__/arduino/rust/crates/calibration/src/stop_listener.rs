@@ -2,10 +2,10 @@ use crate::constants::STOP_FRAME_END;
 
 use unor4_hal::uart::UartIrq;
 
-/// Listens for the `Stop` datagram during a move. The pulses leave no time for
-/// anything else, but each byte from the WiFi chip waits in the UART's receive
-/// ring, put there by its interrupt, so one look between pulses costs almost
-/// nothing. Every other byte is thrown away, as a move has always done.
+/// Listens for the `Stop` datagram during a move. Each byte from the WiFi chip
+/// waits in the UART's receive ring, put there by its interrupt, which also
+/// ends the move's sleep, so the move looks at the ring each time it wakes.
+/// Every other byte is thrown away, as a move has always done.
 pub struct StopListener {
     at: &'static UartIrq<ra4m1::SCI1>,
     /// How much of `STOP_FRAME_END` the latest bytes have matched.

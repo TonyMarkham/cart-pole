@@ -250,9 +250,9 @@ fn main() -> Result<()> {
     )?;
     constant(
         &mut out,
-        "One pulse's period at `seek_speed`, ns. The loop's own work adds to it, so the real rate is a little under the asked one, never over it.",
-        "SEEK_PERIOD_NS",
-        seek_period_ns,
+        "The slow seek's rate, pulses/s: `seek_speed`.",
+        "SEEK_SPEED",
+        seek_speed,
     )?;
     constant(
         &mut out,

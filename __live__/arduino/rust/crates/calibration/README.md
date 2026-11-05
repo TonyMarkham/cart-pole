@@ -149,7 +149,10 @@ datagram "pins"  ->  datagram {"d2":0,"d3":0,"d4":1,"d5":1,"d6":1}
 ```
 
 Any datagram that is neither this nor one of the moves is ignored. D2 and D3 are inputs, measured on the pin;
-D4, D5 and D6 are outputs, reported as the level the firmware sets.
+D4, D5 and D6 are outputs, owned by the HAL's step generator, which cannot
+read them back: each is reported as the level the generator was told to hold
+(STEP high at rest, DIR the latest move's direction, ENA high once the driver
+is enabled).
 [control-design.md](../../../../../control-design.md) has the wiring.
 
 **It never polls for a message.** Polling means asking over and over
@@ -161,6 +164,17 @@ the processor unasked. Each byte raises an **interrupt**, a signal that
 ends the processor's sleep, so it sleeps until there is something to do.
 Push mode covers UDP only, which is why the message is a datagram and not
 a web request. `src/wifi.rs` has the details and sources.
+
+**Nor during a move.** The HAL's step generator makes and counts the
+pulses in hardware, so the processor sleeps through a move too. It wakes
+at each 2 ms tick, at a limit switch's press (the switch's edge
+interrupt), when a centring's count of pulses is done (the generator stops
+itself at exactly that count) and at each byte from the WiFi chip, and
+looks only then. A pressed switch counts only once it has read pressed for
+`trip_us` without a break, so the HAL's **wake timer**, a one-shot timer on
+a spare hardware timer, wakes it once more when that time is up. The same
+timer times the motor driver's 5 µs enable lead at start-up. `src/seek.rs`
+has the rules.
 
 **It needs that bridge on the board.** With Arduino's stock bridge the
 join succeeds but push mode is refused, and the board prints that on its
@@ -189,7 +203,7 @@ but it runs only on the board, so:
   processor to compile for), so the commands below must run from this
   folder.
 - **It uses the root's `firmware` profile,** the compiler settings for the
-  board: full optimisation, because a slow pulse loop slows the cart.
+  board: full optimisation.
 - **Its dependencies' versions are in the root's `[workspace.dependencies]`.**
   Only the feature no other crate needs, `uart-irq`, is set here.
 

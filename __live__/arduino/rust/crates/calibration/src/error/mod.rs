@@ -17,6 +17,7 @@ use core::{
     fmt::{self, Write},
     panic::Location,
 };
+use unor4_hal::{step::StepError, wake::WakeError};
 
 /// The pattern of the Orin webserver's `AppError`, with each message a
 /// `&'static str`: the board has no allocator, so no `String`. Every way a move
@@ -76,6 +77,15 @@ pub(crate) enum AppError {
         location: ErrorLocation,
     },
 
+    /// The HAL's step generator refused to start the move, for the reason it
+    /// gives. The cart did not move.
+    #[error("[Stepper Error]: {message}: {error:?}{location}")]
+    Stepper {
+        error: StepError,
+        message: &'static str,
+        location: ErrorLocation,
+    },
+
     /// A `Stop` datagram ended the move after this many pulses.
     #[error("[Stopped Error]: {message}{location}")]
     Stopped {
@@ -98,6 +108,16 @@ pub(crate) enum AppError {
     #[error("[Timed Out Error]: {message}{location}")]
     TimedOut {
         pulses: u32,
+        message: &'static str,
+        location: ErrorLocation,
+    },
+
+    /// The HAL's wake timer refused a wait, for the reason it gives. Every wait
+    /// this firmware asks for is far inside the timer's range, so this means a
+    /// fault, not a rig condition. A move it ends has stopped first.
+    #[error("[Wake Error]: {message}: {error:?}{location}")]
+    Wake {
+        error: WakeError,
         message: &'static str,
         location: ErrorLocation,
     },
@@ -166,6 +186,15 @@ impl AppError {
     }
 
     #[track_caller]
+    pub(crate) fn stepper(error: StepError) -> Self {
+        Self::Stepper {
+            error,
+            message: "the step generator refused the move",
+            location: ErrorLocation::from(Location::caller()),
+        }
+    }
+
+    #[track_caller]
     pub(crate) fn stopped(pulses: u32) -> Self {
         Self::Stopped {
             pulses,
@@ -194,6 +223,15 @@ impl AppError {
     }
 
     #[track_caller]
+    pub(crate) fn wake(error: WakeError) -> Self {
+        Self::Wake {
+            error,
+            message: "the wake timer refused a wait",
+            location: ErrorLocation::from(Location::caller()),
+        }
+    }
+
+    #[track_caller]
     pub(crate) fn wrong_switch(switch: Switch, pulses: u32) -> Self {
         Self::WrongSwitch {
             switch,
@@ -205,12 +243,16 @@ impl AppError {
 
     /// This failure as a move's answer. The location is left out: it is a long
     /// file path that tells the asker nothing, so only the serial port prints
-    /// it. The first three variants are not a move's, and are never answered.
+    /// it. The first three variants are not a move's, and are never answered;
+    /// `Stepper` and `Wake` are, as `error`: the reason is printed on the
+    /// serial port.
     pub(crate) fn write_answer(&self, out: &mut impl Write) -> fmt::Result {
         let (status, result, message, pin, pulses) = match *self {
             Self::Bridge { message, .. }
             | Self::Format { message, .. }
-            | Self::Join { message, .. } => (STATUS_INTERNAL_ERROR, "error", message, None, 0),
+            | Self::Join { message, .. }
+            | Self::Stepper { message, .. }
+            | Self::Wake { message, .. } => (STATUS_INTERNAL_ERROR, "error", message, None, 0),
             Self::AlreadyThere {
                 switch, message, ..
             } => (STATUS_CONFLICT, "already_there", message, Some(switch), 0),

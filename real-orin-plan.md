@@ -55,7 +55,9 @@ The brain (Python, `__live__/orin/python/`):
   5. push onto the pool at age 0; every older entry ages by the time since the
      last capture;
   6. the 36 inputs; a = tanh(mean), no randomness; c = round(a × 44,600);
-  7. send c as one 4-byte `i32` little-endian datagram to `192.168.0.220:4210`;
+  7. send c as one 3-byte datagram to `192.168.0.220:4210`: byte 0 the sign
+     (0 negative, 1 positive), bytes 1–2 the size of c as a `u16`,
+     little-endian (decided 2026-11-03);
   8. one log line;
   9. wait `[brain] delay_ms`, then take the camera's next frame; frames before
      it are dropped unread (*Timing*).
@@ -101,15 +103,11 @@ Each lands in the diagram first (`real-loop-dia.md`, the *Open* lists):
   which runs the camera today for the live view, the lens and the measurements
   and keeps them apart. This blocks step 6.
 - **Which page carries Run and STOP.** This blocks step 8.
-- **How the board tells a command from a 4-byte text message.** `pins` is 4
-  bytes and the `/arduino` page reads it on request; during a run the board
-  would take it for full speed to the right.
 - **The settings messages** to the board and their answers. This blocks step 9.
 - **The log's file format, and the timestamp's form in the folder name.** This
   blocks step 5.
-- **Whether the camera can be triggered**, and **D**, the delay, not measured
-  (*Timing*; *Measuring D*). Neither blocks the code; both block running it on
-  the rig.
+- **D**, the delay, not measured (*Timing*; *Measuring D*). It does not block
+  the code; it blocks running it on the rig.
 
 ## Steps
 

@@ -1,6 +1,8 @@
 //! The firmware's fixed facts, each copied from a contract or worked out from
 //! one. Any value someone might change between runs is in `calibration.toml`.
 
+use unor4_hal::step::{PCLKD_HZ, TICK_DIVISOR};
+
 /// The requests answered, each the whole datagram; anything else is ignored.
 /// This one asks for the pins' levels: `PINS_REQUEST` in the Orin's webserver.
 pub(crate) const PINS_REQUEST: &[u8] = b"pins";
@@ -65,6 +67,24 @@ pub(crate) const WL_CONNECTED: u32 = 3;
 /// and the connection failed, usually on the password.
 pub(crate) const WL_NETWORK_NOT_FOUND: u32 = 1;
 pub(crate) const WL_CONNECT_FAILED: u32 = 4;
+
+/// The DM542's shortest STEP off time, ns (manual, section 10, t4): the
+/// shortest HIGH the step generator may leave between two pulses. `build.rs`
+/// holds the same figure for its own checks.
+pub(crate) const DM542_STEP_HIGH_MIN_NS: u32 = 2_500;
+
+/// How long ENA must be set before DIR changes, ns: the DM542's t1, at least
+/// 5 µs (manual, section 10; `control-design.md`, the ENA+ row). The step
+/// generator refuses to move until it has passed since `enable()`.
+pub(crate) const DM542_ENA_LEAD_NS: u32 = 5_000;
+
+/// One count of the step generator's tick timer, ns, rounded up: the timer
+/// counts PCLKD / `TICK_DIVISOR` (the HAL's `step::limits`), 83.3 ns at
+/// 48 MHz. The HAL measures the ENA lead in these counts, and `is_enabled()`
+/// may turn true up to 2 of them after the lead (the HAL's `enable` doc), so
+/// the boot checks it again after each such wait until it reads true.
+pub(crate) const TICK_COUNT_NS: u64 =
+    (TICK_DIVISOR as u64 * 1_000_000_000).div_ceil(PCLKD_HZ as u64);
 
 /// DEMCR.TRCENA, bit 24: powers the DWT, so its cycle counter runs
 /// (Armv7-M Architecture Reference Manual, DEMCR; the cortex-m crate's

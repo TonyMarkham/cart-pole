@@ -486,6 +486,16 @@ The roles and per-class figures are in `training/05-POST_TRAINING.md`
   `calibrate` firmware predates this and polls: never copy its WiFi
   loop. Worked failure: the agent copied it for the pin page, with a note
   about the bridge already in front of it.
+- **The firmware sleeps instead of polling, with one exception** (user,
+  2026-11-04: "I hate POLLING"; the exception agreed the same day). Every
+  wait sleeps in `WFI` until an interrupt wakes it
+  (`__live__/arduino/rust/crates/calibration/src/sleep.rs`): a move wakes at
+  each 2 ms tick, a limit switch's press, the count stop and each byte from
+  the WiFi chip, and the HAL's wake timer (GPT167) ends the waits that are
+  not the motor's: a pressed switch's `trip_us` and the ENA lead. The exception is waiting for the WiFi chip's answer to an AT
+  command (`wifi.rs`: `reply`, `frame_byte`, `drain`, in `poll_us` steps). It
+  runs only at the join and around an answer to the Orin, never during a move
+  or while waiting for a request, so nothing else needs the processor then.
 - **The policy file is in git and only ever changes whole** (user,
   2026-11-02). `__live__/orin/python/saved/policy.npz` is the trained actor
   for the Orin, written by the trainer's `export_policy.py` from a run folder

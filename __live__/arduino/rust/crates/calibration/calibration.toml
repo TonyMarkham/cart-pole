@@ -45,10 +45,15 @@ release_pulses = 100
 # for this long, µs. It filters spikes on the switch wire (about 1 m of
 # it runs beside the motor leads) and the contact chattering as the rig
 # shakes; one such spike halted the first jump-limit run 143 mm from the
-# switch (2026-10-27). The wait is the same at every real trip, so it
-# cancels in the span and the noise floor: at seek_speed 2,000 it adds
-# about 2 pulses to each. The switches are read once a pulse, so it
-# takes at least two readings. A choice, not a measurement.
+# switch (2026-10-27). A move sleeps between readings: it reads a switch
+# when the switch's press wakes the board and again when the HAL's wake
+# timer wakes it this long later, and a release and press between two
+# readings is caught by the switch's edge latch. So a trip is confirmed this
+# long after the press plus the time to wake: the HAL measured a 1 ms wait
+# at 1,008 to 1,012 µs on a wire, so at 1,000 µs a trip lands 2 pulses after
+# the press at seek_speed 2,000, and the 4 µs spread is under a hundredth of
+# a pulse. The wake timer reaches 1.398 s in one wait; the firmware answers
+# `error` if this is longer. A choice, not a measurement.
 trip_us = 1000
 
 # STEP's on time, D4 low, ns. The DM542 needs at least 2,500 on and

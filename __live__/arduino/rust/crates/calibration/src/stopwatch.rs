@@ -5,7 +5,8 @@ use cortex_m::peripheral::{DCB, DWT};
 /// Time since `start`, from the core's cycle counter (DWT CYCCNT), which
 /// counts ICLK cycles and wraps every 2³² of them, 89 s at 48 MHz. `cycles`
 /// adds each reading's step to a 64-bit total, so the time stays right as
-/// long as it is read at least once per wrap; a seek reads it every pulse.
+/// long as it is read at least once per wrap; a move reads it at every
+/// wake, at least once per 2 ms tick.
 pub struct Stopwatch {
     last: u32,
     cycles: u64,

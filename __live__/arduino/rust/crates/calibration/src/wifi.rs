@@ -191,8 +191,9 @@ impl Wifi {
         ))
     }
 
-    /// Sleeps until a datagram has arrived, then does what it asks. Only the
-    /// UART's interrupt wakes the processor.
+    /// Sleeps until a datagram has arrived, then does what it asks. The
+    /// UART's interrupt wakes the processor for each byte; a limit switch's
+    /// press wakes it too, and it sleeps again.
     pub fn serve(&mut self, delay: &mut Delay, pins: &mut Pins) -> AppResult<()> {
         if !self.request_waiting {
             self.sleep_until_frame(delay);
@@ -203,20 +204,14 @@ impl Wifi {
             Ok(())
         } else if self.asked(IDLER_REQUEST) {
             let at = self.at;
-            self.travel(delay, pins, |rail, pins, delay| {
-                rail.seek(at, pins, delay, IDLER_END)
-            })
+            self.travel(delay, pins, |rail, pins| rail.seek(at, pins, IDLER_END))
         } else if self.asked(MOTOR_REQUEST) {
             let at = self.at;
-            self.travel(delay, pins, |rail, pins, delay| {
-                rail.seek(at, pins, delay, MOTOR_END)
-            })
+            self.travel(delay, pins, |rail, pins| rail.seek(at, pins, MOTOR_END))
         } else if let Some(rest) = self.request[..self.request_len].strip_prefix(CENTRE_REQUEST) {
             let speed = centre_speed(rest);
             let at = self.at;
-            self.travel(delay, pins, |rail, pins, delay| {
-                rail.centre(at, pins, delay, speed)
-            })
+            self.travel(delay, pins, |rail, pins| rail.centre(at, pins, speed))
         } else {
             Ok(())
         }
@@ -241,8 +236,9 @@ impl Wifi {
             if byte.is_none() {
                 cortex_m::asm::wfi();
             }
-            // Safety: nothing here is in a critical section, and every
-            // handler linked is the UART's, which keeps to its own state.
+            // Safety: nothing here is in a critical section, and the
+            // handlers linked are the UART's, which keep to their own state,
+            // and the HAL's acknowledgements of its wake-ups.
             unsafe { cortex_m::interrupt::enable() };
 
             let Some(byte) = byte else {
@@ -268,19 +264,19 @@ impl Wifi {
 
     /// Makes one move, then tells whoever asked how it ended. The
     /// sender is read first, because no one being told is a reason not to
-    /// move. The pulses leave time only to listen for `Stop`, so every other
+    /// move. A move listens only for `Stop`, so every other
     /// datagram that arrives during the move is thrown away: a request left over
     /// from then must not start another move.
     fn travel(
         &mut self,
         delay: &mut Delay,
         pins: &mut Pins,
-        make_move: impl FnOnce(&mut Rail, &mut Pins, &mut Delay) -> AppResult<Moved>,
+        make_move: impl FnOnce(&mut Rail, &mut Pins) -> AppResult<Moved>,
     ) -> AppResult<()> {
         let Some((address, port)) = self.sender(delay) else {
             return Ok(());
         };
-        let moved = make_move(&mut self.rail, pins, delay);
+        let moved = make_move(&mut self.rail, pins);
         self.drain(delay);
         self.request_waiting = false;
 

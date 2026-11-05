@@ -6,11 +6,11 @@ use crate::{
     moved::Moved,
     pins::Pins,
     seek::{creep, seek},
-    settings::{CENTRE_SPEED_MAX, IDLER_END, MOTOR_END, SEEK_PERIOD_NS},
+    settings::{CENTRE_SPEED_MAX, IDLER_END, MOTOR_END, SEEK_SPEED},
     switch::Switch,
 };
 
-use unor4_hal::{delay::Delay, uart::UartIrq};
+use unor4_hal::uart::UartIrq;
 
 /// What the board knows about the rail, which the stepper cannot report. It is
 /// lost at every reset, so both ends must be found again before a centring.
@@ -38,11 +38,13 @@ impl Rail {
         &mut self,
         at: &'static UartIrq<ra4m1::SCI1>,
         pins: &mut Pins,
-        delay: &mut Delay,
         end: End,
     ) -> AppResult<Moved> {
-        let left_trip = self.resting_on.filter(|&last| pins.pressed_steady(last));
-        match seek(at, pins, delay, end) {
+        let left_trip = match self.resting_on {
+            Some(last) if pins.pressed_steady(last)? => Some(last),
+            _ => None,
+        };
+        match seek(at, pins, end) {
             Ok(Moved::Tripped { switch, pulses }) if switch == end.switch => {
                 if left_trip.is_some_and(|last| last != switch) {
                     self.span = Some(pulses);
@@ -78,23 +80,23 @@ impl Rail {
         &mut self,
         at: &'static UartIrq<ra4m1::SCI1>,
         pins: &mut Pins,
-        delay: &mut Delay,
         speed: Option<u32>,
     ) -> AppResult<Moved> {
-        let period_ns = match speed {
-            None => SEEK_PERIOD_NS,
-            Some(speed) if (1..=CENTRE_SPEED_MAX).contains(&speed) => 1_000_000_000 / speed,
+        let speed = match speed {
+            None => SEEK_SPEED,
+            Some(speed) if (1..=CENTRE_SPEED_MAX).contains(&speed) => speed,
             Some(_) => return Err(AppError::bad_speed()),
         };
         let (Some(span), Some(switch)) = (self.span, self.resting_on) else {
             return Err(AppError::not_ready());
         };
-        let [d2, d3] = Switch::ALL.map(|switch| pins.pressed_steady(switch));
+        let d2 = pins.pressed_steady(Switch::D2)?;
+        let d3 = pins.pressed_steady(Switch::D3)?;
         if d2 && d3 {
             return Err(AppError::refused());
         }
         // Not on it any more: moved by hand, so half the span would not be the centre.
-        if !pins.pressed_steady(switch) {
+        if !pins.pressed_steady(switch)? {
             self.resting_on = None;
             return Err(AppError::not_ready());
         }
@@ -103,9 +105,8 @@ impl Rail {
         let moved = creep(
             at,
             pins,
-            delay,
             away_from(switch),
-            period_ns,
+            speed,
             Limit::Pulses(span / 2),
         )?;
         if let Moved::Tripped { switch, pulses } = moved {

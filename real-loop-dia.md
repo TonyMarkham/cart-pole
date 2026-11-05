@@ -89,7 +89,12 @@ between the frames the brain uses are whole numbers of frames: 33.3 ms (2
 frames) or 50 ms (3 frames) inside the trained band. The synthetic loop has
 the same kind of grid, but finer: its gaps sit on MuJoCo's 2 ms step.
 **Follows:** the next image is the camera's next frame after the wait.
-**Open:** whether the camera can be triggered instead.
+**Decided: the camera is not triggered** (user, 2026-11-04). It free-runs at
+60 frames a second, so each gap between commands is a whole number of frames.
+Triggering it would need a change soldered onto the camera's board (the XTR
+pad, with resistor R11 removed; Raspberry Pi's Global Shutter Camera
+documentation), and no source shows the trigger working on the Orin's camera
+software.
 
 **The delay D** is the time from the moment a frame is exposed to the moment
 its command reaches the Arduino. It is made of the camera's transfer, the
@@ -134,7 +139,7 @@ sequenceDiagram
         C-->>B: the camera's next frame: 1456×1088, halved to 728×544 greyscale,<br/>and its capture time, GStreamer's stamp (do-timestamp)
         Note over B: JPEG q90, then decode (as the training frames were made)<br/>detect: per class the model's box, (x, y) or (−1, −1)<br/>Pivot and End: the lens's bend undone, then through the matrix: (x, z) in metres<br/>push onto the pool at age 0, every older entry ages by the time since the last capture
         Note over B: the 36 inputs: the pool's 30 numbers, ages ÷ 1000,<br/>then the last 6 actions, newest first<br/>the policy: a = tanh(mean), in [−1, 1], no randomness<br/>the command: c = round(a × 44,600) pulses/s
-        B->>A: datagram, 4 bytes: c as an i32, little-endian
+        B->>A: datagram, 3 bytes: the sign (0 negative, 1 positive), then the size of c as a u16, little-endian
         Note over A: clamp c to ±44,600, every tick the sent rate moves towards c<br/>by at most m × the tick (m = 1,210,937 pulses/s²),<br/>DIR from the sign, STEP from the size, count every pulse<br/>the soft limit: heading for an end, the sent rate is at most √(2 × m × d),<br/>d the pulses left to that end's stop point, runtime_end_margin short of its cached trip position:<br/>the ramp reaches 0 before the switch. A switch tripping (a fault): stop in one jump
         A->>R: DIR and STEP pulses
         Note over R: the cart moves on c until the next command lands, the pole swings
@@ -295,10 +300,29 @@ differences at the edge.
 
 ## The command and the Arduino's Run
 
-**The command** is the same as in the synthetic loop (`synthetic-loop-dia.md`,
-*Contracts*). It is one `i32` in pulses per second, sign = direction, sent as
-4 little-endian bytes in one UDP datagram to `192.168.0.220`, port 4210
-(`__live__/README.md`).
+**The command** is the same value as in the synthetic loop
+(`synthetic-loop-dia.md`, *Contracts*): a pulse rate in pulses per second,
+its sign the direction. Only how it is packed differs on the rig.
+
+**Decided: the command is 3 bytes** (user, 2026-11-03), one UDP datagram to
+`192.168.0.220`, port 4210 (`__live__/README.md`):
+
+| Byte | Holds |
+|---|---|
+| 0 | the sign: 0 negative, 1 positive |
+| 1–2 | the rate's size, a `u16` (0 to 65,535), little-endian |
+
+- **Why 3 bytes:** the board tells a command from its text messages by
+  length alone. No text message is 3 bytes: `pins` and `Stop` are 4,
+  `MoveToCentre` 12, the two seeks 25 (`__live__/arduino/rust/crates/calibration/src/constants.rs`).
+  The 4-byte `i32` it replaces could not be told from `pins` or `Stop`, each
+  of which reads as full speed to the right.
+- **Why a `u16` is enough** (follows): its 65,535 is above every supply's top
+  pulse rate in `motor-spec.md`, *The top pulse rate per supply*: 22,266 at
+  12 V, 44,600 at 24 V, 55,733 at 30 V. The board still clamps to 44,600.
+- **A rate of 0 means rest** whatever the sign byte says (follows).
+- The synthetic loop keeps its 4-byte `i32`. The policy never sees how the
+  command is packed, so the change needs no new training (follows).
 
 **What the board does with it** is the rule the synthetic Arduino already
 follows (`__synthetic__/orchestrator/rust/crates/arduino`, `Ramp`). The two are
@@ -312,21 +336,30 @@ kept apart, so the rule is copied and not shared (decided, `AGENTS.md`,
   (`jump-limit-results.md`; decided 2026-10-28);
 - DIR comes from the sign, STEP's rate from the size.
 
+**Decided: m is configurable** (user, 2026-11-03). It is a firmware setting in
+`calibration.toml`, compiled in like the firmware's other values (the board has
+no file system), not a constant in code. **Follows:** it must equal the m the
+policy trained with, the trainer's `[drive] jump_limit`
+(`__synthetic__/trainer/python/settings.toml`, 1,210,937 today). Changed on the
+board alone, the cart ramps differently from training; changed in both, the
+policy is trained again. Nothing in `unor4-hal` depends on its value: the
+firmware works out each tick's rate from it.
+
 It is one fixed rule per tick, because the Uno makes as few decisions as
 possible (decided, `AGENTS.md`, 2026-10-28).
+
+**Decided: the board ticks every 2 ms** (user, 2026-11-03: "If it trained on
+2ms, then make it 2ms"). The synthetic loop ticks the ramp once per MuJoCo
+step, 2 ms (`synthetic-arduino-plan.md`, A7), so the board ramps as the policy
+learned. **Follows:** each tick moves the sent rate by at most m × 2 ms =
+1,210,937 × 0.002 = 2,421 pulses/s, rounded down.
 
 **Decided: the board does not know whether a run is going** (user,
 2026-11-02: "Orin is the brain, uno is the dumb muscle"). There is no message
 to enter or leave a run: the board applies each command as it arrives, and the
 command 0 brings the cart to rest. **Follows: STOP during a run sends the
-command 0,** not the text `Stop`. `Stop` is 4 bytes, the length of a command,
-and as an `i32` it reads 1,886,352,467, which the clamp would turn into full
-speed to the right.
-
-**Follows: the same is true of `pins`.** The webserver's pin reading is the
-4 bytes `pins` (`__live__/orin/rust/crates/webserver/src/constants.rs`,
-`PINS_REQUEST`), and as an `i32` it reads 1,936,615,792: full speed to the
-right. **Open:** how the board tells a command from a 4-byte text message.
+command 0,** not the text `Stop`: the board has no run to stop, and `Stop`
+ends only a seek or a move to the centre.
 
 **One firmware holds the seeks and Run** (follows). Every session starts with
 the seeks (*The calibration on the rig*), and the USB cable that uploads
@@ -391,8 +424,6 @@ through the settings page.
 
 **Open:**
 
-- **The tick's length on the board.** The synthetic loop ticks every 2 ms,
-  MuJoCo's step. At 2 ms, m × the tick is 2,421 pulses/s.
 - **DIR's level for a positive command.** A positive command must move the
   cart to the right as the camera sees it (`robot-plan.md`, *Terms*). The user
   chose a Left / Right toggle that sets it at run time (`robot-plan.md`, user
@@ -517,9 +548,9 @@ to show whether the delay and the losses came from the sleep.
 - **The policy's input:** 36 floats: the pool with ages ÷ 1,000, then the last
   6 actions a, newest first.
 - **The policy's output:** a in [−1, 1]; the command c = round(a × 44,600).
-- **The command:** one `i32`, pulses/s, sign = direction, 4 bytes
-  little-endian, one UDP datagram to `192.168.0.220:4210`. Fixed length, no
-  id.
+- **The command:** 3 bytes, one UDP datagram to `192.168.0.220:4210`: byte 0
+  the sign (0 negative, 1 positive), bytes 1–2 the rate's size in pulses/s as
+  a `u16`, little-endian. Fixed length, no id; no text message is 3 bytes.
 - **`runtime_end_margin`:** pulses, in the Uno's data flash.
 - **The log:** `runs/<the Run press's timestamp>/` on the Orin; per frame the
   model's boxes, the coordinates after the homography and the 36 inputs.
