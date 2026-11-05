@@ -29,7 +29,7 @@ its mass, inertia and centre-of-mass distance once per run (user,
 StateServer TCP bridge (`StateServer.cs` + `vision/gym_state_sender.py`)
 is not part of that loop.
 
-**Not a toy** (user, 2026-10-24). Every part stands in for the real rig
+**Not a toy** Every part stands in for the real rig
 and keeps its real limits: the MJCF comes from the rig's CAD, the command
 is the stepper's pulse rate, and the policy sees only what the robot will
 see — detected markers, with the detector's delay — never the
@@ -37,7 +37,7 @@ simulator's true state. Gymnasium's own `CartPole-v1` and
 `InvertedPendulum-v5` are reference tasks only (`gymnasium-research.md`):
 never the task, and never a shortcut around the loop.
 
-**Written for laymen** (user, 2026-10-28). The repo and all its features
+**Written for laymen** The repo and all its features
 are to be published so that a layman can reproduce and understand every
 aspect. Every doc, comment and explanation is written for that reader:
 each term explained where it first appears, each number traced to where
@@ -45,8 +45,8 @@ it comes from, each step reproducible from the repo alone. No reward
 change lands until its ELI-5 explanation is written and the user has
 approved it.
 
-**The reward's source of truth is `__synthetic__/trainer/python/reward-plan.md`** (user,
-2026-10-28), the ELI-5 explanation of the reward: r = r_tip ×
+**The reward's source of truth is `__synthetic__/trainer/python/reward-plan.md`** 
+the ELI-5 explanation of the reward: r = r_tip ×
 r_target_speed × r_cart × r_reach × r_speed (r_cart added 2026-10-29,
 user; the same day r_tip's star moved onto the cart and r_reach kept the
 fixed one, user; 2026-10-30, user: r_target_speed and r_speed replaced
@@ -54,7 +54,7 @@ r_energy, plugin `tip_speed_cart_centre`), every input MuJoCo's, its values one 
 on 2026-10-28 (in git history at `1e6a1001`); older records that cite it
 say so.
 
-**MuJoCo is the source of truth** (user, 2026-10-28). Wherever MuJoCo
+**MuJoCo is the source of truth** Wherever MuJoCo
 has a value the reward, the episode end or the measures need, the value
 is MuJoCo's, sent by the orchestrator: never worked out in Python or Rust
 from other numbers, and never a hand calculation standing in for it,
@@ -73,15 +73,15 @@ adds repo structure around them, never overrides them.
 
 ## Working with the user
 
-- **The user's word is the record** (user, 2026-11-03: "NEVER, EVER TREAT ME
+- **The user's word is the record** "NEVER, EVER TREAT ME
   AS A LIAR AGAIN"). When the user says what they decided or asked for, it is
   written down as they say it now. Never look for proof, never set their
   earlier words against them, never ask them to pick between them. Worked
   failure: told that the no-hit limit had been asked for the day before, the
   agent searched the user's session transcripts for it and asked them to choose
   between two of their own messages.
-- **Read nothing on the user's computer outside this repo** (user,
-  2026-11-03: "YOU NEVER HAVE MY PERMISSION TO READ ANYTHING ON MY COMPUTER
+- **Read nothing on the user's computer outside this repo** 
+  "YOU NEVER HAVE MY PERMISSION TO READ ANYTHING ON MY COMPUTER
   EXCEPT THE REPO YOU ARE IN"). This includes Claude Code's own session
   transcripts, the sibling checkouts (`D:\git\greyhound-snake`,
   `D:\git\unor4-wifi-interrupt-bridge`, `unor4-hal`) and any other folder.
@@ -100,14 +100,14 @@ adds repo structure around them, never overrides them.
   alternative, or re-open it in later answers. The only acceptable
   objection is one sentence showing a contradiction with an established
   constraint or a verified fact.
-- **Tunable values live in a toml, never in code** (user, 2026-10-24).
+- **Tunable values live in a toml, never in code**
   Any value someone might change between runs — a rate, a period, a
   count, a length, a port, a seed, a path — goes in a toml the code
   reads (the trainer's `settings.toml`, or a file it names, like
   `[trainer] gym`), so variants can sit side by side. Only fixed facts
   copied from a contract stay as named constants in code, each citing
   its source (the frame size, the rig's top rate, the 2 ms grid).
-- **An exact direction is applied as given** (user, 2026-10-24). When the
+- **An exact direction is applied as given** When the
   user specifies the edit itself — the text, the file, the place — make
   that edit. If it has a consequence, state it once, plainly, in the
   user's terms ("as placed, the Orin receives `--gym` and exits at
@@ -135,15 +135,15 @@ adds repo structure around them, never overrides them.
   as a plan. (Worked example: `ArUco.md` specifies `DICT_4X4_50` ids 0–3;
   the landed markers are `DICT_4X4_1000` tags 376/596/920/937.)
 - **`synthetic-loop-dia.md` is the single source of truth for the
-  synthetic loop's design** (user, 2026-10-23). Where a loop plan
+  synthetic loop's design** Where a loop plan
   (a participant plan) disagrees with the diagram, the
   diagram is right and the plan is out of date. A change to the loop's
   design lands in the diagram first; the plans follow it. The diagram is
   still a plan: it is the truth for what the loop is meant to be, never
   for what the code does today — verify that against landed sources, as
   above.
-- **Truth flows one way: diagram → participant plans → code** (user,
-  2026-10-23). A participant's plan is written from the diagram alone,
+- **Truth flows one way: diagram → participant plans → code** 
+  A participant's plan is written from the diagram alone,
   never from the code. Code that disagrees with its plan is not a
   conflict to raise: it is work to do, a step in that plan.
 - **Separate requirement from recommendation.** State invariants as
@@ -151,7 +151,7 @@ adds repo structure around them, never overrides them.
   into an instruction.
 - Clearly distinguish source inspection from an executed build or test.
   Do not claim validation that has not actually happened.
-- **No JavaScript** (user, 2026-10-31). Browser code in this repo is Rust
+- **No JavaScript** Browser code in this repo is Rust
   compiled to WebAssembly, the choice orin-cam made on purpose to avoid all
   JavaScript except the absolutely necessary interop (`trunk`'s generated
   loader and calls through `web-sys`). See
