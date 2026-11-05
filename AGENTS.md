@@ -84,10 +84,13 @@ adds repo structure around them, never overrides them.
   "YOU NEVER HAVE MY PERMISSION TO READ ANYTHING ON MY COMPUTER
   EXCEPT THE REPO YOU ARE IN"). This includes Claude Code's own session
   transcripts, the sibling checkouts (`D:\git\greyhound-snake`,
-  `D:\git\unor4-wifi-interrupt-bridge`, `unor4-hal`) and any other folder.
+  `D:\git\unor4-wifi-interrupt-bridge`) and any other folder.
   Where a question needs something outside the repo, ask the user. Worked
   failure: the agent searched six session transcripts for the user's earlier
   words, and before that read the bridge fork's code, unasked.
+  **The one exception:** `D:\git\unor4-hal` may be read, read-only (user,
+  2026-11-05: "You may read the HAL repo. READ-ONLY"). Nothing in it is ever
+  written.
 - Follow the scope of the user's explicit request. Do not assume permission
   to perform additional work merely because it would advance the project.
 - **Unity validation is the user's.** Compilation, scene behavior,
@@ -224,6 +227,11 @@ adds repo structure around them, never overrides them.
   memory** (user, 2026-10-28): a rule, decision or fact about the repo
   goes here (or into the plan it belongs to), where the user can read
   and correct it.
+- **Never use Claude Code's decision box** (user, 2026-11-05: "STOP using
+  Claude Code's decieion bock interface. I HATE IT"). No question box and
+  no answer buttons at the end of a turn: no `ask` or `actions` in the
+  wrap-up, and no `AskUserQuestion`. A question for the user goes in the
+  reply's text.
 
 ## How greyhound content is consumed (verify before asserting paths)
 
@@ -374,6 +382,11 @@ adds repo structure around them, never overrides them.
   to and built on that computer, so nothing in them points outside them. Only
   the firmware (`__live__/arduino/rust/crates/calibration`) and the browser
   pages (`__live__/orin/wasm`) are built on the PC, as root workspace members.
+  **The one exception that runs on the PC** (user, 2026-11-05): host tests of
+  the firmware's pure rules (the ramp, the soft limit, the command unpacking),
+  as checks only, in a small `no_std` library crate beside the firmware that
+  the firmware itself uses on the board. Nothing that drives the rig runs on
+  the PC.
   The firmware crate keeps one type per file, each file named after its type
   (user, 2026-11-01), and its `use` statements put `use crate::…` first, then a
   blank line, then the external crates.
@@ -474,28 +487,16 @@ The roles and per-class figures are in `training/05-POST_TRAINING.md`
   `synthetic-loop-dia.md` or code: the step-acceleration ceiling, where
   every tick moves the sent rate towards the last command by at most
   `m × dt` (`m` the jump limit, `jump-limit-results.md`; `dt` the tick).
-- **The Arduino has the interrupt bridge; never poll it for WiFi
-  messages** (user, 2026-10-31). Its WiFi chip runs the user's fork of
-  Arduino's bridge firmware (`D:\git\unor4-wifi-interrupt-bridge`, branch
-  `feature/interrupt`; the board reported revision 0.6.102 on 2026-10-31,
-  and prints it at each start). Push mode sends each UDP datagram to the
-  processor unasked, and `unor4-hal`'s `UartIrq` (feature `uart-irq`) wakes
-  it, so firmware sleeps until a message arrives
+- **The product owner dislikes polling** (user, 2026-11-04: "I hate
+  POLLING").
+- **The Arduino has the interrupt bridge** (user, 2026-10-31). Its WiFi chip
+  runs the user's fork of Arduino's bridge firmware
+  (`D:\git\unor4-wifi-interrupt-bridge`, branch `feature/interrupt`; the
+  board reported revision 0.6.102 on 2026-10-31, and prints it at each
+  start). Push mode sends each UDP datagram to the processor unasked, and
+  `unor4-hal`'s `UartIrq` (feature `uart-irq`) wakes it
   (`__live__/arduino/rust/crates/calibration/src/wifi.rs`). Push mode does not
-  cover TCP, so such messages are datagrams, not web requests. The older
-  `calibrate` firmware predates this and polls: never copy its WiFi
-  loop. Worked failure: the agent copied it for the pin page, with a note
-  about the bridge already in front of it.
-- **The firmware sleeps instead of polling, with one exception** (user,
-  2026-11-04: "I hate POLLING"; the exception agreed the same day). Every
-  wait sleeps in `WFI` until an interrupt wakes it
-  (`__live__/arduino/rust/crates/calibration/src/sleep.rs`): a move wakes at
-  each 2 ms tick, a limit switch's press, the count stop and each byte from
-  the WiFi chip, and the HAL's wake timer (GPT167) ends the waits that are
-  not the motor's: a pressed switch's `trip_us` and the ENA lead. The exception is waiting for the WiFi chip's answer to an AT
-  command (`wifi.rs`: `reply`, `frame_byte`, `drain`, in `poll_us` steps). It
-  runs only at the join and around an answer to the Orin, never during a move
-  or while waiting for a request, so nothing else needs the processor then.
+  cover TCP, so such messages are datagrams, not web requests.
 - **The policy file is in git and only ever changes whole** (user,
   2026-11-02). `__live__/orin/python/saved/policy.npz` is the trained actor
   for the Orin, written by the trainer's `export_policy.py` from a run folder

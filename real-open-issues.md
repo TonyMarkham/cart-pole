@@ -1,3 +1,20 @@
+#### Promtp
+```text
+Read:
+- real-open-issues.md
+- real-loop-dia.md
+- real-arduino-plan.md
+- real-orin-plan.md
+- real-pi-plan.md
+```
+
+---
+
+> [!IMPORTANT]
+> `HANDOFF.md` was included in this doc by mistake. DISREGARD any mention of it and any changes to it.
+>
+> Treat `HANDOFF.md` as if it does not exist. Ideally, never even read it to avoid being poisoned by it's content
+
 # Real loop: the open issues, researched
 
 The real loop can't be built or run safely while questions in its design are
@@ -11,6 +28,10 @@ Status: **research** (2026-11-04), not a plan. Nothing here decides anything.
 Each issue stays open until the user decides it, and the decision lands in
 `real-loop-dia.md` first (that file, *This diagram is the single source of truth
 for the real loop*).
+
+**Decided** (user, 2026-11-05): the resolution plans are implemented as
+written: "DO NOT DISMISS THEM OR ALTER THEM". A part of one that carries no
+decision mark needs no separate approval.
 
 Each statement is marked, as the diagram marks its own:
 
@@ -210,6 +231,14 @@ Line numbers point into the files as they stand on 2026-11-04.
 > >    sources say*, above).
 > > 5. While a run is going, the webserver refuses the `/calibrate` moves, as it
 > >    already refuses a second move.
+>
+> > ### OWNER APPROVED OVERRIDES
+> >
+> > - **Run and STOP live on a new page, `/run`, on the Orin's webserver**
+> >   (user, 2026-11-04).
+> >   - *Changes:* `real-loop-dia.md` lines 193–195 (Open: which page) and line
+> >     133 ("which page is open"); `real-orin-plan.md` line 105.
+> >   - *Scope:* where the Run and STOP buttons live.
 
 ---
 
@@ -342,6 +371,18 @@ Line numbers point into the files as they stand on 2026-11-04.
 > >   together;
 > > - when the TensorRT engine loads;
 > > - what the brain does when `homography.json` says `"ok": false`.
+>
+> > ### OWNER APPROVED OVERRIDES
+> >
+> > - **The brain is its own program, a Rust orchestrator** (user, 2026-11-04).
+> >   It calls Python only to find the markers and for the policy's inference.
+> >   The split of each event between Rust and Python is the agent's.
+> >   - *Changes:* `real-loop-dia.md` lines 196–199 (Open), line 118 ("The
+> >     Orin's brain (Python, not built)") and line 41 (the brain as Python);
+> >     `real-orin-plan.md` lines 102–104, and its O1–O7 and steps 1–6, written
+> >     for a Python brain.
+> >   - *Scope:* the brain on the Orin. Detection on the robot stays Python
+> >     (`AGENTS.md`).
 
 ---
 
@@ -404,8 +445,9 @@ Line numbers point into the files as they stand on 2026-11-04.
 >
 > > ### RESOLUTION PLAN
 > >
-> > > [!IMPORTANT]
-> > > **UNRESOLVED**
+> > **Decided** (user, 2026-11-05): DIR's level is a `calibration.toml` key,
+> > set from the rig test below (step 1). The run-time Left / Right toggle of
+> > 2026-10-29 is no question. Only the level itself waits on the test.
 > >
 > > To settle it: on the rig, send `CalibrateIdlerTravelLimit`, which runs with
 > > D5 high, and watch which way the cart goes. If it goes to the camera's left,
@@ -417,6 +459,15 @@ Line numbers point into the files as they stand on 2026-11-04.
 > >    *Tunable values live in a toml*; `robot-plan.md` lines 63–65).
 > > 2. `real-loop-dia.md` records it in place of the Open entry (lines 427–431).
 > > 3. `real-arduino-plan.md` drops the entry (line 88).
+>
+> > ### OWNER APPROVED OVERRIDES
+> >
+> > - **DIR's level for a positive command is a `calibration.toml` key,**
+> >   compiled into the firmware and set from the rig test above (user,
+> >   2026-11-05).
+> >   - *Changes:* the run-time Left / Right toggle (user, 2026-10-29), recorded
+> >     in `real-loop-dia.md` lines 428–430 and `robot-plan.md` lines 52–59.
+> >   - *Scope:* how the level is set. The level itself waits on the rig test.
 
 ---
 
@@ -475,18 +526,25 @@ Line numbers point into the files as they stand on 2026-11-04.
 > > STATE response. Orin needs to acknowlege and stop the run." So the Orin, not
 > > the Uno, ends the run.
 > >
+> > **Decided** (user, 2026-11-05): "ONLY ONLY ONLY entering the protected end
+> > zone is a fault." Nothing else puts the board in FAULT. This replaces the
+> > end strike named as a cause in the two 2026-11-04 statements above.
+> >
+> > **Decided** (user, 2026-11-05): in FAULT, `state` gets the FAULT STATE
+> > reply, as every WiFi datagram does. Issue 7's `status` 200 is `state`'s
+> > answer outside FAULT.
+> >
 > > How the fault state works:
 > >
-> > - **The safe zone** is the `runtime_end_margin` pulses between each end's
-> >   stop point and its cached trip position. It is the only zone the sources
-> >   define near an end (`real-loop-dia.md` lines 395–396 and 403–407). The soft
-> >   limit brings the cart to rest at the stop point and never past it, so a
-> >   pulse count past a stop point is an intrusion: the count or the cache is
-> >   wrong.
-> > - **On an end strike or an intrusion the cart stops in one jump.** That is
-> >   the rule for a trip, whose causes are the same, lost pulses or a wrong
-> >   cache (`real-loop-dia.md` lines 421–423). Either way the cart is at rest,
-> >   so the board can send.
+> > - **The protected end zone** (the safe zone) is the `runtime_end_margin`
+> >   pulses between each end's stop point and its cached trip position. It is
+> >   the only zone the sources define near an end (`real-loop-dia.md` lines
+> >   395–396 and 403–407). The soft limit brings the cart to rest at the stop
+> >   point and never past it, so a pulse count past a stop point is an
+> >   intrusion: the count or the cache is wrong.
+> > - **On entering the protected end zone the cart stops in one jump.** Its
+> >   causes are lost pulses or a wrong cache. The cart is then at rest, so the
+> >   board can send.
 > > - **In the fault state no command is applied.** Every datagram from the Orin
 > >   gets the FAULT STATE reply instead, so a command can't move the cart.
 > > - **The Orin's acknowledgement:** on a FAULT STATE reply, the brain stops
@@ -509,29 +567,49 @@ Line numbers point into the files as they stand on 2026-11-04.
 > >
 > > The steps:
 > >
-> > 1. **The firmware gets a state machine with four states** (user,
-> >    2026-11-04):
+> > 1. **The firmware gets a state machine with five states** (user,
+> >    2026-11-04; CALIBRATING added by the user, 2026-11-05):
 > >    - **UNCALIBRATED:** the state at every start, since a reset forgets the
-> >      rail. The seeks, the move to the centre and the text messages work as
-> >      today. No command is applied, because without cached trip positions
-> >      there is no soft limit. Each command gets the UNCALIBRATED reply.
-> >    - **CALIBRATED:** entered when a seek pair has cached both trip positions,
-> >      with the cart at rest. Commands are applied under the ramp and the soft
-> >      limit, and a non-zero one starts MOVING. Text messages are answered as
-> >      today.
-> >    - **MOVING:** the Uno is sending any signal to the PUL pin. In MOVING it
-> >      accepts no datagram except movement commands (user, 2026-11-04).
+> >      rail. Any calibration button on the Orin's calibration page puts the
+> >      board in CALIBRATING. The other text messages work as today. No command
+> >      is applied, because without cached trip positions there is no soft
+> >      limit. Each command gets the UNCALIBRATED reply.
+> >    - **CALIBRATING** (user, 2026-11-05): entered from UNCALIBRATED or
+> >      CALIBRATED when any calibration button on the Orin's calibration page
+> >      is pressed. It lasts until the move to the centre button is clicked and
+> >      the move succeeds, which goes to CALIBRATED. There is no transition from
+> >      CALIBRATING to UNCALIBRATED, and FAULT is never entered from it. So the
+> >      board stays in CALIBRATING between moves, and after a seek that fails
+> >      or is stopped.
 > >
-> >      The agent's reading, not decided by the user:
-> >      - MOVING is entered from UNCALIBRATED or CALIBRATED when pulses start:
-> >        a seek, a move to the centre, or a command's non-zero rate.
-> >      - The movement datagrams are `Stop` during a seek or a move to the
-> >        centre, and the next command while commands drive the cart.
-> >      - When the pulses stop it goes back to the state it came from. After a
-> >        seek that trips the wrong switch or times out it goes to
-> >        UNCALIBRATED, and after a completed seek pair to CALIBRATED.
-> >    - **FAULT:** entered from MOVING on an end strike or a safe-zone
-> >      intrusion. The cart stops in one jump. The board sends the FAULT STATE
+> >      **Follows:** the board knows only the datagrams it receives, so to the
+> >      board a calibration button is a request for a calibration move: a seek
+> >      or `MoveToCentre`. The page's STOP starts no move, and its measuring
+> >      buttons send the board nothing, so neither changes the board's state.
+> >
+> >      **Follows**, from these states and today's moves:
+> >      - The calibration moves are the two seeks and the move to the centre.
+> >      - During a move it takes only `Stop`, as a move does today: every other
+> >        datagram is dropped unanswered.
+> >      - A switch's trip ends a calibration move as today, by the move's own
+> >        rules, never as a fault.
+> >    - **CALIBRATED:** entered only after the move to the centre button is
+> >      clicked and the move succeeds (user, 2026-11-05). Commands are applied
+> >      under the ramp and the soft limit, and a non-zero one starts MOVING.
+> >      Text messages are answered as today.
+> >    - **MOVING:** the Uno is sending any signal to the PUL pin, outside
+> >      CALIBRATING. In MOVING it accepts no datagram except movement commands
+> >      (user, 2026-11-04).
+> >
+> >      **Follows**, from these states:
+> >      - MOVING is entered from CALIBRATED when a command's non-zero rate
+> >        starts the pulses, or when a `MoveBy` from the homography page starts
+> >        (user, 2026-11-05: `MoveBy` only in CALIBRATED, never CALIBRATING).
+> >      - The movement datagrams are the next command.
+> >      - When the pulses stop it goes back to CALIBRATED.
+> >    - **FAULT:** entered only when the cart enters the protected end zone,
+> >      and never from CALIBRATING (user, 2026-11-05). Nothing else enters
+> >      it. The cart stops in one jump. The board sends the FAULT STATE
 > >      message once, to whoever sent the latest command (`wifi.rs`, `sender`,
 > >      lines 292–307), then answers every datagram with it and applies none.
 > >      Only a reset leaves it, back to UNCALIBRATED.
@@ -539,6 +617,18 @@ Line numbers point into the files as they stand on 2026-11-04.
 > >    A lost message costs nothing, because the brain's next command gets the
 > >    same reply. In UNCALIBRATED and FAULT the cart is at rest, so a reply costs
 > >    no ticks.
+> >
+> >    ```mermaid
+> >    stateDiagram-v2
+> >        [*] --> UNCALIBRATED : every start, since a reset forgets the rail
+> >        UNCALIBRATED --> CALIBRATING : any calibration button on the Orin's calibration page is pressed
+> >        CALIBRATED --> CALIBRATING : any calibration button on the Orin's calibration page is pressed
+> >        CALIBRATING --> CALIBRATED : the move to the centre button is clicked and the move succeeds
+> >        CALIBRATED --> MOVING : a command's non-zero rate starts the pulses, or a MoveBy from the homography page starts
+> >        MOVING --> CALIBRATED : the pulses stop
+> >        MOVING --> FAULT : the cart enters the protected end zone
+> >        FAULT --> UNCALIBRATED : a reset of the board
+> >    ```
 > > 2. **The UNCALIBRATED and FAULT STATE replies use the board's one answer
 > >    format,** the five keys (firmware README lines 32–60): `status` 409, "not
 > >    possible as things stand" (line 57); `result` `"uncalibrated"` or
@@ -549,7 +639,9 @@ Line numbers point into the files as they stand on 2026-11-04.
 > > 4. `real-loop-dia.md` records all of this first, as the source of truth:
 > >    - the board holds the last command, in place of the Open entry (lines
 > >      432–434);
-> >    - the fault state, in the sequence and in *Contracts*;
+> >    - the fault state, in the sequence and in *Contracts*, and its one
+> >      cause, entering the protected end zone, in place of lines 421–423
+> >      (user, 2026-11-05);
 > >    - the two decisions of 2026-11-03 that these replace (lines 168–174).
 > > 5. `real-arduino-plan.md` drops the entry (line 89) and gains the state
 > >    machine. `real-orin-plan.md` gains the brain's handling of the reply.
@@ -565,6 +657,56 @@ Line numbers point into the files as they stand on 2026-11-04.
 > >      (line 30); A1, "the seeks and Run" (lines 40–41); A3's and A9's
 > >      citations of *The command and the Arduino's Run* and "during a run"
 > >      (lines 48 and 68).
+>
+> > ### OWNER APPROVED OVERRIDES
+> >
+> > - **A fault ends the run, and the Orin ends it** (user, 2026-11-04). The Uno
+> >   tells the Orin, and the Orin acknowledges and stops the run.
+> >   - *Changes:* "Run means RUN and do not stop until stop is requested" and
+> >     the gap being "a Uno guardrail, not a run-ending event" (both
+> >     2026-11-03, `real-loop-dia.md` lines 168–174), and the passages resting
+> >     on them: lines 176–187, 189–191 ("STOP is the only way out of run") and
+> >     416–420.
+> >   - *Scope:* a run now ends at STOP or at a fault.
+> > - **FAULT's one cause is entering the protected end zone** (user,
+> >   2026-11-05: "ONLY ONLY ONLY entering the protected end zone is a fault").
+> >   - *Changes:* the end strike named as a cause in the two 2026-11-04
+> >     statements; `real-loop-dia.md` lines 143 and 421–423, and
+> >     `real-arduino-plan.md` A9, step 4 and Done-when 5, which make a switch
+> >     trip a fault in its own right.
+> >   - *Scope:* the protected end zone is the `runtime_end_margin` pulses
+> >     between a stop point and its cached trip position. FAULT is never
+> >     entered from CALIBRATING.
+> > - **In FAULT, every WiFi datagram from the Orin gets the FAULT STATE reply,
+> >   and none is applied** (user, 2026-11-04: "Replied to ANY Orin Wifi
+> >   Command with a FAULT STATE response").
+> >   - *Changes:* `real-loop-dia.md` lines 357–360, "the board applies each
+> >     command as it arrives" (2026-11-02).
+> >   - *Scope:* WiFi datagrams while the board is in FAULT.
+> > - **In FAULT, `state` gets the FAULT STATE reply** (user, 2026-11-05).
+> >   - *Changes:* issue 7 step 1's `status` 200 for `state`, in FAULT only.
+> >   - *Scope:* outside FAULT, `state` answers as issue 7 says.
+> > - **The board has five states: UNCALIBRATED, CALIBRATING, CALIBRATED,
+> >   MOVING and FAULT** (user, 2026-11-04; CALIBRATING added 2026-11-05).
+> >   - *Changes:* `real-loop-dia.md` lines 357–360 and `real-arduino-plan.md`
+> >     A10 and Done-when 1, which apply every command: a command is now applied
+> >     only in CALIBRATED and MOVING.
+> >   - *Scope:* the Uno's firmware. The board still knows no run.
+> > - **CALIBRATING** (user, 2026-11-05): entered from UNCALIBRATED or
+> >   CALIBRATED when any calibration button on the Orin's calibration page is
+> >   pressed, and left only for CALIBRATED, after the move to the centre
+> >   succeeds. There is no transition from CALIBRATING to UNCALIBRATED.
+> >   - *Changes:* this issue's earlier step 1, under which a completed seek
+> >     pair made the board CALIBRATED and a failed seek sent it to
+> >     UNCALIBRATED.
+> >   - *Scope:* the calibration's moves: the two seeks and the move to the
+> >     centre.
+> > - **In MOVING, the board accepts no datagram except movement commands**
+> >   (user, 2026-11-04).
+> >   - *Changes:* adds to `real-arduino-plan.md`; today a move listens only for
+> >     `Stop`.
+> >   - *Scope:* the board while it sends pulses outside CALIBRATING.
+> > - **`MoveBy` enters MOVING from CALIBRATED** (user, 2026-11-05), issue 13.
 
 ---
 
@@ -644,6 +786,18 @@ Line numbers point into the files as they stand on 2026-11-04.
 > >    stayed true.
 > > 5. `real-loop-dia.md` records the answer in place of the Open entry (lines
 > >    435–437), and `real-arduino-plan.md` drops it (lines 90–91).
+>
+> > ### OWNER APPROVED OVERRIDES
+> >
+> > - **No command is dropped** (user, 2026-11-04: "If the new datagram does not
+> >   violate the ramp, implement it, if it does violate the rame, re scope the
+> >   ramp"). Each command becomes the ramp's target as it arrives; if it is
+> >   further than one tick's step, m × 2 ms, the ramp re-aims at it.
+> >   - *Changes:* adds to the ramp rule (`real-loop-dia.md` lines 332–337;
+> >     `real-arduino-plan.md` A4): a command arriving before the last one is
+> >     reached re-aims the ramp.
+> >   - *Scope:* commands in MOVING. During a calibration move the board takes
+> >     only `Stop` (issue 5).
 
 ---
 
@@ -657,9 +811,9 @@ Line numbers point into the files as they stand on 2026-11-04.
 >
 > **What the sources say:**
 >
-> - **Decided:** a switch tripping while the cart moves under commands is a fault, meaning lost pulses
->   or a wrong cache, and stops the cart in one jump (`real-loop-dia.md` lines
->   421–423).
+> - **Replaced** (user, 2026-11-05: "ONLY ONLY ONLY entering the protected end
+>   zone is a fault"): `real-loop-dia.md` lines 421–423 make a switch tripping
+>   while the cart moves under commands a fault.
 > - **Built:** today the board forgets what it knows of the rail whenever a seek
 >   trips the wrong switch or times out (`rail.rs` lines 55–64), because "something
 >   is wrong". It keeps the span after a `Stop`, which loses no pulses (lines
@@ -684,8 +838,9 @@ Line numbers point into the files as they stand on 2026-11-04.
 > >
 > > - **Before a calibration** the board is UNCALIBRATED: no command is applied,
 > >   and each gets the UNCALIBRATED reply.
-> > - **After a trip** the board is in FAULT: no command is applied, every
-> >   datagram gets the FAULT STATE reply, and only a reset leaves it.
+> > - **After the cart enters the protected end zone** the board is in FAULT:
+> >   no command is applied, every datagram gets the FAULT STATE reply, and
+> >   only a reset leaves it.
 > >
 > > **Decided** (user, 2026-11-04): "The Orin's /run page does not enable the Run
 > > button unless the Arduino is in CALIBRATED state."
@@ -694,7 +849,9 @@ Line numbers point into the files as they stand on 2026-11-04.
 > >    five-key answer format: `status` 200, `result` `"uncalibrated"`,
 > >    `"calibrated"` or `"fault"`. At 5 bytes it can't be taken for a command.
 > >    Like every answer, it is given only with the cart at rest, and the Run
-> >    button matters only then.
+> >    button matters only then. **Follows:** CALIBRATING (issue 5, user
+> >    2026-11-05) came after this step, and `state` reports the board's state,
+> >    so between calibration moves it answers `result` `"calibrating"`.
 > > 2. **The webserver forwards it** on `/run`'s status route (issue 2, step 3).
 > >    The page enables Run only on `"calibrated"`. While Run is disabled, the
 > >    page shows the reason beside it (user, 2026-11-04), one of:
@@ -709,6 +866,22 @@ Line numbers point into the files as they stand on 2026-11-04.
 > >    with `state` in *Contracts*.
 > > 4. `real-arduino-plan.md` drops the entry (lines 92–93) and gains `state`.
 > >    `real-orin-plan.md` gains the Run button's rule.
+>
+> > ### OWNER APPROVED OVERRIDES
+> >
+> > - **Resolved by issue 5's state machine** (user, 2026-11-04): before a
+> >   calibration no command is applied, and after the cart enters the
+> >   protected end zone the board is in FAULT.
+> >   - *Changes:* `real-loop-dia.md` lines 438–440 (Open).
+> >   - *Scope:* commands sent in UNCALIBRATED and in FAULT.
+> > - **The `/run` page enables Run only when the board is CALIBRATED** (user,
+> >   2026-11-04), and shows the reason beside a disabled Run (user,
+> >   2026-11-04).
+> >   - *Changes:* adds to `real-orin-plan.md` O8.
+> >   - *Scope:* the `/run` page.
+> > - **A switch trip is not a fault in its own right** (user, 2026-11-05),
+> >   issue 5.
+> >   - *Changes:* `real-loop-dia.md` lines 421–423.
 
 ---
 
@@ -793,8 +966,27 @@ Line numbers point into the files as they stand on 2026-11-04.
 > > speed starts 1,000 + 821 = 1,821 pulses, 27.3 mm, short of each trip
 > > position.
 > >
+> > **Decided** (user, 2026-11-05): the cap can carry the cart past a stop point
+> > (above), and only entering the protected end zone is a fault (issue 5). How
+> > the code keeps the cart from passing a stop point is the agent's.
+> >
 > > 1. `real-loop-dia.md` replaces its Open entry (lines 408–409) with this.
 > > 2. `real-arduino-plan.md` drops the entry (line 97).
+>
+> > ### OWNER APPROVED OVERRIDES
+> >
+> > - **`runtime_end_margin`'s value is chosen on the rig** (user, Resolved).
+> >   - *Changes:* `real-loop-dia.md` lines 408–409 (Open).
+> >   - *Scope:* the value; no design waits on it.
+> > - **The default is 0.015 m, 1,000 pulses, a constant in the Uno's source
+> >   code**, used only when the data flash holds no setting (user, 2026-11-04).
+> >   - *Changes:* `AGENTS.md`, *Tunable values live in a toml*, for this one
+> >     value.
+> >   - *Scope:* the default only.
+> > - **How the code keeps the cart from passing a stop point is the agent's**
+> >   (user, 2026-11-05).
+> >   - *Changes:* nothing decided; the cap, √(2 × m × d), stays.
+> >   - *Scope:* the soft limit's code.
 
 ---
 
@@ -870,6 +1062,18 @@ Line numbers point into the files as they stand on 2026-11-04.
 > >   commands** (issue 5's state machine). A change to the end zone sent then
 > >   is dropped unanswered. The webserver's wait times out, and nothing
 > >   changes.
+>
+> > ### OWNER APPROVED OVERRIDES
+> >
+> > - **While the Orin is in Run mode, it accepts no change to the end zone**
+> >   (user, 2026-11-04).
+> >   - *Changes:* adds to `real-orin-plan.md` O9.
+> >   - *Scope:* the Orin's Arduino Settings page.
+> > - **In MOVING, a change to the end zone is dropped unanswered** (user,
+> >   2026-11-04).
+> >   - *Changes:* `real-arduino-plan.md` step 7's "A write is refused while
+> >     the cart moves", and issue 10 step 1's "refuses".
+> >   - *Scope:* settings messages while the board is in MOVING.
 
 ---
 
@@ -896,9 +1100,9 @@ Line numbers point into the files as they stand on 2026-11-04.
 > - **Built:** the `calibration` firmware's USB serial line, SCI9 at
 >   `monitor_baud`, only writes. It prints start-up messages and failures, and
 >   the firmware never reads from it (`main.rs` lines 57–69 and 128–160).
-> - **Not known:** whether the HAL can receive on SCI9 the way `UartIrq` receives
->   on SCI1, with an interrupt that wakes the processor. That is the HAL's
->   answer.
+> - **Read in the HAL** (2026-11-05, read-only): `UartIrq` takes SCI9 the way
+>   it takes SCI1 (`unor4-hal`, `uart/sci_channel.rs` line 134; its
+>   `uart/uart_irq.rs` line 73 declares a `UartIrq<ra4m1::SCI9>`).
 > - **Configured:** opening the port at any rate but 1,200 or 2,400 baud does
 >   not reset the board (`arduino-manager.toml` lines 30–33). So the manager can
 >   talk to a running board without restarting it.
@@ -949,6 +1153,14 @@ Line numbers point into the files as they stand on 2026-11-04.
 > > 6. `real-loop-dia.md` records it in place of the Open entry (lines 483–485).
 > >    `real-pi-plan.md` drops its entry (lines 46–49), which unblocks its steps 1
 > >    and 2, and `real-arduino-plan.md` drops its entry (line 95).
+>
+> > ### OWNER APPROVED OVERRIDES
+> >
+> > - **One function writes the setting, fed by two helpers: one for WiFi from
+> >   the Orin, one for USB from the Pi** (user, 2026-11-04).
+> >   - *Changes:* `real-loop-dia.md` lines 483–485 (Open); `real-pi-plan.md`
+> >     lines 46–49.
+> >   - *Scope:* `runtime_end_margin`.
 
 ---
 
@@ -992,6 +1204,15 @@ Line numbers point into the files as they stand on 2026-11-04.
 > >    with the default in *Contracts*.
 > > 5. `real-arduino-plan.md` drops the entry (line 96), which unblocks its
 > >    step 6. `real-pi-plan.md` drops its entry (line 50).
+>
+> > ### OWNER APPROVED OVERRIDES
+> >
+> > - **With no valid setting in the data flash, the board uses the default,
+> >   0.015 m, 1,000 pulses, a constant in the Uno's source code** (user,
+> >   2026-11-04).
+> >   - *Changes:* `real-loop-dia.md` lines 486–487 (Open); `AGENTS.md`,
+> >     *Tunable values live in a toml*, for this one value.
+> >   - *Scope:* a blank data flash, or one whose check value fails.
 
 ---
 
@@ -1096,6 +1317,37 @@ Line numbers point into the files as they stand on 2026-11-04.
 >
 > > ### RESOLUTION PLAN
 > >
+> > **Decided** (user, 2026-11-05): the homography gets its own page,
+> > `/homography`, a WebAssembly page on the Orin's webserver. It is a
+> > validation page only: it holds the `MoveBy` check (step 3). The homography
+> > matrix is still calculated only from the data obtained during calibration,
+> > on `/calibrate`. `/calibrate` gains a button that links to `/homography`.
+> > `MoveBy` takes place only in CALIBRATED, and never enters CALIBRATING.
+> >
+> > **The `/homography` page.** It follows from that decision and step 3:
+> >
+> > - **When it is used:** after a calibration on `/calibrate` has stored a
+> >   matrix that passed (step 2), with the board CALIBRATED and the cart at the
+> >   centre.
+> > - **What it needs:** the board's `state` answering `"calibrated"` (issue 7),
+> >   a stored `homography.json` with `"ok": true`, and `calibrate_service.py`
+> >   running, since it reads Pivot from the camera.
+> > - **The check:** from the centre, `MoveBy` to a quarter of the span, then to
+> >   three quarters, then back to the centre. At the quarter and the three
+> >   quarters the page shows Pivot's `x` through the stored homography beside
+> >   the `x` the count gives, `x_idler` + pulses × 15 µm, and passes it within
+> >   1 px, about 2.7 mm. The board is MOVING during each `MoveBy` and
+> >   CALIBRATED between them (issue 5).
+> > - **STOP**, full width, as on `/calibrate`. It sends the command 0, since
+> >   in MOVING the board takes only movement commands (issue 5).
+> > - **The routes:** `/homography/move-by?pulses=<±pulses>`, which sends
+> >   `MoveBy`; `/homography/state`, which asks the board `state`; and
+> >   `/homography/pivot`, which asks `calibrate_service.py` for Pivot's `x`
+> >   through the stored homography at the cart's place.
+> > - **Built as** a WebAssembly crate, `__live__/orin/wasm/homography`, as
+> >   `calibrate` and `lens` are. `/calibrate` keeps its moves, its measuring
+> >   and its fit, and gains the button that links to `/homography`.
+> >
 > > 1. **The lens is done:** `/lens`, 2026-11-02, 0.26 px (above). It is measured
 > >    again only if the lens or its focus changes ("remain fixed unless the
 > >    camera optic is modified", `__live__/orin/python/README.md` lines
@@ -1114,6 +1366,22 @@ Line numbers point into the files as they stand on 2026-11-04.
 > >      gives, `x_idler` + pulses × 15 µm, within 1 px of the frame, about 2.7
 > >      mm (`calibrate-w-homography.md` line 25).
 > > 4. `real-loop-dia.md` replaces line 224 with the result.
+>
+> > ### OWNER APPROVED OVERRIDES
+> >
+> > - **`/homography` is a validation page only** (user, 2026-11-05). It holds
+> >   the `MoveBy` check. The matrix is still calculated only from data obtained
+> >   during calibration, on `/calibrate`, which gains a button linking to
+> >   `/homography`.
+> >   - *Changes:* adds a page to the Orin's webserver, and the link button to
+> >     `/calibrate`.
+> >   - *Scope:* the check of step 3. The measuring and the fit stay on
+> >     `/calibrate`.
+> > - **`MoveBy` takes place only in CALIBRATED, never enters CALIBRATING, and
+> >   runs in MOVING** (user, 2026-11-05).
+> >   - *Changes:* issue 5's state machine gains CALIBRATED → MOVING by a
+> >     `MoveBy`.
+> >   - *Scope:* `MoveBy` only.
 
 ---
 
