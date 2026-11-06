@@ -1,4 +1,3 @@
-[firmware]
 # The level on D5 (DIR) for a positive command, high or low: a positive
 # command moves the cart to the right as the camera sees it, towards the
 # motor's end (real-open-issues.md, issue 4; user, 2026-11-05). NOT yet
@@ -16,11 +15,3 @@ dir_positive = "high"
 # delay. At most 8,300: the HAL's limit, since a reversal's DIR write must
 # outlast a pulse.
 pulse_low_ns = 5_000
-
-[usb]
-# The USB serial line's speed, bits per second: SCI9, through the board's
-# ESP32-S3 bridge to the USB connector. It must match `baud` in
-# arduino-manager.toml's [serial] (115,200), which opens the port from the
-# Pi. Never 1,200 or 2,400: opening the port at either resets the board
-# (arduino-manager.toml, [serial] baud).
-baud = 115_200

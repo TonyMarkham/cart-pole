@@ -1,0 +1,15 @@
+# The file holding the network's name and password, beside this one. Git
+# ignores it; wifi_credentials.example.toml is its template.
+credentials = "wifi_credentials.toml"
+
+# The speed of the link to the WiFi chip, bits per second. It must match the
+# bridge firmware, which opens its AT server at 115,200 8N1
+# (UNOR4USBBridge.ino, SERIAL_AT, as calibration.toml cites it).
+at_baud = 115_200
+
+# The name the router lists: letters, digits and hyphens, 1 to 31 of them.
+hostname = "cart-pole"
+
+# The UDP port the board listens on. The Orin's webserver sends to the same
+# port (its settings.toml, [arduino] port).
+udp_port = 4_210

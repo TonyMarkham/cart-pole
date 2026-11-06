@@ -1,0 +1,39 @@
+# How long the board waits on its WiFi chip, the ESP32-S3 that runs the bridge.
+# A try is one attempt at a command. These are the values calibration joined
+# the network with on 2026-10-31: they have worked, and no one has looked for
+# how far they can go.
+
+# A datagram's payload once its header has arrived, ms: far longer than the
+# few bytes take at 115,200 baud.
+frame_timeout_ms = 100
+
+# How long the line must stay quiet before stale bytes count as all thrown
+# away, ms.
+drain_quiet_ms = 20
+
+# A command's reply, ms, for every command with no value of its own below.
+reply_timeout_ms = 1_000
+
+# The first `AT`, which any reply answers. The chip may still be booting, so
+# it is tried several times, with a pause between tries.
+handshake_tries = 10
+handshake_timeout_ms = 700
+handshake_pause_ms = 300
+
+# Clearing WiFi state left by an earlier program: 3 tries, as in WiFiS3's
+# ModemClass::begin.
+soft_reset_tries = 3
+soft_reset_timeout_ms = 500
+
+# Changing the chip's WiFi mode, and starting the join, ms.
+wifi_mode_timeout_ms = 2_000
+begin_sta_timeout_ms = 3_000
+
+# Asking whether the join has finished: tries × pause is how long the join
+# gets, 20 × 500 ms = 10 s.
+status_tries = 20
+status_pause_ms = 500
+
+# Asking for the address the router gives after the join: 50 × 200 ms = 10 s.
+address_tries = 50
+address_pause_ms = 200

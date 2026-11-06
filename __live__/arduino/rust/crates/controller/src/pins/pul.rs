@@ -1,4 +1,4 @@
-use crate::{config::PULSE_LOW_NS, constants::STEP_MIN_NS};
+use crate::{config::stepper::PULSE_LOW_NS, constants::STEP_MIN_NS};
 
 use unor4_hal::{
     gpio::pin_map::{self, D4},

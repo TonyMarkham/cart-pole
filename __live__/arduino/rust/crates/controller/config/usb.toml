@@ -1,0 +1,6 @@
+# The USB serial line's speed, bits per second: SCI9, through the board's
+# ESP32-S3 bridge to the USB connector. It must match `baud` in
+# arduino-manager.toml's [serial] (115,200), which opens the port from the
+# Pi. Never 1,200 or 2,400: opening the port at either resets the board
+# (arduino-manager.toml, [serial] baud).
+baud = 115_200

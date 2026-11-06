@@ -8,34 +8,41 @@
 
 mod config;
 mod constants;
+mod incoming;
 mod pins;
 mod sleep;
 mod state;
 mod stepper;
 mod usb;
+mod wake_timer;
+mod wifi;
 
 // ---------------------------------------------------------------------------------------------- //
 
 use crate::{
-    config::USB_BAUD,
+    config::{usb::USB_BAUD, wifi::AT_BAUD},
     constants::{LINE_END, LINE_READY, REPLY_STATUS},
     pins::{idler_limit_switch::IDLER_LIMIT_SWITCH, motor_limit_switch::MOTOR_LIMIT_SWITCH},
     state::State,
     stepper::STEPPER,
     usb::{USB, command::Command as UsbCommand, line_reader::LineReader},
+    wake_timer::WAKE_TIMER,
+    wifi::AT,
 };
 
+use crate::incoming::Incoming;
+use crate::wifi::udp_socket::UdpSocket;
 use core::fmt::{self, Write};
 use panic_halt as _;
-use unor4_hal::{Peripherals, gpio::Switch, intc, step::StepGenerator};
+use unor4_hal::{Peripherals, gpio::Switch, intc, step::StepGenerator, wake::WakeTimer};
 
 /// Opens the USB line from the peripherals a failed build handed back, then
 /// answers every `STATUS` with why the board stopped.
 macro_rules! fail {
     ($p:ident, $($why:tt)*) => {{
         USB.attach($p.sci9, $p.sci9_tx, $p.sci9_rx, USB_BAUD, &$p.clocks);
-        // Safety: no critical section is open here (unor4-hal
-        // `intc/enable_interrupts.rs`).
+        // Safety: no critical section is open here:
+        // (unor4-hal `intc/enable_interrupts.rs`).
         unsafe { intc::enable_interrupts() };
         stopped(format_args!($($why)*))
     }};
@@ -62,6 +69,18 @@ fn main() -> ! {
         Err((error, p)) => fail!(p, "motor switch: {:?}", error),
     };
 
+    let (mut wake_timer, p) = match WakeTimer::new(WAKE_TIMER).with_peripherals(p).build() {
+        Ok(built) => built,
+        Err((error, p)) => fail!(p, "wake timer: {:?}", error),
+    };
+
+    AT.attach(p.sci1, p.sci1_tx, p.sci1_rx, AT_BAUD, &p.clocks);
+
+    let mut udp = match wifi::join::join(&mut wake_timer) {
+        Ok(socket) => UdpSocket::new(socket),
+        Err(error) => stopped(format_args!("wifi: {error}")),
+    };
+
     // The fields taken directly come last: this leaves `p` partly moved.
     USB.attach(p.sci9, p.sci9_tx, p.sci9_rx, USB_BAUD, &p.clocks);
     // Safety: no critical section is open here (unor4-hal
@@ -72,17 +91,34 @@ fn main() -> ! {
 
     USB.write_all(LINE_READY);
 
+    let _socket = match wifi::join::join(&mut wake_timer) {
+        Ok(socket) => socket,
+        Err(error) => stopped(format_args!("wifi: {error}")),
+    };
+
     let state = State::START;
     let mut reader = LineReader::new();
     loop {
-        let command = usb::next_command(&mut reader);
+        let incoming = sleep::until(|| match usb::look(&mut reader) {
+            Some(command) => Some(Ok(Incoming::Usb(command))),
+            None => udp
+                .look(&mut wake_timer)
+                .map(|datagram| datagram.map(Incoming::Wifi))
+                .transpose(),
+        });
 
-        match command {
-            UsbCommand::Status => {
+        match incoming {
+            Ok(Incoming::Usb(UsbCommand::Status)) => {
                 USB.write_all(REPLY_STATUS);
                 USB.write_all(state.name().as_bytes());
                 USB.write_all(LINE_END);
             }
+            Ok(Incoming::Wifi(datagram)) => {
+                if let Err(error) = wifi::serve(&mut udp, &mut wake_timer, state, &datagram) {
+                    stopped(format_args!("wifi: wake timer: {error:?}"));
+                }
+            }
+            Err(error) => stopped(format_args!("wifi: wake timer: {error:?}")),
         }
     }
 }

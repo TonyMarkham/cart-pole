@@ -1,4 +1,4 @@
-use crate::{config::DIR_POSITIVE, constants::DIR_SETUP_NS};
+use crate::{config::stepper::DIR_POSITIVE, constants::DIR_SETUP_NS};
 
 use unor4_hal::{
     gpio::pin_map::{self, D5},

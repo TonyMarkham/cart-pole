@@ -4,6 +4,7 @@ version           = { workspace = true }
 edition           = { workspace = true }
 description       = "The rig's Arduino UNO R4 WiFi firmware that runs the cart under the Orin's commands. Built one slice at a time; the first is the board's state machine"
 publish           = false
+build             = "build/main.rs"
 
 [dependencies]
 cortex-m          = { workspace = true }

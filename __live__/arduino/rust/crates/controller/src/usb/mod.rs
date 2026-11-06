@@ -18,15 +18,19 @@ use unor4_hal::uart::UartIrq;
 /// rings are the HAL's defaults: 256 bytes in, 128 out.
 pub(crate) static USB: UartIrq<ra4m1::SCI9> = UartIrq::new();
 
-/// Sleeps until a whole line the board knows has arrived on the USB line, and
-/// returns its command. Lines it doesn't know are dropped unanswered.
-pub(crate) fn next_command(reader: &mut LineReader) -> Command {
-    sleep::until(|| {
-        while let Some(line) = reader.read_line(&USB) {
-            if let Some(command) = Command::parse(line) {
-                return Some(command);
-            }
+/// Takes the lines waiting on the USB line, without sleeping, and returns the
+/// first one the board knows. Lines it doesn't know are dropped unanswered.
+pub(crate) fn look(reader: &mut LineReader) -> Option<Command> {
+    while let Some(line) = reader.read_line(&USB) {
+        if let Some(command) = Command::parse(line) {
+            return Some(command);
         }
-        None
-    })
+    }
+    None
+}
+
+/// Sleeps until a line the board knows has arrived on the USB line, and
+/// returns its command.
+pub(crate) fn next_command(reader: &mut LineReader) -> Command {
+    sleep::until(|| look(reader))
 }
