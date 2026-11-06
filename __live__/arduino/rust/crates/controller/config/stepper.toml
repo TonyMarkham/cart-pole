@@ -1,8 +1,8 @@
 # The level on D5 (DIR) for a positive command, high or low: a positive
 # command moves the cart to the right as the camera sees it, towards the
 # motor's end (real-open-issues.md, issue 4; user, 2026-11-05). NOT yet
-# checked on the rig: "high" is the level the calibration firmware runs
-# positive rates with today, until issue 4's rig test gives the real one.
+# checked on the rig: "high" stands until issue 4's rig test gives the real
+# level.
 #
 # Acceptable Values:
 #     - "high"

@@ -5,8 +5,8 @@ use crate::{
 
 use core::fmt;
 
-/// One answer to the Orin, in the board's five-key format: `status`, `result`,
-/// `message`, `pin` and `pulses` (calibration's README, *What it answers*).
+/// One answer to the Orin, in the board's one format, five keys: `status`,
+/// `result`, `message`, `pin` and `pulses`.
 /// Nothing yet moves the cart or trips a switch, so `pin` is always null and
 /// `pulses` always 0.
 pub(crate) struct Answer {

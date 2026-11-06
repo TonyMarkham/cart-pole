@@ -383,8 +383,13 @@ adds repo structure around them, never overrides them.
   (user, 2026-10-31): nothing in it runs on the PC. `__live__/orin/rust` and
   `__live__/rpi/rust` are each a workspace with its crates in `crates/`, pushed
   to and built on that computer, so nothing in them points outside them. Only
-  the firmware (`__live__/arduino/rust/crates/calibration`) and the browser
-  pages (`__live__/orin/wasm`) are built on the PC, as root workspace members.
+  the firmware (`__live__/arduino/rust/crates/calibration` and
+  `__live__/arduino/rust/crates/controller`) and the browser pages
+  (`__live__/orin/wasm`) are built on the PC, as root workspace members.
+  **`controller` replaces `calibration`** (user, 2026-11-06): `controller`,
+  begun 2026-11-05, is the production firmware, and once everything is
+  implemented in it, `calibration` goes away. Until then `calibration` is kept
+  as it is, for reference.
   **The one exception that runs on the PC** (user, 2026-11-05): host tests of
   the firmware's pure rules (the ramp, the soft limit, the command unpacking),
   as checks only, in a small `no_std` library crate beside the firmware that

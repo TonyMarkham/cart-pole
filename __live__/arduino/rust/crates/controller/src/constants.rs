@@ -40,8 +40,7 @@ pub(crate) const REPLY_MAX: usize = 256;
 pub(crate) const REPLY_OK: &[u8] = b"OK\r\n";
 pub(crate) const REPLY_ERROR: &[u8] = b"ERROR\r\n";
 
-/// The join's AT commands that carry no setting (calibration's `Wifi::join`,
-/// the sequence it joined the network with on 2026-10-31).
+/// The join's AT commands that carry no setting.
 pub(crate) const AT_HANDSHAKE: &[u8] = b"AT\r\n";
 pub(crate) const AT_SOFTRESETWIFI: &[u8] = b"AT+SOFTRESETWIFI\r\n";
 pub(crate) const AT_WIFIMODE_OFF: &[u8] = b"AT+WIFIMODE=0\r\n";
@@ -55,14 +54,14 @@ pub(crate) const PROMPT_IPSTA: &[u8] = b"+IPSTA: ";
 pub(crate) const PROMPT_UDPBEGIN: &[u8] = b"+UDPBEGIN: ";
 
 /// The join's status numbers: the bridge's `WIFI_ST_CONNECTED` and the two
-/// failures it names (at_handler.h, as calibration's constants.rs cites it).
+/// failures it names (at_handler.h).
 pub(crate) const WL_NETWORK_NOT_FOUND: u32 = 1;
 pub(crate) const WL_CONNECTED: u32 = 3;
 pub(crate) const WL_CONNECT_FAILED: u32 = 4;
 
 /// How the bridge pushes a datagram, with push mode on:
-/// `+UDPRX: <sock>,<len>|<len bytes>\r\n` (calibration's wifi.rs, citing the
-/// interrupt bridge's release notes).
+/// `+UDPRX: <sock>,<len>|<len bytes>\r\n` (the interrupt bridge's release
+/// notes).
 pub(crate) const FRAME_PROMPT: &[u8] = b"+UDPRX: ";
 pub(crate) const FRAME_HEADER_END: u8 = b'|';
 pub(crate) const FRAME_END: &[u8] = b"\r\n";
@@ -86,10 +85,10 @@ pub(crate) const STATE_REQUEST: &[u8] = b"state";
 pub(crate) const COMMAND_SIZE: u32 = 3;
 
 /// The status numbers in an answer, with HTTP's meanings (RFC 9110, section
-/// 15), as calibration's answers use them.
+/// 15).
 pub(crate) const STATUS_OK: u16 = 200;
 pub(crate) const STATUS_CONFLICT: u16 = 409;
 
 /// Room for one answer, bytes. The longest today, the 409 for a command, is
-/// about 120; calibration gives its move answers 160.
+/// about 120, so 160 leaves room for `pin` and `pulses` once they carry values.
 pub(crate) const ANSWER_MAX: usize = 160;

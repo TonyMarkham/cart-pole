@@ -36,7 +36,7 @@ impl UdpSocket {
 
     /// Sends `payload` to whoever sent the latest datagram. False if any of
     /// the five exchanges was refused or timed out: the answer is dropped, and
-    /// the asker's wait for it times out, as with calibration's `send`.
+    /// the asker's wait for it times out.
     pub(crate) fn answer(
         &mut self,
         wake: &mut WakeTimer,

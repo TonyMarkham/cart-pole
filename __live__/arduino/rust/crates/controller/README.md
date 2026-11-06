@@ -4,8 +4,7 @@ The trained policy can only balance the real pole if the rig's Arduino turns
 each of the Orin's commands into motor pulses the way training did, keeps the
 cart out of the ends of the rail, and tells the Orin when something is wrong.
 `controller` is that firmware, for the board on the rig, an Arduino UNO R4
-WiFi. It replaces the `calibration` firmware's job of moving the cart, and is
-built one slice at a time.
+WiFi. It is built one slice at a time.
 
 **What it does today:** at every start it claims the motor driver's pins and
 both limit switches, opens the USB serial line, sends `READY` down it, and
@@ -14,10 +13,8 @@ sleeps. The one thing it answers is `STATUS` over USB, with its state:
 WiFi. If claiming a part fails, it stops there, and each `STATUS` is answered
 `OK STATUS stopped <part>: <error>` instead.
 
-**Uploading it replaces `calibration` on the board.** The board holds one
-firmware at a time. While `controller` is on it, the board doesn't join the
-WiFi, so the Orin's `/calibrate` and `/arduino` pages get no answers. Upload
-`calibration` again (its [README](../calibration/README.md)) to get them back.
+**Uploading it replaces whatever firmware was on the board.** The board holds
+one firmware at a time.
 
 ## Settings
 

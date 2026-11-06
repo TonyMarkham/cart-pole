@@ -1,6 +1,5 @@
 //! The join: from a chip that may still be booting, to a UDP socket that
-//! pushes each datagram to the board. The sequence is calibration's
-//! `Wifi::join`, which joined the network on 2026-10-31; every wait sleeps.
+//! pushes each datagram to the board. Every wait sleeps.
 
 use crate::{
     config::{

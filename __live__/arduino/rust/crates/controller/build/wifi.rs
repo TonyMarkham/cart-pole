@@ -23,7 +23,7 @@ const SSID_KEY: &str = "ssid";
 const PASSWORD_KEY: &str = "password";
 const CREDENTIALS_EXAMPLE_FILE_NAME: &str = "wifi_credentials.example.toml";
 
-/// The longest hostname, the limit `calibration`'s build.rs checks.
+/// The longest hostname the board takes: 31 characters.
 const HOSTNAME_MAX: usize = 31;
 
 /// WPA2's limits: an SSID of 1 to 32 bytes, a passphrase of 8 to 63
@@ -118,7 +118,7 @@ pub fn generate(config_dir: &Path, out_dir: &Path) -> Result<()> {
 
 /// `text` inside an AT command's quotes: each `"` and `\` gets a `\` before it.
 /// The bridge's parser splits a command at unquoted commas and takes `\` as an
-/// escape (as `calibration`'s build.rs cites it, for `AT+BEGINSTA`).
+/// escape, so a password holding either would otherwise break `AT+BEGINSTA`.
 fn at_quoted(text: &str) -> String {
     let mut quoted = String::with_capacity(text.len());
     for character in text.chars() {

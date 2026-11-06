@@ -3,8 +3,7 @@ use crate::config::wifi_timing::{STATUS_PAUSE_MS, STATUS_TRIES};
 use core::fmt;
 use unor4_hal::wake::WakeError;
 
-/// Why the join failed, in words for `OK STATUS stopped wifi: …`. The words
-/// are calibration's (its `Wifi::join`).
+/// Why the join failed, in words for `OK STATUS stopped wifi: …`.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum JoinError {
     /// The chip never answered the first `AT`.

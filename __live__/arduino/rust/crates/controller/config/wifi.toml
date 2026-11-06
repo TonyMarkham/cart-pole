@@ -4,7 +4,7 @@ credentials = "wifi_credentials.toml"
 
 # The speed of the link to the WiFi chip, bits per second. It must match the
 # bridge firmware, which opens its AT server at 115,200 8N1
-# (UNOR4USBBridge.ino, SERIAL_AT, as calibration.toml cites it).
+# (UNOR4USBBridge.ino, SERIAL_AT).
 at_baud = 115_200
 
 # The name the router lists: letters, digits and hyphens, 1 to 31 of them.

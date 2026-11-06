@@ -1,6 +1,6 @@
 # How long the board waits on its WiFi chip, the ESP32-S3 that runs the bridge.
-# A try is one attempt at a command. These are the values calibration joined
-# the network with on 2026-10-31: they have worked, and no one has looked for
+# A try is one attempt at a command. The board joined the network with these
+# values on the rig on 2026-11-05: they have worked, and no one has looked for
 # how far they can go.
 
 # A datagram's payload once its header has arrived, ms: far longer than the
