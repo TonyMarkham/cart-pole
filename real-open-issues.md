@@ -46,6 +46,16 @@ Each statement is marked, as the diagram marks its own:
 
 Line numbers point into the files as they stand on 2026-11-04.
 
+**Status on 2026-11-06.** The board's firmware is now `controller`
+(`__live__/arduino/rust/crates/controller`), which replaces `calibration`
+(user, 2026-11-06, `AGENTS.md`). The **Built:** and **Configured:** lines below
+are kept as researched on 2026-11-04, and most describe the `calibration`
+crate, not `controller`. Each issue now opens with a **Status, 2026-11-06**
+line: what `controller` does today, and whether the decision has been recorded
+in `real-loop-dia.md`. On 2026-11-06 every decision below was recorded there,
+and `real-loop-dia.md` and this file agree; the three participant plans were
+not updated.
+
 **Contents**
 
 - *Timing and the delay D:* 1
@@ -59,6 +69,9 @@ Line numbers point into the files as they stand on 2026-11-04.
 ---
 
 > ## 1. D, the delay: not measured, and no way to measure it chosen
+>
+> **Status, 2026-11-06:** D is not measured. The method below is recorded in
+> `real-loop-dia.md`, *Measuring D*, and its two log fields in *The log*.
 >
 > > [!WARNING]
 > > **Worse than an open issue: no decision can answer it, only an experiment.**
@@ -176,6 +189,11 @@ Line numbers point into the files as they stand on 2026-11-04.
 
 > ## 2. Which page carries Run and STOP
 >
+> **Status, 2026-11-06:** decided, recorded in `real-loop-dia.md` (*The run and
+> idle states*, the sequence, *What exists today*). `/run` is not built. As
+> `calibration` did, `controller` takes `Stop` only during a seek or the move
+> to the centre, and drops it otherwise.
+>
 > > ### ISSUE SOURCES
 > >
 > > - `real-loop-dia.md`, *The run and idle states*, lines 193–195.
@@ -243,6 +261,11 @@ Line numbers point into the files as they stand on 2026-11-04.
 ---
 
 > ## 3. Whether the brain is its own program or part of `calibrate_service.py`
+>
+> **Status, 2026-11-06:** decided, recorded in `real-loop-dia.md` (the
+> participants, *The brain*, the sequence's box), with this plan's five
+> still-open points as its Open list in *The run and idle states*. The brain is
+> not built.
 >
 > > ### ISSUE SOURCES
 > >
@@ -388,6 +411,15 @@ Line numbers point into the files as they stand on 2026-11-04.
 
 > ## 4. DIR's level for a positive command
 >
+> **Status, 2026-11-06: done.** The rig test ran on 2026-11-06: the idler's
+> seek, a negative rate, ran with D5 low and the cart went to the motor's end,
+> so positive is D5 low, the level the user always intended (user,
+> 2026-11-06). In `controller` the key is `dir_positive = "low"` in
+> `config/stepper.toml`, the crate's file for the driver, in place of step 1's
+> `calibration.toml` and `Direction::FORWARD`, which belong to `calibration`.
+> Recorded in `real-loop-dia.md` (step 2). `real-arduino-plan.md` still has
+> its entry (step 3).
+>
 > > ### ISSUE SOURCES
 > >
 > > - `real-loop-dia.md`, *The command and the Arduino's Run*, lines 427–431.
@@ -472,6 +504,23 @@ Line numbers point into the files as they stand on 2026-11-04.
 ---
 
 > ## 5. What the board does when commands stop coming
+>
+> **Status, 2026-11-06:** recorded in `real-loop-dia.md` (*The board's states*,
+> the sequence, *The run and idle states*, *The soft limit*), with step 6's
+> words for the Uno's Run replaced there. **Built in `controller`:** the five
+> states, holding the last command, FAULT on the count passing a stop point
+> (stopped in one jump), the FAULT STATE reply to every datagram in FAULT
+> (`pulses` where the cart stopped, from the idler's trip), the UNCALIBRATED
+> reply, MOVING taking only commands, and the FAULT STATE message sent once
+> unasked when the board enters FAULT while the cart follows commands, to
+> whoever sent the latest datagram (checked on the rig, 2026-11-06). **Not
+> built:** the brain's handling of either reply.
+> **Replaced** (user, 2026-11-06, *Owner approved overrides* below): FAULT's
+> one cause, and FAULT never being entered from CALIBRATING. A sign byte other
+> than 0 or 1 is a fault too, from any state, during a seek or the move to the
+> centre as well; and so is a limit switch hit while the cart follows commands
+> or during the move to the centre (not built). No other issue during
+> CALIBRATING is a fault (user, 2026-11-06).
 >
 > > ### ISSUE SOURCES
 > >
@@ -707,10 +756,52 @@ Line numbers point into the files as they stand on 2026-11-04.
 > >     `Stop`.
 > >   - *Scope:* the board while it sends pulses outside CALIBRATING.
 > > - **`MoveBy` enters MOVING from CALIBRATED** (user, 2026-11-05), issue 13.
+> > - **A sign byte other than 0 or 1 is a fault** (user, 2026-11-06: "ANY value
+> >   other than 0 or 1 for the dir bit was by definition a trigger to go into
+> >   FAULT state"). From any state, whatever the size, during a seek or the
+> >   move to the centre too; a moving cart stops in one jump.
+> >   - *Changes:* "ONLY ONLY ONLY entering the protected end zone is a fault"
+> >     (user, 2026-11-05), above, and FAULT never being entered from
+> >     CALIBRATING (step 1). FAULT now has two causes.
+> >   - *Scope:* the command's sign byte. Recorded in `real-loop-dia.md`, *The
+> >     command and the Arduino* and *The board's states*.
+> > - **A limit switch hit unexpectedly is a FAULT** (user, 2026-11-06: "If a
+> >   limit switch is hit unexpectedly, it should be a FAULT").
+> >   - *Changes:* "A switch trip is not a fault in its own right" (user,
+> >     2026-11-05, here and in issue 7). FAULT now has three causes.
+> >   - *Scope:* a switch tripping while the cart follows commands: the cart
+> >     stops in one jump and the board goes into FAULT. Not CALIBRATING (next
+> >     entry). Recorded in `real-loop-dia.md`, *The soft limit* and *The
+> >     board's states*.
+> > - **No issue during CALIBRATING is a fault** (user, 2026-11-06: "ANY issue
+> >   during CALIBRATING is not a fault, but the message in the response to the
+> >   Orin's WASM should be sufficient for the WASM to display an informed
+> >   message about the specifics of the issue. NOT going into FAULT").
+> >   - *Changes:* keeps step 1's "never as a fault" for a seek's trips, and
+> >     adds that each answer names the specific issue.
+> >   - *Scope:* the seeks: any issue ends the seek and is answered with its
+> >     switch and what happened. Recorded in `real-loop-dia.md`, *The board's
+> >     states*, CALIBRATING.
+> >   - *Two exceptions* (user, 2026-11-06): a sign byte other than 0 or 1
+> >     stays a FAULT in CALIBRATING too ("SHOULD NEVER happen, but yes"); and
+> >     a switch tripping during the move to the centre is a FAULT ("Move To
+> >     Centre should also be able to fault, ESPECIALLY if custom speed is
+> >     used"), a starting switch still pressed after `release_pulses`
+> >     included. So FAULT is entered from CALIBRATING by these two.
 
 ---
 
 > ## 6. Whether a command reaches the board during a fast move
+>
+> **Status, 2026-11-06:** recorded in `real-loop-dia.md` (*The command and the
+> Arduino*). **Built in `controller`** (`Cart::follow`): each command re-aims
+> the ramp as it arrives and none is dropped; in MOVING only commands are
+> taken; the board sleeps between 2 ms ticks, woken by the tick or a datagram,
+> and answers nothing while the cart moves. **Run on the rig:** single
+> commands of ±10,000 and +44,600, and a 0 that brought a moving cart to rest;
+> a seek after the +44,600 run took 1,007 pulses from the stop point, so no
+> step was lost. **Not run:** step 4's test, reversals at one command per
+> camera frame for minutes.
 >
 > > ### ISSUE SOURCES
 > >
@@ -803,6 +894,17 @@ Line numbers point into the files as they stand on 2026-11-04.
 
 > ## 7. What the board does with a command after a trip, or before a calibration
 >
+> **Status, 2026-11-06:** recorded in `real-loop-dia.md` (*The board's states*,
+> *Contracts*, the sequence). **Built in `controller`:** `state` (`result`
+> `"uncalibrated"`, `"calibrating"` or `"calibrated"`, and in FAULT the FAULT
+> STATE reply), and the UNCALIBRATED reply to a command. Its `Rail` caches both
+> trip positions on one count (`cart/rail.rs`), so the **Built:** lines about
+> `rail.rs` below describe `calibration`. A command in CALIBRATING is neither
+> applied nor answered. **Not built:** `/run` and its Run button rule. A
+> switch trip while the cart follows commands is not read by `controller`.
+> **Replaced** (user, 2026-11-06, issue 5's overrides): a switch hit
+> unexpectedly is now a FAULT, not "not a fault in its own right".
+>
 > > ### ISSUE SOURCES
 > >
 > > - `real-loop-dia.md`, *The command and the Arduino's Run*, lines 438–440.
@@ -886,6 +988,13 @@ Line numbers point into the files as they stand on 2026-11-04.
 ---
 
 > ## 8. `runtime_end_margin`'s value
+>
+> **Status, 2026-11-06:** recorded in `real-loop-dia.md` (*The soft limit*).
+> **Built in `controller`:** the default, 1,000 pulses, as `RUNTIME_END_MARGIN`
+> in `constants.rs`, which it uses always since the data flash is not built;
+> and the cap with two bounds, d taken one tick ahead and at most d ÷ the tick
+> per tick (`cart/stop_points.rs`). On the rig, ±10,000 and +44,600 commands
+> came to rest at the stop points, about 15 mm short of each trip.
 >
 > > ### ISSUE SOURCES
 > >
@@ -992,6 +1101,12 @@ Line numbers point into the files as they stand on 2026-11-04.
 
 > ## 9. The settings messages over WiFi, and their answers
 >
+> **Status, 2026-11-06:** recorded in `real-loop-dia.md` (*The Uno's
+> settings*, *Contracts*); not built. The text messages listed below are
+> `calibration`'s. `controller` takes `Stop`, `state`, `MoveToCentre` with or
+> without a speed, and the two seeks (its `constants.rs`), and does not answer
+> `pins`.
+>
 > > ### ISSUE SOURCES
 > >
 > > - `real-loop-dia.md`, *The Uno's settings*, lines 481–482.
@@ -1078,6 +1193,11 @@ Line numbers point into the files as they stand on 2026-11-04.
 ---
 
 > ## 10. How `arduino-manager` pulls and uploads the settings
+>
+> **Status, 2026-11-06:** recorded in `real-loop-dia.md` (*The Uno's
+> settings*); not built. Step 4's reader exists: `controller` reads the USB
+> line with `UartIrq` on SCI9 and answers `STATUS` with `OK STATUS <state>`
+> (`src/usb/`, `main.rs`).
 >
 > > ### ISSUE SOURCES
 > >
@@ -1166,6 +1286,11 @@ Line numbers point into the files as they stand on 2026-11-04.
 
 > ## 11. What the board uses when the data flash holds no setting
 >
+> **Status, 2026-11-06:** recorded in `real-loop-dia.md` (*The Uno's
+> settings*, *Contracts*). Step 1 is built: the default is
+> `RUNTIME_END_MARGIN`, 1,000, in `controller`'s `constants.rs`. Steps 2 and 3
+> are not.
+>
 > > ### ISSUE SOURCES
 > >
 > > - `real-loop-dia.md`, *The Uno's settings*, lines 486–487.
@@ -1217,6 +1342,9 @@ Line numbers point into the files as they stand on 2026-11-04.
 ---
 
 > ## 12. The log's file format, and the timestamp's form in the folder name
+>
+> **Status, 2026-11-06:** recorded in `real-loop-dia.md` (*The log*,
+> *Contracts*); not built.
 >
 > > ### ISSUE SOURCES
 > >
@@ -1278,6 +1406,12 @@ Line numbers point into the files as they stand on 2026-11-04.
 ---
 
 > ## 13. The calibration's metres against a frame from the rig
+>
+> **Status, 2026-11-06:** recorded in `real-loop-dia.md` (*The calibration on
+> the rig*); not built, and the check not done. Step 3 names `calibration`'s
+> `creep` and `Limit::Pulses`. In `controller` the hardware count stop is used
+> by the ramped move to the centre (`Cart::centre`), and nothing moves the cart
+> by a set count yet.
 >
 > > ### ISSUE SOURCES
 > >
@@ -1387,6 +1521,9 @@ Line numbers point into the files as they stand on 2026-11-04.
 
 > ## 14. The data flash keeping its contents through a power-off
 >
+> **Status, 2026-11-06:** not run; it needs issue 9's messages, which are not
+> built.
+>
 > > ### ISSUE SOURCES
 > >
 > > - `real-loop-dia.md`, *The Uno's settings*, line 469: "Not yet run in the
@@ -1436,6 +1573,9 @@ Line numbers point into the files as they stand on 2026-11-04.
 
 > ## 15. A firmware-only upload leaving the settings in place
 >
+> **Status, 2026-11-06:** not run; it needs issue 10's USB messages, which are
+> not built.
+>
 > > ### ISSUE SOURCES
 > >
 > > - `real-loop-dia.md`, *The Uno's settings*, lines 469–470: "Still to test on
@@ -1483,6 +1623,10 @@ Line numbers point into the files as they stand on 2026-11-04.
 ---
 
 > ## 16. STOP's order lets the brain restart the cart
+>
+> **Status, 2026-11-06:** step 1 done: `real-loop-dia.md`'s sequence and *The
+> run and idle states* ask the brain for idle first, then send the zeros. Step
+> 2, in `real-orin-plan.md`, is not done.
 >
 > > ### ISSUE SOURCES
 > >

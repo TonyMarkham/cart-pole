@@ -122,10 +122,7 @@ fn main() -> ! {
             // In FAULT, every datagram gets the FAULT STATE reply and none is
             // applied; only a reset leaves it (real-open-issues.md, issue 5).
             Ok(Incoming::Wifi(_)) if state == State::Fault => {
-                let answer = Answer::fault(cart.pulses_from_idler());
-                if let Err(error) = wifi::reply(&mut udp, &mut wake_timer, &answer) {
-                    stopped(format_args!("wifi: wake timer: {error:?}"));
-                }
+                reply_fault(&mut udp, &mut wake_timer, &cart);
             }
             Ok(Incoming::Wifi(datagram)) => match WifiMessage::parse(&datagram) {
                 // A bad sign byte is a fault from any state, and is answered
@@ -133,10 +130,7 @@ fn main() -> ! {
                 // command*).
                 Some(WifiMessage::BadSign) => {
                     state = state.next(Event::BadSign);
-                    let answer = Answer::fault(cart.pulses_from_idler());
-                    if let Err(error) = wifi::reply(&mut udp, &mut wake_timer, &answer) {
-                        stopped(format_args!("wifi: wake timer: {error:?}"));
-                    }
+                    reply_fault(&mut udp, &mut wake_timer, &cart);
                 }
                 // A command that moves the cart starts MOVING, from CALIBRATED
                 // only; it gets no answer (issue 5, step 1).
@@ -149,6 +143,13 @@ fn main() -> ! {
                         Err(error) => stopped(format_args!("moving: {error}")),
                     };
                     state = state.next(event);
+                    // Entering FAULT, the board tells the Orin at once, unasked:
+                    // the cart is at rest, so sending costs no tick (issue 5).
+                    // Every datagram after it gets the same reply, so a lost
+                    // push costs nothing.
+                    if state == State::Fault {
+                        reply_fault(&mut udp, &mut wake_timer, &cart);
+                    }
                 }
                 // A calibration move runs from every state that leads to
                 // CALIBRATING, and CALIBRATING itself, between moves
@@ -211,6 +212,17 @@ fn main() -> ! {
             },
             Err(error) => stopped(format_args!("wifi: wake timer: {error:?}")),
         }
+    }
+}
+
+/// Sends the FAULT STATE reply to whoever sent the latest datagram. The bridge
+/// can name only that sender, and asking it takes exchanges a moving cart
+/// can't spare, so after a move it is asked once the cart has stopped: then
+/// it is the latest command's sender, unless another datagram came after it.
+fn reply_fault(udp: &mut UdpSocket, wake_timer: &mut WakeTimer, cart: &Cart) {
+    let answer = Answer::fault(cart.pulses_from_idler());
+    if let Err(error) = wifi::reply(udp, wake_timer, &answer) {
+        stopped(format_args!("wifi: wake timer: {error:?}"));
     }
 }
 
