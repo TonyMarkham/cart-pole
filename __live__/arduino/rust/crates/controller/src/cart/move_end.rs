@@ -11,6 +11,8 @@ pub(crate) enum MoveEnd {
     Count,
     /// A `Stop` arrived.
     Stopped,
+    /// A command with a bad sign byte arrived: a fault.
+    BadSign,
     /// The move's time limit passed.
     TimedOut,
 }

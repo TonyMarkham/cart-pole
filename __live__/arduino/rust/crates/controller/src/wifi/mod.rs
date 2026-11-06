@@ -63,14 +63,27 @@ pub(crate) fn serve(
 ) -> Result<(), WakeError> {
     let answer = match message {
         Some(WifiMessage::State) => Answer::state(state),
-        Some(WifiMessage::Command) => match Answer::command_refused(state) {
+        Some(WifiMessage::Command(_)) => match Answer::command_refused(state) {
             Some(answer) => answer,
             None => return Ok(()),
         },
-        Some(WifiMessage::Calibrate(_) | WifiMessage::Stop) | None => return Ok(()),
+        // A bad sign byte is a fault, handled by `main` before this.
+        Some(WifiMessage::BadSign | WifiMessage::Calibrate(_) | WifiMessage::Stop) | None => {
+            return Ok(());
+        }
     };
+    reply(udp, wake, &answer)
+}
+
+/// Sends `answer` to whoever sent the latest datagram. An answer whose asker
+/// can't be read is dropped, and the Orin's wait for it times out.
+pub(crate) fn reply(
+    udp: &mut UdpSocket,
+    wake: &mut WakeTimer,
+    answer: &Answer,
+) -> Result<(), WakeError> {
     match udp.asker(wake)? {
-        Some(asker) => send_to(udp, wake, &asker, &answer),
+        Some(asker) => send_to(udp, wake, &asker, answer),
         None => Ok(()),
     }
 }

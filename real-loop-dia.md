@@ -320,7 +320,14 @@ its sign the direction. Only how it is packed differs on the rig.
 - **Why a `u16` is enough** (follows): its 65,535 is above every supply's top
   pulse rate in `motor-spec.md`, *The top pulse rate per supply*: 22,266 at
   12 V, 44,600 at 24 V, 55,733 at 30 V. The board still clamps to 44,600.
-- **A rate of 0 means rest** whatever the sign byte says (follows).
+- **A rate of 0 means rest** whatever the sign byte says (follows), as long
+  as the sign byte is 0 or 1.
+- **Decided: a sign byte other than 0 or 1 is a fault** (user, 2026-11-06).
+  By definition it puts the board in FAULT, from any state, whatever the
+  size, during a seek or the move to the centre too; a moving cart stops in
+  one jump. This adds a second cause to FAULT, beside entering a protected
+  end zone, and replaces "ONLY entering the protected end zone is a fault"
+  (user, 2026-11-05, `real-open-issues.md`, issue 5).
 - The synthetic loop keeps its 4-byte `i32`. The policy never sees how the
   command is packed, so the change needs no new training (follows).
 

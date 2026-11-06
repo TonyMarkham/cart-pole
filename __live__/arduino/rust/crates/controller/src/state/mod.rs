@@ -44,10 +44,12 @@ impl State {
     /// | `Calibrated`   | `MoveRequested`     | `Moving`       |
     /// | `Moving`       | `FinishMoving`      | `Calibrated`   |
     /// | `Moving`       | `EndZoneEntered`    | `Fault`        |
+    /// | any            | `BadSign`           | `Fault`        |
     /// | `Fault`        | `Resetting`         | `Uncalibrated` |
     ///
-    /// So no event leads from `Calibrating` to `Uncalibrated` or to `Fault`
-    /// (the user, 2026-11-05), and only `Resetting` leads out of `Fault`.
+    /// So no event leads from `Calibrating` to `Uncalibrated` (the user,
+    /// 2026-11-05), only a bad sign byte leads from it to `Fault` (the user,
+    /// 2026-11-06), and only `Resetting` leads out of `Fault`.
     pub const fn next(self, event: Event) -> State {
         match (self, event) {
             (State::Uncalibrated | State::Calibrated, Event::StartCalibrating) => {
@@ -58,6 +60,7 @@ impl State {
             (State::Moving, Event::FinishMoving) => State::Calibrated,
             (State::Moving, Event::EndZoneEntered) => State::Fault,
             (State::Fault, Event::Resetting) => State::Uncalibrated,
+            (_, Event::BadSign) => State::Fault,
             (state, _) => state,
         }
     }

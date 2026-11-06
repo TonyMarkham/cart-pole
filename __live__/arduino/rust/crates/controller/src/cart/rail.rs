@@ -1,4 +1,7 @@
-use crate::cart::rail_end::RailEnd;
+use crate::{
+    cart::{rail_end::RailEnd, stop_points::StopPoints},
+    constants::RUNTIME_END_MARGIN,
+};
 
 /// The rail as the seeks found it: where each end's switch stopped the cart,
 /// on the cart's own count of its position. Known once a seek has reached
@@ -34,6 +37,24 @@ impl Rail {
     /// Half way between the two ends, or None until a seek has reached each.
     pub(crate) fn centre(&self) -> Option<i64> {
         Some(midpoint(self.idler?, self.motor?))
+    }
+
+    /// The stop points, `runtime_end_margin` inside each end, or None until a
+    /// seek has reached each. The idler's end is the lower count, since a
+    /// positive rate runs towards the motor's end.
+    pub(crate) fn stop_points(&self) -> Option<StopPoints> {
+        Some(StopPoints::new(
+            self.idler? + RUNTIME_END_MARGIN,
+            self.motor? - RUNTIME_END_MARGIN,
+        ))
+    }
+
+    /// `position` counted from the idler's end, for an answer's `pulses`, or 0
+    /// before that end is known or at or below it.
+    pub(crate) fn pulses_from_idler(&self, position: i64) -> u32 {
+        self.idler
+            .and_then(|idler| u32::try_from(position - idler).ok())
+            .unwrap_or(0)
     }
 }
 

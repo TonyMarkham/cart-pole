@@ -16,4 +16,7 @@ pub(crate) enum SeekEnd {
     Stopped,
     /// No switch tripped within `seek_timeout_ms`.
     TimedOut,
+    /// A command with a bad sign byte arrived during the seek: the cart was
+    /// stopped, and the board is in FAULT.
+    Fault,
 }

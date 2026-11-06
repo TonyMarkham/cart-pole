@@ -23,6 +23,7 @@ mod wifi;
 use crate::{
     cart::{
         Cart, calibration_move::CalibrationMove, centre_end::CentreEnd, move_timer::MOVE_TIMER,
+        moving_end::MovingEnd, seek_end::SeekEnd,
     },
     config::{usb::USB_BAUD, wifi::AT_BAUD},
     constants::{LINE_END, LINE_READY, REPLY_STATUS},
@@ -118,7 +119,37 @@ fn main() -> ! {
                 USB.write_all(state.name().as_bytes());
                 USB.write_all(LINE_END);
             }
+            // In FAULT, every datagram gets the FAULT STATE reply and none is
+            // applied; only a reset leaves it (real-open-issues.md, issue 5).
+            Ok(Incoming::Wifi(_)) if state == State::Fault => {
+                let answer = Answer::fault(cart.pulses_from_idler());
+                if let Err(error) = wifi::reply(&mut udp, &mut wake_timer, &answer) {
+                    stopped(format_args!("wifi: wake timer: {error:?}"));
+                }
+            }
             Ok(Incoming::Wifi(datagram)) => match WifiMessage::parse(&datagram) {
+                // A bad sign byte is a fault from any state, and is answered
+                // as every datagram in FAULT is (real-loop-dia.md, *The
+                // command*).
+                Some(WifiMessage::BadSign) => {
+                    state = state.next(Event::BadSign);
+                    let answer = Answer::fault(cart.pulses_from_idler());
+                    if let Err(error) = wifi::reply(&mut udp, &mut wake_timer, &answer) {
+                        stopped(format_args!("wifi: wake timer: {error:?}"));
+                    }
+                }
+                // A command that moves the cart starts MOVING, from CALIBRATED
+                // only; it gets no answer (issue 5, step 1).
+                Some(WifiMessage::Command(rate)) if state == State::Calibrated && rate != 0 => {
+                    state = state.next(Event::MoveRequested);
+                    let event = match cart.follow(rate, &mut udp, &mut wake_timer) {
+                        Ok(MovingEnd::Rest) => Event::FinishMoving,
+                        Ok(MovingEnd::EndZone) => Event::EndZoneEntered,
+                        Ok(MovingEnd::BadSign) => Event::BadSign,
+                        Err(error) => stopped(format_args!("moving: {error}")),
+                    };
+                    state = state.next(event);
+                }
                 // A calibration move runs from every state that leads to
                 // CALIBRATING, and CALIBRATING itself, between moves
                 // (real-open-issues.md, issue 5, step 1).
@@ -140,7 +171,12 @@ fn main() -> ! {
                     let answer = match calibration {
                         CalibrationMove::Seek(toward) => {
                             match cart.seek(toward, &mut udp, &mut wake_timer) {
-                                Ok((end, pulses)) => Answer::seek(toward, end, pulses),
+                                Ok((end, pulses)) => {
+                                    if end == SeekEnd::Fault {
+                                        state = state.next(Event::BadSign);
+                                    }
+                                    Answer::seek(toward, end, pulses)
+                                }
                                 Err(error) => stopped(format_args!("seek: {error}")),
                             }
                         }
@@ -148,9 +184,14 @@ fn main() -> ! {
                             match cart.centre(speed, &mut udp, &mut wake_timer) {
                                 Ok((end, pulses)) => {
                                     // Only the move to the centre ends the
-                                    // calibration (issue 5, step 1).
-                                    if end == CentreEnd::Centred {
-                                        state = state.next(Event::FinishCalibrating);
+                                    // calibration (issue 5, step 1), and a bad
+                                    // sign byte during it is a fault.
+                                    match end {
+                                        CentreEnd::Centred => {
+                                            state = state.next(Event::FinishCalibrating);
+                                        }
+                                        CentreEnd::Fault => state = state.next(Event::BadSign),
+                                        _ => {}
                                     }
                                     Answer::centre(end, pulses)
                                 }

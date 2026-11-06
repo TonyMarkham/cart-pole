@@ -17,10 +17,12 @@ pub(crate) enum Event {
     /// The pulses stopped: the cart is at rest.
     FinishMoving,
     /// The cart entered a protected end zone, the `runtime_end_margin` pulses
-    /// between an end's stop point and its cached trip position. The only
-    /// cause of a fault (the user, 2026-11-05: "ONLY ONLY ONLY entering the
-    /// protected end zone is a fault").
+    /// between an end's stop point and its cached trip position.
     EndZoneEntered,
+    /// A command arrived whose sign byte is neither 0 nor 1: by definition a
+    /// fault, from any state (the user, 2026-11-06, real-loop-dia.md, *The
+    /// command*).
+    BadSign,
     /// A reset of the board: the only way out of FAULT, back to UNCALIBRATED
     /// (issue 5, step 1).
     Resetting,

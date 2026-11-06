@@ -105,6 +105,19 @@ pub(crate) const PIN_MOTOR: &str = "d2";
 /// (real-loop-dia.md, *Contracts*).
 pub(crate) const COMMAND_SIZE: u32 = 3;
 
+/// A command's sign byte: 0 negative, 1 positive (real-loop-dia.md,
+/// *Contracts*, the command). Any other is a fault (the user, 2026-11-06).
+pub(crate) const COMMAND_NEGATIVE: u8 = 0;
+pub(crate) const COMMAND_POSITIVE: u8 = 1;
+
+/// The soft limit's gap, pulses, between each end's cached trip position and
+/// its stop point: the cart is brought to rest at a stop point, and passing
+/// one is entering that end's protected zone, a fault. 1,000 pulses is 15 mm.
+/// The default the user decided (2026-11-04, real-open-issues.md, issues 8 and
+/// 11), kept in code by that decision, not in a toml. Setting it from the
+/// Orin and keeping it in the data flash (issues 9 to 11) comes later.
+pub(crate) const RUNTIME_END_MARGIN: i64 = 1_000;
+
 /// The status numbers in an answer, with HTTP's meanings (RFC 9110, section
 /// 15).
 pub(crate) const STATUS_OK: u16 = 200;

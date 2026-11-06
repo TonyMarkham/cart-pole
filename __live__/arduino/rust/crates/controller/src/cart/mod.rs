@@ -5,9 +5,13 @@ pub(crate) mod error;
 pub(crate) mod move_end;
 pub(crate) mod move_timer;
 pub(crate) mod move_wake;
+pub(crate) mod moving_end;
+pub(crate) mod moving_wake;
 pub(crate) mod rail;
 pub(crate) mod rail_end;
+pub(crate) mod ramp;
 pub(crate) mod seek_end;
+pub(crate) mod stop_points;
 
 // ---------------------------------------------------------------------------------------------- //
 
@@ -18,9 +22,13 @@ use crate::{
         error::{move_error::MoveError, move_result::MoveResult},
         move_end::MoveEnd,
         move_wake::MoveWake,
+        moving_end::MovingEnd,
+        moving_wake::MovingWake,
         rail::Rail,
         rail_end::RailEnd,
+        ramp::Ramp,
         seek_end::SeekEnd,
+        stop_points::StopPoints,
     },
     config::calibration::{RELEASE_PULSES, SEEK_SPEED, SEEK_TIMEOUT_MS},
     constants::MICROS_PER_SECOND,
@@ -35,7 +43,7 @@ use unor4_hal::{
         contact::Nc,
         pin_map::{D2, D3},
     },
-    step::StepGenerator,
+    step::{StepError, StepGenerator},
     wake::WakeTimer,
 };
 
@@ -120,10 +128,11 @@ impl Cart {
                 self.rail.forget();
                 SeekEnd::TimedOut
             }
+            MoveEnd::BadSign => SeekEnd::Fault,
             // A seek arms no pulse count, so only a `Stop` is left.
             MoveEnd::Stopped | MoveEnd::Count => SeekEnd::Stopped,
         };
-        Ok((end, pulses))
+        Ok((end, self.pulses_for(end == SeekEnd::Fault, pulses)))
     }
 
     /// Moves to the centre of the rail at `speed`, from wherever the cart is,
@@ -179,17 +188,138 @@ impl Cart {
                 self.rail.forget();
                 CentreEnd::Tripped(end)
             }
+            MoveEnd::BadSign => CentreEnd::Fault,
             // The move has no time limit, so only a `Stop` is left.
             MoveEnd::Stopped | MoveEnd::TimedOut => CentreEnd::Stopped,
         };
-        Ok((end, pulses))
+        Ok((end, self.pulses_for(end == CentreEnd::Fault, pulses)))
+    }
+
+    /// A move's answer gives the pulses it sent, but the FAULT STATE reply
+    /// gives where the cart stopped, counted from the idler's end, as every
+    /// reply in FAULT does.
+    fn pulses_for(&self, fault: bool, sent: u32) -> u32 {
+        if fault {
+            self.pulses_from_idler()
+        } else {
+            sent
+        }
+    }
+
+    /// Runs the Orin's commands, starting with `first`, until the cart is at
+    /// rest again or has entered a protected end zone. Every 2 ms tick: the
+    /// count is checked against the stop points, then the ramp takes one step
+    /// towards the latest command, the soft limit caps it, and the rate is
+    /// queued for the next tick. Each command that arrives re-aims the ramp,
+    /// and none is dropped (real-open-issues.md, issue 6); every other
+    /// datagram is dropped unanswered (issue 5, MOVING). It sleeps between
+    /// ticks, woken by the tick or a datagram.
+    pub(crate) fn follow(
+        &mut self,
+        first: i32,
+        udp: &mut UdpSocket,
+        wake: &mut WakeTimer,
+    ) -> MoveResult<MovingEnd> {
+        // Commands are taken only in CALIBRATED, which needs the rail.
+        let Some(stops) = self.rail.stop_points() else {
+            return Ok(MovingEnd::Rest);
+        };
+        let mut ramp = Ramp::new();
+        ramp.command(first);
+
+        // The HAL's position counts each tick's pulses in the direction it
+        // ran last, and the moves before ran untimed, so it is right only as a
+        // difference from a tick taken now, with the cart at rest.
+        self.stepper.set_tick_wake(true);
+        sleep::until(|| self.stepper.poll_tick());
+        let base = self.stepper.position();
+        let start = self.position;
+
+        let ended = self.until_at_rest(&mut ramp, stops, base, start, udp, wake);
+        // Stopped whatever happened. A pulse that was running ends and is
+        // latched by the next tick, so the count is taken there.
+        self.stepper.stop();
+        sleep::until(|| self.stepper.poll_tick());
+        self.position = start + (self.stepper.position() - base);
+        self.stepper.set_tick_wake(false);
+        ended
+    }
+
+    /// The ticks of `follow`, until the cart is at rest or in a protected
+    /// zone.
+    fn until_at_rest(
+        &mut self,
+        ramp: &mut Ramp,
+        stops: StopPoints,
+        base: i64,
+        start: i64,
+        udp: &mut UdpSocket,
+        wake: &mut WakeTimer,
+    ) -> MoveResult<MovingEnd> {
+        loop {
+            match sleep::until(|| self.look_moving(udp, wake).transpose())? {
+                MovingWake::Command(rate) => ramp.command(rate),
+                // A fault: stopped in one jump, by `follow`.
+                MovingWake::BadSign => return Ok(MovingEnd::BadSign),
+                MovingWake::Tick => {
+                    self.position = start + (self.stepper.position() - base);
+                    if stops.passed(self.position) {
+                        // Into a protected zone: stopped in one jump (issue 5).
+                        return Ok(MovingEnd::EndZone);
+                    }
+                    let next = ramp.next();
+                    let sent = stops.cap(next, ramp.rate(), self.position);
+                    match self.stepper.queue(sent) {
+                        Ok(_) => ramp.sent(sent),
+                        // Not this tick: the rate running now holds for one
+                        // more, and the ramp tries again at the next.
+                        Err(StepError::NotReady | StepError::TooLate) => {}
+                        Err(error) => return Err(error.into()),
+                    }
+                    // At rest when the ramp is at 0 and stays there: the
+                    // command is 0, or the soft limit holds the cart at a stop
+                    // point. A reversal passing through 0 is neither.
+                    if ramp.rate() == 0 && (ramp.command_rate() == 0 || sent != next) {
+                        return Ok(MovingEnd::Rest);
+                    }
+                }
+            }
+        }
+    }
+
+    /// One look while the commands run, without sleeping: a tick, or a
+    /// command, or None. Any datagram that isn't a command is dropped.
+    fn look_moving(
+        &mut self,
+        udp: &mut UdpSocket,
+        wake: &mut WakeTimer,
+    ) -> MoveResult<Option<MovingWake>> {
+        // The tick first: the rate for the next tick must be queued at least
+        // 40 µs before it (unor4-hal `step/step_generator.rs`, `queue`).
+        if self.stepper.poll_tick().is_some() {
+            return Ok(Some(MovingWake::Tick));
+        }
+        while let Some(datagram) = udp.look(wake).map_err(MoveError::WakeTimer)? {
+            match WifiMessage::parse(&datagram) {
+                Some(WifiMessage::Command(rate)) => return Ok(Some(MovingWake::Command(rate))),
+                Some(WifiMessage::BadSign) => return Ok(Some(MovingWake::BadSign)),
+                _ => {}
+            }
+        }
+        Ok(None)
+    }
+
+    /// Where the cart is, counted from the idler's end, for an answer.
+    pub(crate) fn pulses_from_idler(&self) -> u32 {
+        self.rail.pulses_from_idler(self.position)
     }
 
     /// Runs the cart at `rate` until something ends the move, then stops it,
     /// adds the pulses it sent to `position`, and returns what ended it and
     /// the pulses. It sleeps the whole way, woken by a switch, a datagram, the
-    /// move timer or the pulse count. Only `Stop` is taken: any other datagram
-    /// is dropped unanswered (real-open-issues.md, issue 5).
+    /// move timer or the pulse count. Only `Stop` and a command with a bad
+    /// sign byte, a fault, are taken: any other datagram is dropped unanswered
+    /// (real-open-issues.md, issue 5; real-loop-dia.md, *The command*).
     ///
     /// `leaving`: a switch the cart starts on, whose presses count only once
     /// the cart has moved `release_pulses` off it. `limit`: the longest the
@@ -296,8 +426,10 @@ impl Cart {
             }
         }
         while let Some(datagram) = udp.look(wake).map_err(MoveError::WakeTimer)? {
-            if WifiMessage::parse(&datagram) == Some(WifiMessage::Stop) {
-                return Ok(Some(MoveWake::Ended(MoveEnd::Stopped)));
+            match WifiMessage::parse(&datagram) {
+                Some(WifiMessage::Stop) => return Ok(Some(MoveWake::Ended(MoveEnd::Stopped))),
+                Some(WifiMessage::BadSign) => return Ok(Some(MoveWake::Ended(MoveEnd::BadSign))),
+                _ => {}
             }
         }
         if let Some(deadline) = deadline.as_mut()

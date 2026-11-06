@@ -18,4 +18,7 @@ pub(crate) enum CentreEnd {
     BadSpeed,
     /// Both switches read pressed at the start: the cart didn't move.
     Refused,
+    /// A command with a bad sign byte arrived during the move: the cart was
+    /// stopped, and the board is in FAULT.
+    Fault,
 }

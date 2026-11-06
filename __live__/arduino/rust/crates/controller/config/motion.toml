@@ -1,0 +1,15 @@
+# How the board runs the Orin's commands: the ramp each 2 ms tick follows, and
+# the fastest it may go (real-loop-dia.md, *The command and the Arduino's Run*).
+
+# The jump limit m, pulses/s²: each tick moves the sent rate towards the
+# command by at most m × 2 ms, rounded down, 2,421 pulses/s. Measured on the
+# rig (jump-limit-results.md: the staircase, the lowest of the four kinds'
+# limits). It must equal the m the policy trained with, the trainer's
+# [drive] jump_limit (__synthetic__/trainer/python/settings.toml): changed
+# here alone, the cart ramps differently from training.
+jump_limit = 1_210_937
+
+# The top rate, pulses/s: every command is clamped to ± this. 44,600 is the
+# rig's top rate on its 24 V supply (motor-spec.md, *The top pulse rate per
+# supply*).
+top_rate = 44_600

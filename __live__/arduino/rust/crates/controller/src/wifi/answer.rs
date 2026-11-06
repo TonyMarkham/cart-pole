@@ -6,6 +6,11 @@ use crate::{
 
 use core::fmt;
 
+/// What FAULT means for the person at the page, whichever cause put the board
+/// there: the cart entering a protected end zone, or a command with a bad sign
+/// byte.
+const FAULT_MESSAGE: &str = "the board is in FAULT: reset it, then calibrate";
+
 /// One answer to the Orin, in the board's one format, five keys: `status`,
 /// `result`, `message`, `pin` and `pulses`. `pin` is the switch a move
 /// stopped at, or null; `pulses` is how far the move went, or 0.
@@ -30,9 +35,7 @@ impl Answer {
                 State::Calibrating => "a calibration is under way",
                 State::Calibrated => "the rail is known and the cart is at rest",
                 State::Moving => "the cart is moving",
-                State::Fault => {
-                    "the cart entered a protected end zone: reset the board, then calibrate"
-                }
+                State::Fault => FAULT_MESSAGE,
             },
             pin: None,
             pulses: 0,
@@ -52,6 +55,19 @@ impl Answer {
                 pulses: 0,
             }),
             _ => None,
+        }
+    }
+
+    /// The FAULT STATE reply, to every datagram in FAULT (real-open-issues.md,
+    /// issue 5, steps 1 and 2): 409, `"fault"`, and `pulses` where the cart
+    /// stopped, counted from the idler's end.
+    pub(crate) const fn fault(pulses: u32) -> Self {
+        Self {
+            status: STATUS_CONFLICT,
+            result: "fault",
+            message: FAULT_MESSAGE,
+            pin: None,
+            pulses,
         }
     }
 
@@ -98,6 +114,7 @@ impl Answer {
                 "no switch tripped in time: the cart stopped",
                 None,
             ),
+            SeekEnd::Fault => return Self::fault(pulses),
         };
         Self {
             status,
@@ -145,6 +162,7 @@ impl Answer {
                 "both switches read pressed: the cart did not move",
                 None,
             ),
+            CentreEnd::Fault => return Self::fault(pulses),
         };
         Self {
             status,
