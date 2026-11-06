@@ -1,6 +1,6 @@
 use crate::{
-    cart::seek_end::SeekEnd,
-    constants::{PIN_IDLER, PIN_MOTOR, STATUS_CONFLICT, STATUS_OK, STATUS_TIMEOUT},
+    cart::{rail_end::RailEnd, seek_end::SeekEnd},
+    constants::{STATUS_CONFLICT, STATUS_OK, STATUS_TIMEOUT},
     state::State,
 };
 
@@ -55,29 +55,30 @@ impl Answer {
         }
     }
 
-    /// The answer to a seek of the idler's end that ended at `end`, after
+    /// The answer to a seek `toward` an end that ended at `end`, after
     /// `pulses`. The results and statuses are the ones the webserver's
     /// calibrate page reads (`__live__/orin/rust/crates/webserver/src/rail_state.rs`):
-    /// only a trip of the switch the seek was for is a 200.
-    pub(crate) const fn seek_idler(end: SeekEnd, pulses: u32) -> Self {
+    /// only a trip of the switch the seek was for is a 200, and `pin` names
+    /// the switch.
+    pub(crate) const fn seek(toward: RailEnd, end: SeekEnd, pulses: u32) -> Self {
         let (status, result, message, pin) = match end {
-            SeekEnd::Idler => (
+            SeekEnd::Arrived => (
                 STATUS_OK,
                 "tripped",
-                "the cart stopped at the idler's switch",
-                Some(PIN_IDLER),
+                "the cart stopped at that end's switch",
+                Some(toward.pin()),
             ),
-            SeekEnd::Motor => (
+            SeekEnd::OtherEnd => (
                 STATUS_CONFLICT,
                 "tripped",
-                "the cart stopped at the motor's switch, the other end",
-                Some(PIN_MOTOR),
+                "the cart stopped at the other end's switch",
+                Some(toward.other().pin()),
             ),
             SeekEnd::AlreadyThere => (
                 STATUS_CONFLICT,
                 "already_there",
-                "the idler's switch already reads pressed: the cart did not move",
-                Some(PIN_IDLER),
+                "that end's switch already reads pressed: the cart did not move",
+                Some(toward.pin()),
             ),
             SeekEnd::Refused => (
                 STATUS_CONFLICT,

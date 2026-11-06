@@ -5,7 +5,7 @@ use crate::cart::seek_end::SeekEnd;
 pub(crate) enum SeekWake {
     /// The seek is over.
     Ended(SeekEnd),
-    /// The cart has moved `release_pulses` off the motor's switch it started
-    /// on, so that switch should read released now.
+    /// The cart has moved `release_pulses` off the other end's switch it
+    /// started on, so that switch should read released now.
     LeftSwitch,
 }

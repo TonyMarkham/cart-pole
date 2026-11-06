@@ -83,10 +83,11 @@ pub(crate) const ADDRESS_MAX: usize = 15;
 /// can't be taken for a command.
 pub(crate) const STATE_REQUEST: &[u8] = b"state";
 
-/// The Orin's request for a seek to the idler's end, and the message that
-/// ends a move: they must match the webserver's `IDLER_REQUEST` and
+/// The Orin's requests for a seek to each end, and the message that ends a
+/// move: they must match the webserver's `IDLER_REQUEST`, `MOTOR_REQUEST` and
 /// `STOP_REQUEST` (`__live__/orin/rust/crates/webserver/src/constants.rs`).
 pub(crate) const SEEK_IDLER_REQUEST: &[u8] = b"CalibrateIdlerTravelLimit";
+pub(crate) const SEEK_MOTOR_REQUEST: &[u8] = b"CalibrateMotorTravelLimit";
 pub(crate) const STOP_REQUEST: &[u8] = b"Stop";
 
 /// The switches by the pin names a seek's answer gives in `pin`, which the

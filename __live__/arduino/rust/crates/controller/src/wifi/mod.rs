@@ -67,7 +67,7 @@ pub(crate) fn serve(
             Some(answer) => answer,
             None => return Ok(()),
         },
-        Some(WifiMessage::SeekIdler | WifiMessage::Stop) | None => return Ok(()),
+        Some(WifiMessage::Seek(_) | WifiMessage::Stop) | None => return Ok(()),
     };
     match udp.asker(wake)? {
         Some(asker) => send_to(udp, wake, &asker, &answer),

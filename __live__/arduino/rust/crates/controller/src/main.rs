@@ -120,7 +120,7 @@ fn main() -> ! {
                 // A seek is a calibration move, so it runs from every state
                 // that leads to CALIBRATING, and CALIBRATING itself, between
                 // moves (real-open-issues.md, issue 5, step 1).
-                Some(WifiMessage::SeekIdler)
+                Some(WifiMessage::Seek(toward))
                     if matches!(
                         state,
                         State::Uncalibrated | State::Calibrating | State::Calibrated
@@ -135,11 +135,11 @@ fn main() -> ! {
                         Err(error) => stopped(format_args!("wifi: wake timer: {error:?}")),
                     };
                     state = state.next(Event::StartCalibrating);
-                    let (end, pulses) = match cart.seek_idler(&mut udp, &mut wake_timer) {
+                    let (end, pulses) = match cart.seek(toward, &mut udp, &mut wake_timer) {
                         Ok(seek) => seek,
-                        Err(error) => stopped(format_args!("seek: {error:?}")),
+                        Err(error) => stopped(format_args!("seek: {error}")),
                     };
-                    let answer = Answer::seek_idler(end, pulses);
+                    let answer = Answer::seek(toward, end, pulses);
                     if let Err(error) = wifi::send_to(&mut udp, &mut wake_timer, &asker, &answer) {
                         stopped(format_args!("wifi: wake timer: {error:?}"));
                     }

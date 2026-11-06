@@ -1,5 +1,8 @@
 use crate::{
-    constants::{COMMAND_SIZE, SEEK_IDLER_REQUEST, STATE_REQUEST, STOP_REQUEST},
+    cart::rail_end::RailEnd,
+    constants::{
+        COMMAND_SIZE, SEEK_IDLER_REQUEST, SEEK_MOTOR_REQUEST, STATE_REQUEST, STOP_REQUEST,
+    },
     wifi::datagram::Datagram,
 };
 
@@ -10,8 +13,9 @@ pub(crate) enum Message {
     State,
     /// A command: 3 bytes, the pulse rate to run at.
     Command,
-    /// `CalibrateIdlerTravelLimit`: seek the idler's end.
-    SeekIdler,
+    /// `CalibrateIdlerTravelLimit` or `CalibrateMotorTravelLimit`: seek that
+    /// end of the rail.
+    Seek(RailEnd),
     /// `Stop`: end the move under way. Outside a move it does nothing.
     Stop,
 }
@@ -25,7 +29,8 @@ impl Message {
         }
         match datagram.payload() {
             STATE_REQUEST => Some(Self::State),
-            SEEK_IDLER_REQUEST => Some(Self::SeekIdler),
+            SEEK_IDLER_REQUEST => Some(Self::Seek(RailEnd::Idler)),
+            SEEK_MOTOR_REQUEST => Some(Self::Seek(RailEnd::Motor)),
             STOP_REQUEST => Some(Self::Stop),
             _ => None,
         }
