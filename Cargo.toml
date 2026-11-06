@@ -1,6 +1,7 @@
 [workspace]
 members           = [
                       "__live__/arduino/rust/crates/calibration",
+                      "__live__/arduino/rust/crates/controller",
                       "__live__/orin/wasm/arduino",
                       "__live__/orin/wasm/calibrate",
                       "__live__/orin/wasm/lens",

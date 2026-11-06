@@ -232,6 +232,9 @@ adds repo structure around them, never overrides them.
   no answer buttons at the end of a turn: no `ask` or `actions` in the
   wrap-up, and no `AskUserQuestion`. A question for the user goes in the
   reply's text.
+- **One question at a time** (user, 2026-11-05). When the user has
+  decisions to make, each message carries one: the situation, the options
+  and what each leads to. The next comes only after the user has answered.
 
 ## How greyhound content is consumed (verify before asserting paths)
 
@@ -487,8 +490,9 @@ The roles and per-class figures are in `training/05-POST_TRAINING.md`
   `synthetic-loop-dia.md` or code: the step-acceleration ceiling, where
   every tick moves the sent rate towards the last command by at most
   `m × dt` (`m` the jump limit, `jump-limit-results.md`; `dt` the tick).
-- **The product owner dislikes polling** (user, 2026-11-04: "I hate
-  POLLING").
+- **The product owner dislikes polling and prefers interrupts** (user,
+  2026-11-04: "I hate POLLING"; 2026-11-05). Code waits for an interrupt to
+  tell it something happened, rather than checking again and again.
 - **The Arduino has the interrupt bridge** (user, 2026-10-31). Its WiFi chip
   runs the user's fork of Arduino's bridge firmware
   (`D:\git\unor4-wifi-interrupt-bridge`, branch `feature/interrupt`; the
