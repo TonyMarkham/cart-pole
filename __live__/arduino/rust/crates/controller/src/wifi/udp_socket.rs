@@ -2,8 +2,8 @@ use crate::{
     config::wifi_timing::{FRAME_TIMEOUT_MS, REPLY_TIMEOUT_MS},
     constants::{PROMPT_UDPREMOTEIP, PROMPT_UDPREMOTEPORT},
     wifi::{
-        AT, at, datagram::Datagram, deadline::Deadline, frame_reader::FrameReader, next_byte,
-        reply::Reply,
+        AT, asker::Asker, at, datagram::Datagram, deadline::Deadline, frame_reader::FrameReader,
+        next_byte, reply::Reply,
     },
 };
 
@@ -34,34 +34,43 @@ impl UdpSocket {
         }
     }
 
-    /// Sends `payload` to whoever sent the latest datagram. False if any of
-    /// the five exchanges was refused or timed out: the answer is dropped, and
-    /// the asker's wait for it times out.
-    pub(crate) fn answer(
-        &mut self,
-        wake: &mut WakeTimer,
-        payload: &[u8],
-    ) -> Result<bool, WakeError> {
+    /// Who sent the latest datagram, or None if either exchange was refused or
+    /// timed out.
+    pub(crate) fn asker(&mut self, wake: &mut WakeTimer) -> Result<Option<Asker>, WakeError> {
         let socket = self.number;
 
         let Some(address) = self
             .ask(wake, format_args!("AT+UDPREMOTEIP={socket}\r\n"), &[])?
             .filter(Reply::ok)
         else {
-            return Ok(false);
+            return Ok(None);
         };
         let Some(port) = self
             .ask(wake, format_args!("AT+UDPREMOTEPORT={socket}\r\n"), &[])?
             .filter(Reply::ok)
         else {
-            return Ok(false);
+            return Ok(None);
         };
         let (Some(address), Some(port)) = (
             address.text_after(PROMPT_UDPREMOTEIP),
-            port.text_after(PROMPT_UDPREMOTEPORT),
+            port.number_after(PROMPT_UDPREMOTEPORT),
         ) else {
-            return Ok(false);
+            return Ok(None);
         };
+        Ok(Asker::new(address, port))
+    }
+
+    /// Sends `payload` to `asker`. False if any of the three exchanges was
+    /// refused or timed out: the answer is dropped, and the asker's wait for it
+    /// times out.
+    pub(crate) fn send_to(
+        &mut self,
+        wake: &mut WakeTimer,
+        asker: &Asker,
+        payload: &[u8],
+    ) -> Result<bool, WakeError> {
+        let socket = self.number;
+        let (address, port) = (asker.address(), asker.port());
 
         let begun = self.ask(
             wake,

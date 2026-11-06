@@ -1,11 +1,12 @@
 //! The rig's Arduino firmware that runs the cart under the Orin's commands.
-//! It is built one slice at a time. This first slice is the board's state
-//! machine (`State`, `Event`); the board starts in its first state and
-//! sleeps, since nothing drives the machine yet.
+//! It is built one slice at a time. So far: the board's state machine
+//! (`State`, `Event`), `STATUS` over USB, `state` and commands over WiFi, and
+//! the first calibration move, the seek of the idler's end.
 
 #![no_std]
 #![no_main]
 
+mod cart;
 mod config;
 mod constants;
 mod incoming;
@@ -20,18 +21,18 @@ mod wifi;
 // ---------------------------------------------------------------------------------------------- //
 
 use crate::{
+    cart::{Cart, move_timer::MOVE_TIMER},
     config::{usb::USB_BAUD, wifi::AT_BAUD},
     constants::{LINE_END, LINE_READY, REPLY_STATUS},
+    incoming::Incoming,
     pins::{idler_limit_switch::IDLER_LIMIT_SWITCH, motor_limit_switch::MOTOR_LIMIT_SWITCH},
-    state::State,
+    state::{State, event::Event},
     stepper::STEPPER,
     usb::{USB, command::Command as UsbCommand, line_reader::LineReader},
     wake_timer::WAKE_TIMER,
-    wifi::AT,
+    wifi::{AT, answer::Answer, message::Message as WifiMessage, udp_socket::UdpSocket},
 };
 
-use crate::incoming::Incoming;
-use crate::wifi::udp_socket::UdpSocket;
 use core::fmt::{self, Write};
 use panic_halt as _;
 use unor4_hal::{Peripherals, gpio::Switch, intc, step::StepGenerator, wake::WakeTimer};
@@ -54,17 +55,17 @@ fn main() -> ! {
         halt();
     };
 
-    let (_stepper, p) = match StepGenerator::new(STEPPER).with_peripherals(p).build() {
+    let (stepper, p) = match StepGenerator::new(STEPPER).with_peripherals(p).build() {
         Ok(built) => built,
         Err((error, p)) => fail!(p, "step generator: {:?}", error),
     };
 
-    let (_idler, p) = match Switch::new(IDLER_LIMIT_SWITCH).with_peripherals(p).build() {
+    let (idler, p) = match Switch::new(IDLER_LIMIT_SWITCH).with_peripherals(p).build() {
         Ok(built) => built,
         Err((error, p)) => fail!(p, "idler switch: {:?}", error),
     };
 
-    let (_motor, p) = match Switch::new(MOTOR_LIMIT_SWITCH).with_peripherals(p).build() {
+    let (motor, p) = match Switch::new(MOTOR_LIMIT_SWITCH).with_peripherals(p).build() {
         Ok(built) => built,
         Err((error, p)) => fail!(p, "motor switch: {:?}", error),
     };
@@ -74,29 +75,31 @@ fn main() -> ! {
         Err((error, p)) => fail!(p, "wake timer: {:?}", error),
     };
 
+    let (move_timer, p) = match WakeTimer::new(MOVE_TIMER).with_peripherals(p).build() {
+        Ok(built) => built,
+        Err((error, p)) => fail!(p, "move timer: {:?}", error),
+    };
+
+    let mut cart = Cart::new(stepper, idler, motor, move_timer);
+
     AT.attach(p.sci1, p.sci1_tx, p.sci1_rx, AT_BAUD, &p.clocks);
+
+    // The fields taken directly come last: this leaves `p` partly moved.
+    USB.attach(p.sci9, p.sci9_tx, p.sci9_rx, USB_BAUD, &p.clocks);
+    // Safety: no critical section is open here (unor4-hal
+    // `intc/enable_interrupts.rs`). The bootloader leaves interrupts masked;
+    // the USB line's handlers, and the switches' and timers' wake-ups, need
+    // them on.
+    unsafe { intc::enable_interrupts() };
+
+    USB.write_all(LINE_READY);
 
     let mut udp = match wifi::join::join(&mut wake_timer) {
         Ok(socket) => UdpSocket::new(socket),
         Err(error) => stopped(format_args!("wifi: {error}")),
     };
 
-    // The fields taken directly come last: this leaves `p` partly moved.
-    USB.attach(p.sci9, p.sci9_tx, p.sci9_rx, USB_BAUD, &p.clocks);
-    // Safety: no critical section is open here (unor4-hal
-    // `intc/enable_interrupts.rs`). The bootloader leaves interrupts masked;
-    // the USB line's handlers, and later the switches' and the step
-    // generator's wake-ups, need them on.
-    unsafe { intc::enable_interrupts() };
-
-    USB.write_all(LINE_READY);
-
-    let _socket = match wifi::join::join(&mut wake_timer) {
-        Ok(socket) => socket,
-        Err(error) => stopped(format_args!("wifi: {error}")),
-    };
-
-    let state = State::START;
+    let mut state = State::START;
     let mut reader = LineReader::new();
     loop {
         let incoming = sleep::until(|| match usb::look(&mut reader) {
@@ -113,11 +116,40 @@ fn main() -> ! {
                 USB.write_all(state.name().as_bytes());
                 USB.write_all(LINE_END);
             }
-            Ok(Incoming::Wifi(datagram)) => {
-                if let Err(error) = wifi::serve(&mut udp, &mut wake_timer, state, &datagram) {
-                    stopped(format_args!("wifi: wake timer: {error:?}"));
+            Ok(Incoming::Wifi(datagram)) => match WifiMessage::parse(&datagram) {
+                // A seek is a calibration move, so it runs from every state
+                // that leads to CALIBRATING, and CALIBRATING itself, between
+                // moves (real-open-issues.md, issue 5, step 1).
+                Some(WifiMessage::SeekIdler)
+                    if matches!(
+                        state,
+                        State::Uncalibrated | State::Calibrating | State::Calibrated
+                    ) =>
+                {
+                    // Who asked, read before the move: the answer goes there,
+                    // not to the `Stop` that may end it. Unknown, the cart
+                    // stays put, since no answer could reach the asker.
+                    let asker = match udp.asker(&mut wake_timer) {
+                        Ok(Some(asker)) => asker,
+                        Ok(None) => continue,
+                        Err(error) => stopped(format_args!("wifi: wake timer: {error:?}")),
+                    };
+                    state = state.next(Event::StartCalibrating);
+                    let (end, pulses) = match cart.seek_idler(&mut udp, &mut wake_timer) {
+                        Ok(seek) => seek,
+                        Err(error) => stopped(format_args!("seek: {error:?}")),
+                    };
+                    let answer = Answer::seek_idler(end, pulses);
+                    if let Err(error) = wifi::send_to(&mut udp, &mut wake_timer, &asker, &answer) {
+                        stopped(format_args!("wifi: wake timer: {error:?}"));
+                    }
                 }
-            }
+                message => {
+                    if let Err(error) = wifi::serve(&mut udp, &mut wake_timer, state, message) {
+                        stopped(format_args!("wifi: wake timer: {error:?}"));
+                    }
+                }
+            },
             Err(error) => stopped(format_args!("wifi: wake timer: {error:?}")),
         }
     }

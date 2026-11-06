@@ -422,13 +422,17 @@ through the settings page.
   wrong cache). A switch tripping during a run stops the cart in one jump, as
   in a seek.
 
+**Decided: DIR's level for a positive command is D5 low.** A positive command
+must move the cart to the right as the camera sees it, towards the motor's end
+(`robot-plan.md`, *Terms*). The level is compiled into the firmware from a
+settings file, `dir_positive` in the controller's `config/stepper.toml`, in
+place of the Left / Right toggle at run time chosen on 2026-10-29 (user,
+2026-11-05, `real-open-issues.md`, issue 4). Low is the level the user always
+intended (user, 2026-11-06), and the rig agrees: on 2026-11-06 the idler's
+seek, a negative rate, ran with D5 low and the cart went to the motor's end.
+
 **Open:**
 
-- **DIR's level for a positive command.** A positive command must move the
-  cart to the right as the camera sees it (`robot-plan.md`, *Terms*). The user
-  chose a Left / Right toggle that sets it at run time (`robot-plan.md`, user
-  2026-10-29). The calibration firmware's `[idler]` and `[motor]` guesses have
-  not been checked on the rig.
 - **What the board does when commands stop coming** (the Orin crashes, or the
   WiFi drops). Today's rule would hold the last command until the soft
   limit brought the cart to rest at a stop point.

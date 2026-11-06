@@ -75,9 +75,24 @@ pub(crate) const DATAGRAM_MAX: usize = 32;
 pub(crate) const PROMPT_UDPREMOTEIP: &[u8] = b"+UDPREMOTEIP: ";
 pub(crate) const PROMPT_UDPREMOTEPORT: &[u8] = b"+UDPREMOTEPORT: ";
 
+/// The longest sender's address the board keeps, bytes: an IPv4 address,
+/// `255.255.255.255`.
+pub(crate) const ADDRESS_MAX: usize = 15;
+
 /// The `state` message (real-open-issues.md, issue 7, step 1). At 5 bytes it
 /// can't be taken for a command.
 pub(crate) const STATE_REQUEST: &[u8] = b"state";
+
+/// The Orin's request for a seek to the idler's end, and the message that
+/// ends a move: they must match the webserver's `IDLER_REQUEST` and
+/// `STOP_REQUEST` (`__live__/orin/rust/crates/webserver/src/constants.rs`).
+pub(crate) const SEEK_IDLER_REQUEST: &[u8] = b"CalibrateIdlerTravelLimit";
+pub(crate) const STOP_REQUEST: &[u8] = b"Stop";
+
+/// The switches by the pin names a seek's answer gives in `pin`, which the
+/// webserver's calibrate page shows: the idler's end is D3, the motor's D2.
+pub(crate) const PIN_IDLER: &str = "d3";
+pub(crate) const PIN_MOTOR: &str = "d2";
 
 /// A command's size, bytes: the sign, then the size as a u16, little-endian.
 /// The board tells a command from a text message by size alone
@@ -87,8 +102,9 @@ pub(crate) const COMMAND_SIZE: u32 = 3;
 /// The status numbers in an answer, with HTTP's meanings (RFC 9110, section
 /// 15).
 pub(crate) const STATUS_OK: u16 = 200;
+pub(crate) const STATUS_TIMEOUT: u16 = 408;
 pub(crate) const STATUS_CONFLICT: u16 = 409;
 
-/// Room for one answer, bytes. The longest today, the 409 for a command, is
-/// about 120, so 160 leaves room for `pin` and `pulses` once they carry values.
+/// Room for one answer, bytes. The longest today is a seek's with the widest
+/// `pulses`, 4,294,967,295: under 150 bytes.
 pub(crate) const ANSWER_MAX: usize = 160;

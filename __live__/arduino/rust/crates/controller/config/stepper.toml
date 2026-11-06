@@ -7,7 +7,7 @@
 # Acceptable Values:
 #     - "high"
 #     - "low"
-dir_positive = "high"
+dir_positive = "low"
 
 # STEP's on time, D4 low, ns. A low pin lights the driver's PUL input through
 # its PNP stage. The DM542 needs at least 2,500 on and 2,500 off (manual,

@@ -1,18 +1,20 @@
 use crate::{
-    constants::{STATUS_CONFLICT, STATUS_OK},
+    cart::seek_end::SeekEnd,
+    constants::{PIN_IDLER, PIN_MOTOR, STATUS_CONFLICT, STATUS_OK, STATUS_TIMEOUT},
     state::State,
 };
 
 use core::fmt;
 
 /// One answer to the Orin, in the board's one format, five keys: `status`,
-/// `result`, `message`, `pin` and `pulses`.
-/// Nothing yet moves the cart or trips a switch, so `pin` is always null and
-/// `pulses` always 0.
+/// `result`, `message`, `pin` and `pulses`. `pin` is the switch a move
+/// stopped at, or null; `pulses` is how far the move went, or 0.
 pub(crate) struct Answer {
     status: u16,
     result: &'static str,
     message: &'static str,
+    pin: Option<&'static str>,
+    pulses: u32,
 }
 
 impl Answer {
@@ -32,6 +34,8 @@ impl Answer {
                     "the cart entered a protected end zone: reset the board, then calibrate"
                 }
             },
+            pin: None,
+            pulses: 0,
         }
     }
 
@@ -44,8 +48,62 @@ impl Answer {
                 status: STATUS_CONFLICT,
                 result: "uncalibrated",
                 message: "no command is applied before a calibration",
+                pin: None,
+                pulses: 0,
             }),
             _ => None,
+        }
+    }
+
+    /// The answer to a seek of the idler's end that ended at `end`, after
+    /// `pulses`. The results and statuses are the ones the webserver's
+    /// calibrate page reads (`__live__/orin/rust/crates/webserver/src/rail_state.rs`):
+    /// only a trip of the switch the seek was for is a 200.
+    pub(crate) const fn seek_idler(end: SeekEnd, pulses: u32) -> Self {
+        let (status, result, message, pin) = match end {
+            SeekEnd::Idler => (
+                STATUS_OK,
+                "tripped",
+                "the cart stopped at the idler's switch",
+                Some(PIN_IDLER),
+            ),
+            SeekEnd::Motor => (
+                STATUS_CONFLICT,
+                "tripped",
+                "the cart stopped at the motor's switch, the other end",
+                Some(PIN_MOTOR),
+            ),
+            SeekEnd::AlreadyThere => (
+                STATUS_CONFLICT,
+                "already_there",
+                "the idler's switch already reads pressed: the cart did not move",
+                Some(PIN_IDLER),
+            ),
+            SeekEnd::Refused => (
+                STATUS_CONFLICT,
+                "refused",
+                "both switches read pressed: the cart did not move",
+                None,
+            ),
+            SeekEnd::Stopped => (
+                STATUS_CONFLICT,
+                "stopped",
+                "a Stop arrived: the cart stopped",
+                None,
+            ),
+            SeekEnd::TimedOut => (
+                STATUS_TIMEOUT,
+                "timed_out",
+                "no switch tripped in time: the cart stopped",
+                None,
+            ),
+        };
+        Self {
+            status,
+            result,
+            message,
+            pin,
+            pulses,
         }
     }
 
@@ -54,8 +112,13 @@ impl Answer {
     pub(crate) fn write(&self, out: &mut impl fmt::Write) -> fmt::Result {
         write!(
             out,
-            "{{\"status\":{},\"result\":\"{}\",\"message\":\"{}\",\"pin\":null,\"pulses\":0}}",
+            "{{\"status\":{},\"result\":\"{}\",\"message\":\"{}\",\"pin\":",
             self.status, self.result, self.message
-        )
+        )?;
+        match self.pin {
+            Some(pin) => write!(out, "\"{pin}\"")?,
+            None => out.write_str("null")?,
+        }
+        write!(out, ",\"pulses\":{}}}", self.pulses)
     }
 }

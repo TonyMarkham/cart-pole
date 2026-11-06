@@ -1,5 +1,5 @@
 use crate::{
-    constants::{COMMAND_SIZE, STATE_REQUEST},
+    constants::{COMMAND_SIZE, SEEK_IDLER_REQUEST, STATE_REQUEST, STOP_REQUEST},
     wifi::datagram::Datagram,
 };
 
@@ -10,6 +10,10 @@ pub(crate) enum Message {
     State,
     /// A command: 3 bytes, the pulse rate to run at.
     Command,
+    /// `CalibrateIdlerTravelLimit`: seek the idler's end.
+    SeekIdler,
+    /// `Stop`: end the move under way. Outside a move it does nothing.
+    Stop,
 }
 
 impl Message {
@@ -19,6 +23,11 @@ impl Message {
         if datagram.size() == COMMAND_SIZE {
             return Some(Self::Command);
         }
-        (datagram.payload() == STATE_REQUEST).then_some(Self::State)
+        match datagram.payload() {
+            STATE_REQUEST => Some(Self::State),
+            SEEK_IDLER_REQUEST => Some(Self::SeekIdler),
+            STOP_REQUEST => Some(Self::Stop),
+            _ => None,
+        }
     }
 }

@@ -1,3 +1,4 @@
+pub(crate) mod calibration;
 pub(crate) mod stepper;
 pub(crate) mod usb;
 pub(crate) mod wifi;

@@ -4,6 +4,7 @@
 //! `config/` into the constants that part runs on: the board has no file
 //! system.
 
+mod calibration;
 mod stepper;
 mod toml_value;
 mod usb;
@@ -41,6 +42,7 @@ fn main() -> Result<()> {
     link(&manifest_dir, &out_dir)?;
 
     let config_dir = manifest_dir.join(CONFIG_DIR);
+    calibration::generate(&config_dir, &out_dir)?;
     stepper::generate(&config_dir, &out_dir)?;
     usb::generate(&config_dir, &out_dir)?;
     wifi::generate(&config_dir, &out_dir)?;
