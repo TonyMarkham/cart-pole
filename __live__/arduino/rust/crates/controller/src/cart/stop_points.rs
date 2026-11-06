@@ -6,7 +6,8 @@ use unor4_hal::step::TICK_US;
 /// trip position, on the cart's count. While the Orin's commands move the
 /// cart, the soft limit brings it to rest at a stop point and never past it,
 /// and the count passing one is the cart entering that end's protected zone
-/// (real-loop-dia.md, *The soft limit*; real-open-issues.md, issue 5).
+/// (real-loop-dia.md, *The soft limit*; real-open-issues.md, issue 5). The
+/// move to the centre brakes by the same rule onto one stop point, the centre.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) struct StopPoints {
     /// The idler's stop point: the count may not go below it.
@@ -18,6 +19,12 @@ pub(crate) struct StopPoints {
 impl StopPoints {
     pub(crate) const fn new(idler: i64, motor: i64) -> Self {
         Self { idler, motor }
+    }
+
+    /// One stop point, `point`, from either side: heading for the motor's
+    /// end it is the motor's stop point, heading for the idler's the idler's.
+    pub(crate) const fn at(point: i64) -> Self {
+        Self::new(point, point)
     }
 
     /// Whether `position` is past either stop point, inside a protected zone.

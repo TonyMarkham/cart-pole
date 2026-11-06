@@ -21,8 +21,9 @@ seek_timeout_ms = 34_000
 # The fastest `MoveToCentre <pulses/s>` may ask for; a speed above it, or not a
 # whole number, is answered bad_speed and the cart stays put. With no speed the
 # move runs at seek_speed. 44,600 pulses/s is the rig's top rate, the one every
-# command is clamped to (real-loop-dia.md, the command's sequence). That move
-# has no ramp, so it starts and stops in one jump.
+# command is clamped to (real-loop-dia.md, the command's sequence). The move
+# ramps up to its speed and brakes to rest at the centre by the same rule as
+# the commands (motion.toml's jump_limit), so it loses no step at any speed.
 centre_speed_max = 44_600
 
 # A switch the cart starts a move on counts only once the cart has moved this

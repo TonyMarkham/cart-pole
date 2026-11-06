@@ -1,6 +1,7 @@
 pub(crate) mod calibration_move;
 pub(crate) mod centre_end;
 pub(crate) mod centre_speed;
+pub(crate) mod centre_wake;
 pub(crate) mod error;
 pub(crate) mod move_end;
 pub(crate) mod move_timer;
@@ -19,6 +20,7 @@ use crate::{
     cart::{
         centre_end::CentreEnd,
         centre_speed::CentreSpeed,
+        centre_wake::CentreWake,
         error::{move_error::MoveError, move_result::MoveResult},
         move_end::MoveEnd,
         move_wake::MoveWake,
@@ -107,14 +109,7 @@ impl Cart {
 
         let timeout = Duration::from_millis(u64::from(SEEK_TIMEOUT_MS));
         let leaving = on_other.then_some(toward.other());
-        let (end, pulses) = self.drive(
-            toward.rate(SEEK_SPEED),
-            leaving,
-            Some(timeout),
-            None,
-            udp,
-            wake,
-        )?;
+        let (end, pulses) = self.drive(toward.rate(SEEK_SPEED), leaving, timeout, udp, wake)?;
         let end = match end {
             MoveEnd::Switch(end) if end == toward => {
                 self.rail.record(toward, self.position);
@@ -129,16 +124,20 @@ impl Cart {
                 SeekEnd::TimedOut
             }
             MoveEnd::BadSign => SeekEnd::Fault,
-            // A seek arms no pulse count, so only a `Stop` is left.
-            MoveEnd::Stopped | MoveEnd::Count => SeekEnd::Stopped,
+            MoveEnd::Stopped => SeekEnd::Stopped,
         };
         Ok((end, self.pulses_for(end == SeekEnd::Fault, pulses)))
     }
 
     /// Moves to the centre of the rail at `speed`, from wherever the cart is,
-    /// and stops there by pulse count. Returns how the move ended and the
-    /// pulses it sent. A switch tripping on the way forgets the rail: the cart
-    /// was not where the count said.
+    /// ramped both ways so no step is lost. Every 2 ms tick the ramp takes one
+    /// step towards `speed`, and the soft limit, with the centre as its one
+    /// stop point, brakes the cart to rest on it. The hardware count stop,
+    /// armed at the centre, ends the move there, so the cart never passes it.
+    /// Returns how the move ended and the pulses it sent. A switch tripping on
+    /// the way forgets the rail: the cart was not where the count said. A
+    /// `Stop` brakes the cart to rest as a 0 command does; a fault stops it in
+    /// one jump.
     pub(crate) fn centre(
         &mut self,
         speed: CentreSpeed,
@@ -180,19 +179,108 @@ impl Cart {
         } else {
             None
         };
-        let (end, pulses) =
-            self.drive(toward.rate(speed), leaving, None, Some(count), udp, wake)?;
-        let end = match end {
-            MoveEnd::Count => CentreEnd::Centred,
-            MoveEnd::Switch(end) => {
-                self.rail.forget();
-                CentreEnd::Tripped(end)
-            }
-            MoveEnd::BadSign => CentreEnd::Fault,
-            // The move has no time limit, so only a `Stop` is left.
-            MoveEnd::Stopped | MoveEnd::TimedOut => CentreEnd::Stopped,
-        };
+        let mut ramp = Ramp::new();
+        ramp.command(toward.rate(speed));
+
+        // Only a press during the move counts.
+        let _ = self.tripped(RailEnd::Idler);
+        let _ = self.tripped(RailEnd::Motor);
+
+        let base = self.start_ticks();
+        let start = self.position;
+        let ended = self
+            .stepper
+            .stop_at(self.stepper.pulses().wrapping_add(count))
+            .map_err(MoveError::from)
+            .and_then(|()| {
+                self.until_centred(&mut ramp, StopPoints::at(centre), leaving, base, udp, wake)
+            });
+        self.stop_ticks(base, start);
+
+        let end = ended?;
+        if let CentreEnd::Tripped(_) = end {
+            self.rail.forget();
+        }
+        // At most `count`: the count stop ends the move there.
+        let pulses = u32::try_from((self.position - start).unsigned_abs()).unwrap_or(count);
         Ok((end, self.pulses_for(end == CentreEnd::Fault, pulses)))
+    }
+
+    /// The ticks of the move to the centre, until it ends. A switch the cart
+    /// is `leaving` is checked once the cart has moved `release_pulses`: still
+    /// pressed, the cart is driving into it.
+    fn until_centred(
+        &mut self,
+        ramp: &mut Ramp,
+        target: StopPoints,
+        mut leaving: Option<RailEnd>,
+        base: i64,
+        udp: &mut UdpSocket,
+        wake: &mut WakeTimer,
+    ) -> MoveResult<CentreEnd> {
+        let start = self.position;
+        loop {
+            match sleep::until(|| self.look_centring(leaving, udp, wake).transpose())? {
+                CentreWake::Ended(end) => return Ok(end),
+                CentreWake::Stop => ramp.command(0),
+                CentreWake::Tick => {
+                    self.position = start + (self.stepper.position() - base);
+                    if let Some(end) = leaving
+                        && (self.position - start).unsigned_abs() >= u64::from(RELEASE_PULSES)
+                    {
+                        if self.pressed(end) {
+                            return Ok(CentreEnd::Tripped(end));
+                        }
+                        // Its bounces as the cart left it don't count.
+                        let _ = self.tripped(end);
+                        leaving = None;
+                    }
+                    self.ramp_tick(ramp, target)?;
+                    // At rest after a `Stop`. Reaching the centre is the
+                    // count stop's to say: braking onto it, the ramp may rest
+                    // a pulse short, and starts again at the next tick.
+                    if ramp.rate() == 0 && ramp.command_rate() == 0 {
+                        return Ok(CentreEnd::Stopped);
+                    }
+                }
+            }
+        }
+    }
+
+    /// One look during the move to the centre, without sleeping: what has
+    /// happened, or None if nothing the move acts on. Only `Stop` and a
+    /// command with a bad sign byte, a fault, are taken: any other datagram is
+    /// dropped unanswered (real-open-issues.md, issue 5).
+    fn look_centring(
+        &mut self,
+        leaving: Option<RailEnd>,
+        udp: &mut UdpSocket,
+        wake: &mut WakeTimer,
+    ) -> MoveResult<Option<CentreWake>> {
+        if self.stepper.stopped_at_count() {
+            return Ok(Some(CentreWake::Ended(CentreEnd::Centred)));
+        }
+        for end in [RailEnd::Idler, RailEnd::Motor] {
+            if leaving != Some(end) && self.tripped(end) {
+                return Ok(Some(CentreWake::Ended(CentreEnd::Tripped(end))));
+            }
+        }
+        // The tick before the datagrams: the rate for the next tick must be
+        // queued at least 40 µs before it (unor4-hal `step/step_generator.rs`,
+        // `queue`).
+        if self.stepper.poll_tick().is_some() {
+            return Ok(Some(CentreWake::Tick));
+        }
+        while let Some(datagram) = udp.look(wake).map_err(MoveError::WakeTimer)? {
+            match WifiMessage::parse(&datagram) {
+                Some(WifiMessage::Stop) => return Ok(Some(CentreWake::Stop)),
+                Some(WifiMessage::BadSign) => {
+                    return Ok(Some(CentreWake::Ended(CentreEnd::Fault)));
+                }
+                _ => {}
+            }
+        }
+        Ok(None)
     }
 
     /// A move's answer gives the pulses it sent, but the FAULT STATE reply
@@ -227,22 +315,33 @@ impl Cart {
         let mut ramp = Ramp::new();
         ramp.command(first);
 
-        // The HAL's position counts each tick's pulses in the direction it
-        // ran last, and the moves before ran untimed, so it is right only as a
-        // difference from a tick taken now, with the cart at rest.
+        let base = self.start_ticks();
+        let start = self.position;
+        let ended = self.until_at_rest(&mut ramp, stops, base, start, udp, wake);
+        self.stop_ticks(base, start);
+        ended
+    }
+
+    /// Starts a move timed by the 2 ms tick: the tick wakes the board, and
+    /// one is taken now. Returns the HAL's position at it, the move's base.
+    /// The HAL's position counts each tick's pulses in the direction it ran
+    /// last, and the seeks run untimed, so it is right only as a difference
+    /// from a tick taken now, with the cart at rest.
+    fn start_ticks(&mut self) -> i64 {
         self.stepper.set_tick_wake(true);
         sleep::until(|| self.stepper.poll_tick());
-        let base = self.stepper.position();
-        let start = self.position;
+        self.stepper.position()
+    }
 
-        let ended = self.until_at_rest(&mut ramp, stops, base, start, udp, wake);
-        // Stopped whatever happened. A pulse that was running ends and is
-        // latched by the next tick, so the count is taken there.
+    /// Ends a move timed by the tick, whatever ended it: stops the pulses,
+    /// takes the cart's position from the HAL's, by `base` and the cart's
+    /// `start`, and turns the tick's wake off. A pulse that was running ends
+    /// and is latched by the next tick, so the count is taken there.
+    fn stop_ticks(&mut self, base: i64, start: i64) {
         self.stepper.stop();
         sleep::until(|| self.stepper.poll_tick());
         self.position = start + (self.stepper.position() - base);
         self.stepper.set_tick_wake(false);
-        ended
     }
 
     /// The ticks of `follow`, until the cart is at rest or in a protected
@@ -267,15 +366,7 @@ impl Cart {
                         // Into a protected zone: stopped in one jump (issue 5).
                         return Ok(MovingEnd::EndZone);
                     }
-                    let next = ramp.next();
-                    let sent = stops.cap(next, ramp.rate(), self.position);
-                    match self.stepper.queue(sent) {
-                        Ok(_) => ramp.sent(sent),
-                        // Not this tick: the rate running now holds for one
-                        // more, and the ramp tries again at the next.
-                        Err(StepError::NotReady | StepError::TooLate) => {}
-                        Err(error) => return Err(error.into()),
-                    }
+                    let (next, sent) = self.ramp_tick(ramp, stops)?;
                     // At rest when the ramp is at 0 and stays there: the
                     // command is 0, or the soft limit holds the cart at a stop
                     // point. A reversal passing through 0 is neither.
@@ -285,6 +376,22 @@ impl Cart {
                 }
             }
         }
+    }
+
+    /// One tick's step of a ramped move, the cart's position just taken: the
+    /// ramp's next rate, capped by the soft limit towards `stops`, queued for
+    /// the next tick. Returns the rate the ramp asked for and the rate sent.
+    fn ramp_tick(&mut self, ramp: &mut Ramp, stops: StopPoints) -> MoveResult<(i32, i32)> {
+        let next = ramp.next();
+        let sent = stops.cap(next, ramp.rate(), self.position);
+        match self.stepper.queue(sent) {
+            Ok(_) => ramp.sent(sent),
+            // Not this tick: the rate running now holds for one more, and the
+            // ramp tries again at the next.
+            Err(StepError::NotReady | StepError::TooLate) => {}
+            Err(error) => return Err(error.into()),
+        }
+        Ok((next, sent))
     }
 
     /// One look while the commands run, without sleeping: a tick, or a
@@ -314,23 +421,21 @@ impl Cart {
         self.rail.pulses_from_idler(self.position)
     }
 
-    /// Runs the cart at `rate` until something ends the move, then stops it,
-    /// adds the pulses it sent to `position`, and returns what ended it and
-    /// the pulses. It sleeps the whole way, woken by a switch, a datagram, the
-    /// move timer or the pulse count. Only `Stop` and a command with a bad
-    /// sign byte, a fault, are taken: any other datagram is dropped unanswered
+    /// Runs the cart at `rate`, a seek's, until something ends the move, then
+    /// stops it, adds the pulses it sent to `position`, and returns what ended
+    /// it and the pulses. It sleeps the whole way, woken by a switch, a
+    /// datagram or the move timer. Only `Stop` and a command with a bad sign
+    /// byte, a fault, are taken: any other datagram is dropped unanswered
     /// (real-open-issues.md, issue 5; real-loop-dia.md, *The command*).
     ///
     /// `leaving`: a switch the cart starts on, whose presses count only once
     /// the cart has moved `release_pulses` off it. `limit`: the longest the
-    /// move may run, or None. `count`: the pulses after which the hardware
-    /// stops the move, or None.
+    /// move may run.
     fn drive(
         &mut self,
         rate: i32,
         leaving: Option<RailEnd>,
-        limit: Option<Duration>,
-        count: Option<u32>,
+        limit: Duration,
         udp: &mut UdpSocket,
         wake: &mut WakeTimer,
     ) -> MoveResult<(MoveEnd, u32)> {
@@ -340,12 +445,13 @@ impl Cart {
 
         let start = self.stepper.pulses();
         let ended = self
-            .start(rate, start, count)
-            .and_then(|()| self.until_move_ends(rate, leaving, limit, count.is_some(), udp, wake));
+            .stepper
+            .run(rate)
+            .map_err(MoveError::from)
+            .and_then(|_| self.until_move_ends(rate, leaving, limit, udp, wake));
         // Stopped whatever happened, an error included: no pulse is cut, and
         // the last one is counted before `stop` returns (unor4-hal
-        // `step/step_generator.rs`, `stop`). A count stop has stopped it
-        // already, and `stop` then does nothing.
+        // `step/step_generator.rs`, `stop`).
         self.stepper.stop();
         self.timer.cancel();
         let pulses = self.stepper.pulses().wrapping_sub(start);
@@ -357,15 +463,6 @@ impl Cart {
         Ok((ended?, pulses))
     }
 
-    /// Arms the pulse count, if any, from `start`, then starts the pulses.
-    fn start(&mut self, rate: i32, start: u32, count: Option<u32>) -> MoveResult<()> {
-        if let Some(count) = count {
-            self.stepper.stop_at(start.wrapping_add(count))?;
-        }
-        self.stepper.run(rate)?;
-        Ok(())
-    }
-
     /// Sleeps until the move at `rate` is over, and says what ended it. A
     /// switch the cart is `leaving` is checked once the cart should be off
     /// it: still pressed, the cart is driving into it. The move timer times
@@ -374,23 +471,15 @@ impl Cart {
         &mut self,
         rate: i32,
         mut leaving: Option<RailEnd>,
-        limit: Option<Duration>,
-        counted: bool,
+        limit: Duration,
         udp: &mut UdpSocket,
         wake: &mut WakeTimer,
     ) -> MoveResult<MoveEnd> {
         let release = release_time(rate);
-        let first = if leaving.is_some() {
-            Some(release)
-        } else {
-            limit
-        };
+        let first = if leaving.is_some() { release } else { limit };
         let mut deadline = self.deadline(first)?;
         loop {
-            let woke = sleep::until(|| {
-                self.look(leaving, counted, &mut deadline, udp, wake)
-                    .transpose()
-            })?;
+            let woke = sleep::until(|| self.look(leaving, &mut deadline, udp, wake).transpose())?;
             match woke {
                 MoveWake::Ended(end) => return Ok(end),
                 MoveWake::LeftSwitch => {
@@ -401,7 +490,7 @@ impl Cart {
                         // Its bounces as the cart left it don't count.
                         let _ = self.tripped(end);
                     }
-                    deadline = self.deadline(limit.map(|limit| limit.saturating_sub(release)))?;
+                    deadline = self.deadline(limit.saturating_sub(release))?;
                 }
             }
         }
@@ -412,14 +501,10 @@ impl Cart {
     fn look(
         &mut self,
         leaving: Option<RailEnd>,
-        counted: bool,
-        deadline: &mut Option<Deadline>,
+        deadline: &mut Deadline,
         udp: &mut UdpSocket,
         wake: &mut WakeTimer,
     ) -> MoveResult<Option<MoveWake>> {
-        if counted && self.stepper.stopped_at_count() {
-            return Ok(Some(MoveWake::Ended(MoveEnd::Count)));
-        }
         for end in [RailEnd::Idler, RailEnd::Motor] {
             if leaving != Some(end) && self.tripped(end) {
                 return Ok(Some(MoveWake::Ended(MoveEnd::Switch(end))));
@@ -432,10 +517,9 @@ impl Cart {
                 _ => {}
             }
         }
-        if let Some(deadline) = deadline.as_mut()
-            && deadline
-                .passed(&mut self.timer)
-                .map_err(MoveError::MoveTimer)?
+        if deadline
+            .passed(&mut self.timer)
+            .map_err(MoveError::MoveTimer)?
         {
             return Ok(Some(if leaving.is_some() {
                 MoveWake::LeftSwitch
@@ -446,11 +530,9 @@ impl Cart {
         Ok(None)
     }
 
-    /// Starts `wait` on the move timer, or nothing for None.
-    fn deadline(&mut self, wait: Option<Duration>) -> MoveResult<Option<Deadline>> {
-        wait.map(|wait| Deadline::start(&mut self.timer, wait))
-            .transpose()
-            .map_err(MoveError::MoveTimer)
+    /// Starts `wait` on the move timer.
+    fn deadline(&mut self, wait: Duration) -> MoveResult<Deadline> {
+        Deadline::start(&mut self.timer, wait).map_err(MoveError::MoveTimer)
     }
 
     /// Whether `end`'s switch reads pressed now.
@@ -472,7 +554,7 @@ impl Cart {
 }
 
 /// How long `release_pulses` takes at `rate`, rounded up so the check never
-/// comes early. A move runs at one rate, start to stop.
+/// comes early. A seek runs at one rate, start to stop.
 fn release_time(rate: i32) -> Duration {
     let speed = u64::from(rate.unsigned_abs()).max(1);
     Duration::from_micros((u64::from(RELEASE_PULSES) * MICROS_PER_SECOND).div_ceil(speed))
