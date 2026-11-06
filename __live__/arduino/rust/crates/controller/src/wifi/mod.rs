@@ -53,8 +53,8 @@ pub(crate) fn next_byte(
 
 /// Answers `message` as the board stands in `state`: `state` gets the state,
 /// a command gets the reply for a command the board doesn't apply, and any
-/// other datagram gets nothing. A seek isn't answered here: it moves the cart
-/// (`main`), and `Stop` outside a move does nothing.
+/// other datagram gets nothing. A calibration move isn't answered here: it
+/// moves the cart (`main`), and `Stop` outside a move does nothing.
 pub(crate) fn serve(
     udp: &mut UdpSocket,
     wake: &mut WakeTimer,
@@ -67,7 +67,7 @@ pub(crate) fn serve(
             Some(answer) => answer,
             None => return Ok(()),
         },
-        Some(WifiMessage::Seek(_) | WifiMessage::Stop) | None => return Ok(()),
+        Some(WifiMessage::Calibrate(_) | WifiMessage::Stop) | None => return Ok(()),
     };
     match udp.asker(wake)? {
         Some(asker) => send_to(udp, wake, &asker, &answer),

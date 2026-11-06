@@ -1,7 +1,8 @@
 use crate::{
-    cart::rail_end::RailEnd,
+    cart::{calibration_move::CalibrationMove, centre_speed::CentreSpeed, rail_end::RailEnd},
     constants::{
-        COMMAND_SIZE, SEEK_IDLER_REQUEST, SEEK_MOTOR_REQUEST, STATE_REQUEST, STOP_REQUEST,
+        CENTRE_REQUEST, CENTRE_SPEED_SEPARATOR, COMMAND_SIZE, SEEK_IDLER_REQUEST,
+        SEEK_MOTOR_REQUEST, STATE_REQUEST, STOP_REQUEST,
     },
     wifi::datagram::Datagram,
 };
@@ -13,9 +14,9 @@ pub(crate) enum Message {
     State,
     /// A command: 3 bytes, the pulse rate to run at.
     Command,
-    /// `CalibrateIdlerTravelLimit` or `CalibrateMotorTravelLimit`: seek that
-    /// end of the rail.
-    Seek(RailEnd),
+    /// `CalibrateIdlerTravelLimit`, `CalibrateMotorTravelLimit`, or
+    /// `MoveToCentre` with or without a speed: a move of the calibration.
+    Calibrate(CalibrationMove),
     /// `Stop`: end the move under way. Outside a move it does nothing.
     Stop,
 }
@@ -29,10 +30,26 @@ impl Message {
         }
         match datagram.payload() {
             STATE_REQUEST => Some(Self::State),
-            SEEK_IDLER_REQUEST => Some(Self::Seek(RailEnd::Idler)),
-            SEEK_MOTOR_REQUEST => Some(Self::Seek(RailEnd::Motor)),
+            SEEK_IDLER_REQUEST => Some(Self::seek(RailEnd::Idler)),
+            SEEK_MOTOR_REQUEST => Some(Self::seek(RailEnd::Motor)),
             STOP_REQUEST => Some(Self::Stop),
-            _ => None,
+            payload => Self::centre(payload),
         }
+    }
+
+    const fn seek(toward: RailEnd) -> Self {
+        Self::Calibrate(CalibrationMove::Seek(toward))
+    }
+
+    /// `MoveToCentre`, or `MoveToCentre` and a space and a speed, or None for
+    /// any other payload. A speed that isn't a whole number is still a move
+    /// to the centre, answered `bad_speed`.
+    fn centre(payload: &[u8]) -> Option<Self> {
+        let speed = match payload.strip_prefix(CENTRE_REQUEST)? {
+            [] => CentreSpeed::Default,
+            [CENTRE_SPEED_SEPARATOR, digits @ ..] => CentreSpeed::parse(digits),
+            _ => return None,
+        };
+        Some(Self::Calibrate(CalibrationMove::Centre(speed)))
     }
 }

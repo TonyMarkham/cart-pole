@@ -1,12 +1,14 @@
 use core::fmt;
 use unor4_hal::{step::StepError, wake::WakeError};
 
-/// Why a move couldn't run, in words for `OK STATUS stopped seek: …`. Each is
-/// the firmware's own fault, not the rig's: the rate is fixed at build time,
-/// the driver is on from start-up, and every wait is at most 1.398 s.
+/// Why a move couldn't run, in words for `OK STATUS stopped seek: …` or
+/// `… centre: …`. Each is the firmware's own fault, not the rig's: every rate
+/// is within the settings the build checked, the driver is on from start-up,
+/// a pulse count is armed before the pulses start, and every wait is at most
+/// 1.398 s.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum MoveError {
-    /// The step generator refused the move's rate.
+    /// The step generator refused the move's rate or its pulse count.
     StepGenerator(StepError),
     /// The move timer refused a wait: the move's own time limit.
     MoveTimer(WakeError),

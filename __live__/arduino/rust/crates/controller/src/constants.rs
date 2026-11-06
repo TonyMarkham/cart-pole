@@ -83,11 +83,16 @@ pub(crate) const ADDRESS_MAX: usize = 15;
 /// can't be taken for a command.
 pub(crate) const STATE_REQUEST: &[u8] = b"state";
 
-/// The Orin's requests for a seek to each end, and the message that ends a
-/// move: they must match the webserver's `IDLER_REQUEST`, `MOTOR_REQUEST` and
-/// `STOP_REQUEST` (`__live__/orin/rust/crates/webserver/src/constants.rs`).
+/// The Orin's requests for a seek to each end and for the move to the centre,
+/// and the message that ends a move: they must match the webserver's
+/// `IDLER_REQUEST`, `MOTOR_REQUEST`, `CENTRE_REQUEST` and `STOP_REQUEST`
+/// (`__live__/orin/rust/crates/webserver/src/constants.rs`). The move to the
+/// centre may carry a speed after a space: `MoveToCentre 5000` (the
+/// webserver's `calibrate.rs`, `centre`).
 pub(crate) const SEEK_IDLER_REQUEST: &[u8] = b"CalibrateIdlerTravelLimit";
 pub(crate) const SEEK_MOTOR_REQUEST: &[u8] = b"CalibrateMotorTravelLimit";
+pub(crate) const CENTRE_REQUEST: &[u8] = b"MoveToCentre";
+pub(crate) const CENTRE_SPEED_SEPARATOR: u8 = b' ';
 pub(crate) const STOP_REQUEST: &[u8] = b"Stop";
 
 /// The switches by the pin names a seek's answer gives in `pin`, which the
@@ -103,9 +108,13 @@ pub(crate) const COMMAND_SIZE: u32 = 3;
 /// The status numbers in an answer, with HTTP's meanings (RFC 9110, section
 /// 15).
 pub(crate) const STATUS_OK: u16 = 200;
+pub(crate) const STATUS_BAD_REQUEST: u16 = 400;
 pub(crate) const STATUS_TIMEOUT: u16 = 408;
 pub(crate) const STATUS_CONFLICT: u16 = 409;
 
-/// Room for one answer, bytes. The longest today is a seek's with the widest
-/// `pulses`, 4,294,967,295: under 150 bytes.
+/// Room for one answer, bytes. The longest today is a seek's `already_there`
+/// with the widest `pulses`, 4,294,967,295: 145 bytes.
 pub(crate) const ANSWER_MAX: usize = 160;
+
+/// Microseconds in a second, for the time a move takes to go some pulses.
+pub(crate) const MICROS_PER_SECOND: u64 = 1_000_000;

@@ -1,6 +1,6 @@
 use crate::{
-    cart::{rail_end::RailEnd, seek_end::SeekEnd},
-    constants::{STATUS_CONFLICT, STATUS_OK, STATUS_TIMEOUT},
+    cart::{centre_end::CentreEnd, rail_end::RailEnd, seek_end::SeekEnd},
+    constants::{STATUS_BAD_REQUEST, STATUS_CONFLICT, STATUS_OK, STATUS_TIMEOUT},
     state::State,
 };
 
@@ -96,6 +96,53 @@ impl Answer {
                 STATUS_TIMEOUT,
                 "timed_out",
                 "no switch tripped in time: the cart stopped",
+                None,
+            ),
+        };
+        Self {
+            status,
+            result,
+            message,
+            pin,
+            pulses,
+        }
+    }
+
+    /// The answer to a move to the centre that ended at `end`, after
+    /// `pulses`. The results and statuses are the ones the webserver's
+    /// calibrate page reads (`__live__/orin/rust/crates/webserver/src/rail_state.rs`):
+    /// only `centred` is a 200, and it makes the board CALIBRATED.
+    pub(crate) const fn centre(end: CentreEnd, pulses: u32) -> Self {
+        let (status, result, message, pin) = match end {
+            CentreEnd::Centred => (STATUS_OK, "centred", "the cart stopped at the centre", None),
+            CentreEnd::Tripped(end) => (
+                STATUS_CONFLICT,
+                "tripped",
+                "a switch tripped on the way: seek both ends again",
+                Some(end.pin()),
+            ),
+            CentreEnd::Stopped => (
+                STATUS_CONFLICT,
+                "stopped",
+                "a Stop arrived: the cart stopped",
+                None,
+            ),
+            CentreEnd::NotReady => (
+                STATUS_CONFLICT,
+                "not_ready",
+                "the rail is not known yet: seek both ends first",
+                None,
+            ),
+            CentreEnd::BadSpeed => (
+                STATUS_BAD_REQUEST,
+                "bad_speed",
+                "the speed must be a whole number from 1 to centre_speed_max",
+                None,
+            ),
+            CentreEnd::Refused => (
+                STATUS_CONFLICT,
+                "refused",
+                "both switches read pressed: the cart did not move",
                 None,
             ),
         };

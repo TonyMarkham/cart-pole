@@ -1,5 +1,7 @@
 # How the board runs the calibration's moves. A seek drives the cart from
 # wherever it is to one end's limit switch, and stops when the switch trips.
+# The move to the centre drives it from wherever it is to half way between
+# the two ends the seeks found, and stops at that pulse count.
 
 # A seek's speed, pulses per second. A seek starts and stops in one jump, with
 # no ramp, so it stays slow: at 15 µm a pulse (real-open-issues.md, issue 13),
@@ -16,9 +18,17 @@ seek_speed = 2_000
 # (its settings.toml, move_timeout_ms), so this must stay below that.
 seek_timeout_ms = 34_000
 
-# A switch the cart starts a seek on counts only once the cart has moved this
+# The fastest `MoveToCentre <pulses/s>` may ask for; a speed above it, or not a
+# whole number, is answered bad_speed and the cart stays put. With no speed the
+# move runs at seek_speed. 44,600 pulses/s is the rig's top rate, the one every
+# command is clamped to (real-loop-dia.md, the command's sequence). That move
+# has no ramp, so it starts and stops in one jump.
+centre_speed_max = 44_600
+
+# A switch the cart starts a move on counts only once the cart has moved this
 # many pulses off it, so its contact bouncing as the cart leaves is not taken
 # for a trip. If it still reads pressed then, the cart is driving into it, the
-# wrong way, and the seek stops. 100 pulses is 1.5 mm, 50 ms at seek_speed. A
-# choice, not a measurement of these switches.
-release_pulses = 100
+# wrong way, and the move stops. 400 pulses is 6 mm, 200 ms at seek_speed. A
+# choice, not a measurement of these switches: both switches have read
+# released within 100 pulses (1.5 mm) on the rig.
+release_pulses = 400

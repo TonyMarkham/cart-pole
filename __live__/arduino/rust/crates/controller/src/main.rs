@@ -21,7 +21,9 @@ mod wifi;
 // ---------------------------------------------------------------------------------------------- //
 
 use crate::{
-    cart::{Cart, move_timer::MOVE_TIMER},
+    cart::{
+        Cart, calibration_move::CalibrationMove, centre_end::CentreEnd, move_timer::MOVE_TIMER,
+    },
     config::{usb::USB_BAUD, wifi::AT_BAUD},
     constants::{LINE_END, LINE_READY, REPLY_STATUS},
     incoming::Incoming,
@@ -117,10 +119,10 @@ fn main() -> ! {
                 USB.write_all(LINE_END);
             }
             Ok(Incoming::Wifi(datagram)) => match WifiMessage::parse(&datagram) {
-                // A seek is a calibration move, so it runs from every state
-                // that leads to CALIBRATING, and CALIBRATING itself, between
-                // moves (real-open-issues.md, issue 5, step 1).
-                Some(WifiMessage::Seek(toward))
+                // A calibration move runs from every state that leads to
+                // CALIBRATING, and CALIBRATING itself, between moves
+                // (real-open-issues.md, issue 5, step 1).
+                Some(WifiMessage::Calibrate(calibration))
                     if matches!(
                         state,
                         State::Uncalibrated | State::Calibrating | State::Calibrated
@@ -135,11 +137,27 @@ fn main() -> ! {
                         Err(error) => stopped(format_args!("wifi: wake timer: {error:?}")),
                     };
                     state = state.next(Event::StartCalibrating);
-                    let (end, pulses) = match cart.seek(toward, &mut udp, &mut wake_timer) {
-                        Ok(seek) => seek,
-                        Err(error) => stopped(format_args!("seek: {error}")),
+                    let answer = match calibration {
+                        CalibrationMove::Seek(toward) => {
+                            match cart.seek(toward, &mut udp, &mut wake_timer) {
+                                Ok((end, pulses)) => Answer::seek(toward, end, pulses),
+                                Err(error) => stopped(format_args!("seek: {error}")),
+                            }
+                        }
+                        CalibrationMove::Centre(speed) => {
+                            match cart.centre(speed, &mut udp, &mut wake_timer) {
+                                Ok((end, pulses)) => {
+                                    // Only the move to the centre ends the
+                                    // calibration (issue 5, step 1).
+                                    if end == CentreEnd::Centred {
+                                        state = state.next(Event::FinishCalibrating);
+                                    }
+                                    Answer::centre(end, pulses)
+                                }
+                                Err(error) => stopped(format_args!("centre: {error}")),
+                            }
+                        }
                     };
-                    let answer = Answer::seek(toward, end, pulses);
                     if let Err(error) = wifi::send_to(&mut udp, &mut wake_timer, &asker, &answer) {
                         stopped(format_args!("wifi: wake timer: {error:?}"));
                     }
