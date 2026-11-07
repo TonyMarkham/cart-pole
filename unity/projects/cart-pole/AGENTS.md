@@ -11,7 +11,7 @@ The user's directives are immutable. Follow them verbatim, exactly as stated:
   or is technically impossible), say so in one factual sentence and implement
   the directive verbatim anyway, unless the user redirects.
 
-Standing directive from the user (2026-10-12):
+Standing directive from the user:
 
 > I want you to 100% ALWAYS take my directives SERIOUSLY and treat them as
 > immutable.
