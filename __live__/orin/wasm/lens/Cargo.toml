@@ -2,6 +2,8 @@
 name                 = "lens-page"
 version              = { workspace = true }
 edition              = { workspace = true }
+description          = "The lens page, in the browser: shows where to hold the printed board for each still that measures the lens"
+publish              = false
 
 [dependencies]
 error-location       = { workspace = true }

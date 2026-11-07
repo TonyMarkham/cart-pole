@@ -2,6 +2,8 @@
 name                 = "arduino-page"
 version              = { workspace = true }
 edition              = { workspace = true }
+description          = "The Arduino page, in the browser: draws the board and what each pin the rig uses reads now"
+publish              = false
 
 [dependencies]
 error-location       = { workspace = true }

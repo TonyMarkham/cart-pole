@@ -8,20 +8,19 @@
 mod bar;
 mod constants;
 mod error;
-mod lens_rect;
-mod lens_result;
 mod lens_status;
-mod meter;
 mod page;
 mod poll_settings;
 mod render;
 mod request;
+#[cfg(test)]
+mod tests;
 
 // ---------------------------------------------------------------------------------------------- //
 
 use crate::{
     constants::{RESTART_ROUTE, SKIP_ROUTE, SOLVE_ROUTE, START_ROUTE, STILL_ROUTE, STOP_ROUTE},
-    error::{AppError, result::AppResult},
+    error::{app_error::AppError, app_result::AppResult},
     page::Page,
 };
 
@@ -38,6 +37,8 @@ fn main() {
     });
 }
 
+/// Finds the page's parts, wires the buttons, then looks at the measurement
+/// until the page closes.
 async fn run() -> AppResult<()> {
     let window = web_sys::window().ok_or_else(|| AppError::missing("window"))?;
     let document = window
@@ -64,6 +65,7 @@ async fn run() -> AppResult<()> {
     }
 }
 
+/// Runs `action` on each click of `button`.
 fn on_click(button: &HtmlButtonElement, page: &Rc<Page>, action: fn(Rc<Page>)) -> AppResult<()> {
     let page = Rc::clone(page);
     let click = Closure::<dyn FnMut()>::new(move || action(Rc::clone(&page)));
@@ -84,6 +86,7 @@ fn toggle(page: Rc<Page>) {
     post(page, route);
 }
 
+/// Posts one button's request; a refusal is shown, and Start/Stop comes back.
 fn post(page: Rc<Page>, route: &'static str) {
     spawn_local(async move {
         if let Err(error) = request::post(&page.window, route).await {
@@ -104,6 +107,7 @@ fn restart(page: Rc<Page>) {
     }
 }
 
+/// Solves the lens from the kept stills, and shows the result.
 fn solve(page: Rc<Page>) {
     page.solve.set_disabled(true);
     page.say_result("Solving.");
@@ -130,6 +134,7 @@ fn save_picture(page: Rc<Page>) {
     });
 }
 
+/// A page has nowhere else to say what went wrong: the browser's console.
 fn report(error: &AppError) {
     console::error_1(&JsValue::from_str(&error.to_string()));
 }

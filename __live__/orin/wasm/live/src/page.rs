@@ -1,6 +1,6 @@
 use crate::{
     constants::{BOXES_ID, BUTTON_ID, IMAGE_ID, ROWS_ID, STATUS_ID},
-    error::{AppError, result::AppResult},
+    error::{app_error::AppError, app_result::AppResult},
     live_status::LiveStatus,
     render,
 };
@@ -72,6 +72,7 @@ impl Page {
     }
 }
 
+/// The element `id` in `index.html`; a missing one is this crate's fault.
 fn element(document: &Document, id: &str) -> AppResult<Element> {
     document
         .get_element_by_id(id)

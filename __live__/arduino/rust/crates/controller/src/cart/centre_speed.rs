@@ -37,7 +37,7 @@ impl CentreSpeed {
 
     /// The speed to run at, pulses per second, or None for one outside 1 to
     /// `centre_speed_max`: the firmware alone decides what a good speed is
-    /// (the webserver's `calibrate.rs`, `CentreQuery`).
+    /// (the webserver's `calibrate/centre_query.rs`, `CentreQuery`).
     pub(crate) fn speed(self) -> Option<i32> {
         match self {
             Self::Default => Some(SEEK_SPEED),

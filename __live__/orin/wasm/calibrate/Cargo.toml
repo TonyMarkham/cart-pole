@@ -2,6 +2,8 @@
 name                 = "calibrate-page"
 version              = { workspace = true }
 edition              = { workspace = true }
+description          = "The calibration page, in the browser: finds the rail's ends and centre, and measures the seven poses the camera's matrix is fitted from"
+publish              = false
 
 [dependencies]
 error-location       = { workspace = true }

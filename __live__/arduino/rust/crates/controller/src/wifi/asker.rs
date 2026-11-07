@@ -3,7 +3,7 @@ use crate::constants::ADDRESS_MAX;
 /// Who sent a datagram: the address and port the bridge reports for it
 /// (`AT+UDPREMOTEIP`, `AT+UDPREMOTEPORT`). A move's answer goes to whoever
 /// asked for the move, read before it starts: the `Stop` that can end it
-/// comes from another socket (the webserver's `calibrate.rs`, `send_stops`),
+/// comes from another socket (the webserver's `calibrate/mod.rs`, `send_stops`),
 /// and an answer sent there would leave the move's own wait to time out.
 pub(crate) struct Asker {
     address: [u8; ADDRESS_MAX],

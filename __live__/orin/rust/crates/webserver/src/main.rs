@@ -1,41 +1,38 @@
+//! The Orin's webserver. The Orin has no monitor, so this is how it shows
+//! things: it serves the browser pages, pushes images to the viewer, asks the
+//! rig's Arduino for its pins and to move the cart, and passes the
+//! measurements on to `calibrate_service.py`. Its settings are in
+//! `settings.toml`, read once at the start.
+
 mod arduino;
 mod calibrate;
 mod constants;
 mod error;
-mod images;
-mod lens;
-mod live;
-mod measure;
-mod pages;
-mod rail_state;
+mod hello;
+mod service;
 mod settings;
-mod stop;
-mod ws;
-
-// ---------------------------------------------------------------------------------------------- //
-
-pub(crate) use crate::constants::{
-    ADDRESS, ARDUINO_PAGE_DIR, ARDUINO_PAGE_ROUTE, ARDUINO_PINS_ROUTE, ARDUINO_SETTINGS_ROUTE,
-    CALIBRATE_CENTRE_ROUTE, CALIBRATE_FIT_ACCEPT_ROUTE, CALIBRATE_FIT_ROUTE, CALIBRATE_IDLER_ROUTE,
-    CALIBRATE_MEASURE_ACCEPT_ROUTE, CALIBRATE_MEASURE_CANCEL_ROUTE, CALIBRATE_MEASURE_ROUTE,
-    CALIBRATE_MEASURE_STATUS_ROUTE, CALIBRATE_MOTOR_ROUTE, CALIBRATE_PAGE_DIR,
-    CALIBRATE_PAGE_ROUTE, CALIBRATE_STATE_ROUTE, CALIBRATE_STOP_ROUTE, HELLO_ROUTE, IMAGE_ROUTE,
-    LENS_PAGE_DIR, LENS_PAGE_ROUTE, LENS_RESTART_ROUTE, LENS_SKIP_ROUTE, LENS_SOLVE_ROUTE,
-    LENS_START_ROUTE, LENS_STATUS_ROUTE, LENS_STILL_ROUTE, LENS_STOP_ROUTE, LIVE_PAGE_DIR,
-    LIVE_PAGE_ROUTE, LIVE_START_ROUTE, LIVE_STATUS_ROUTE, LIVE_STOP_ROUTE, MAX_IMAGE_BYTES,
-    SETTINGS_PATH, VIEWER_DIR, VIEWER_ROUTE, WS_ROUTE,
-};
+#[cfg(test)]
+mod tests;
+mod viewer;
 
 // ---------------------------------------------------------------------------------------------- //
 
 use crate::{
-    arduino::{ArduinoState, pins, settings as arduino_settings},
-    calibrate::{centre, idler, motor, stop},
-    error::result::AppResult,
-    images::push_image,
-    pages::hello::hello,
+    arduino::arduino_state::ArduinoState,
+    constants::{
+        ARDUINO_PAGE_DIR, ARDUINO_PAGE_ROUTE, ARDUINO_PINS_ROUTE, ARDUINO_SETTINGS_ROUTE,
+        CALIBRATE_CENTRE_ROUTE, CALIBRATE_FIT_ACCEPT_ROUTE, CALIBRATE_FIT_ROUTE,
+        CALIBRATE_IDLER_ROUTE, CALIBRATE_MEASURE_ACCEPT_ROUTE, CALIBRATE_MEASURE_CANCEL_ROUTE,
+        CALIBRATE_MEASURE_ROUTE, CALIBRATE_MEASURE_STATUS_ROUTE, CALIBRATE_MOTOR_ROUTE,
+        CALIBRATE_PAGE_DIR, CALIBRATE_PAGE_ROUTE, CALIBRATE_STATE_ROUTE, CALIBRATE_STOP_ROUTE,
+        HELLO_ROUTE, IMAGE_ROUTE, LENS_PAGE_DIR, LENS_PAGE_ROUTE, LENS_RESTART_ROUTE,
+        LENS_SKIP_ROUTE, LENS_SOLVE_ROUTE, LENS_START_ROUTE, LENS_STATUS_ROUTE, LENS_STILL_ROUTE,
+        LENS_STOP_ROUTE, LIVE_PAGE_DIR, LIVE_PAGE_ROUTE, LIVE_START_ROUTE, LIVE_STATUS_ROUTE,
+        LIVE_STOP_ROUTE, SETTINGS_PATH, VIEWER_DIR, VIEWER_ROUTE, WS_ROUTE,
+    },
+    error::app_result::AppResult,
+    service::{lens, live, measure},
     settings::Settings,
-    ws::ws_handler,
 };
 
 use axum::{Router, extract::DefaultBodyLimit, routing};
@@ -47,13 +44,13 @@ async fn main() -> AppResult<()> {
     let settings = Settings::load(SETTINGS_PATH)?;
     let (images, _) = watch::channel(None);
 
-    let arduino = Router::new()
-        .route(ARDUINO_PINS_ROUTE, routing::get(pins))
-        .route(ARDUINO_SETTINGS_ROUTE, routing::get(arduino_settings))
-        .route(CALIBRATE_IDLER_ROUTE, routing::post(idler))
-        .route(CALIBRATE_MOTOR_ROUTE, routing::post(motor))
-        .route(CALIBRATE_CENTRE_ROUTE, routing::post(centre))
-        .route(CALIBRATE_STOP_ROUTE, routing::post(stop))
+    let rig = Router::new()
+        .route(ARDUINO_PINS_ROUTE, routing::get(arduino::pins))
+        .route(ARDUINO_SETTINGS_ROUTE, routing::get(arduino::settings))
+        .route(CALIBRATE_IDLER_ROUTE, routing::post(calibrate::idler))
+        .route(CALIBRATE_MOTOR_ROUTE, routing::post(calibrate::motor))
+        .route(CALIBRATE_CENTRE_ROUTE, routing::post(calibrate::centre))
+        .route(CALIBRATE_STOP_ROUTE, routing::post(calibrate::stop))
         .route(CALIBRATE_STATE_ROUTE, routing::get(measure::state))
         .route(CALIBRATE_MEASURE_ROUTE, routing::post(measure::start))
         .route(
@@ -90,17 +87,18 @@ async fn main() -> AppResult<()> {
         .with_state(ArduinoState::new(settings.arduino, settings.calibration));
 
     let app = Router::new()
-        .route(HELLO_ROUTE, routing::get(hello))
+        .route(HELLO_ROUTE, routing::get(hello::hello))
         .route(
             IMAGE_ROUTE,
-            routing::post(push_image).layer(DefaultBodyLimit::max(MAX_IMAGE_BYTES)),
+            routing::post(viewer::images::push_image)
+                .layer(DefaultBodyLimit::max(settings.server.max_image_bytes)),
         )
-        .route(WS_ROUTE, routing::get(ws_handler))
+        .route(WS_ROUTE, routing::get(viewer::ws::ws_handler))
         .nest_service(VIEWER_ROUTE, ServeDir::new(VIEWER_DIR))
         .with_state(images)
-        .merge(arduino);
+        .merge(rig);
 
-    let listener = TcpListener::bind(ADDRESS).await?;
+    let listener = TcpListener::bind(&settings.server.address).await?;
     println!("Server started at http://{}", listener.local_addr()?);
 
     axum::serve(listener, app).await?;

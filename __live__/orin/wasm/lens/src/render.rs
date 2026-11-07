@@ -1,4 +1,7 @@
-use crate::{lens_result::LensResult, lens_status::LensStatus, meter::Meter};
+use crate::{
+    bar::meter::Meter,
+    lens_status::{LensStatus, lens_result::LensResult},
+};
 
 use std::fmt::Write;
 
@@ -36,6 +39,7 @@ pub(crate) fn overlay(status: &LensStatus) -> Result<String, std::fmt::Error> {
     Ok(out)
 }
 
+/// One outline through `corners`, in full-sensor pixels.
 fn polygon(out: &mut String, class: &str, corners: &[[f64; 2]]) -> std::fmt::Result {
     let points: Vec<String> = corners
         .iter()
@@ -206,110 +210,4 @@ pub(crate) fn result(result: &LensResult) -> String {
         dist.join(", "),
         result.saved_to
     )
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::lens_rect::LensRect;
-
-    fn status(tilt: &str, in_box: bool, turned: bool) -> LensStatus {
-        LensStatus {
-            on: true,
-            message: String::new(),
-            per_s: 40.0,
-            frame: None,
-            markers: vec![vec![[10.0, 20.0], [30.0, 20.0], [30.0, 40.0], [10.0, 40.0]]],
-            outline: Some(vec![[5.0, 5.0], [300.0, 5.0], [300.0, 200.0], [5.0, 200.0]]),
-            corners: 13,
-            all_corners: 15,
-            min_corners: 11,
-            in_box,
-            turn_deg: None,
-            ready: in_box && turned,
-            width: 1456,
-            height: 1088,
-            distance_mm: 1000.0,
-            tilt_deg: 30.0,
-            min_tilt_deg: 20.0,
-            rect: Some(LensRect {
-                x: 0.0,
-                y: 0.0,
-                w: 355.0,
-                h: 237.0,
-                tilt: tilt.to_owned(),
-                shape: vec![[29.5, 19.8], [325.5, 19.8], [325.5, 217.2], [29.5, 217.2]],
-            }),
-            position: 0,
-            positions: 45,
-            flat_positions: 25,
-            held: 3,
-            hold_frames: 10,
-            kept: 2,
-            min_views: 10,
-            result: None,
-        }
-    }
-
-    #[test]
-    fn the_box_is_red_until_a_frame_counts() {
-        let red = overlay(&status("", false, true)).unwrap_or_default();
-        assert!(red.contains("class=\"target\" x=\"0\" y=\"0\" width=\"355\" height=\"237\""));
-        assert!(
-            red.contains("class=\"shape\" points=\"29.5,19.8 325.5,19.8 325.5,217.2 29.5,217.2\"")
-        );
-        let green = overlay(&status("", true, true)).unwrap_or_default();
-        assert!(green.contains("class=\"target held\""));
-        assert!(green.contains("class=\"board\""));
-        assert!(green.contains("points=\"10.0,20.0 30.0,20.0 30.0,40.0 10.0,40.0\""));
-    }
-
-    #[test]
-    fn the_line_says_what_to_do() {
-        assert!(
-            line(&status("", false, true))
-                .starts_with("Flat position 1 of 25: hold the board flat")
-        );
-        let mut turned = status("left", false, false);
-        turned.position = 25;
-        assert!(line(&turned).starts_with(
-            "Turned position 1 of 20: hold the board with its left side turned about 30 degrees away"
-        ));
-        assert!(
-            line(&status("left", true, false))
-                .starts_with("Inside the box: now turn the board's left side")
-        );
-        assert!(line(&status("", true, true)).starts_with("Hold it still: 3 of 10"));
-    }
-
-    #[test]
-    fn the_turn_bar_fills_at_the_aim_and_counts_from_the_least() {
-        assert_eq!(turn(&status("", true, true)), None);
-        let mut turned = status("left", true, false);
-        turned.turn_deg = Some(15.0);
-        let short = turn(&turned);
-        assert_eq!(short.as_ref().map(|meter| meter.fraction), Some(0.5));
-        assert_eq!(short.as_ref().map(|meter| meter.good), Some(false));
-        assert_eq!(short.and_then(|meter| meter.mark), Some(20.0 / 30.0));
-        turned.turn_deg = Some(24.0);
-        assert_eq!(turn(&turned).map(|meter| meter.good), Some(true));
-        turned.turn_deg = Some(-12.0);
-        assert!(
-            turn(&turned).is_some_and(|meter| meter.label.contains("12 degrees the wrong way"))
-        );
-    }
-
-    #[test]
-    fn the_progress_bar_counts_the_positions_behind() {
-        let mut status = status("left", false, false);
-        status.position = 27;
-        let meter = progress(&status);
-        assert_eq!(meter.fraction, 27.0 / 45.0);
-        assert!(
-            meter
-                .label
-                .starts_with("27 of 45 positions done, 2 stills kept")
-        );
-        assert_eq!(hold(&status).fraction, 0.3);
-    }
 }

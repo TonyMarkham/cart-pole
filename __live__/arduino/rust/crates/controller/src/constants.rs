@@ -88,7 +88,7 @@ pub(crate) const STATE_REQUEST: &[u8] = b"state";
 /// `IDLER_REQUEST`, `MOTOR_REQUEST`, `CENTRE_REQUEST` and `STOP_REQUEST`
 /// (`__live__/orin/rust/crates/webserver/src/constants.rs`). The move to the
 /// centre may carry a speed after a space: `MoveToCentre 5000` (the
-/// webserver's `calibrate.rs`, `centre`).
+/// webserver's `calibrate/mod.rs`, `centre`).
 pub(crate) const SEEK_IDLER_REQUEST: &[u8] = b"CalibrateIdlerTravelLimit";
 pub(crate) const SEEK_MOTOR_REQUEST: &[u8] = b"CalibrateMotorTravelLimit";
 pub(crate) const CENTRE_REQUEST: &[u8] = b"MoveToCentre";

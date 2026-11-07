@@ -73,7 +73,7 @@ impl Answer {
 
     /// The answer to a seek `toward` an end that ended at `end`, after
     /// `pulses`. The results and statuses are the ones the webserver's
-    /// calibrate page reads (`__live__/orin/rust/crates/webserver/src/rail_state.rs`):
+    /// calibrate page reads (`__live__/orin/rust/crates/webserver/src/calibrate/rail_state.rs`):
     /// only a trip of the switch the seek was for is a 200, and `pin` names
     /// the switch.
     pub(crate) const fn seek(toward: RailEnd, end: SeekEnd, pulses: u32) -> Self {
@@ -127,7 +127,7 @@ impl Answer {
 
     /// The answer to a move to the centre that ended at `end`, after
     /// `pulses`. The results and statuses are the ones the webserver's
-    /// calibrate page reads (`__live__/orin/rust/crates/webserver/src/rail_state.rs`):
+    /// calibrate page reads (`__live__/orin/rust/crates/webserver/src/calibrate/rail_state.rs`):
     /// only `centred` is a 200, and it makes the board CALIBRATED.
     pub(crate) const fn centre(end: CentreEnd, pulses: u32) -> Self {
         let (status, result, message, pin) = match end {

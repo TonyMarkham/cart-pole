@@ -1,3 +1,5 @@
+/// The elements in `index.html` this program fills, and the buttons that move
+/// the cart.
 pub(crate) const STATUS_ELEMENT_ID: &str = "status";
 pub(crate) const RAIL_ELEMENT_ID: &str = "rail";
 pub(crate) const WHERE_ELEMENT_ID: &str = "where";

@@ -1,4 +1,4 @@
-use crate::DEFAULT_SERVER;
+use crate::constants::DEFAULT_SERVER;
 
 use clap::Parser;
 use std::path::PathBuf;
@@ -6,7 +6,7 @@ use std::path::PathBuf;
 /// Push a PNG to the server, which pushes it to every connected viewer.
 #[derive(Parser)]
 #[command(version)]
-pub(crate) struct Args {
+pub(crate) struct Arguments {
     /// PNG file to push
     pub(crate) png: PathBuf,
 

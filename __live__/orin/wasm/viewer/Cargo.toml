@@ -2,6 +2,8 @@
 name           = "viewer"
 version        = { workspace = true }
 edition        = { workspace = true }
+description    = "The viewer page, in the browser: shows each image the webserver pushes over its WebSocket"
+publish        = false
 
 [dependencies]
 error-location = { workspace = true }

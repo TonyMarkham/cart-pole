@@ -1,6 +1,16 @@
 # The webserver's settings. Read once when it starts, from the folder it runs
 # in, so run it from this folder (its README, deployment step 9).
 
+[server]
+# Where the server listens: 0.0.0.0 is every network the Orin is on, and 8080
+# the port every page and image-push is reached at. image-push's default
+# --server and the README's links name this port.
+address = "0.0.0.0:8080"
+
+# The largest PNG /image accepts, bytes: 16 MB, 16 × 1024 × 1024. A larger one
+# is answered 413.
+max_image_bytes = 16_777_216
+
 [arduino]
 # Where the rig's Arduino listens, for the /arduino page. The board prints its
 # address on its USB serial port after it joins the WiFi; on this network it

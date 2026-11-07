@@ -1,4 +1,7 @@
-use crate::{constants::MARKERS, live_status::LiveStatus, marker_box::MarkerBox};
+use crate::{
+    constants::MARKERS,
+    live_status::{LiveStatus, marker_box::MarkerBox},
+};
 
 use std::fmt::Write;
 
@@ -54,50 +57,7 @@ pub(crate) fn rows(status: &LiveStatus) -> Result<String, std::fmt::Error> {
     Ok(out)
 }
 
+/// The box found for the marker `name` in the latest frame, if any.
 fn found_box(status: &LiveStatus, name: &str) -> Option<MarkerBox> {
     status.boxes.as_ref()?.get(name).copied().flatten()
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    fn status(left: Option<MarkerBox>) -> LiveStatus {
-        LiveStatus {
-            on: true,
-            message: String::new(),
-            frames: 10,
-            per_s: 40.0,
-            window: 60,
-            found: [("Left".to_string(), 60), ("End".to_string(), 12)].into(),
-            frame: None,
-            boxes: Some([("Left".to_string(), left), ("End".to_string(), None)].into()),
-            width: 728,
-            height: 544,
-        }
-    }
-
-    #[test]
-    fn a_found_marker_gets_a_named_box() {
-        let marker = MarkerBox {
-            cx: 100.0,
-            cy: 50.0,
-            w: 20.0,
-            h: 10.0,
-        };
-        let svg = boxes(&status(Some(marker))).unwrap_or_default();
-        assert!(
-            svg.contains("class=\"box-left\" x=\"90.0\" y=\"45.0\" width=\"20.0\" height=\"10.0\"")
-        );
-        assert!(svg.contains(">Left</text>") && !svg.contains(">End</text>"));
-    }
-
-    #[test]
-    fn a_marker_found_in_every_frame_reads_good() {
-        let table = rows(&status(None)).unwrap_or_default();
-        assert!(table.contains("class=\"good\">60 of 60"));
-        assert!(table.contains("class=\"bad\">12 of 60"));
-        assert!(table.contains("class=\"bad\">0 of 60"));
-        assert!(table.contains("not in this frame"));
-    }
 }

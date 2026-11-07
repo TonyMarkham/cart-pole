@@ -6,16 +6,17 @@
 mod constants;
 mod error;
 mod live_status;
-mod marker_box;
 mod page;
 mod poll_settings;
 mod render;
 mod request;
+#[cfg(test)]
+mod tests;
 
 // ---------------------------------------------------------------------------------------------- //
 
 use crate::{
-    error::{AppError, result::AppResult},
+    error::{app_error::AppError, app_result::AppResult},
     page::Page,
 };
 
@@ -32,6 +33,8 @@ fn main() {
     });
 }
 
+/// Finds the page's parts, wires the button, then looks at the view until
+/// the page closes.
 async fn run() -> AppResult<()> {
     let window = web_sys::window().ok_or_else(|| AppError::missing("window"))?;
     let document = window
@@ -71,6 +74,7 @@ fn toggle(page: Rc<Page>) {
     });
 }
 
+/// A page has nowhere else to say what went wrong: the browser's console.
 fn report(error: &AppError) {
     console::error_1(&JsValue::from_str(&error.to_string()));
 }

@@ -1,4 +1,5 @@
 use crate::{
+    board::travel::Travel,
     constants::{
         CENTRE_BUTTON_ID, IDLER_BUTTON_ID, MEASURE_BUTTON_ID, MOTOR_BUTTON_ID, NEXT_ELEMENT_ID,
         POSE_CENTRE_HANGING_ID, POSE_IDLER_HANGING_ID, POSE_IDLER_HORIZONTAL_ID,
@@ -6,13 +7,12 @@ use crate::{
         POSE_MOTOR_UPRIGHT_ID, RAIL_ELEMENT_ID, RESULT_ELEMENT_ID, ROWS_ELEMENT_ID,
         SPEED_ELEMENT_ID, STATUS_ELEMENT_ID, STOP_BUTTON_ID, WHERE_ELEMENT_ID,
     },
-    error::{AppError, result::AppResult},
+    error::{app_error::AppError, app_result::AppResult},
+    measure::pole::Pole,
     modal::Modal,
-    pole::Pole,
     render,
     session::Session,
     tone::Tone,
-    travel::Travel,
 };
 
 use js_sys::Date;
@@ -168,17 +168,21 @@ impl Page {
     }
 }
 
+/// One line of the page, in its colour. Set as text, so nothing in a message
+/// can become part of the page.
 fn say(line: &Element, tone: Tone, message: &str) {
     line.set_class_name(&format!("line {}", tone.class()));
     line.set_text_content(Some(message));
 }
 
+/// The element `id` in `index.html`; a missing one is this crate's fault.
 pub(crate) fn element(document: &Document, id: &str) -> AppResult<Element> {
     document
         .get_element_by_id(id)
         .ok_or_else(|| AppError::missing(id))
 }
 
+/// The button `id` in `index.html`.
 pub(crate) fn button(document: &Document, id: &str) -> AppResult<HtmlButtonElement> {
     Ok(element(document, id)?.dyn_into()?)
 }

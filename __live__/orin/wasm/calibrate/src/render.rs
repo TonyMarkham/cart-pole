@@ -1,14 +1,11 @@
 use crate::{
     constants::{CART_AT_CENTRE_X, CART_AT_IDLER_X, CART_AT_MOTOR_X, CART_WIDTH, MARKERS},
-    entry::Entry,
-    fit_report::FitReport,
-    frame_boxes::FrameBoxes,
-    live_status::LiveStatus,
-    marker_box::MarkerBox,
-    marker_summary::MarkerSummary,
-    measure_summary::MeasureSummary,
-    place::Place,
-    session::{Session, grouped},
+    measure::{
+        fit_report::FitReport, frame_boxes::FrameBoxes, live_status::LiveStatus,
+        marker_box::MarkerBox, marker_summary::MarkerSummary, measure_summary::MeasureSummary,
+    },
+    number::grouped,
+    session::{Session, entry::Entry, place::Place},
     tone::Tone,
 };
 
@@ -54,6 +51,8 @@ pub(crate) fn rail(session: &Session) -> Result<String, std::fmt::Error> {
     Ok(out)
 }
 
+/// A switch's word and colour. Pressed is expected at an end, so only both
+/// pressed at once is a warning.
 fn switch_state(pressed: bool, place: Place) -> (&'static str, Tone) {
     match (pressed, place) {
         (true, Place::BothPressed) => ("pressed", Tone::Warn),
@@ -62,6 +61,7 @@ fn switch_state(pressed: bool, place: Place) -> (&'static str, Tone) {
     }
 }
 
+/// One switch on the drawing, with its name and what it reads.
 fn switch(
     out: &mut String,
     name: &str,
@@ -79,6 +79,8 @@ fn switch(
     )
 }
 
+/// The cart at an end or the centre when the page knows it is there. Otherwise
+/// it is drawn unsure in the middle, labelled `Where?` or `Moving`.
 fn cart(out: &mut String, place: Place) -> std::fmt::Result {
     let (x, label, sure) = match place {
         Place::Motor => (CART_AT_MOTOR_X, "Cart", true),
@@ -151,6 +153,7 @@ pub(crate) fn boxes(
     Ok(out)
 }
 
+/// One marker's box, centred on the detector's point.
 fn one_box(out: &mut String, class: &str, marker: MarkerBox) -> std::fmt::Result {
     write!(
         out,
@@ -202,6 +205,7 @@ pub(crate) fn live_line(status: &LiveStatus) -> String {
     )
 }
 
+/// The box the live view found for the marker `name`, if any.
 fn live_box(status: &LiveStatus, name: &str) -> Option<MarkerBox> {
     status.boxes.as_ref()?.get(name).copied().flatten()
 }
@@ -229,6 +233,7 @@ pub(crate) fn summary(summary: &MeasureSummary) -> Result<String, std::fmt::Erro
     Ok(out)
 }
 
+/// One marker's row in a stop's summary.
 fn marker_row(out: &mut String, name: &str, marker: &MarkerSummary) -> std::fmt::Result {
     write!(
         out,
@@ -315,154 +320,10 @@ pub(crate) fn fit(report: &FitReport) -> Result<String, std::fmt::Error> {
     Ok(out)
 }
 
+/// Text from outside this crate, made safe to write into the page's HTML.
 fn escaped(text: &str) -> String {
     text.replace('&', "&amp;")
         .replace('<', "&lt;")
         .replace('>', "&gt;")
         .replace('"', "&quot;")
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::{answer::Answer, lens_used::LensUsed, reading::Reading, travel::Travel};
-
-    #[test]
-    fn the_drawing_says_when_the_cart_is_not_known() {
-        let session = Session::new();
-        let svg = rail(&session).unwrap_or_default();
-        assert!(svg.starts_with("<svg") && svg.ends_with("</svg>"));
-        assert!(svg.contains("Where?") && svg.contains("no reading"));
-    }
-
-    #[test]
-    fn a_failed_reading_leaves_no_switch_state() {
-        let mut session = Session::new();
-        session.read(Reading::Failed("lost".to_string()), "now".to_string());
-        let svg = rail(&session).unwrap_or_default();
-        assert!(!svg.contains("pressed") && !svg.contains("released"));
-    }
-
-    #[test]
-    fn the_idler_is_drawn_left_of_the_motor() {
-        let svg = rail(&Session::new()).unwrap_or_default();
-        let (idler, motor) = (svg.find(">Idler<"), svg.find(">Motor<"));
-        assert!(idler < motor);
-        assert!(
-            svg.contains("x=\"50\" y=\"198\">Idler") && svg.contains("x=\"810\" y=\"198\">Motor")
-        );
-    }
-
-    #[test]
-    fn a_missed_marker_draws_no_box() {
-        let found = MarkerBox {
-            cx: 100.0,
-            cy: 50.0,
-            w: 20.0,
-            h: 10.0,
-        };
-        let frame = FrameBoxes {
-            pivot: Some(found),
-            end: None,
-        };
-        let drawn = boxes(&frame, 728, 544).unwrap_or_default();
-        assert!(drawn.contains("box-pivot") && !drawn.contains("box-end"));
-        assert!(drawn.contains("x=\"90.0\" y=\"45.0\" width=\"20.0\" height=\"10.0\""));
-    }
-
-    #[test]
-    fn the_live_view_names_every_found_marker() {
-        let marker = MarkerBox {
-            cx: 100.0,
-            cy: 50.0,
-            w: 20.0,
-            h: 10.0,
-        };
-        let status = LiveStatus {
-            on: true,
-            message: String::new(),
-            per_s: 43.6,
-            window: 60,
-            found: [("Left".to_string(), 60), ("End".to_string(), 12)].into(),
-            frame: None,
-            boxes: Some(
-                [
-                    ("Left".to_string(), Some(marker)),
-                    ("End".to_string(), None),
-                ]
-                .into(),
-            ),
-            width: 728,
-            height: 544,
-        };
-        let svg = live_boxes(&status).unwrap_or_default();
-        assert!(svg.contains("class=\"box-left\" x=\"90.0\" y=\"45.0\""));
-        assert!(svg.contains(">Left</text>") && !svg.contains(">End</text>"));
-        assert_eq!(
-            live_line(&status),
-            "Live, 44 frames a second. Found in the last 60 frames: Left 60, Right 0, Pivot 0, End 12."
-        );
-    }
-
-    #[test]
-    fn a_fit_over_the_limit_is_stored_and_can_be_accepted() {
-        let report = FitReport {
-            within_limit: false,
-            accepted: false,
-            residuals: Vec::new(),
-            worst_px: 8.0,
-            limit_px: 1.0,
-            lens: LensUsed {
-                date: "2026-11-03T00:13:38Z".to_string(),
-                rms_px: 0.26,
-            },
-            worst_uncorrected_px: 1.6,
-            kept_minutes_ago: [("motor upright".to_string(), 3)].into(),
-            gaps_mm: [("motor".to_string(), 5.0), ("idler".to_string(), 7.5)].into(),
-            span_pulses: 59_822,
-            span_m: 0.89733,
-            cad_length_m: 0.873,
-            difference_m: 0.02433,
-            saved_to: Some("~/live-orin-python/homography.json".to_string()),
-            dated_copy: Some(
-                "~/live-orin-python/saved/homography-20261103-004500.json".to_string(),
-            ),
-        };
-        let text = fit(&report).unwrap_or_default();
-        assert!(text.contains("over the limit") && text.contains("not a failure"));
-        assert!(text.contains("Stored in <code>~/live-orin-python/homography.json</code>"));
-        assert!(text.contains("saved/homography-20261103-004500.json"));
-        assert!(text.contains("897.3 mm") && text.contains("873.0 mm"));
-        assert!(text.contains("-24.3 mm"));
-        assert!(text.contains("5 mm at the motor") && text.contains("7.5 mm at the idler"));
-        assert!(text.contains("2026-11-03T00:13:38Z") && text.contains("0.26 px"));
-        assert!(text.contains("1.600 px"));
-        assert!(text.contains("motor upright 3 min ago"));
-    }
-
-    #[test]
-    fn what_came_from_outside_is_escaped() {
-        let entry = Entry {
-            clock: "now".to_string(),
-            travel: Travel::Motor,
-            answer: Answer::lost("<b>&\"".to_string()),
-            took_s: 1.0,
-        };
-        let table = rows(&[entry]).unwrap_or_default();
-        assert!(table.contains("&lt;b&gt;&amp;&quot;"));
-        assert!(!table.contains("<b>"));
-    }
-
-    #[test]
-    fn the_newest_move_comes_first() {
-        let entry = |clock: &str| Entry {
-            clock: clock.to_string(),
-            travel: Travel::Motor,
-            answer: Answer::lost("said".to_string()),
-            took_s: 1.0,
-        };
-        let table = rows(&[entry("first"), entry("second")]).unwrap_or_default();
-        let (first, second) = (table.find("first"), table.find("second"));
-        assert!(second < first);
-    }
 }

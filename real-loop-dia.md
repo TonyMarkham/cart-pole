@@ -173,7 +173,7 @@ sequenceDiagram
 the Orin's webserver sends it requests to change state, as the webserver
 already does for `calibrate_service.py`: the webserver forwards the page's
 request to the Python program on the Orin's own address
-(`__live__/orin/rust/crates/webserver/src/live.rs`, `measure::forward`).
+(`__live__/orin/rust/crates/webserver/src/service/live.rs`, `service::forward`).
 
 **Decided: a run ends at STOP or at a fault** (user, 2026-11-04,
 `real-open-issues.md` issue 5): "Arduino goes into FAULT STATE on an end

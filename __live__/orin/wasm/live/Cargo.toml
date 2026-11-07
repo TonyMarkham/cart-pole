@@ -2,6 +2,8 @@
 name                 = "live-page"
 version              = { workspace = true }
 edition              = { workspace = true }
+description          = "The live page, in the browser: the camera's picture with a box on every marker the detector finds, for aiming the camera"
+publish              = false
 
 [dependencies]
 error-location       = { workspace = true }

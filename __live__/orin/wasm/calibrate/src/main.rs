@@ -1,39 +1,28 @@
-mod answer;
+//! The calibration page: finds the rail's two ends and its centre with the
+//! real cart, then measures the pole in the seven poses the camera's matrix is
+//! fitted from. Each move button moves the real cart. The board and
+//! `calibrate_service.py` do the work; this page asks and shows.
+
 mod board;
 mod constants;
-mod entry;
 mod error;
-mod fit_report;
-mod frame_boxes;
-mod heading;
-mod lens_used;
-mod live_status;
-mod marker_box;
-mod marker_summary;
-mod measure_status;
-mod measure_summary;
-mod measuring;
+mod measure;
 mod modal;
-mod modal_screen;
+mod number;
 mod page;
-mod place;
-mod pole;
-mod reading;
 mod render;
-mod residual;
-mod server_state;
+mod request;
 mod session;
-mod settings;
-mod switches;
+#[cfg(test)]
+mod tests;
 mod tone;
-mod travel;
 
 // ---------------------------------------------------------------------------------------------- //
 
 use crate::{
-    error::{AppError, result::AppResult},
+    board::travel::Travel,
+    error::{app_error::AppError, app_result::AppResult},
     page::Page,
-    travel::Travel,
 };
 
 use js_sys::Date;
@@ -50,6 +39,8 @@ fn main() {
     });
 }
 
+/// Finds the page's parts, learns what the webserver knows, wires the
+/// buttons, then reads the switches until the page closes.
 async fn run() -> AppResult<()> {
     let window = web_sys::window().ok_or_else(|| AppError::missing("window"))?;
     let document = window
@@ -65,7 +56,7 @@ async fn run() -> AppResult<()> {
         .borrow_mut()
         .restore(state.last_stop, state.span);
     page.modal.set_poll_ms(state.poll_ms);
-    measuring::wire(&page)?;
+    measure::wire(&page)?;
 
     for (travel, button) in page.buttons() {
         let travel = *travel;
@@ -91,7 +82,7 @@ async fn run() -> AppResult<()> {
             page.session.borrow_mut().read(reading, time_now());
         }
         page.draw()?;
-        board::sleep(&page.window, settings.poll_ms).await?;
+        request::sleep(&page.window, settings.poll_ms).await?;
     }
 }
 
@@ -135,6 +126,7 @@ fn stop(page: Rc<Page>) {
     });
 }
 
+/// The clock, for the table's times.
 fn time_now() -> String {
     let now = Date::new_0();
     format!(
@@ -145,6 +137,7 @@ fn time_now() -> String {
     )
 }
 
+/// A page has nowhere else to say what went wrong: the browser's console.
 pub(crate) fn report(error: &AppError) {
     console::error_1(&JsValue::from_str(&error.to_string()));
 }

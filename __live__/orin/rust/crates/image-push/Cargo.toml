@@ -2,6 +2,8 @@
 name           = "image-push"
 version        = { workspace = true }
 edition        = { workspace = true }
+description    = "Sends one PNG to the Orin's webserver, which shows it on every open viewer page"
+publish        = false
 
 [dependencies]
 clap           = { workspace = true }

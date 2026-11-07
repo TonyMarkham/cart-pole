@@ -2,6 +2,8 @@
 name           = "webserver"
 version        = { workspace = true }
 edition        = { workspace = true }
+description    = "The Orin's webserver: serves the browser pages, pushes images to the viewer, asks the rig's Arduino for its pins and its moves, and passes measurements on to calibrate_service.py"
+publish        = false
 
 [dependencies]
 axum           = { workspace = true }

@@ -1,6 +1,6 @@
 use crate::{
     constants::{BOARD_X, BOARD_Y, BOTTOM_Y, TOP_Y},
-    pins::{Levels, PINS},
+    pins::{PINS, levels::Levels},
 };
 
 use std::fmt::Write;
@@ -10,7 +10,7 @@ const BOARD_PARTS: &str = include_str!("board_parts.svg");
 
 /// The header holes' x positions, in the board's units: the 0.1 inch spacing of
 /// the header, with the wider gap the Uno shape has in the middle of each row.
-const TOP_ROW: [(&str, i32); 18] = [
+pub(crate) const TOP_ROW: [(&str, i32); 18] = [
     ("SCL", 245),
     ("SDA", 272),
     ("AREF", 300),
@@ -30,7 +30,7 @@ const TOP_ROW: [(&str, i32); 18] = [
     ("D1", 700),
     ("D0", 728),
 ];
-const BOTTOM_ROW: [(&str, i32); 14] = [
+pub(crate) const BOTTOM_ROW: [(&str, i32); 14] = [
     ("BOOT", 344),
     ("IOREF", 372),
     ("RESET", 399),
@@ -168,60 +168,4 @@ pub(crate) fn rows(levels: Option<&Levels>) -> Result<String, std::fmt::Error> {
         write!(out, "</td></tr>")?;
     }
     Ok(out)
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    fn resting() -> Levels {
-        ["d2", "d3"]
-            .map(|key| (key.to_string(), 0))
-            .into_iter()
-            .chain(["d4", "d5", "d6"].map(|key| (key.to_string(), 1)))
-            .collect()
-    }
-
-    #[test]
-    fn the_drawing_shows_every_pins_state() {
-        let svg = board(Some(&resting())).unwrap_or_default();
-        assert!(svg.starts_with("<svg") && svg.ends_with("</svg>"));
-        assert!(svg.contains("Driver on") && svg.contains("Released"));
-        assert!(!svg.contains("No reading"));
-    }
-
-    #[test]
-    fn without_a_reading_no_level_survives() {
-        let svg = board(None).unwrap_or_default();
-        let table = rows(None).unwrap_or_default();
-        for text in ["Driver on", "Released", "High (1)", "Low (0)"] {
-            assert!(!svg.contains(text) && !table.contains(text), "{text}");
-        }
-        assert!(svg.contains("No reading") && table.contains("No reading"));
-    }
-
-    #[test]
-    fn every_used_hole_is_on_a_header_under_its_own_name() {
-        let on_row = |name: &str, hole: &(i32, i32)| {
-            let row: &[(&str, i32)] = if hole.1 == TOP_Y {
-                &TOP_ROW
-            } else {
-                &BOTTOM_ROW
-            };
-            row.contains(&(name, hole.0))
-        };
-        for pin in &PINS {
-            assert!(
-                pin.holes.iter().all(|hole| on_row(pin.name, hole)),
-                "{}",
-                pin.name
-            );
-        }
-    }
-
-    #[test]
-    fn the_gnd_beside_vin_is_not_marked() {
-        let marked = PINS.iter().any(|pin| pin.holes.contains(&(509, BOTTOM_Y)));
-        assert!(!marked);
-    }
 }

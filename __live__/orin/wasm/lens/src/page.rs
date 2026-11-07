@@ -4,9 +4,8 @@ use crate::{
         HOLD_ID, IMAGE_ID, OVERLAY_ID, PICTURE_ID, PROGRESS_ID, RESTART_ID, RESULT_ID, SKIP_ID,
         SOLVE_ID, STATUS_ID, TOGGLE_ID, TURN_ID,
     },
-    error::{AppError, result::AppResult},
-    lens_result::LensResult,
-    lens_status::LensStatus,
+    error::{app_error::AppError, app_result::AppResult},
+    lens_status::{LensStatus, lens_result::LensResult},
     render,
 };
 
@@ -97,6 +96,7 @@ impl Page {
     }
 }
 
+/// The element `id` in `index.html`; a missing one is this crate's fault.
 pub(crate) fn element(document: &Document, id: &str) -> AppResult<Element> {
     document
         .get_element_by_id(id)
