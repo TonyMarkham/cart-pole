@@ -149,7 +149,7 @@ sequenceDiagram
 
     P->>W: Run (on /run)
     W->>B: request: run (as W does for calibrate_service.py)
-    Note over B: refuses Run while the calibration service is busy, or the matrix is not ok (The run and idle states)<br/>idle → run. Opens the run's log folder in runs/, named by the Run press's timestamp<br/>reads the matrix (homography.json) and the lens stored with it; the policy's run values came with the worker's ready line<br/>pre-warms the pool: six entries, no detection (−1, −1),<br/>at gaps of [brain] pre_warm_gap_ms before the first frame, the last 6 actions all 0
+    Note over B: refuses Run while the calibration service is busy, or the matrix is not ok (The run and idle states)<br/>idle → run. Opens the run's log folder in runs/, named by the Run press's timestamp<br/>reads the matrix (homography.json) and the lens stored with it<br/>the policy's run values came with the worker's ready line<br/>pre-warms the pool: six entries, no detection (−1, −1),<br/>at gaps of [brain] pre_warm_gap_ms before the first frame, the last 6 actions all 0
     B->>C: opens the camera, drops the settling frames
 
     loop every command n, until STOP or a FAULT
