@@ -1,0 +1,53 @@
+# The WiFi test's settings: `wifi-host wifi-host.toml`. Paths are relative to
+# this file.
+
+[r4]
+# The R4's USB port and speed: the firmware's config/usb.toml baud.
+port = "COM3"
+baud = 115_200
+# How long to keep asking STATUS until the R4 answers that it is running:
+# its WiFi join takes up to about 25 s (its config/wifi_timing.toml).
+status_timeout_ms = 40_000
+
+[wifi]
+# Clock syncs before the first datagram and after the last, on top of the
+# one before every datagram. The two ends pin down the rate difference
+# between the two clocks (the drift).
+warmup_syncs = 50
+closing_syncs = 50
+
+# Datagrams, each one cycle: a sync, the datagram, its report.
+cycles = 3_000
+
+# The gap after each cycle, ms, drawn evenly from this band: 33–50 ms is the
+# simulator's 20–30 Hz command rate (gym.toml [env]), so the WiFi carries
+# datagrams as often as the rig's.
+gap_min_ms = 33
+gap_max_ms = 50
+
+# How long a sync's answer and a datagram's report may take, ms, before the
+# sync or the datagram counts as lost.
+sync_timeout_ms = 100
+ping_timeout_ms = 500
+
+# Each datagram is a valid command: sign byte 0 or 1, then a rate up to
+# top_rate pulses/s (the rig's top rate, the controller's config/motion.toml).
+# No two in a run are the same, so each one's payload names it.
+top_rate = 44_600
+
+# The clock fit: the syncs are split into fit_windows runs of consecutive
+# syncs, and in each the keep_fraction with the shortest round trips are
+# kept. The shortest round trips waited least on the way, so their midpoints
+# are the truest; keeping some in every window spreads them over the whole
+# run, which the drift needs.
+fit_windows = 10
+keep_fraction = 0.2
+
+# The histogram's bin width, µs.
+histogram_bin_us = 250
+
+# The random draws' seed: the same seed sends the same datagrams.
+seed = 1
+
+# Where each run's folder goes.
+output_dir = "runs"

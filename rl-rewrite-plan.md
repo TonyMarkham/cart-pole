@@ -3,10 +3,10 @@
 The reward has had four versions in two runs (run 1: the graded reward
 it spun on, the slow-pole, the log height; run 2: the product), and it
 is about to change again, to the
-site-based calculation in the reward plan (now `trainer/reward-plan.md`). Each change so far meant
+site-based calculation in the reward plan (now `__synthetic__/trainer/python/reward-plan.md`). Each change so far meant
 editing one hard-wired function, its three callers and its settings
 parser together, and the next one cannot be rescored at all. This plan
-replaces the trainer's Python (`trainer/src`, 1,799 lines in 14 modules,
+replaces the trainer's Python (`__synthetic__/trainer/python/src`, 1,799 lines in 14 modules,
 read 2026-10-25) with a design in which the reward, the episode end and
 the observation are parts chosen and configured in the toml, every
 step's inputs are recorded, and any reward change can be rescored onto
@@ -14,7 +14,7 @@ the experience already gathered.
 
 A plan: nothing here is written yet (user, 2026-10-25: "a fresh and
 complete rewrite ... once we design it to be flexible"). It follows
-`synthetic-loop-dia.md` and `trainer/reward-plan.md`; where they disagree with
+`synthetic-loop-dia.md` and `__synthetic__/trainer/python/reward-plan.md`; where they disagree with
 the code, the code is the work. Requirements are stated as requirements;
 recommendations say so and name their source or say they have none.
 
@@ -29,7 +29,7 @@ Read from the code, 2026-10-25:
 | Two copies of the environment | `LoopEnv` and `LoopVecEnv` each carry reset, step, scoring and the command history | Every change lands twice, and the copies can drift |
 | Rescoring tied to the observation's layout | `train.rescore` rebuilds the pool by slicing `next_observations[...][:FLOATS]` | The site reward cannot be rescored (sites are never in the observation), and any observation change breaks it |
 | The reward decides the episode end | `score` returns the reward and `crashed` together | The end rule cannot change without the reward |
-| No tests | `trainer/` has no tests | Nothing guards a change; run 2's checks lived in scratchpad scripts outside the repo |
+| No tests | `__synthetic__/trainer/python/` has no tests | Nothing guards a change; run 2's checks lived in scratchpad scripts outside the repo |
 | Analysis outside the repo | `session4.py`, `catches.py`, `schemes.py` and the rest are scratchpad scripts with run folders hard-coded | The measurements behind each decision cannot be reproduced |
 
 ## 2. Requirements (invariants the rewrite must keep)
@@ -144,7 +144,7 @@ interface; the others reach it only through that interface.
   class with the same two methods:
   `from_table(table) -> Reward`, which checks its own values, and
   `score(inputs: StepInputs) -> (r, factors)`, where `factors` names
-  each part of `r` for the log. `trainer/reward-plan.md`'s calculation
+  each part of `r` for the log. `__synthetic__/trainer/python/reward-plan.md`'s calculation
   is the plugin, `rewards/tip_speed_cart_centre.py` (user, 2026-10-30:
   r_target_speed and r_speed replaced r_energy;
   `tip_energy_cart_centre.py` stays while its run can resume;
@@ -165,7 +165,9 @@ interface; the others reach it only through that interface.
   each with `check(inputs: StepInputs) -> reason or None`; the toml
   lists which are on, and the first is `endings/strike_gap.py`, the
   strike-face rule. Kept apart from the reward (section 1, the fifth
-  row).
+  row). *Since 2026-11-08* (`synthetic-loop-dia.md`, *The rail's
+  ends*): the strike-face rule is gone; the episode ends on the synthetic
+  Arduino's FAULT, which the line reports, and the list is empty today.
 - **`env.py`: one vectorized environment** (SB3's `VecEnv`) built from
   the parts above. One instance is a group of one, so `LoopEnv` goes.
   `info` carries the `StepInputs`, the factors, the end reason, and
@@ -207,7 +209,7 @@ interface; the others reach it only through that interface.
   through any reward plugin (the true poses, turned into sites by
   `physics`).
 - **`tests/`:** every plugin against hand-computed values (the tables
-  in `trainer/reward-plan.md`, the strike gaps, the observation's shape and
+  in `__synthetic__/trainer/python/reward-plan.md`, the strike gaps, the observation's shape and
   contents, the action's rounding and bound), the contract types'
   refusals, the episode tracker's first step, the buffer's store and
   rescore, the manifest's checks and the settings loader's refusals.
@@ -215,7 +217,10 @@ interface; the others reach it only through that interface.
 
 ### 3.3 The gym file's shape
 
-A sketch: the names and values are `trainer/reward-plan.md`'s.
+A sketch: the names and values are `__synthetic__/trainer/python/reward-plan.md`'s. *Since
+2026-11-08* (`synthetic-loop-dia.md`, *Timing*, *The rail's ends*):
+`[env]` has no command rate and `[end]` no strike gap; the sketch is
+the shape of 2026-10-30.
 
 ```toml
 [env]
@@ -233,9 +238,9 @@ past_commands = 6
 plugin = "linear_rate"                 # actions/linear_rate.py: a × the top pulse rate, rounded
 
 [reward]
-scheme = "tip_speed_cart_centre"       # the plugin: rewards/tip_speed_cart_centre.py (trainer/reward-plan.md's calculation)
+scheme = "tip_speed_cart_centre"       # the plugin: rewards/tip_speed_cart_centre.py (__synthetic__/trainer/python/reward-plan.md's calculation)
 
-[reward.tip]                           # one table per factor, checked by the plugin; values: trainer/reward-plan.md
+[reward.tip]                           # one table per factor, checked by the plugin; values: __synthetic__/trainer/python/reward-plan.md
 width = 0.2
 
 [reward.target_speed]
@@ -279,9 +284,9 @@ name in the toml; tuning it is its table. Nothing else changes.
 Each step ends with its check. Steps 2–10 need no orchestrator.
 
 1. **Prerequisites in the design.** `synthetic-loop-dia.md`'s reward
-   sections rewritten to the reward plan (`trainer/reward-plan.md`),
+   sections rewritten to the reward plan (`__synthetic__/trainer/python/reward-plan.md`),
    then `trainer-plan.md` rewritten from the diagram and this plan.
-   *Check:* the diagram, `trainer/reward-plan.md`, `trainer-plan.md` and
+   *Check:* the diagram, `__synthetic__/trainer/python/reward-plan.md`, `trainer-plan.md` and
    this file agree.
 2. **The contract types.** *Check:* tests build each from good values
    and refuse bad ones (a pool of the wrong shape, a site with two
@@ -291,7 +296,7 @@ Each step ends with its check. Steps 2–10 need no orchestrator.
    load `gym.toml`, and refuse an unknown plugin name, a missing table
    and a value out of range, each with a message naming the key.
 4. **The reward plugin, `tip_speed_cart_centre`.** *Check:* tests reproduce
-   `trainer/reward-plan.md`'s tables (`r_tip` from hanging, 0.011, to
+   `__synthetic__/trainer/python/reward-plan.md`'s tables (`r_tip` from hanging, 0.011, to
    straight up, 1.00, wherever the cart is; `r_target_speed` 1 at or below
    0.5 rad/s and outside the zone, 0.667 passing straight up at 10 rad/s;
    `r_cart` 1 within 0.050 m of the middle, 0.737 at the left end, never
@@ -352,7 +357,7 @@ Not to be re-introduced as options:
 
 Each with a recommendation; the choice is the user's.
 
-- **Scope.** Recommended: all of `trainer/src`, the link included, so
+- **Scope.** Recommended: all of `__synthetic__/trainer/python/src`, the link included, so
   no old piece constrains the new shape. The link's contract (R4) does
   not change, only its code's shape.
 - **Test framework.** Python's own `unittest` needs no install;

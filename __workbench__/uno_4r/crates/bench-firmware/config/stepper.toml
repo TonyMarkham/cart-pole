@@ -1,0 +1,17 @@
+# The level on D5 (DIR) for a positive command, high or low: a positive
+# command moves the cart to the right as the camera sees it, towards the
+# motor's end (real-open-issues.md, issue 4; user, 2026-11-05). NOT yet
+# checked on the rig: "high" stands until issue 4's rig test gives the real
+# level.
+#
+# Acceptable Values:
+#     - "high"
+#     - "low"
+dir_positive = "low"
+
+# STEP's on time, D4 low, ns. A low pin lights the driver's PUL input through
+# its PNP stage. The DM542 needs at least 2,500 on and 2,500 off (manual,
+# section 10, t3 and t4); 5,000 leaves room for the PNP stage's switching
+# delay. At most 8,300: the HAL's limit, since a reversal's DIR write must
+# outlast a pulse.
+pulse_low_ns = 5_000

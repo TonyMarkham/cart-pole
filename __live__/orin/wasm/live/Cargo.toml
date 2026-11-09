@@ -1,0 +1,22 @@
+[package]
+name                 = "live-page"
+version              = { workspace = true }
+edition              = { workspace = true }
+description          = "The live page, in the browser: the camera's picture with a box on every marker the detector finds, for aiming the camera"
+publish              = false
+
+[dependencies]
+error-location       = { workspace = true }
+js-sys               = { workspace = true }
+serde                = { workspace = true }
+serde_json           = { workspace = true }
+thiserror            = { workspace = true }
+wasm-bindgen         = { workspace = true }
+wasm-bindgen-futures = { workspace = true }
+web-sys              = {
+                         workspace = true,
+                         features = ["HtmlButtonElement"]
+}
+
+[lints]
+workspace            = true

@@ -1,0 +1,341 @@
+# The Orin's Python's settings. Read at each run. [camera], [png] and [push] are
+# capture_push.py's: taking the picture on the Orin and pushing it to the viewer.
+# [detector] is the marker detector's, read by src/detector_config.py. The brain's
+# own table, [brain] with delay_ms, moved to the Rust settings.toml
+# (../rust/settings.toml) with the brain on 2026-11-07; brain_worker.py reads
+# [detector] and [stream] here.
+
+
+
+[camera]
+# Which camera, and which of its modes. Mode 0 is the sensor's full frame,
+# 1456 x 1088 at 60 frames/s (v4l2-ctl --list-formats-ext on robo-orin).
+sensor_id = 0
+sensor_mode = 0
+width = 1_456
+height = 1_088
+framerate = 60
+
+# Frames to capture; only the last is kept, because the camera's automatic
+# exposure needs a moment to settle after it starts.
+frames = 30
+
+# The camera software's noise reduction and edge sharpening, 0 = off, so
+# the picture changes as little as possible from what the sensor saw.
+tnr_mode = 0
+ee_mode = 0
+
+# How long the capture may take before it counts as failed, s. 30 frames
+# took 7.6 s on robo-orin, nearly all of it writing the PNGs.
+timeout_s = 60
+
+
+
+[png]
+# Where the picture is written. Each run replaces it.
+path = "/tmp/orin-capture.png"
+
+# PNG compression, 0 (none) to 9 (most, slowest). 1 keeps a run short and
+# made a 2.9 MB file.
+compression_level = 1
+
+
+
+[push]
+# orin-cam's command-line tool, and the orin-cam server it sends to. The
+# server runs on the Orin too, so this is the Orin's own address.
+image_push = "~/orin-cam/target/release/image-push"
+server = "http://localhost:8080"
+
+
+
+[stream]
+# The frames the detector gets. The sensor's full frame from [camera], halved
+# exactly on each side, in greyscale: the format of the real images the model has
+# already been run on (datasets/real-640).
+width = 728
+height = 544
+
+# JPEG quality each frame is encoded at before the detector decodes it. 0-100.
+jpeg_quality = 90
+
+# The shutter, ns: 1 ms, locked. With a global shutter that keeps the swinging pole's
+# end sharp, which automatic exposure would not. It is what the real images the model
+# has been run on used (training/06-REAL_LABELING.md).
+exposure_ns = 1_000_000
+
+# The sensor's gain, locked. A 1 ms shutter lets in little light, and this makes up
+# for it, at the cost of a noisier picture. The Orin's IMX296 driver takes it as a
+# plain number from 0 to 480 (its device tree: gain_factor 1, max_gain_val 480),
+# taken to be tenths of a decibel, so 180 is 18 dB, x8: the Pi's gain 8. The old
+# value 8 was 0.8 dB here. On 2026-11-02, 1 ms, room light on: gain 8 found no
+# marker in 5 stills, gain 180 all four in 5 of 5.
+gain = 180
+
+# Frames thrown away after the camera starts, while it settles.
+settle_frames = 30
+
+
+
+[detector]
+# The trained detector, float ONNX: the model src/build_engine.py builds the
+# TensorRT engine from. It is not in git. This copy on the Orin has the same
+# checksum as training/runs/cp2-640-base/weights/best.onnx on the PC (2026-11-01).
+model = "~/orin-test/best.onnx"
+
+# The TensorRT engine: the model compiled for this GPU, FP16, already on the Orin.
+engine = "~/orin-test/best_fp16.engine"
+
+# The model's square input size, pixels (its metadata imgsz).
+input_size = 640
+
+# Ultralytics' letterbox padding value (0-255 grey).
+pad_value = 114
+
+# A class's best box counts as detected at or above this score.
+# 0.25 is Ultralytics' predict default, the value the reference used.
+confidence = 0.25
+
+# Class order = slot order = the model's class ids (its metadata names).
+classes = ["Left", "Right", "Pivot", "End"]
+
+
+
+[service]
+# Where calibrate_service.py listens. Only this computer can reach it: the
+# webserver forwards to it (service in the webserver's settings.toml must match).
+host = "127.0.0.1"
+port = 8090
+
+
+
+[live]
+# The live view (the webserver's /live page): the camera stream with every
+# frame's detections, for aiming the camera and in the calibration page's window.
+# It uses the camera the way a measurement does, with [stream]'s shutter and gain, so
+# the two never run together: a measurement stops it.
+
+# How many of the latest frames each marker's found count covers. 60 is one
+# second of the camera's 60 frames/s.
+window_frames = 60
+
+# The live view stops itself when no page has asked for a frame for this long, s,
+# so a closed page cannot keep the camera from the calibration.
+idle_stop_s = 10
+
+
+
+[lens_board]
+# The ChArUco board that measures the lens (src/charuco_board.py makes it): a
+# chessboard with an ArUco marker in each white square, so OpenCV can tell which
+# corner is which even when only part of the board is in the picture. Sized for
+# letter paper on a laser printer, the largest board available (user, 2026-11-02).
+
+# Squares across and down. 6 x 4 has 5 x 3 = 15 inner corners, the points the lens
+# is measured from.
+squares_x = 6
+squares_y = 4
+
+# A square's side and its marker's side, mm. 6 x 42 = 252 mm across and 4 x 42 =
+# 168 mm down fit landscape letter, 279.4 x 215.9 mm, inside a laser printer's
+# unprintable edge. The marker is 3/4 of its square, leaving a white ring for the
+# chessboard's corners. Each is rounded to whole printer dots.
+square_mm = 42.0
+marker_mm = 31.5
+
+# The white border around the board, mm. The PDF's page is the board and this
+# border only, so nothing reaches a printer's unprintable edge. A first print on a
+# full letter page came out at 40 mm squares, 95%, with the printer at 100%
+# (2026-11-02).
+border_mm = 5.0
+
+# The markers' dictionary: OpenCV's DICT_4X4_50, ids 0 to 11. The rig's own tags
+# are DICT_4X4_1000 376, 596, 920 and 937, so nothing on the board is a rig marker.
+dictionary = "DICT_4X4_50"
+
+# The resolution the board is drawn at, dots per inch.
+dpi = 600
+
+# Where the PDF and PNG are written, beside this file.
+out_dir = "lens-board"
+
+# A square's side as printed, measured with a ruler, mm. The print came out at 43 mm
+# across (user, 2026-11-02), not the file's 42: the print path scales the page. The
+# lens measurement needs only the real size, and the squares square; the marker is
+# taken to be the same 3/4 of its square.
+printed_square_mm = 43.0
+
+
+
+[lens]
+# The lens measurement (the webserver's /lens page): a red box, with the board's
+# shape inside it, is drawn over the live picture; the person holds the board
+# there, a still is kept, and the box moves on, first flat across the whole
+# picture, then with the board turned. Then OpenCV's calibrateCamera. It uses
+# nothing from the rig's earlier measurements (user, 2026-11-02). Frames are the
+# sensor's full size, [camera] width and height, at [stream]'s shutter and gain.
+# Kept stills remember their position by number, so after changing anything that
+# changes the positions, press Start over; the service reads this file only when
+# it starts.
+
+# How far from the camera the board is held, mm: 1 m (user, 2026-11-02). At 2 m the
+# board's markers measured 18.5 px a side in the stills, under the 32 px OpenCV gives
+# for reading a marker's code reliably ("tau_c=16-32 pixels", DetectorParameters,
+# from Romero-Ramirez et al. 2018), and only 8 to 11 of 12 were read; 32 px needs
+# about 2000 x 18.5 / 32 = 1.16 m.
+distance_mm = 1000
+
+# The camera's scale, measured from the board itself: its markers (3/4 of a 43 mm
+# square, 32.25 mm) measured 18.5 px a side, the mean of the 47 read in five stills
+# held 2 m away (2026-11-02). The lens and sensor specs predicted 28 px there, so
+# they are not used. On this scale the board's printed squares, 6 x 43 = 258 by
+# 4 x 43 = 172 mm, are 296 x 197 px at 1 m.
+measured_marker_px = 18.5
+measured_at_mm = 2000
+
+# How much larger than the board the box is, as a share of the board: 0.2 makes it
+# 296 x 1.2 = 355 by 197 x 1.2 = 237 px at 1 m, and 5 x 5 = 25 flat positions. With
+# no margin (until 2026-11-02) the board filled the box exactly, its edge markers
+# fell a few pixels outside, and no still was ever kept. A choice, not a measurement.
+box_margin = 0.2
+
+# After the flat positions, the board turned so one side is farther from the
+# camera: each of tilts at each of tilt_spots. Stills of a flat board, wherever it
+# is held, tell calibrateCamera nothing new about the lens; it needs the board at
+# different angles (Zhang, "A Flexible New Technique for Camera Calibration", 2000,
+# which calibrateCamera is built on). The sides are named as the picture shows
+# them: "left", "right", "top", "bottom". The spots are "centre", "top left",
+# "top right", "bottom left", "bottom right". 5 spots x 4 sides = 20 positions.
+tilts = ["left", "right", "top", "bottom"]
+tilt_spots = ["centre", "top left", "top right", "bottom left", "bottom right"]
+
+# The turn to aim for, degrees: the page draws the board's shape turned this far
+# for the person to match, and fills its turn bar at it. A choice, not from a
+# source.
+tilt_deg = 30
+
+# The least turn a tilted still is kept at, degrees. Lower than tilt_deg because a
+# turn judged by eye falls short: aiming for 30, the board measured about 22 to 26
+# degrees inside the box (2026-11-02), and with the bar at 30 no turned still was
+# ever kept. The turn is measured with OpenCV's solvePnP from the corners found,
+# on the camera's scale measured from the board (1147 px focal length), so it does
+# not depend on how far away the board is held. A choice, not from a source.
+min_tilt_deg = 20
+
+# A frame counts towards a still when at least this many of the board's 15 corners
+# are found, all inside the box. A corner is found only when both markers beside it
+# are (OpenCV's CharucoParameters.minMarkers, 2 by default), and a marker in the
+# board's middle touches 4 corners, so one missed marker leaves 15 - 4 = 11. Until
+# 2026-11-02 all 12 markers were needed, and one missed marker reset the hold.
+min_corners = 11
+
+# A still is kept once this many frames in a row have counted, so a board still
+# moving into place is not kept.
+hold_frames = 10
+
+# Solve needs at least this many kept stills. OpenCV's calibration tutorial: "we
+# need at least 10 test patterns".
+min_views = 10
+
+# OpenCV's CLAHE, contrast-limited adaptive histogram equalisation, run on each frame
+# before the board is looked for: it stretches contrast tile by tile. The board's
+# black squares came out mid-grey, about 84 of 255, with whites near 200, and only
+# 3 to 5 of its 12 markers were read (2026-11-02). clip_limit caps how far a tile's
+# contrast is stretched, so noise is not blown up; OpenCV's defaults are 40 and 8 x 8,
+# and 2.0 is the value its own tutorial uses.
+clahe_clip_limit = 2.0
+clahe_tiles = 8
+
+# The lens view stops itself when no page has asked for a frame for this long, s.
+idle_stop_s = 10
+
+# Where the kept views are saved as they are kept, and where a solve is stored. A
+# dated copy of each solve goes to saved/ beside this file. The calibration's fit
+# reads the solve from lens_path at every fit, and refuses to fit without one.
+views_path = "~/live-orin-python/lens_views.json"
+lens_path = "~/live-orin-python/lens.json"
+
+# Where the page's Still button saves the current frame, with the rectangle and the
+# markers drawn in as the page shows them. Inside the webserver's lens page folder,
+# so each is served at /lens/stills/<name>. Every press is its own file, named to
+# the millisecond, with the number of markers found written on it.
+stills_dir = "~/orin-cam/pages/lens/stills"
+
+
+
+[calibration]
+# How many images a stop's measurement may be asked for. An image counts only if
+# it has both Pivot and End in it.
+min_images = 30
+max_images = 9999
+
+# A detection further from the middle of its marker's detections than this many
+# spreads is dropped before the mean. Proposed in calibrate-w-homography.md.
+clip_k = 3
+
+# The largest distance, in pixels, between a measured point and where the fitted
+# matrix puts it. Any point over this fails the fit; the fit is stored anyway,
+# marked "ok": false (user, 2026-11-02: not passing must not mean not kept). On
+# 2026-11-01 the rig's worst point was 1.600 px with no lens correction and 0.166 px
+# with one, so this leaves room for the corrected fit and would catch the other.
+residual_px = 1.0
+
+# The lens's bend is undone with the lens calibration, [lens] lens_path, before the
+# matrix is fitted (lens.py). Until 2026-11-02 one number for it was searched for at
+# each fit instead, from the lens and sensor specs and these points.
+
+# Where the fitted matrix is stored. It belongs to one camera position on one rig,
+# so it stays on the Orin, out of git.
+matrix_path = "~/live-orin-python/homography.json"
+
+# Where each stop's kept result is saved, so a restart does not lose it.
+kept_path = "~/live-orin-python/kept_stops.json"
+
+# The largest gap the page's form accepts, mm. The gap is the hand measurement from
+# the stopped cart's face to the rail support it faces, about 5 mm, typed in at each
+# switch. This only catches a mistyped number, such as metres or centimetres.
+max_gap_mm = 50
+
+# From the MJCF, the rig's CAD, in metres. Each is a site's position with the cart
+# centred and the pole hanging (calibrate-w-homography.md, The ground truth).
+left_wall_x = -0.485          # 10-Left-Rail.Site
+right_wall_x = 0.470          # 12-Right-Rail.Site
+left_face_to_pivot = 0.035    # Pivot x - 11-Left-Cart.Site x
+right_face_to_pivot = 0.035   # 13-Right-Cart.Site x - Pivot x
+pivot_z = 0.082               # Pivot's height
+pole_length = 0.450           # Pivot to End
+
+# Metres of cart travel per pulse: __synthetic__/trainer/python/settings.toml [drive], a 96,000 um belt
+# turn over 200 full steps x 32 microsteps.
+metres_per_pulse = 0.000_015
+
+# Poses the fit leaves out, by name ("idler upright" and so on; fit.py's POSES). A
+# left-out pose need not be measured. [] fits all seven. On 2026-11-09 the four held
+# by hand were the worst points by far, up to 24 px against the 3 hanging poses' 4 to
+# 11 px, so the user left them out for now: "the horizontal and the up points are
+# unreliable". The 3 hanging poses give 6 points, 12 measurements for the matrix's 8
+# numbers, all at or below the pivot's height.
+fit_leave_out = ["idler horizontal", "idler upright", "motor horizontal", "motor upright"]
+
+
+
+[round_trip]
+# The WiFi round trip between the Orin and the Arduino (wifi_round_trip.py): the
+# Orin sends the board's "pins" request and times its answer, `count` times.
+# address and port are where the board listens, the same as [arduino] in the
+# webserver's settings.toml (../rust/settings.toml); they must match it.
+address = "192.168.0.220"
+port = 4210
+
+# How many requests, and the pause between one answer and the next request, ms.
+# 40 ms is about the policy's command gap, 33.3-50 ms (real-loop-dia.md, Timing).
+count = 1000
+gap_ms = 40
+
+# How long to wait for an answer before counting it lost, ms. An answer arriving
+# later is thrown away before the next request, so it is never taken for the
+# next one's.
+timeout_ms = 500
+
+# Where each request's time is written, one line each, relative to this folder.
+out = "round_trip.csv"

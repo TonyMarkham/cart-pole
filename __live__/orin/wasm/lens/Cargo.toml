@@ -1,0 +1,22 @@
+[package]
+name                 = "lens-page"
+version              = { workspace = true }
+edition              = { workspace = true }
+description          = "The lens page, in the browser: shows where to hold the printed board for each still that measures the lens"
+publish              = false
+
+[dependencies]
+error-location       = { workspace = true }
+js-sys               = { workspace = true }
+serde                = { workspace = true }
+serde_json           = { workspace = true }
+thiserror            = { workspace = true }
+wasm-bindgen         = { workspace = true }
+wasm-bindgen-futures = { workspace = true }
+web-sys              = {
+                         workspace = true,
+                         features = ["HtmlButtonElement"]
+}
+
+[lints]
+workspace            = true

@@ -1,0 +1,19 @@
+[package]
+name            = "camera-timing"
+version         = { workspace = true }
+edition         = { workspace = true }
+description     = "Gap 1 on the Orin: flashes an LED in the camera's view and times, on the Orin's clock, how long the camera takes from exposing a frame to the frame being read"
+publish         = false
+
+[dependencies]
+anyhow          = { workspace = true }
+clap            = { workspace = true }
+serde           = { workspace = true }
+toml            = { workspace = true }
+
+# The GPIO character device is Linux's: the LED is driven only on the Orin.
+[target.'cfg(target_os = "linux")'.dependencies]
+gpiocdev        = { workspace = true }
+
+[lints]
+workspace = true

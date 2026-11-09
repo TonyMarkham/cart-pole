@@ -55,7 +55,7 @@ pub fn full(out: &mut impl Write, report: &Report, pins: PinStates, log: &str, l
     write!(
         out,
         "<p><form method=\"post\" action=\"{}\"><button>{}</button></form> \
-         Measures m for trainer/gym.toml: needs a calibration, takes hours, and STOP ends it. \
+         Measures m for __synthetic__/trainer/python/gym.toml: needs a calibration, takes hours, and STOP ends it. \
          The page answers at once; reload it to follow the trials.</p><pre>",
         Action::Experiment.path(),
         Action::Experiment.label()

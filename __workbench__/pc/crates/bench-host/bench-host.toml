@@ -1,0 +1,47 @@
+# The bench's settings: the two boards' ports, and each test's values. Read by
+# `bench-host <test> bench-host.toml`; paths are relative to this file.
+
+[r3]
+# The R3's USB port and speed. The awake_timer sketch talks at 115,200
+# (its SERIAL_BAUD). Opening the port resets an R3, so the host waits for the
+# sketch's READY line, for at most ready_timeout_ms.
+port = "COM4"
+baud = 115_200
+ready_timeout_ms = 5_000
+
+[r4]
+# The R4's USB port and speed: the firmware's config/usb.toml baud.
+port = "COM3"
+baud = 115_200
+# How long to keep asking STATUS until the R4 answers that it is running:
+# its WiFi join takes up to about 25 s (its config/wifi_timing.toml).
+status_timeout_ms = 40_000
+
+[awake]
+# Datagrams sent before the R3 starts timing, so the run loop is steady, and
+# then the datagrams of the measurement itself.
+warmup_datagrams = 50
+datagrams = 3_000
+
+# The gap between datagrams, ms, drawn evenly from this band: 33–50 ms is the
+# simulator's 20–30 Hz command rate (gym.toml [env]). The PC's sleep is
+# coarse, a few ms, which only widens the band a little.
+gap_min_ms = 33
+gap_max_ms = 50
+
+# Each datagram's rate is drawn evenly from ±top_rate pulses/s: the rig's top
+# rate (the controller's config/motion.toml).
+top_rate = 44_600
+
+# The R3's histogram of awake stretches: bins of bin_us microseconds (1 to
+# 1,000, the sketch's MAX_BIN_US), and how many (1 to 250, its MAX_BINS).
+# 2 µs × 250 bins covers up to 500 µs; longer stretches are counted as over,
+# with the longest kept.
+bin_us = 2
+bins = 250
+
+# The random draws' seed: the same seed sends the same datagrams.
+seed = 1
+
+# Where each run's folder goes.
+output_dir = "runs"

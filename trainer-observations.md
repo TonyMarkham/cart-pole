@@ -2038,3 +2038,258 @@ fix.
 ```
 uv run --project trainer python trainer/src/train.py
 ```
+
+## Run `20261101_154007`: the policy learned to hit the wall on purpose
+
+The first long run on DeepMind's reward (`__synthetic__/trainer/python/gym.toml`,
+12 instances), stopped at 247,572 steps. By the end every episode drove right
+at about 0.65 m/s and hit the strike gap in about 22 steps.
+
+| Steps | Episode length | Score per episode | Near upright (within 20°) |
+|---|---|---|---|
+| 0-80,000 | about 155 steps, both walls | 7-12 (best 93) | up to 0.8% of steps |
+| 80,000-90,000 | 315 | 20.6 (best 141) | 0.66% |
+| 130,000 | 81, right wall only | 0.8 | 0 |
+| 190,000+ | 22, right wall only | 0.12 | 0 |
+
+### Why ending the episode paid
+
+SAC pays the policy for acting randomly, on top of the reward:
+
+- While the episode continues: `Q_target = r + γ (Q_next − α log π)`
+- When it ends: `Q_target = r`
+
+`Q` is the critic's score for the situation, `r` the reward, `γ` the discount,
+`α` the weight on randomness, and `log π` how sure the policy was of its action,
+high when very sure. When `α log π` is larger than the reward, each step alive
+costs more than it earns, and an episode's end stops the cost.
+
+Read from the run's snapshots, on the same observations:
+
+| Steps | α | log π | `−α log π` a step | Critic, hanging still | Critic, at the wall |
+|---|---|---|---|---|---|
+| 10,008 | 1.08 | +4.62 | −4.97 | −26 | −26 |
+| 80,004 | 1.92 | +4.59 | −8.83 | −186 | −183 |
+| 90,000 | 1.86 | −0.68 | +1.26 | −163 | −159 |
+| 190,008 | 0.90 | +0.45 | −0.40 | −57 | −27 |
+
+The reward was about 0.06 a step, so at step 80,004 the penalty was about 150
+times larger. This run says nothing either way about DeepMind's reward.
+
+### Why the actor was so sure
+
+It wasn't sure: its randomness was stuck at the top limit. The actor's command
+is a bell curve squashed into [−1, 1], and Stable-Baselines3 (SB3) limits
+`log_std`, the setting for the curve's width, to at most 2. A curve that wide
+squashes nearly every command to full speed, either way, which looks like great
+certainty: 84% of actions were beyond ±0.9.
+
+The cause is the inputs' scale. The pool's ages reached the network in
+milliseconds, down to −246, beside markers and actions within ±1. An untrained
+actor's raw `log_std`, before the limit, on those inputs, across six seeds:
+
+| Ages given in | Raw `log_std` range |
+|---|---|
+| milliseconds | −4.35 to +12.06 |
+| seconds | −0.17 to +0.11 |
+
+So the seed decides whether a run starts pinned. In this run the raw value was
+5.27 at step 10,008 and dropped below 2 only around step 80,000, when full-rate
+actions fell from 85% to 10% within about 4,000 steps. By then the critic's
+scores were deeply negative, and `α` was slow to fall: at a learning rate of
+0.0001, `log α` moves about 0.0001 an update, and one update per 12 samples made
+only 15,733 updates by step 190,008.
+
+## Change 6: ages in seconds, a smaller randomness weight, more updates (2026-11-01)
+
+| Value | Was | Now | Why |
+|---|---|---|---|
+| `[observation.pool_and_commands] age_unit_ms` | none (raw ms) | 1000 | ages arrive in seconds, on the other inputs' scale |
+| `[sac] ent_coef` | none (SB3's `"auto"`, starting at 1.0) | `"auto_0.1"` | tuned as before, from a start near the reward's size |
+| `[sac] gradient_steps` | 1 | 2 | one update per 6 samples instead of per 12 |
+
+The pool on the wire keeps its ages in ms. A run saved before this cannot
+resume: the observation changed.
+
+### Checked before a run
+
+- **Offline, the old settings against the new, 733 updates, four seeds:** an
+  environment that only draws observations at the run's scales and pays 0.06 a
+  step, no physics. Old: three of four seeds pinned, seed 0 at α 1.0754, log π
+  +4.58 (the run itself: 1.0754, +4.62); the fourth was not. New: none pinned,
+  raw `log_std` −0.09 to −0.12, log π −0.68.
+- **The real loop, 6,000 steps, 12 instances, the same values:** every process
+  exited cleanly. Commands at 95%+ of full rate:
+
+  | Steps | Commands at 95%+ | Mean reward | Mean upright |
+  |---|---|---|---|
+  | 1-1,200 (random) | 5% | 0.010 | 0.011 |
+  | 1,201-2,400 | 4% | 0.028 | 0.035 |
+  | 2,401-3,600 | 3% | 0.037 | 0.045 |
+  | 3,601-4,800 | 4% | 0.048 | 0.061 |
+  | 4,801-6,000 | 3% | 0.067 | 0.088 |
+
+  The trial before this change, with the same random start, showed 79-82% from
+  step 1,201. At step 6,000 (798 updates): α 0.0923, raw `log_std` −0.11, log π
+  −0.68, so the randomness term was +0.063 a step, a small reward for staying
+  alive rather than a cost. 8 of the 12 first episodes reached the time limit.
+
+### What this does not show
+
+798 updates is too few to show balancing. And the wall can still pay: SAC tunes
+`α` until `log π` is about +1 (SB3's target entropy, −1 for one action), so at
+that point `−α log π` is about −α a step. Whether `α` is small by then, against
+the reward, is for a long run to show. Watch for episodes shortening towards one
+wall, and compare `α` (`measure.py`'s entropy table) with the reward per step.
+
+### The command
+
+From the repo root:
+
+```
+uv run --project __synthetic__/trainer/python python __synthetic__/trainer/python/src/train.py
+```
+
+## Run `20261101_163458`: the policy swings the pole up and balances it
+
+The first run on Change 6's settings, and the first to balance. By the end,
+every episode swung the pole up from hanging in about 2.2 s and then held it
+upright for the rest of the episode, about 18.5 s, without letting it drop.
+The run took all 4,000,008 steps, with no stops and no strikes after its
+first 55 episodes.
+
+### The command
+
+From the repo root:
+
+```
+uv run --project __synthetic__/trainer/python python __synthetic__/trainer/python/src/train.py
+```
+
+It ran from 2026-11-01 16:35 to 2026-11-02 05:28, about **12 h 53 min**
+(read from the run folder's file times), so about 86 steps a second. The
+code was commit `9087b8fd`, with no uncommitted changes (`latest.json`).
+Settings, as copied into the run's folder (`gym_from_0.toml`, the same as
+today's `gym.toml`):
+
+- **Group:** 12 training instances (a 3 x 4 grid), seed 0.
+- **The reward:** DeepMind's (`dm_control_reward.md`), each step
+  r = upright x small_control x small_velocity x centered, between 0 and 1.
+- **The episode:** starts with the pole hanging; ends at a strike gap or at
+  the time limit, which was **500 steps** in this run, about 20.8 s at the
+  mean gap of 41.5 ms (Change 5 and `gym.toml`'s comment still say 460). So
+  an episode's score is at most 500.
+- **SAC:** Change 6's values (ages in seconds, `ent_coef = "auto_0.1"`,
+  `gradient_steps = 2`), with `learning_rate = 0.0001`, `buffer_size =
+  2,000,000`, `learning_starts = 1,200` and `gamma = 0.9934`.
+
+### What happened
+
+8,018 episodes. Measured with `measure.py episodes` (its columns are
+defined at the top of `src/measures/episodes.py`): **Ends** are episodes
+stopped by a strike gap; **Full turns** how far the pole went round, in
+whole turns; **Spinning** episodes of 15 turns or more; **Within** the share
+of all captures with the pole within 20° of upright; **Longest hold** the
+longest unbroken time within 20°, in any episode of the band. A selection of
+the 50,000-step bands:
+
+| Steps | Episodes | Ends | Mean score | Full turns | Spinning | Within 20° | Longest hold |
+|---|---|---|---|---|---|---|---|
+| 0-50k | 116 | 55 | 69.4 | 18.5 | 52 | 6.2% | 1.03 s |
+| 50k-100k | 102 | 0 | 124.7 | 35.5 | 102 | 12.0% | 0.92 s |
+| 100k-150k | 101 | 0 | 162.9 | 20.8 | 72 | 16.7% | 1.41 s |
+| 150k-200k | 97 | 0 | 190.3 | 5.7 | 2 | 10.6% | 1.10 s |
+| 250k-300k | 101 | 0 | 234.6 | 7.5 | 0 | 26.3% | 2.18 s |
+| 350k-400k | 102 | 0 | 264.1 | 7.1 | 0 | 35.5% | 3.41 s |
+| 400k-450k | 101 | 0 | 329.0 | 5.7 | 0 | 55.8% | 10.46 s |
+| 450k-500k | 97 | 0 | 394.9 | 2.5 | 0 | 74.7% | 17.75 s |
+| 500k-550k | 102 | 0 | 415.4 | 1.2 | 0 | 80.2% | 17.95 s |
+| 950k-1,000k | 102 | 0 | 436.2 | 0.9 | 0 | 86.6% | 18.70 s |
+| 1,950k-2,000k | 97 | 0 | 444.9 | 0.8 | 0 | 88.6% | 18.76 s |
+| 2,950k-3,000k | 101 | 0 | 450.7 | 0.8 | 0 | 89.0% | 18.78 s |
+| 3,950k-4,000k | 102 | 0 | 451.9 | 0.8 | 0 | 89.3% | 18.78 s |
+
+In short:
+
+- **No wall-hitting this time.** The strike gap ended 55 episodes, all in
+  the first 50,000 steps; after that, every episode ran to the time limit.
+  This is what run `20261101_154007` lacked: with α (SAC's weight on staying
+  random) starting at 0.1, staying alive never cost more than it earned.
+- **First it spun, then it learned to stop.** Up to 150,000 steps the pole
+  was driven round and round (up to 35.5 turns an episode). By 150,000 the
+  spinning had stopped, and the time near upright grew steadily.
+- **It learned to balance between 400,000 and 500,000 steps.** The longest
+  hold jumped from 3.4 s to 10.5 s and then to 17.8 s, nearly the whole
+  episode after the swing-up. The first episode to score over 400 was
+  episode 924, at 453,852 steps.
+- **After 500,000 steps it only polished.** The score rose slowly from 415
+  to 452, and the full turns fell from 1.2 to 0.8: the swing-up stopped
+  going round and became one swing back and then up.
+
+### What one episode looks like now
+
+Read from MuJoCo's state in the capture record (`captures_from_0.csv`), for
+the 252 whole episodes in its last 200 MB, about the last 120,000 steps
+(median, with the range in brackets):
+
+| What | Value |
+|---|---|
+| Swing-up: time until the pole is first within 20° of upright | 2.25 s (2.18-2.32), 54 steps |
+| After that, share of the episode within 20° | 100% in every episode |
+| Worst tilt from 1 s after arriving to the end | 2.1° (1.4-3.5°) |
+| Worst tilt in the last 10 s | 1.9° (1.2-3.5°) |
+| Cart's farthest from the rail's middle in the last 10 s | 44 mm (23-89 mm) |
+| Commands at 95% of full rate or more | 6.8% (5.8-7.6%) |
+
+So the pole doesn't just stay within 20°: within a second of arriving it
+settles to within about 2-3° of straight up and stays there, and the cart
+stays within a few centimetres of the middle. The ends of the rail are about
+0.44 m away.
+
+### Why the score stops near 452, not 500
+
+The score is now limited by the swing-up, not by the balancing. In those
+same 252 episodes:
+
+- **The 54 swing-up steps** earn about 9 points (7.4-10.4) in all, because
+  the upright factor is small while the pole is low.
+- **The about 446 held steps** earn 0.993 each (0.991-0.995). The factors
+  while held: upright 1.000, small_control 0.996, small_velocity 0.998,
+  centered 1.000. The small loss is the commands and the pole's small
+  movements.
+
+446 x 0.993 + 9 is about 452. A faster swing-up is the only room left
+worth more than a few points.
+
+### How random the actor is
+
+SAC's weight on staying random (α), from `measure.py entropy`:
+
+| Steps | α |
+|---|---|
+| 10,008 | 0.0864 |
+| 100,008 | 0.0216 |
+| 500,004 | 0.0256 |
+| 1,000,008 | 0.0307 |
+| 2,000,004 | 0.0202 |
+| 3,000,000 | 0.0127 |
+| 4,000,008 | 0.0135 |
+
+Change 6 asked whether α would be small, against the reward, once it had
+tuned itself. It was: about 0.013 at the end, against about 0.9 of reward a
+step, so the randomness term is roughly 1.5% of the reward, not the 150
+times of the last run.
+
+### What this does not show
+
+- **Only the synthetic loop.** Every number here is from simulation: the
+  MJCF, the rendered frames and the synthetic detector. Nothing has run on
+  the real rig.
+- **Only seed 0.** One run, one seed. Whether every seed learns to balance,
+  and by about 500,000 steps, is not tested.
+- **The policy was not tested apart from training.** All the numbers are
+  from training episodes, where SAC still picks its commands with some
+  randomness. A run of the saved actor alone, choosing its most likely
+  command each time, has not been made.
+- **The 2-3° hold was measured from MuJoCo's true angle**, which the policy
+  never sees: it acts on the detected markers, with the detector's delay.

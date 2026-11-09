@@ -171,7 +171,7 @@ All runs from the repo root against `Build/SimulationLoop.exe`.
 4. **Step 3's remaining check:** one dataset-generator run, frames as
    before.
 5. **Commit** (nothing is committed). cart-pole: `.gitignore`,
-   `Cargo.toml`, `Cargo.lock`, `orchestrator/`, `loop-plan.md`,
+   `Cargo.toml`, `Cargo.lock`, `__synthetic__/orchestrator/rust/crates/orchestrator/`, `loop-plan.md`,
    `unity-player-plan.md`, `unity/projects/packages/simulation.cart-pole.sim-loop/`,
    synthetic-data-gen's `GreyscaleEncoder.cs` (+ `.meta`) and
    `GenerationSetRunner.cs`, `Packages/manifest.json` and
@@ -314,7 +314,7 @@ All runs from the repo root against `Build/SimulationLoop.exe`.
   the same two messages pass between the synthetic Orin and the player:
   the Orin sends `{"id", "joints"}` (the trigger), and the player
   returns the JPEG to the Orin.
-- **Orchestrator stub** in `orchestrator/` (Rust): launches the player
+- **Orchestrator stub** in `__synthetic__/orchestrator/rust/crates/orchestrator/` (Rust): launches the player
   (or, with `--no-launch`, waits for editor Play mode to connect),
   sends a scripted sweep or one fixed pose, saves and checks the
   frames. It stands in for MuJoCo; it is the seed of the real
@@ -521,7 +521,7 @@ Recommendations (choices, with the reason):
     second against 39 (`trainer-observations.md`, Change 2). Step 10's
     grid launched each player with its `-window-position`.
 
-## Orchestrator stub (`orchestrator/`)
+## Orchestrator stub (`__synthetic__/orchestrator/rust/crates/orchestrator/`)
 
 A Rust binary crate, member of the repo-root Cargo workspace
 (`Cargo.toml`: shared `[workspace.package]`, `[workspace.dependencies]`,

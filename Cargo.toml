@@ -1,13 +1,36 @@
 [workspace]
 members           = [
-    "arduino",
-    "orchestrator",
-    "physics"
+                      "__live__/arduino/rust/crates/calibration",
+                      "__live__/arduino/rust/crates/controller",
+                      "__live__/orin/wasm/arduino",
+                      "__live__/orin/wasm/calibrate",
+                      "__live__/orin/wasm/lens",
+                      "__live__/orin/wasm/live",
+                      "__live__/orin/wasm/run",
+                      "__live__/orin/wasm/viewer",
+                      "__synthetic__/orchestrator/rust/crates/arduino",
+                      "__synthetic__/orchestrator/rust/crates/orchestrator",
+                      "__synthetic__/orchestrator/rust/crates/physics",
+                      "__workbench__/uno_4r/crates/apply-firmware",
+                      "__workbench__/uno_4r/crates/bench-firmware",
+                      "__workbench__/uno_4r/crates/wifi-firmware",
+                      "__workbench__/pc/crates/apply-host",
+                      "__workbench__/pc/crates/bench-host",
+                      "__workbench__/pc/crates/wifi-host"
+]
+# What a plain `cargo build` at the root builds. The __live__ members are left
+# out: the firmware compiles only for the board, from its own folder (its
+# .cargo/config.toml names the target), and the pages with `trunk`, from theirs.
+# Their READMEs have the commands.
+default-members   = [
+                      "__synthetic__/orchestrator/rust/crates/arduino",
+                      "__synthetic__/orchestrator/rust/crates/orchestrator",
+                      "__synthetic__/orchestrator/rust/crates/physics"
 ]
 # aruco-gen is the superseded DICT_4X4_50 generator, kept for reference
 # only (AGENTS.md); excluded so it builds standalone and stays untouched.
 exclude           = [
-    "aruco"
+                      "aruco"
 ]
 resolver          = "3"
 
@@ -17,17 +40,62 @@ edition           = "2024"
 
 [workspace.dependencies]
 anyhow            = { version = "1.0.104" }
-clap              = { version = "4.6.7", features = ["derive"] }
+clap              = {
+                      version = "4.6.7",
+                      features = ["derive"]
+}
+cortex-m          = { version = "0.7.10" }
+cortex-m-rt       = {
+                      version = "0.7.7",
+                      features = ["set-vtor", "device"]
+}
+embedded-hal      = { version = "1.0.0" }
+error-location    = { version = "0.1.0" }
 futures-util      = { version = "0.3.34" }
-arduino           = { path = "arduino" }
-physics           = { path = "physics" }
-serde             = { version = "1.0.229", features = ["derive"] }
-# float_roundtrip: parse every float to the exact double its text names, so
-# the pool the Orin writes reaches states.csv bit for bit.
-serde_json        = { version = "1.0.154", features = ["float_roundtrip"] }
-tokio             = { version = "1.54.1", features = ["fs", "macros", "net", "process", "rt-multi-thread", "time"] }
+js-sys            = { version = "0.3.107" }
+panic-halt        = { version = "1.0.0" }
+ra4m1             = { version = "0.2.0" }
+serde             = {
+                      version = "1.0.229",
+                      features = ["derive"]
+}
+serialport        = {
+                      version = "4.10.1",
+                      default-features = false
+}
+serde_json        = {
+                      version = "1.0.154",
+                      features = ["float_roundtrip"]
+}
+thiserror         = { version = "2.0.21" }
+tokio             = {
+                      version = "1.54.1",
+                      features = ["fs", "macros", "net", "process", "rt-multi-thread", "time"]
+}
 tokio-tungstenite = { version = "0.30.0" }
 toml              = { version = "1.1.8" }
+wasm-bindgen      = { version = "0.2.130" }
+wasm-bindgen-futures = { version = "0.4.80" }
+web-sys           = {
+                      version = "0.3.107",
+                      features = [
+                          "Blob", "console", "Document", "Element", "HtmlImageElement", "Location", "MessageEvent",
+                          "Request", "RequestCache", "RequestInit", "Response", "Url", "WebSocket", "Window",
+                      ]
+}
+
+arduino           = { path = "__synthetic__/orchestrator/rust/crates/arduino" }  # Synthetic Arduino
+physics           = { path = "__synthetic__/orchestrator/rust/crates/physics" }  # Custom MuJoCo ABI
+unor4-hal         = { path = "../unor4-hal/crates/unor4-hal" }  # Custom HAL
+
+# The board's images. A profile of its own, because a workspace has one
+# [profile.release] and this one would change every PC crate's build.
+[profile.firmware]
+inherits          = "release"
+opt-level         = 3
+lto               = true
+codegen-units     = 1
+debug             = true # keeps cargo size and backtraces readable
 
 [workspace.lints.clippy]
 unwrap_used       = "deny"

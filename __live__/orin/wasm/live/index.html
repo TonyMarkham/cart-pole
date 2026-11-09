@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Live view</title>
+<link data-trunk rel="rust" data-wasm-opt="0">
+<style>
+:root {
+  color-scheme: light dark;
+  --page: #f6f7f7; --text: #1d2629; --quiet: #586569; --line: #d3dadc; --panel: #ffffff;
+  --accent: #0f6f7f; --accent-text: #ffffff; --ok: #1a7f4b; --warn: #b4560b;
+  --left: #ff9f1a; --right: #d63cff; --pivot: #2ecc40; --end: #2d8cff;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --page: #14191b; --text: #e6ecee; --quiet: #9eabaf; --line: #313b3f; --panel: #1d2427;
+    --accent: #2a9bb0; --accent-text: #06181c; --ok: #48c088; --warn: #ec9a4e;
+  }
+}
+* { box-sizing: border-box; }
+body { margin: 0 auto; max-width: 900px; padding: 16px; background: var(--page); color: var(--text);
+  font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+h1 { font-size: 26px; margin: 8px 0; }
+h2 { font-size: 18px; margin: 28px 0 8px; }
+p { margin: 8px 0; }
+code { font-size: 14px; }
+button { font: inherit; font-weight: 600; padding: 9px 12px; border-radius: 6px; border: 0; cursor: pointer;
+  background: var(--accent); color: var(--accent-text); min-width: 140px; touch-action: manipulation; }
+button:disabled { background: var(--line); color: var(--quiet); cursor: not-allowed; }
+#status { padding: 8px 12px; border-radius: 6px; background: var(--panel); border: 1px solid var(--line);
+  overflow-wrap: anywhere; }
+.frame { position: relative; margin: 12px 0; aspect-ratio: 728 / 544; background: #000;
+  border: 1px solid var(--line); }
+.frame img, #boxes svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+rect { fill: none; stroke-width: 3; }
+text { font: 600 16px system-ui, sans-serif; stroke: #000; stroke-width: 3px; paint-order: stroke; }
+rect.box-left { stroke: var(--left); } text.box-left { fill: var(--left); }
+rect.box-right { stroke: var(--right); } text.box-right { fill: var(--right); }
+rect.box-pivot { stroke: var(--pivot); } text.box-pivot { fill: var(--pivot); }
+rect.box-end { stroke: var(--end); } text.box-end { fill: var(--end); }
+.swatch { display: inline-block; width: 12px; height: 12px; margin-right: 8px; border-radius: 2px; }
+.swatch.box-left { background: var(--left); } .swatch.box-right { background: var(--right); }
+.swatch.box-pivot { background: var(--pivot); } .swatch.box-end { background: var(--end); }
+.table-wrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; background: var(--panel); }
+th, td { border: 1px solid var(--line); padding: 7px 9px; text-align: left; font-size: 14px; }
+th { color: var(--quiet); font-weight: 600; }
+td.good { color: var(--ok); font-weight: 700; }
+td.bad { color: var(--warn); font-weight: 700; }
+</style>
+</head>
+<body>
+<h1>Live view</h1>
+<p>Aim the camera with this. It shows what the camera sees, with a box on every marker the detector
+finds, so you can check that the whole rail is in the picture, and that End stays in it with the pole
+held level at each end of the rail.</p>
+<p><button id="toggle" type="button" disabled>Start</button></p>
+<p id="status" role="status">Asking the Orin for the live view.</p>
+<div class="frame"><img id="image" alt="The latest frame the detector looked at"><div id="boxes"></div></div>
+
+<h2>The markers</h2>
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Marker</th><th>Found lately</th><th>Where now (px across, down)</th></tr></thead>
+  <tbody id="rows"><tr><td colspan="3">Nothing yet.</td></tr></tbody>
+</table>
+</div>
+
+<h2>How to read this</h2>
+<p><b>What you see.</b> The camera's full picture halved to 728 by 544 pixels in greyscale, the
+frames the detector and the calibration use, taken with the same shutter and gain
+(<code>[stream]</code> in the Orin's <code>settings.toml</code>). Pixel positions count from the
+picture's top left corner. The picture here changes a few times a second, but the detector looks
+at every frame the camera sends, up to 60 a second.</p>
+<p><b>Found lately.</b> In how many of the latest frames each marker was found: green when it was
+found in every one, orange when it was missed in any. A marker that flickers between found and
+missed is at the edge of what the detector can see, and is worth moving further into the
+picture.</p>
+<p><b>Aiming for the calibration.</b> The calibration measures the pole hanging at each end and at
+the centre, held level pointing away from the centre at each end, and held straight up at each end.
+With the cart at an end, hold the pole level and check that End is found in every frame; then do
+the same at the other end.</p>
+<p><b>The camera is shared.</b> The live view and a calibration measurement use the same camera, so
+a measurement stops this view, and this view cannot start while a measurement runs. The view stops by itself when
+no page has looked at it for a few seconds (<code>[live] idle_stop_s</code>), so a closed page never
+keeps the camera from the calibration.</p>
+</body>
+</html>

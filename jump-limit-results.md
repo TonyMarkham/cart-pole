@@ -11,8 +11,8 @@ run found.
 
 **Result: `m` = 1,210,937 pulses/s², a measured limit.** At 15 µm of
 belt per pulse, that is a cart acceleration of 18.2 m/s². It was written
-into the reward's table in `trainer/gym.toml` on 2026-10-28,
-and moved the same day to `trainer/settings.toml` `[drive] jump_limit`,
+into the reward's table in `__synthetic__/trainer/python/gym.toml` on 2026-10-28,
+and moved the same day to `__synthetic__/trainer/python/settings.toml` `[drive] jump_limit`,
 where the drive's ramp reads it (`synthetic-loop-dia.md`, *The
 acceleration ceiling*).
 

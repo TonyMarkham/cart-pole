@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Measure the lens</title>
+<link data-trunk rel="rust" data-wasm-opt="0">
+<style>
+:root {
+  color-scheme: light dark;
+  --page: #f6f7f7; --text: #1d2629; --quiet: #586569; --line: #d3dadc; --panel: #ffffff;
+  --accent: #0f6f7f; --accent-text: #ffffff;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --page: #14191b; --text: #e6ecee; --quiet: #9eabaf; --line: #313b3f; --panel: #1d2427;
+    --accent: #2a9bb0; --accent-text: #06181c;
+  }
+}
+* { box-sizing: border-box; }
+body { margin: 0 auto; max-width: 1000px; padding: 16px; background: var(--page); color: var(--text);
+  font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+h1 { font-size: 26px; margin: 8px 0; }
+h2 { font-size: 18px; margin: 28px 0 8px; }
+p { margin: 8px 0; }
+code { font-size: 14px; }
+button { font: inherit; font-weight: 600; padding: 9px 12px; border-radius: 6px; border: 0; cursor: pointer;
+  background: var(--accent); color: var(--accent-text); min-width: 120px; touch-action: manipulation; }
+button:disabled { background: var(--line); color: var(--quiet); cursor: not-allowed; }
+button.quiet { background: var(--line); color: var(--text); }
+.row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 8px 0; }
+#status { flex: 1; min-width: 240px; padding: 8px 12px; border-radius: 6px; background: var(--panel);
+  border: 1px solid var(--line); font-size: 18px; font-weight: 600; }
+.frame { position: relative; margin: 8px 0; aspect-ratio: 1456 / 1088; background: #000; border: 1px solid var(--line); }
+.frame img, #overlay svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+rect.target { fill: none; stroke: #ff2d2d; stroke-width: 8; }
+rect.target.held { stroke: #2ecc40; }
+polygon.shape { fill: none; stroke: #ffffff; stroke-width: 4; stroke-dasharray: 16 10; }
+polygon.board { fill: none; stroke: #ff9f00; stroke-width: 4; }
+polygon.marker { fill: none; stroke: #ffd400; stroke-width: 3; }
+.bars { display: grid; gap: 6px; margin: 8px 0; }
+.bar[hidden] { display: none; }
+.bar span { display: block; font-size: 15px; font-weight: 600; }
+.track { position: relative; height: 18px; border-radius: 9px; background: var(--line); overflow: hidden; }
+.track .fill { height: 100%; width: 0; background: #ff2d2d; transition: width 0.15s; }
+.track .fill.good { background: #2ecc40; }
+.track .mark { position: absolute; top: 0; bottom: 0; width: 3px; margin-left: -1px; background: var(--text); }
+.track .mark[hidden] { display: none; }
+#result { padding: 8px 12px; border-radius: 6px; background: var(--panel); border: 1px solid var(--line); }
+#result:empty { display: none; }
+</style>
+</head>
+<body>
+<h1>Measure the lens</h1>
+<p>The lens bends the picture, most at its edges, and the calibration's matrix cannot follow a bend.
+This measures the bend with the printed board: hold the board about 1 m from the camera, over the
+dashed shape inside the red box, until the box turns green and stays green for a moment. That still
+is kept and the box moves on by itself: first across the whole picture with the board flat, then
+with the board turned. Then press Solve.</p>
+<div class="row">
+  <button id="toggle" type="button" disabled>Start</button>
+  <p id="status" role="status">Asking the Orin.</p>
+</div>
+<div class="bars">
+  <div class="bar" id="turn" hidden><span id="turn-label"></span><div class="track"><div class="fill" id="turn-fill"></div><div class="mark" id="turn-mark" hidden></div></div></div>
+  <div class="bar" id="hold"><span id="hold-label"></span><div class="track"><div class="fill" id="hold-fill"></div><div class="mark" id="hold-mark" hidden></div></div></div>
+  <div class="bar" id="progress"><span id="progress-label"></span><div class="track"><div class="fill" id="progress-fill"></div><div class="mark" id="progress-mark" hidden></div></div></div>
+</div>
+<div class="frame"><img id="image" alt="What the camera sees now"><div id="overlay"></div></div>
+<div class="row">
+  <button id="picture" type="button" class="quiet" disabled>Save picture</button>
+  <button id="skip" type="button" class="quiet" disabled>Skip this position</button>
+  <button id="restart" type="button" class="quiet">Start over</button>
+  <button id="solve" type="button" disabled>Solve</button>
+</div>
+<p id="result" role="status"></p>
+
+<h2>How to read this</h2>
+<p><b>The dashed shape</b> is the board as the camera sees it 1 m away, worked out on the camera's
+own scale, measured from the board: its 32.25 mm markers measured 18.5 pixels at 2 m, so at 1 m a
+pixel is 32.25 ÷ 18.5 × ½ = 0.872 mm, and the 258 × 172 mm of squares are 296 × 197 pixels.
+<b>The red box</b> is 20% larger, 355 × 237 pixels, so a hand-held board fits inside it with room
+(<code>box_margin</code>; <code>[lens]</code> and <code>[lens_board]</code> in the Orin's
+<code>settings.toml</code>).</p>
+<p><b>The positions.</b> The first 25 tile the whole picture row by row from the top left, with the
+board flat, facing the camera, so the stills reach every edge and corner, where the lens bends
+most. The next 20 put the box at the centre and at each corner, and ask for the board turned 30°
+with its left, right, top or bottom side, as the picture shows it, farther from the camera: the
+dashed shape is drawn turned, with that side shorter. Turned stills are needed because stills of a
+flat board, wherever it is held, all tell OpenCV the same thing about the lens (Zhang, 2000, the
+method <code>calibrateCamera</code> is built on). <b>Skip this position</b> moves on when the board
+cannot be held there.</p>
+<p><b>Green.</b> The yellow outlines are the board's markers the camera finds, and the orange line
+is the board's edge they put it at. The box turns green when at least 11 of the board's 15 corners
+are found and everything found is inside the box, and, at a turned position, the named side is
+turned at least 20° away (<code>min_tilt_deg</code>). One missed marker costs at most 4 corners, so it
+does not stop a still being kept. The still is kept once the box has stayed green for
+<code>hold_frames</code> frames in a row, so a board still moving into place is not kept.</p>
+<p><b>The bars.</b> <b>Turn</b>, at turned positions only, shows how far the board is turned now: full
+at the 30° aimed for, with a tick at the 20° that counts, green from there. It is worked out from
+the corners found with OpenCV's <code>solvePnP</code>, on the camera's scale measured from the
+board, so it does not depend on how far away the board is held. Aiming for 30° by eye, the board
+measured about 22–26°, which is why 20° counts. <b>Held</b> fills as the frames that count add up,
+and <b>positions done</b> counts the positions kept or skipped.</p>
+<p><b>Save picture</b> saves what the camera sees now on the Orin, with the box and the outlines
+drawn in, so it can be looked at from another room. It is for looking at only: it is not a kept
+still, and it does not move the box.</p>
+<p><b>Nothing is lost.</b> Each still is saved on the Orin as it is kept, and the next position is
+remembered, so a closed page or a restart carries on where it was. <b>Start over</b> forgets them
+all. The camera is shared: this view stops when the live view or a calibration measurement starts.</p>
+<p><b>Solve.</b> OpenCV's <code>calibrateCamera</code> works out the lens's centre, its focal lengths
+and its bend from the kept stills. The result is stored in <code>lens.json</code> on the Orin, with a
+dated copy in <code>saved/</code>. The calibration does not use it yet.</p>
+</body>
+</html>

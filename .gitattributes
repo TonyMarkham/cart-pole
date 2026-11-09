@@ -1,0 +1,4 @@
+# A policy file is only ever replaced whole, never merged or edited a part at a
+# time (user, 2026-11-02): git shows no line-by-line diff of it and never merges
+# two versions, so a conflict is settled by keeping one file or the other.
+*.npz binary

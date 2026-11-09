@@ -1,0 +1,5 @@
+# The USB serial line's speed, bits per second: SCI9, through the board's
+# ESP32-S3 bridge to the USB connector. It must match the PC's bench-host
+# (bench-host.toml, [r4] baud). Never 1,200 or 2,400: opening the port at
+# either resets the board (the controller's config/usb.toml).
+baud = 115_200

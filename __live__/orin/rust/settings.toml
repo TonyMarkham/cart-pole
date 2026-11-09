@@ -1,0 +1,167 @@
+# The webserver's settings. Read once when it starts, from the folder it runs
+# in, so run it from this folder (its README, deployment step 9).
+
+[server]
+# Where the server listens: 0.0.0.0 is every network the Orin is on, and 8080
+# the port every page and image-push is reached at. image-push's default
+# --server and the README's links name this port.
+address = "0.0.0.0:8080"
+
+# The largest PNG /image accepts, bytes: 16 MB, 16 × 1024 × 1024. A larger one
+# is answered 413.
+max_image_bytes = 16_777_216
+
+[arduino]
+# Where the rig's Arduino listens, for the /arduino page. The board prints its
+# address on its USB serial port after it joins the WiFi; on this network it
+# has been 192.168.0.220. The port must match the firmware's [wifi] udp_port.
+address = "192.168.0.220"
+port = 4_210
+
+# How long to wait for the board's answer before the page says it gave none,
+# ms. A datagram can be lost on WiFi, and nothing resends it: the next reading
+# simply asks again. Chosen, not measured.
+timeout_ms = 1_000
+
+# The pause between the page's readings, ms. A reading happens only while the
+# page is open; between readings the board sleeps.
+poll_ms = 1_000
+
+# How long to wait for the board's answer to a move, ms. The board answers only
+# once the cart has stopped, and a seek stops by itself at the firmware's
+# seek_timeout_ms, 34,000, so this must be longer than that. If it runs out, the
+# answer was lost or the board is off, and the cart may still have moved.
+move_timeout_ms = 40_000
+
+# The most pulses a move to the centre can take, for working out how long to wait
+# when the page asks for a slow one: half the rail, measured at 29,910 on
+# 2026-11-01, rounded up. Only the wait uses it; the board measures its own span.
+half_span_pulses = 30_000
+
+# How many times to send the board a Stop, and the pause between them, ms. A
+# datagram can be lost on WiFi and nothing resends it, so one press sends several.
+# The first to arrive ends the move, and the board ignores the rest. Chosen, not
+# measured.
+stop_sends = 3
+stop_gap_ms = 50
+
+[calibration]
+# Where calibrate_service.py listens, on this computer: host and port must match
+# [service] in ../python/settings.toml.
+service = "http://127.0.0.1:8090"
+
+# How long to wait for the service's answer, ms. It answers at once, because a
+# measurement runs on behind it, so this is only for a service that has hung.
+timeout_ms = 5_000
+
+# How often the page looks at a running measurement, ms. It sets how often the
+# slide show changes, and costs the measurement nothing. The viewer's Refresh
+# asks the live view this often for its first frame.
+poll_ms = 200
+
+# How long the viewer's Refresh waits for the live view's first frame, ms. The
+# camera takes about a second to start, and the service skips its settling
+# frames before the first one it shows.
+refresh_timeout_ms = 10_000
+
+[run]
+# Where the brain listens, on this computer: it must match [brain] address
+# below. The webserver's /run/start, /run/stop and /run/status forward there,
+# and its camera jobs ask it whether a run is going.
+brain = "http://127.0.0.1:8091"
+
+# How long to wait for the brain's answer, ms. A Run answers at once; an idle
+# answers once the loop has stopped, within one pass of the loop, so this is
+# only for a brain that has hung.
+timeout_ms = 5_000
+
+
+
+# The brain's own tables, read by the brain program, not the webserver
+# (real-loop-dia.md, The run and idle states; the brain's README).
+
+[brain]
+# Where the brain answers the webserver's requests, the Orin's own address. It
+# must match [run] brain above.
+address = "127.0.0.1:8091"
+
+# The worker: the Orin's Python, which holds the TensorRT engine and the policy
+# for the brain. worker_dir is the Python project's folder on the Orin (a leading
+# ~ is the home folder), and worker the command run there. uv runs it in the
+# project's own environment, the one the calibration service runs in.
+worker_dir = "~/live-orin-python"
+worker = ["uv", "run", "python", "src/brain_worker.py"]
+
+# How long the worker gets to load the engine and the policy and say it is
+# ready, ms. The engine loads in a few seconds; a minute leaves room for a cold
+# start of uv itself.
+worker_start_timeout_ms = 60_000
+
+# The wait after each command before the next frame is taken, ms (user,
+# 2026-11-02; real-loop-dia.md, Timing). The brain takes an image, gets the
+# points from detection, builds the inputs, asks the policy for a command and
+# sends it at once, then waits this long; the next image is the camera's next
+# frame after the wait. At 0 the loop runs as fast as the Orin can, about one
+# command per camera frame. 0 is what the policy trained with since 2026-11-08:
+# the synthetic loop's next picture is the camera's next frame after the send,
+# with no wait added (the trainer's settings.toml [orchestrator]
+# next_frame_ready_*, 0 to 16.7 ms).
+delay_ms = 0
+
+# The gap between the pre-warmed pool's six entries, ms: before the first frame
+# the pool holds six entries with no detection, this far apart, so the first
+# frame's ages are 0, -32, -64, -96, -128 and -160. 32 is the mean gap between
+# the synthetic loop's pre-warm captures, 32.5 ms (15.5 to 49.5 ms), on its 2 ms
+# grid (synthetic-loop-dia.md, The initial pool).
+pre_warm_gap_ms = 32.0
+
+# How long to wait for a frame before the camera counts as gone, ms. The camera
+# makes one every 16.7 ms, so two seconds without one means it has stopped.
+frame_timeout_ms = 2_000
+
+# Where each run's folder goes: runs/YYYYMMDD_HHMMSS (UTC, the Run press), each
+# with frames.jsonl (real-loop-dia.md, The log). Outside ~/orin-cam, because a
+# deploy replaces that folder whole (DEPLOY.md, step 8). A leading ~ is the home
+# folder.
+runs_dir = "~/orin-runs"
+
+# The fitted matrix: matrix_path in the Python's settings.toml, [calibration].
+# A leading ~ is the home folder.
+homography = "~/live-orin-python/homography.json"
+
+# Where calibrate_service.py listens, the same as [calibration] service above:
+# before opening the camera the brain asks it GET /busy, and refuses Run while
+# it is busy. How long to wait for its answer, ms; no answer means it is not
+# running.
+service = "http://127.0.0.1:8090"
+service_timeout_ms = 2_000
+
+[camera]
+# The sensor and how the brain runs it: the same values as [camera] and
+# [stream] in the Python's settings.toml, because the matrix was fitted on the
+# frames those made, and the detector was trained on them. Change one, change
+# the other.
+
+# Which camera, and which of its modes. Mode 0 is the sensor's full frame,
+# 1456 x 1088 at 60 frames/s (v4l2-ctl --list-formats-ext on robo-orin).
+sensor_id = 0
+sensor_mode = 0
+width = 1_456
+height = 1_088
+framerate = 60
+
+# The camera software's noise reduction and edge sharpening, 0 = off, so the
+# picture changes as little as possible from what the sensor saw.
+tnr_mode = 0
+ee_mode = 0
+
+# The shutter, ns: 1 ms, locked. With a global shutter that keeps the swinging
+# pole's end sharp, which automatic exposure would not.
+exposure_ns = 1_000_000
+
+# The sensor's gain, locked: tenths of a decibel, so 180 is 18 dB. On 2026-11-02
+# at 1 ms, gain 180 found all four markers in 5 of 5 stills, and gain 8 none.
+gain = 180
+
+# Frames thrown away after the camera starts, while it settles.
+settle_frames = 30

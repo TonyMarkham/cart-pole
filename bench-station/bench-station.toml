@@ -3,7 +3,7 @@
 # change. Relative paths resolve against this file's folder.
 #
 # Rates are pulses/s, the unit the Arduino drives. At the rig's 15 µm a
-# pulse (96 mm per turn ÷ (200 × 32), trainer/settings.toml [drive]),
+# pulse (96 mm per turn ÷ (200 × 32), __synthetic__/trainer/python/settings.toml [drive]),
 # 1,000 pulses/s is 15 mm/s.
 
 [station]

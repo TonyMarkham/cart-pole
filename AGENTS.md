@@ -12,22 +12,23 @@ swinging pole, four ArUco markers attached, designed in FreeCAD, imported into
 Unity as a STEP assembly (via the greyhound packages), and rendered there to
 generate labeled synthetic-vision datasets. The trained detector
 (YOLO11n, `cp2-640-base`; see *The trained detector*) later runs on a
-Jetson Orin Nano Super (replacing the Raspberry Pi 5, user 2026-10-23:
+Jetson Orin Nano Super (replacing the Raspberry Pi 5:
 TensorRT FP16 built from the ONNX export, *The real robot*) with the Pi
 global-shutter camera (IMX296) against the real rig. The balance policy
 trains in the **synthetic loop** (`synthetic-loop-dia.md`, the source of
 truth for the loop plans): the Rust orchestrator steps MuJoCo
 in-process, the synthetic Orin triggers the standalone Unity player
 (`SimulationLoop.exe`) over WebSocket and detects the markers in its
-frames, and the trainer receives the marker pool for the policy and,
+frames, passing Pivot and End through the matrix its calibration found
+(`synthetic-loop-dia.md`, *Calibration*), and the trainer
+receives that pool, in metres, for the policy and,
 for the reward alone, each capture's true site positions from MuJoCo
-(user, 2026-10-25) and the pole's true speed and centre of mass, with
-its mass, inertia and centre-of-mass distance once per run (user,
-2026-10-28); the policy's input is still the pool. The older
+and the pole's true speed and centre of mass, with
+its mass, inertia and centre-of-mass distance once per run; the policy's input is still the pool. The older
 StateServer TCP bridge (`StateServer.cs` + `vision/gym_state_sender.py`)
 is not part of that loop.
 
-**Not a toy** (user, 2026-10-24). Every part stands in for the real rig
+**Not a toy** Every part stands in for the real rig
 and keeps its real limits: the MJCF comes from the rig's CAD, the command
 is the stepper's pulse rate, and the policy sees only what the robot will
 see — detected markers, with the detector's delay — never the
@@ -35,7 +36,7 @@ simulator's true state. Gymnasium's own `CartPole-v1` and
 `InvertedPendulum-v5` are reference tasks only (`gymnasium-research.md`):
 never the task, and never a shortcut around the loop.
 
-**Written for laymen** (user, 2026-10-28). The repo and all its features
+**Written for laymen** The repo and all its features
 are to be published so that a layman can reproduce and understand every
 aspect. Every doc, comment and explanation is written for that reader:
 each term explained where it first appears, each number traced to where
@@ -43,16 +44,16 @@ it comes from, each step reproducible from the repo alone. No reward
 change lands until its ELI-5 explanation is written and the user has
 approved it.
 
-**The reward's source of truth is `trainer/reward-plan.md`** (user,
-2026-10-28), the ELI-5 explanation of the reward: r = r_tip ×
-r_target_speed × r_cart × r_reach × r_speed (r_cart added 2026-10-29,
-user; the same day r_tip's star moved onto the cart and r_reach kept the
-fixed one, user; 2026-10-30, user: r_target_speed and r_speed replaced
+**The reward's source of truth is `__synthetic__/trainer/python/reward-plan.md`** 
+the ELI-5 explanation of the reward: r = r_tip ×
+r_target_speed × r_cart × r_reach × r_speed (r_cart added 2026-10-29;
+the same day r_tip's star moved onto the cart and r_reach kept the
+fixed one; 2026-10-30: r_target_speed and r_speed replaced
 r_energy, plugin `tip_speed_cart_centre`), every input MuJoCo's, its values one `gym.toml` table per factor. The root `reward-plan.md` it replaced was deleted
 on 2026-10-28 (in git history at `1e6a1001`); older records that cite it
 say so.
 
-**MuJoCo is the source of truth** (user, 2026-10-28). Wherever MuJoCo
+**MuJoCo is the source of truth** Wherever MuJoCo
 has a value the reward, the episode end or the measures need, the value
 is MuJoCo's, sent by the orchestrator: never worked out in Python or Rust
 from other numbers, and never a hand calculation standing in for it,
@@ -71,6 +72,22 @@ adds repo structure around them, never overrides them.
 
 ## Working with the user
 
+- **The user's word is the record** "NEVER, EVER TREAT ME
+  AS A LIAR AGAIN"). When the user says what they decided or asked for, it is
+  written down as they say it now. Never look for proof, never set their
+  earlier words against them, never ask them to pick between them. Worked
+  failure: told that the no-hit limit had been asked for the day before, the
+  agent searched the user's session transcripts for it and asked them to choose
+  between two of their own messages.
+- **Read nothing on the user's computer outside this repo**.
+  This includes Claude Code's own session
+  transcripts, the sibling checkouts (`D:\git\greyhound-snake`,
+  `D:\git\unor4-wifi-interrupt-bridge`) and any other folder.
+  Where a question needs something outside the repo, ask the user. Worked
+  failure: the agent searched six session transcripts for the user's earlier
+  words, and before that read the bridge fork's code, unasked.
+  **The one exception:** `D:\git\unor4-hal` may be read, read-only. Nothing in it is ever
+  written.
 - Follow the scope of the user's explicit request. Do not assume permission
   to perform additional work merely because it would advance the project.
 - **Unity validation is the user's.** Compilation, scene behavior,
@@ -83,14 +100,14 @@ adds repo structure around them, never overrides them.
   alternative, or re-open it in later answers. The only acceptable
   objection is one sentence showing a contradiction with an established
   constraint or a verified fact.
-- **Tunable values live in a toml, never in code** (user, 2026-10-24).
+- **Tunable values live in a toml, never in code**
   Any value someone might change between runs — a rate, a period, a
   count, a length, a port, a seed, a path — goes in a toml the code
   reads (the trainer's `settings.toml`, or a file it names, like
   `[trainer] gym`), so variants can sit side by side. Only fixed facts
   copied from a contract stay as named constants in code, each citing
   its source (the frame size, the rig's top rate, the 2 ms grid).
-- **An exact direction is applied as given** (user, 2026-10-24). When the
+- **An exact direction is applied as given** When the
   user specifies the edit itself — the text, the file, the place — make
   that edit. If it has a consequence, state it once, plainly, in the
   user's terms ("as placed, the Orin receives `--gym` and exits at
@@ -118,15 +135,15 @@ adds repo structure around them, never overrides them.
   as a plan. (Worked example: `ArUco.md` specifies `DICT_4X4_50` ids 0–3;
   the landed markers are `DICT_4X4_1000` tags 376/596/920/937.)
 - **`synthetic-loop-dia.md` is the single source of truth for the
-  synthetic loop's design** (user, 2026-10-23). Where a loop plan
+  synthetic loop's design** Where a loop plan
   (a participant plan) disagrees with the diagram, the
   diagram is right and the plan is out of date. A change to the loop's
   design lands in the diagram first; the plans follow it. The diagram is
   still a plan: it is the truth for what the loop is meant to be, never
   for what the code does today — verify that against landed sources, as
   above.
-- **Truth flows one way: diagram → participant plans → code** (user,
-  2026-10-23). A participant's plan is written from the diagram alone,
+- **Truth flows one way: diagram → participant plans → code** 
+  A participant's plan is written from the diagram alone,
   never from the code. Code that disagrees with its plan is not a
   conflict to raise: it is work to do, a step in that plan.
 - **Separate requirement from recommendation.** State invariants as
@@ -134,16 +151,26 @@ adds repo structure around them, never overrides them.
   into an instruction.
 - Clearly distinguish source inspection from an executed build or test.
   Do not claim validation that has not actually happened.
+- **No JavaScript** Browser code in this repo is Rust
+  compiled to WebAssembly, the choice orin-cam made on purpose to avoid all
+  JavaScript except the absolutely necessary interop (`trunk`'s generated
+  loader and calls through `web-sys`). See
+  `__live__/orin/wasm/viewer` and `__live__/orin/wasm/arduino`.
+  Never hand-write JavaScript. Worked failure: the first `/arduino` page was
+  about 165 lines of it, with the viewer crate right beside it.
+- **Clippy must be clean, and `unwrap()` is forbidden except in tests**. The workspace's `Cargo.toml` denies it, and the root
+  `clippy.toml` lets tests use it. Check with `cargo clippy --all-targets
+  --no-deps` from the repo root, before saying Rust work is done.
 - **Python policy.** Always `uv`, never pip; install nothing without
   permission (a standing directive). No Python on the dataset-verify path —
   the Python checker retired; verification runs in-process through the
   `com.greyhound.vision` package's native shim. Remaining Python lives
-  in five places, each for a stated reason: `trainer/` (the RL trainer,
-  a `uv` project around Gymnasium, the learning tooling, user
-  2026-10-24, `trainer-plan.md`), `freecad/tools/step-mass.py`
+  in five places, each for a stated reason: `__synthetic__/trainer/python/` (the RL trainer,
+  a `uv` project around Gymnasium, the learning tooling,
+  `trainer-plan.md`), `freecad/tools/step-mass.py`
   (FreeCAD's scripting API is Python-only), `vision/gym_state_sender.py`
-  (the gym-side client), `orin/` (the synthetic Orin, a `uv` project:
-  detection on the robot is Python, user 2026-10-23, because OpenCV +
+  (the gym-side client), `__synthetic__/orin/python/` (the synthetic Orin, a `uv` project:
+  detection on the robot is Python, because OpenCV +
   TensorRT beat the Rust POC on the Orin, `detector-plan.md` *Results*),
   and `training/` (the detector training, a `uv` project around
   Ultralytics).
@@ -160,7 +187,7 @@ adds repo structure around them, never overrides them.
   and it cost three escalations before the convert_proposals.py
   explanation finally led with "real frames have no geometry, so
   labels can only come from guess-then-correct." That sentence should
-  have been the first response, not the fourth. (2026-10-16)
+  have been the first response, not the fourth.
 - **Corrections get weighed before they get answered.** When the user
   corrects you, the default assumption is that the correction is
   right — weigh it genuinely first. The session record is that the
@@ -170,7 +197,7 @@ adds repo structure around them, never overrides them.
   content, never as a default stance that the correction was wrong.
   Treating a steering input as a debate opening is the failure mode.
   The correct response to a correction: apply it, confirm it in one
-  line, stop. (2026-10-16)
+  line, stop.
 - **A file with an outstanding issue is frozen.** While any question,
   correction, or unresolved discussion about a file's content is
   open, that file gets NO edits — not even "helpful" ones. Edits made
@@ -178,8 +205,8 @@ adds repo structure around them, never overrides them.
   "landed" conclusions the user never reached (observed: marking a
   still-running training run as early-stopped). The freeze lifts when
   the user resolves the issue or explicitly requests the change; a
-  "fix this" instruction IS the resolution. (2026-10-16)
-- **Say what you don't understand** (user, 2026-10-28). When a request
+  "fix this" instruction IS the resolution.
+- **Say what you don't understand**. When a request
   is not fully understood, the first thing said is exactly which part,
   plainly ("I understand the nesting, but not how deep it goes or what
   it replaces"). Never cover it with a "no", a claim of understanding,
@@ -192,10 +219,18 @@ adds repo structure around them, never overrides them.
   rationale** — never recite what the adjacent code already says.
 - Preserve existing user changes. Do not commit, stage, or discard changes
   unless explicitly requested.
+- **Never add any byline to any commit message, ever**.
 - **Anything about this repo is recorded in this file, never in agent
-  memory** (user, 2026-10-28): a rule, decision or fact about the repo
+  memory**: a rule, decision or fact about the repo
   goes here (or into the plan it belongs to), where the user can read
   and correct it.
+- **Never use Claude Code's decision box**. No question box and
+  no answer buttons at the end of a turn: no `ask` or `actions` in the
+  wrap-up, and no `AskUserQuestion`. A question for the user goes in the
+  reply's text.
+- **One question at a time**. When the user has
+  decisions to make, each message carries one: the situation, the options
+  and what each leads to. The next comes only after the user has answered.
 
 ## How greyhound content is consumed (verify before asserting paths)
 
@@ -205,7 +240,8 @@ adds repo structure around them, never overrides them.
   is the sibling checkout `D:\git\greyhound-snake`, whose `dist/package/`
   is what the editor actually loads.
 - The Rust side resolves to the same sibling checkout: `orchestrator.toml`'s
-  `mujoco_dir` is `../greyhound-snake/dist/mujoco/…` from the repo root.
+  `mujoco_dir` is `../../../../greyhound-snake/dist/mujoco/…` from
+  `__synthetic__/orchestrator/rust/`, the file's folder.
 - There is no greyhound submodule (dropped 2026-10-22: nothing built
   from it, and the `dist/` everything loads is gitignored in greyhound).
   The greyhound version anything runs against is whatever the sibling
@@ -275,7 +311,7 @@ adds repo structure around them, never overrides them.
   `simulation.cart-pole.synthetic-data-gen` package's `Runtime/`;
   `MarkerMaterialSet` no longer exists. Inventory verified by file list
   (2026-10-23); roles by the files' own headers.
-- **The Executive desk is excluded by decision** (2026-10-14):
+- **The Executive desk is excluded by decision**:
   `Desk (Executive).asset` (in the `synthetic-data-gen` package,
   `Runtime/Props/Desks/`) is deliberately not wired into any generation
   set's `m_Desks` list (`Assets/Simulation/GenerationSets/Set-*.asset`) —
@@ -314,23 +350,82 @@ adds repo structure around them, never overrides them.
   marker and desk SOs) and `simulation.cart-pole.sim-loop`
   (`SimulationLoopController`, the standalone player's renderer for the
   synthetic loop, `unity-player-plan.md`).
+- `bench-station/` — kept for one reason: to remind the user
+  to bring the skip test, the jump-limit experiment and its `POST /trial`
+  route, into `__live__/rpi/rust/crates/arduino-manager`, which replaces it for
+  everything else. Do not extend it.
+- `__synthetic__/` — the synthetic loop's code, moved here on 2026-11-01
+  and kept apart from `__live__/`. Each part is a folder by language:
+  `orchestrator/rust/`, `orin/python/` and `trainer/python/`. The Unity project
+  and its sim-loop package, `training/`, `datasets/` and the root plans stay
+  where they are. `__synthetic__/README.md` has the layout.
 - **The Rust workspace** (`Cargo.toml` at the repo root; `aruco/`
-  excluded) — the synthetic loop's parts, each with its plan:
+  excluded) — the synthetic loop's parts, each with its plan, under
+  `__synthetic__/orchestrator/rust/crates/`:
   `orchestrator/` (the loop's driver; it began as the Unity leg's stub),
   `physics/` (MuJoCo in-process, linked from `orchestrator.toml`'s
-  `mujoco_dir`; the MJCF and its names come from the trainer's
-  `settings.toml` `[mjcf]` on the orchestrator's command line,
-  `mujoco-plan.md`), `arduino/` (the Arduino firmware, one source for
-  the rig and the loop's synthetic Arduino, `synthetic-arduino-plan.md`).
+  `mujoco_dir`, the file beside `crates/`; the MJCF and its names come from
+  the trainer's `settings.toml` `[mjcf]` on the orchestrator's command line,
+  `mujoco-plan.md`), `arduino/` (the loop's synthetic Arduino,
+  `synthetic-arduino-plan.md`).
   Roles by the crates' own header comments and the plans. The Rust
-  detector crate, `object-detection/`, was retired on 2026-10-23 (user):
+  detector crate, `object-detection/`, was retired on 2026-10-23:
   a Pi-era POC whose question `detector-plan.md` answered, the Python
   synthetic Orin being faster on the Orin. Its `ObjectDetection.toml`
-  moved to `orin/settings.toml`, the Orin's detector configuration.
-- `orin/` — the synthetic Orin, a `uv` project: Python + TensorRT
+  moved to `__synthetic__/orin/python/settings.toml`, the Orin's detector configuration.
+- `__live__/` — what runs on the real rig, one folder per computer.
+  `__live__/README.md` says what is built, moved and started where; each
+  part's own README has the commands. **It is kept apart from the repo**: nothing in it runs on the PC. `__live__/orin/rust` and
+  `__live__/rpi/rust` are each a workspace with its crates in `crates/`, pushed
+  to and built on that computer, so nothing in them points outside them.
+  **The Orin's brain is `__live__/orin/rust/crates/brain`** (its README), the
+  Rust orchestrator that runs the balance loop on the rig, with its Python
+  worker `__live__/orin/python/src/brain_worker.py` for detection and the
+  policy's inference; both built 2026-11-07 from `real-loop-dia.md`, and
+  first run on the rig 2026-11-09, where the 6M-step policy (run
+  `20261108_115227`) balanced the pole. Only
+  the firmware (`__live__/arduino/rust/crates/calibration` and
+  `__live__/arduino/rust/crates/controller`) and the browser pages
+  (`__live__/orin/wasm`) are built on the PC, as root workspace members.
+  **`controller` replaces `calibration`**: `controller`,
+  begun 2026-11-05, is the production firmware, and once everything is
+  implemented in it, `calibration` goes away. Until then `calibration` is kept
+  as it is, for reference.
+  **The one exception that runs on the PC**: host tests of
+  the firmware's pure rules (the ramp, the soft limit, the command unpacking),
+  as checks only, in a small `no_std` library crate beside the firmware that
+  the firmware itself uses on the board. Nothing that drives the rig runs on
+  the PC.
+  The firmware crate keeps one type per file, each file named after its type, and its `use` statements put `use crate::…` first, then a
+  blank line, then the external crates.
+- `__workbench__/` — measurements on the HAL's bench (begun 2026-11-07):
+  the R4 WiFi and R3 on this PC's USB (COM3, COM4), wired as unor4-hal's
+  `Validation.md` describes. Every timing is taken on one clock, the R3's
+  Timer1. `uno_4r/crates/bench-firmware` is R4 firmware copying the
+  controller's MOVING loop with D3 marking each sleep; `uno_r3/` holds the
+  R3's sketches (`awake_timer`); `pc/crates/bench-host` is the PC program
+  that runs the awake test. The WiFi test (gap 7 of `real-timings.md`) has
+  its own pair: `uno_4r/crates/wifi-firmware` (GPT320 as a free-running
+  48 MHz clock, stamps over USB) and `pc/crates/wifi-host` (the USB clock
+  sync and the fit; the PC's clock is the one clock). The apply test (gap 8)
+  has `uno_4r/crates/apply-firmware` (the MOVING loop, D3 flipped per
+  command), `uno_r3/apply_timer` (INT1 on D3, input capture on STEP) and
+  `pc/crates/apply-host`. All six Rust crates are root workspace members,
+  not default members. Gap 1 (the camera) is on the Orin:
+  `orin/rust/crates/camera-timing` in its own workspace, `orin/rust`,
+  pushed to and built on the Orin like `__live__/orin/rust`. It flashes an
+  LED wired to an Orin GPIO pin (`orin/led-circuit.svg`) through
+  `gpiocdev`, which compiles only on Linux, so on the PC only the rest is
+  checked. Gaps 2–6 (the brain's stages) are `orin/rust/crates/stage-timing`
+  in the same workspace: a copy of the brain's loop that drives the live
+  Python worker unchanged, stamps each stage, and sends its datagrams to the
+  PC, not the rig's Arduino. Nothing in `D:\git\unor4-hal` is changed:
+  the bench is borrowed, and the R3's validator part is re-flashed from
+  there afterwards. `__workbench__/README.md` has the steps.
+- `__synthetic__/orin/python/` — the synthetic Orin, a `uv` project: Python + TensorRT
   detection, the 6-entry pool, the WebSocket client (`synthetic-orin-plan.md`).
   The root holds the uv files and `settings.toml` (the detector's
-  settings); the code is in `orin/src/`.
+  settings); the code is in `__synthetic__/orin/python/src/`.
 - `training/` — the detector training, a `uv` project: the numbered
   docs `01`–`07` and appendices, `src/` (`build_dataset.py`,
   `convert_proposals.py`, `dataset_stats.py`), and `runs/` (gitignored;
@@ -341,7 +436,12 @@ adds repo structure around them, never overrides them.
   planned sequence of one run, the source of truth for the loop plans),
   one plan per diagram participant, named after it: `orchestrator-plan.md`, `mujoco-plan.md`,
   `trainer-plan.md`, `synthetic-arduino-plan.md`,
-  `synthetic-orin-plan.md`, `unity-player-plan.md`; `detector-plan.md`
+  `synthetic-orin-plan.md`, `unity-player-plan.md`; `real-loop-dia.md`
+  (the planned sequence of one run on the real rig, the single source of
+  truth for the real plans) and its plans, one per
+  computer: `real-orin-plan.md` (the brain, the webserver and its pages),
+  `real-arduino-plan.md` (the board's firmware) and `real-pi-plan.md`
+  (`arduino-manager`); `detector-plan.md`
   (the retired Rust detector crate's plan, kept for its *Results*: the
   measurements that chose the Orin and Python); `DATASETS.md` (the one dataset format) and
   `GENERATOR.md` (the generator's binding directives, which win over
@@ -355,9 +455,15 @@ adds repo structure around them, never overrides them.
   on 2026-10-26); `reward-research.md` (research, not a plan:
   the published cart-pole swing-up rewards and discounts, quoted from
   their sources, and run 1's episodes scored under each);
+  `real-timings.md` (not a plan: every gap in time on the real loop, from
+  the camera's exposure to the motor's new rate, each with its clock, its
+  method and its measured spread, or TBD; begun 2026-11-07);
+  `real-timing-conclusion.md` (suggestions, not a plan: what
+  `real-timings.md`'s measurements suggest for the synthetic loop's timing
+  draws, and how the draws run in MuJoCo's time; 2026-11-08);
   `trainer-observations.md` (not a plan: the
-  user's journal of how we learned from the policy learning, user
-  2026-10-24. Each training run gets an entry with its reward, its exact
+  user's journal of how we learned from the policy learning.
+  Each training run gets an entry with its reward, its exact
   command, the measurements and what they showed, and each change made
   because of it. The user is new to reinforcement learning and wants the
   information: explain each idea where it comes up, with the numbers,
@@ -386,40 +492,55 @@ The roles and per-class figures are in `training/05-POST_TRAINING.md`
 
 ## The real robot (what the synthetic loop stands in for)
 
-- **The robot's computer is a Jetson Orin Nano Super** (user,
-  2026-10-23), replacing the Raspberry Pi 5: TensorRT FP16 detects in
+- **The robot's computer is a Jetson Orin Nano Super**, replacing the Raspberry Pi 5: TensorRT FP16 detects in
   8–10 ms per frame on it, against 80–125 ms for the best Pi 5 options
   (`detector-plan.md`, *Results*). "The Pi" in older plans names that
   computer's role, the robot side of the loop, not the board. Its code
-  is built on the device: the repo is cloned there and compiled (user,
-  2026-10-22, for the Pi; unchanged for the Orin). Requirement: every
+  is built on the device: the repo is cloned there and compiled (for the Pi; unchanged for the Orin). Requirement: every
   dependency of the robot-side code builds there — aarch64 Linux,
   JetPack 6.2.3 (CUDA 12.6, TensorRT 10.3).
-- **Live and virtual are one source.** The robot computer's code and
-  the Arduino firmware are each one source built two ways: the live
-  build for the hardware, the synthetic build for the loop; only the
-  edges (where frames come from, where commands go) differ. Exception:
-  detection on the robot runs in Python (user, 2026-10-23) — on the
-  Orin, OpenCV pre-processing + TensorRT ran 11.9–14.5 ms per frame
-  against 18.7–19.1 ms for the Rust POC in the same session
-  (`detector-plan.md`, *Results*).
+- **Live and synthetic are kept apart**. This replaces
+  the older rule that each was one source built two ways, and any plan
+  that still says "one source" is out of date. `__live__/` and
+  `__synthetic__/` share no code: what both need is copied. Detection on
+  the robot runs in Python — on the Orin, OpenCV
+  pre-processing + TensorRT ran 11.9–14.5 ms per frame against 18.7–19.1 ms
+  for the Rust POC in the same session (`detector-plan.md`, *Results*).
 - **On the rig, the Orin sends the command packets to the Arduino over
   WiFi.**
-- **The orchestrator alone times perception** (user, 2026-10-30). In the
-  synthetic loop it draws when each frame happens, 20–30 Hz by default
-  (`trainer/gym.toml` `[env]`), and nothing happens between commands: no
-  render, no detection, no message (`synthetic-loop-dia.md`). The synthetic
+- **The orchestrator alone times perception**. In the
+  synthetic loop it makes each episode's schedule at the reset, from the
+  rig's measured stretches (`__synthetic__/trainer/python/settings.toml`
+  `[orchestrator]`, `real-timing-conclusion.md`, 2026-11-08), and nothing
+  happens between the schedule's events: no render, no detection, no
+  message (`synthetic-loop-dia.md`, *Timing*). The synthetic
   Orin holds no timing of its own, and the firmware holds none to remove:
   its ramp is the motor's limit, unrelated to perception. The orchestrator
   has no real counterpart, so on the rig the Orin runs this timer itself
   (`robot-plan.md`).
-- **The Uno is dumb** (user, 2026-10-28): its firmware has as few
+- **The Uno is dumb**: its firmware has as few
   decision choices as possible. Any firmware behaviour reduces to a fixed
   rule applied per tick or per command; never propose one that makes
   choices. Example, agreed the same day and not yet in
   `synthetic-loop-dia.md` or code: the step-acceleration ceiling, where
   every tick moves the sent rate towards the last command by at most
   `m × dt` (`m` the jump limit, `jump-limit-results.md`; `dt` the tick).
+- **The product owner dislikes polling and prefers interrupts**. Code waits for an interrupt to
+  tell it something happened, rather than checking again and again.
+- **The Arduino has the interrupt bridge**. Its WiFi chip
+  runs the user's fork of Arduino's bridge firmware
+  (`D:\git\unor4-wifi-interrupt-bridge`, branch `feature/interrupt`; the
+  board reported revision 0.6.102 on 2026-10-31, and prints it at each
+  start). Push mode sends each UDP datagram to the processor unasked, and
+  `unor4-hal`'s `UartIrq` (feature `uart-irq`) wakes it
+  (`__live__/arduino/rust/crates/calibration/src/wifi.rs`). Push mode does not
+  cover TCP, so such messages are datagrams, not web requests.
+- **The policy file is in git and only ever changes whole**. `__live__/orin/python/saved/policy.npz` is the trained actor
+  for the Orin, written by the trainer's `export_policy.py` from a run folder
+  that git ignores, so it is tracked. A new policy replaces the file
+  entirely with a fresh export; it is never edited, patched or merged a part
+  at a time. The root `.gitattributes` marks `*.npz` binary, so git never
+  diffs or merges two versions.
 - **Each diagram participant's real counterpart:**
 
   | Participant | On the real robot |
@@ -428,14 +549,13 @@ The roles and per-class figures are in `training/05-POST_TRAINING.md`
   | MuJoCo | the physical rig |
   | Unity player | the Pi GS camera (IMX296), its frame reduced to 728×544 greyscale |
   | Synthetic Orin | the Orin: detection, and in production the policy |
-  | Synthetic Arduino | the Arduino (an UNO R4 WiFi, user 2026-10-24), the DM542 (replacing the DRV8825, 2026-10-26), the stepper and the belt |
+  | Synthetic Arduino | the Arduino (an UNO R4 WiFi), the DM542 (replacing the DRV8825, 2026-10-26), the stepper and the belt |
   | Trainer | none — training happens only in the synthetic loop |
 
-- **The camera on the Orin** (user, 2026-10-23): the Pi Global Shutter
+- **The camera on the Orin**: the Pi Global Shutter
   Camera (IMX296) is validated on the Orin Nano Super for default colour
   captures.
-- **Open issue — the camera's greyscale JPEGs on the Orin** (user,
-  2026-10-23): not tested. To find out: what the camera delivers when
+- **Open issue — the camera's greyscale JPEGs on the Orin**: not tested. To find out: what the camera delivers when
   asked for greyscale (a true single-channel mono/Y format, or colour
   converted after capture), and the JPEGs that result — channel count,
   size, quality. Why it matters: the detector trained on, and the loop

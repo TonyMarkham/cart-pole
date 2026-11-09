@@ -1,0 +1,175 @@
+# The trainer's Gymnasium settings: one whole variant of the learning
+# (rl-rewrite-plan.md, 3.3). The run itself - the orchestrator's command,
+# the seed, the random timings, the MJCF - is in settings.toml, beside this
+# file. Each plugin table is read and checked by its plugin alone
+# (__synthetic__/trainer/python/src/plugins.py): changing a plugin's logic is a new file and its
+# name here; tuning it is its table. The reward is the exception: its
+# values are one table per factor, [reward.centered] and so on, which the
+# scheme named in [reward] reads (user, 2026-10-29).
+
+[env]
+# How far apart the steps come is no longer set here: the command rate
+# (command_rate_min and command_rate_max, 2026-10-30) gave way to the rig's
+# own timings (settings.toml [orchestrator]; synthetic-loop-dia.md, Timing;
+# user, 2026-11-08). A run saved with command rates cannot resume.
+
+# Steps per episode before the time limit truncates it
+# (synthetic-loop-dia.md, The time limit): a step is one command, so 500
+# steps is about 16.3 s of simulated time at the loop's mean of 32.5 ms between
+# captures. Passed to the orchestrator as --max-episode-steps: each episode's
+# schedule holds steps -5 to this + 14. A truncation is not an end: SAC keeps
+# valuing the state it stopped in.
+max_episode_steps = 500
+
+[observation]
+# What the policy sees (__synthetic__/trainer/python/src/observations/). Never a site: the
+# plugin is given the pool and the command history only. A run saved with
+# another observation, or another table for it, cannot resume.
+plugin = "pool_and_commands"
+
+[observation.pool_and_commands]
+# The pool's 30 floats, then the actions of the last past_commands
+# commands, newest first, 0 before an episode's first
+# (synthetic-loop-dia.md, The policy sees its last commands). NFQ2.0's
+# real cart-pole needed at least 2 and used 6 (reward-research.md).
+past_commands = 6
+
+# ms: each of the pool's ages is divided by this before the network sees it.
+# 1000 is seconds: the oldest age, about -250 ms, arrives as -0.25, on the scale
+# of the markers (within 1 m) and the actions (within 1). As raw ms the ages pinned
+# the actor's randomness at its limit for 80,000 steps
+# (synthetic-loop-dia.md, The policy sees its last commands).
+age_unit_ms = 1_000.0
+
+[action]
+# The policy's action a in [-1, 1] to the command (__synthetic__/trainer/python/src/actions/).
+# linear_rate: a x the top pulse rate (the run's values, from the MJCF and
+# [drive]), rounded; it has no values.
+plugin = "linear_rate"
+
+[reward]
+# The reward (__synthetic__/trainer/python/src/rewards/). dm_control_cartpole is
+# DeepMind's cart-pole reward (__synthetic__/trainer/python/dm_control_reward.md):
+#   r = upright x small_control x small_velocity x centered, in [0, 1],
+#   every input MuJoCo's but the command: the pole's angle and speed from its
+#   state, Cart and Cart Target from the sites. The command is c_t, as a
+#   fraction of the top pulse rate.
+# Each factor's values are its own table below; upright has none. Each value is
+# DeepMind's own fixed number, from dm_control's cartpole.py, where it describes
+# a 1 m pole on a 3.6 m rail: none has been tuned for this rig.
+# A resume rescores every stored step through the scheme named here.
+scheme = "dm_control_cartpole"
+
+[reward.small_control]
+# The fraction of the top pulse rate at which the score's part above the floor
+# reaches 0 (dm_control_reward.md section 2): 1, a full-rate command.
+margin = 1.0
+
+# small_control's lowest value, at that command (section 2.2). 0.8: a full-rate
+# command keeps four-fifths of the score.
+floor = 0.8
+
+[reward.small_velocity]
+# rad/s: the pole's turning speed at which the bell falls to at_margin
+# (dm_control_reward.md section 3.1.2).
+margin = 5.0
+
+# The bell's value at that speed: tolerance()'s default (section 3.1.3).
+at_margin = 0.1
+
+# small_velocity's lower limit, approached at high speed, never reached (section
+# 3.2). 0.5: a step keeps at least half its score however fast the pole turns.
+floor = 0.5
+
+[reward.centered]
+# metres from the middle of the rail: where the bell falls to at_margin
+# (dm_control_reward.md section 4.1.2). 2: longer than DeepMind's rail, and much
+# longer than this one, whose ends are about 0.44 m away, where this gives 0.947.
+margin = 2.0
+
+# The bell's value at that distance: tolerance()'s default.
+at_margin = 0.1
+
+# centered's lower limit, approached far out, never reached (section 4.2). 0.5: a
+# step keeps at least half its score wherever the cart is.
+floor = 0.5
+
+[end]
+# Which episode-end conditions are checked, each after the step's reward
+# is paid (__synthetic__/trainer/python/src/endings/), besides the one that is
+# not a plugin: the synthetic Arduino's FAULT, when a limit switch trips
+# (synthetic-loop-dia.md, The rail's ends; user, 2026-11-08), which replaced
+# the strike-gap end. None today. A run saved with other end conditions, or
+# other values for them, cannot resume: a rescore cannot move where stored
+# episodes ended.
+plugins = []
+
+[train]
+# The training run (train.py): SAC learns until it has taken total_steps
+# steps, every training instance's counting. Six instances took about
+# 1 h 27 min for 500,000 (run 2, trainer-observations.md). A run that has
+# reached total_steps resumes only once this is raised.
+total_steps = 6_000_000
+
+# Every save_every steps the run saves the model, its replay buffer and
+# their manifest (latest.zip, latest_buffer.pkl, latest.json) and keeps a
+# snapshot of the model and manifest (model_<steps>.zip / .json).
+save_every = 10_000
+
+# Where each training run gets its folder, runs/<date>_<time>/, relative
+# to this file. __synthetic__/trainer/python/runs/ is gitignored.
+runs_dir = "runs"
+
+[sac]
+# Stable-Baselines3's SAC (synthetic-loop-dia.md, The policy learns by
+# SAC). Values are SB3's defaults except device, learning_starts, buffer_size,
+# learning_rate, gamma, gradient_steps and ent_coef.
+
+# "cuda" (the 3090) or "cpu". Both measured the same step time.
+device = "cuda"
+
+# Steps of random actions before learning starts, to fill the replay
+# buffer with varied motion: 1,200 is 2.4 episodes of 500 steps.
+learning_starts = 1_200
+
+# The replay buffer: the most recent steps SAC learns from. Each step also
+# keeps its inputs (91 floats), so 1,000,000 steps hold about 1.2 GB.
+# !!!!! buffer_size = 1000000 // Original Value !!!!!
+buffer_size = 2_000_000
+
+# Steps per learning update, and Adam's step size.
+batch_size = 256
+# !!!!! learning_rate = 0.0003 // Original Value !!!!!
+learning_rate = 0.000_1
+
+# The discount (synthetic-loop-dia.md, The discount): rewards about
+# 1 / (1 - gamma) steps ahead still count, 152 steps at 0.9934. Chosen as about
+# 6.3 s at the command rate's mean gap of 41.5 ms, the same time ahead as 0.998
+# at the old 12.57 ms; at the loop's mean of 32.5 ms between captures since
+# 2026-11-08 the 152 steps reach about 4.9 s. Read only by a new run: a resume
+# keeps the saved model's.
+gamma = 0.993_4
+
+# How fast the target critics follow the critics.
+tau = 0.005
+
+# gradient_steps updates after every train_freq steps. A step is one step of
+# every training instance, so on 12 instances 2 updates are one per 6 samples,
+# about 101 steps/s and 17 updates/s (trainer-observations.md, How many instances
+# to train with, an estimate). 1 was one per 12 samples, 15,733 updates by step
+# 190,008, too few for the randomness weight to move. gradient_steps = -1 (SB3: as
+# many updates as samples) keeps one per sample.
+train_freq = 1
+# !!!!! gradient_steps = 1 // Original Value !!!!!
+gradient_steps = 2
+
+# The weight on SAC's randomness bonus. "auto_0.1": tuned as usual, starting at
+# 0.1. SB3's "auto" starts at 1.0, and the reward here is about 0.06 a step, so the
+# bonus outweighed it about 150 to 1 at its worst in run 20261101_154007. A step
+# alive then cost more than an episode's end, so the policy learned to hit the wall
+# (synthetic-loop-dia.md, The randomness bonus). Read only by a new run: a resume
+# keeps the saved model's.
+ent_coef = "auto_0.1"
+
+# The policy's and critics' hidden layers.
+net_arch = [256, 256]

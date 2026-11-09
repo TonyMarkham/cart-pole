@@ -1,0 +1,21 @@
+[package]
+name              = "wifi-firmware"
+version           = { workspace = true }
+edition           = { workspace = true }
+description       = "Test firmware for the bench UNO R4 WiFi: stamps each datagram from WiFi on a free-running 48 MHz timer, and answers clock syncs over USB, so the PC can time the WiFi hop on its own clock"
+publish           = false
+build             = "build/main.rs"
+
+[dependencies]
+cortex-m          = { workspace = true }
+cortex-m-rt       = { workspace = true }
+panic-halt        = { workspace = true }
+ra4m1             = { workspace = true }
+unor4-hal         = { workspace = true, features = ["uart-irq"] }
+
+[build-dependencies]
+anyhow            = { workspace = true }
+toml              = { workspace = true }
+
+[lints]
+workspace = true

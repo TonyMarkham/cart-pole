@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Run the rig</title>
+<link data-trunk rel="rust" data-wasm-opt="0">
+<style>
+:root {
+  color-scheme: light dark;
+  --page: #f6f7f7; --text: #1d2629; --quiet: #586569; --line: #d3dadc; --panel: #ffffff;
+  --accent: #0f6f7f; --accent-text: #ffffff; --warn: #b4560b; --info: #1f5fa8; --none: #71797c;
+  --stop: #c62828; --stop-text: #ffffff;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --page: #14191b; --text: #e6ecee; --quiet: #9eabaf; --line: #313b3f; --panel: #1d2427;
+    --accent: #2a9bb0; --accent-text: #06181c; --warn: #ec9a4e; --info: #6ea8e8; --none: #8d979b;
+  }
+}
+* { box-sizing: border-box; }
+body { margin: 0 auto; max-width: 900px; padding: 16px; background: var(--page); color: var(--text);
+  font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+h1 { font-size: 26px; margin: 8px 0; }
+h2 { font-size: 18px; margin: 28px 0 8px; }
+p { margin: 8px 0; }
+code { font-size: 14px; }
+.line { padding: 8px 12px; border-radius: 6px; background: var(--panel); border: 1px solid var(--line);
+  border-left: 5px solid var(--none); overflow-wrap: anywhere; }
+.line.info { border-left-color: var(--info); }
+#safety { border-left-color: var(--warn); font-weight: 600; }
+#result:empty { display: none; }
+button { font: inherit; font-weight: 600; padding: 9px 12px; border-radius: 6px; border: 0; cursor: pointer;
+  touch-action: manipulation; background: var(--accent); color: var(--accent-text); }
+button:disabled { background: var(--line); color: var(--quiet); cursor: not-allowed; }
+/* Stays in view while the page scrolls, and answers a tablet's first touch. Never disabled. */
+#stop { position: sticky; top: 8px; z-index: 1; display: block; width: 100%; min-height: 64px; margin: 12px 0;
+  font-size: 24px; letter-spacing: 2px; background: var(--stop); color: var(--stop-text); }
+.run-row { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin: 12px 0; }
+#run, #centre { min-width: 160px; min-height: 52px; font-size: 20px; }
+#why { flex: 1; min-width: 200px; margin: 0; }
+dl { display: grid; grid-template-columns: max-content 1fr; gap: 6px 16px; margin: 8px 0; padding: 12px;
+  border-radius: 8px; background: var(--panel); border: 1px solid var(--line); }
+dt { color: var(--quiet); }
+dd { margin: 0; overflow-wrap: anywhere; }
+@media (max-width: 480px) { dl { grid-template-columns: 1fr; } dd { margin-bottom: 8px; } }
+</style>
+</head>
+<body>
+<h1>Run the rig</h1>
+<p>Run starts the trained policy balancing the pole: the Orin's brain takes each camera frame,
+finds the markers, asks the policy for a speed, and sends it to the board, until STOP or until the
+board goes into FAULT. One press of Run is one run, with no time limit.</p>
+<p id="safety" class="line">Stand at the e-stop before pressing Run: the cart moves fast. STOP below
+asks over WiFi, and a message can be lost, so it does not replace the e-stop.</p>
+<button id="stop" type="button">STOP</button>
+
+<div class="run-row">
+  <button id="run" type="button" disabled>Run</button>
+  <button id="centre" type="button" disabled>Re-centre</button>
+  <p id="why" class="line info" role="status">Asking the brain and the board.</p>
+</div>
+<p id="result" class="line" role="status"></p>
+
+<h2>State</h2>
+<dl>
+  <dt>Brain</dt><dd id="state">Asking.</dd>
+  <dt>Last message</dt><dd id="message"></dd>
+  <dt>Frames this run</dt><dd id="frames"></dd>
+  <dt>Run folder</dt><dd id="run-dir"></dd>
+  <dt>Board</dt><dd id="board"></dd>
+</dl>
+
+<h2>How to read this</h2>
+<p><b>When Run can be pressed.</b> Only when the brain is idle and the board says it is
+<code>calibrated</code>: it knows where both ends of the rail are, and the cart is at rest. The
+board learns the rail on the <a href="/calibrate/">calibrate page</a>: find both ends, then move
+to the centre. Beside a greyed-out Run is the reason. A board that was reset, or switched off,
+starts <code>uncalibrated</code>. A board in FAULT stays there until it is reset, and then needs
+calibrating again. Before Run, the pole should hang still.</p>
+<p><b>The brain may still refuse Run</b>, and the line under the buttons then says why: the
+camera is in use by the live view or a calibration measurement, or the camera's matrix,
+<code>homography.json</code>, did not pass its fit and was not accepted on the calibrate page.</p>
+<p><b>How a run ends.</b> Only two things end it. STOP: the webserver first asks the brain to
+stop sending, and once it has, sends the board the command 0, a speed of zero, several times,
+since any one message can be lost on the WiFi; the board slows the cart to rest. The zeros go out
+even if the brain does not answer, so a brain that has crashed cannot keep the cart moving. Or a
+FAULT: the board stops the cart by itself when it enters the protected zone near either end of
+the rail, or gets a command it cannot read, and answers every message after that with its FAULT
+reply. The brain then stops, and <b>Last message</b> says which ended the run: <code>stopped</code>,
+or the board's FAULT with where the cart stopped, in motor pulses from the idler end.</p>
+<p><b>Re-centre.</b> Moves the cart back to the middle of the rail, from wherever a run left
+it, at the board's seek speed, 2,000 motor pulses a second, which is 30 mm a second, so about
+15 s from an end. The board knows where the cart is by counting its pulses, so it needs no
+switch to do this. It can be pressed when Run can, and greys out both buttons until the cart has
+stopped. STOP ends it too: STOP always also sends the board <code>Stop</code>, the only message it
+listens to during the move. A Re-centre that is stopped, or that trips a switch on the way, leaves
+the board <code>calibrating</code>, and Run waits until a Re-centre arrives; after a tripped switch
+the board has forgotten the rail, so calibrate again on the calibrate page.</p>
+<p><b>The state.</b> <b>Brain</b> is Running or Idle. <b>Last message</b> is why the last run
+ended, or why Run was refused. <b>Frames this run</b> is how many camera frames the brain has
+turned into a command, about 30 each second. <b>Run folder</b> is where the run's log is written
+on the Orin, <code>frames.jsonl</code>, one line per frame, named by the time Run was pressed (UTC).
+<b>Board</b> is the board's own answer to <code>state</code>. During a run the board is not asked:
+the brain alone talks to it then.</p>
+<p><b>When the state is read.</b> When the page opens, and after each press of Run, Re-centre or STOP.
+Reload the page to read it again.</p>
+</body>
+</html>

@@ -1,0 +1,6 @@
+[build]
+# The RA4M1 is an Arm Cortex-M4 with a single-precision FPU (RA4M1
+# datasheet, features): ARMv7E-M, hard-float. Cargo reads this file only
+# when it runs from this folder, so the root workspace still builds for
+# the PC.
+target = "thumbv7em-none-eabihf"

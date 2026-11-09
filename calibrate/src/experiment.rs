@@ -290,7 +290,7 @@ pub fn run(
 
     let limit = report.experiment.jump_limit();
     match limit {
-        JumpLimit::Measured(m) => monitor.line(format_args!("m = {m} pulses/s², measured: write it into trainer/settings.toml [drive] jump_limit")),
+        JumpLimit::Measured(m) => monitor.line(format_args!("m = {m} pulses/s², measured: write it into __synthetic__/trainer/python/settings.toml [drive] jump_limit")),
         JumpLimit::AtLeast(m) => monitor.line(format_args!("m = at least {m} pulses/s²: no slip found")),
         JumpLimit::Below(m) => monitor.line(format_args!("m is below j_start, {m}: lower j_start and run again")),
         JumpLimit::Incomplete => monitor.line(format_args!("m: not every kind finished")),

@@ -27,6 +27,10 @@ messages.
 5. **The ramp holds the ceiling:** each tick of `dt` µs moves the sent
    rate towards the command by at most m × dt, rounded down; a change
    within that finishes in one tick; a reset (R3) returns both rates to 0.
+6. **A limit switch is a FAULT** (the diagram's *The rail's ends*, user
+   2026-11-08): a tick given a closed switch answers FAULT with STEP rate
+   0; every later tick answers the same and no command is applied, until
+   a reset (R3) brings it back to rest, out of FAULT.
 
 ## Requirements (from the diagram)
 
@@ -35,9 +39,11 @@ messages.
   50% of the rail, a guarantee that stands in for the real board's
   homing, so the synthetic Arduino is never told a start position. It
   starts at rest: sent rate 0, command 0.
-- **A2 — the command, and nothing else (19).** `receive(the command:
-  i32 LE pulses/s)`, once per observation at the arrival step; sign =
-  direction, magnitude = pulses per second.
+- **A2 — the command (19).** `receive(the command: i32 LE pulses/s)`, on
+  the timestep a command lands (the diagram's *The gobble rule*): it sets
+  the command and nothing else; the sent rate moves at that timestep's
+  tick (A7). Sign = direction, magnitude = pulses per second. In FAULT
+  (A8) a command is not applied.
 - **A3 — the clamp.** The command is clamped to ± the top pulse rate:
   the cart top speed (the MJCF actuator's `ctrlrange`) ÷ metres per pulse
   (`[drive]`).
@@ -46,19 +52,28 @@ messages.
   orchestrator.
 - **A5 — no pulse count in the loop.** The loop's only clock is MuJoCo's
   step, which ticks the ramp (A7) but counts no pulses, so the synthetic
-  Arduino holds no travel: where the cart meets the bases comes from the
-  strike-face sites, and the episode end is the trainer's
-  (`trainer-plan.md`). On the real board, the timer counts the pulses it
-  sends, so a travel limit acts there.
+  Arduino holds no travel: the rail's ends are its limit switches (A8).
+  On the real board, the timer counts the pulses it sends, so a travel
+  limit acts there too.
 - **A7 — the acceleration ceiling** (the diagram's *The acceleration
   ceiling*). Every tick of `dt`, the sent rate moves towards the
   command by at most m × dt, rounded down to a whole pulse/s. In the
-  loop a tick is one 2 ms MuJoCo step: the arrival step's at 19–20, and
-  one after every other step (the note at 15–16, and the note after 21).
+  loop a tick is one 2 ms MuJoCo timestep, once every timestep after
+  MuJoCo moves on (19–20), with the command that landed on it, if one did.
   The firmware holds no perception timing: when a command arrives is the
   orchestrator's to decide. A reset returns the
   sent rate and the command to 0 (R3). One fixed rule, the same on the
   board's step generator.
+- **A8 — the limit switches and FAULT** (the diagram's *The rail's ends*;
+  user, 2026-11-08). Each tick is given the two limit switches, closed or
+  open; the orchestrator works them out from the strike faces, since the
+  switches are the physical world's. One fixed rule each tick, as the
+  controller firmware's (commit `c1b4bd1b`): a closed switch puts it in
+  FAULT. In FAULT the cart stops in one jump (sent rate 0, command 0), no
+  command is applied, and every tick answers FAULT with STEP rate 0 (20);
+  only a reset (R3) leaves it. The 50% start stands in for the
+  calibration, so it is calibrated from its creation, and it does not tell
+  CALIBRATED from MOVING: a trip in either is a FAULT.
 - **A6 — one source with the board.** The firmware is one source built
   two ways: the synthetic edge for the loop, the board's edge for the
   rig.
@@ -90,10 +105,10 @@ diagram first:
 ## Steps
 
 1. **Creation** (A1). *Check:* Done-when 1. **Done (2026-10-24):** the
-   crate is `arduino/` (renamed from `firmware/`);
+   crate is `__synthetic__/orchestrator/rust/crates/arduino/` (renamed from `firmware/`);
    `SyntheticArduino::new(config)` takes no start position and holds
    only its `Config` (test `synthetic_is_created_with_its_config_alone`,
-   `arduino/src/tests.rs`).
+   `__synthetic__/orchestrator/rust/crates/arduino/src/tests.rs`).
 2. **Receive, clamp, signals** (A2–A5). *Check:* Done-when 2–3.
    **Done (2026-10-24):** `receive` decodes the 4-byte `i32`, clamps it
    with `Config::clamp_rate` (the clamp the board's step generator uses
@@ -110,14 +125,24 @@ diagram first:
 3. **The orchestrator's conversion** (`orchestrator-plan.md`, O8).
    *Check:* Done-when 4. **Done (2026-10-24):** test
    `cart_velocity_is_step_rate_times_15_um_signed_by_dir`
-   (`orchestrator/src/tests.rs`, at its test `Config`'s 15 µm a pulse:
+   (`__synthetic__/orchestrator/rust/crates/orchestrator/src/tests.rs`, at its test `Config`'s 15 µm a pulse:
    26,667 → ±0.400005 m/s), and the runs in `orchestrator-plan.md`
    step 5.
 4. **The ramp** (A1, A7). *Check:* Done-when 5: the shared ramp the
    board's `Stepper` and the synthetic Arduino both hold; `receive` sets
    the command and takes the arrival step's tick, `tick(dt)` the others,
    `reset` returns to rest; the orchestrator ticks it after every step
-   but the arrival step (`orchestrator-plan.md`, O8).
+   but the arrival step (`orchestrator-plan.md`, O8). Since step 5,
+   `receive` only sets the command and every timestep has one `tick`.
+5. **The limit switches and FAULT** (A2, A7, A8; user, 2026-11-08).
+   `receive` sets the command alone; `tick(switches)` ramps, or enters
+   FAULT on a closed switch, and answers the signals and whether it is in
+   FAULT; `reset` leaves FAULT. *Check:* Done-when 6, and Done-when 5
+   under the new split, by unit tests worked by hand on the tests'
+   `Config`. **Done (2026-11-08):** `LimitSwitches` and `TickAnswer`, one
+   a file; tests `synthetic_ticks_the_ramp`, `synthetic_receive_does_not_tick`,
+   `a_closed_limit_switch_is_a_fault_until_reset` and
+   `either_limit_switch_trips` pass, with the crate's other 19.
 
 ## The board and the top rate
 

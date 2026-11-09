@@ -1,0 +1,19 @@
+[package]
+name           = "brain"
+version        = { workspace = true }
+edition        = { workspace = true }
+description    = "The Orin's brain: runs the balance loop on the rig, from the camera's frame through its Python worker (detection and the policy) to the command datagram for the Arduino"
+publish        = false
+
+[dependencies]
+axum           = { workspace = true }
+error-location = { workspace = true }
+serde          = { workspace = true }
+serde_json     = { workspace = true }
+thiserror      = { workspace = true }
+tokio          = { workspace = true }
+toml           = { workspace = true }
+ureq           = { workspace = true }
+
+[lints]
+workspace      = true

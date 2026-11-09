@@ -1,0 +1,18 @@
+# The file holding the network's name and password, beside this one. Git
+# ignores it; wifi_credentials.example.toml is its template. The bench board
+# joins the same network as the rig's, so the controller's own file can be
+# copied here unchanged.
+credentials = "wifi_credentials.toml"
+
+# The speed of the link to the WiFi chip, bits per second. It must match the
+# bridge firmware, which opens its AT server at 115,200 8N1
+# (UNOR4USBBridge.ino, SERIAL_AT).
+at_baud = 115_200
+
+# The name the router lists: letters, digits and hyphens, 1 to 31 of them.
+# Not the rig's `cart-pole`, so the two boards can be told apart.
+hostname = "uno-bench"
+
+# The UDP port the board listens on. The PC's apply-host sends to the same
+# port (its apply-host.toml, [r4] udp_port).
+udp_port = 4_210

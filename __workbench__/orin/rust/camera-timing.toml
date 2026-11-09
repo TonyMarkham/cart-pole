@@ -1,0 +1,64 @@
+# camera-timing's settings: `camera-timing camera-timing.toml`, run on the Orin
+# from this folder. Paths are relative to this file.
+
+[camera]
+# The camera exactly as the brain runs it: these are the brain's values,
+# copied from __live__/orin/rust/settings.toml [camera], where each is
+# explained. Change one, change both, or this measures another camera.
+sensor_id = 0
+sensor_mode = 0
+width = 1_456
+height = 1_088
+framerate = 60
+tnr_mode = 0
+ee_mode = 0
+exposure_ns = 1_000_000
+gain = 180
+settle_frames = 30
+
+[led]
+# The LED's GPIO line, by the name `gpioinfo` lists for the header pin it is
+# wired to: pin 33, line 43 of gpiochip0, `PH.00`
+# (__workbench__/orin/led-circuit.svg; __workbench__/orin/README.md has the
+# pin's names and the one fix it needs after each boot). Left empty, the run
+# stops and says so.
+line_name = "PH.00"
+
+[test]
+# The frames at the start with the LED off, then with it on, from which the
+# run finds the LED in the picture and how bright it is each way.
+calibration_frames = 30
+
+# The LED's patch: the brightest change between off and on, and this many
+# pixels either side of it, so 4 gives a 9 x 9 patch.
+patch_half = 4
+
+# How much brighter the patch must be lit than dark, grey levels out of 255,
+# for the run to go on: less, and the LED is too dim or not in view.
+min_contrast = 20
+
+# The flashes: how many, how long each is lit, µs, and how many frames apart.
+# A flash lights a frame only if it overlaps that frame's exposure, 1 ms of
+# every 16.7 ms, so about (1 ms + pulse) / 16.7 ms of flashes are seen: 9% at
+# 500 µs. The gap between flashes must be longer than gap 1 itself (the time
+# from the camera exposing a frame to that frame being read on the Orin, gap 1
+# of real-timings.md, which this test measures), so each lit frame can only
+# belong to the flash before it: 8 frames is 133 ms.
+pulses = 10_000
+pulse_us = 500
+pulse_spacing_frames = 8
+
+# How often to print how far the run has got, in flashes; 0 for never.
+progress_every = 1_000
+
+# How long to wait for any frame before the run stops, ms. The first frame
+# comes only after the camera software has started: on 2026-11-08, 31 frames
+# took 2.35 s from launch, so about 1.85 s passed before the first, and runs
+# with 1,000 and 2,000 here both stopped waiting for it.
+frame_timeout_ms = 5_000
+
+# The random draws' seed: the same seed places the flashes the same way.
+seed = 1
+
+# Where each run's folder goes.
+output_dir = "runs"

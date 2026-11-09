@@ -1,0 +1,16 @@
+[package]
+name              = "apply-host"
+version           = { workspace = true }
+edition           = { workspace = true }
+description       = "The PC side of the bench's apply test: sends the bench R4 alternating commands over WiFi and collects the R3's timing of each one, from its arrival to its new rate on STEP"
+publish           = false
+
+[dependencies]
+anyhow            = { workspace = true }
+clap              = { workspace = true }
+serde             = { workspace = true }
+serialport        = { workspace = true }
+toml              = { workspace = true }
+
+[lints]
+workspace = true

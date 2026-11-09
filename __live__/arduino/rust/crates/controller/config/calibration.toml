@@ -1,0 +1,35 @@
+# How the board runs the calibration's moves. A seek drives the cart from
+# wherever it is to one end's limit switch, and stops when the switch trips.
+# The move to the centre drives it from wherever it is to half way between
+# the two ends the seeks found, and stops at that pulse count.
+
+# A seek's speed, pulses per second. A seek starts and stops in one jump, with
+# no ramp, so it stays slow: at 15 µm a pulse (real-open-issues.md, issue 13),
+# 2,000 pulses/s is 30 mm/s, and the cart stops within a pulse or two of its
+# switch tripping. A choice, not a measurement of the fastest safe speed.
+seek_speed = 2_000
+
+# The longest one seek runs before the board stops the cart and gives up, ms:
+# past it, no switch tripped (a wiring fault, a missed switch, or a stalled
+# motor). At seek_speed, 34,000 ms is 68,000 pulses, more than the 59,822
+# between the switches (real-open-issues.md, issue 8), so a working seek
+# reaches a switch first from anywhere on the rail. Lower seek_speed and this
+# must rise with it. The Orin's webserver waits 40,000 ms for a seek's answer
+# (its settings.toml, move_timeout_ms), so this must stay below that.
+seek_timeout_ms = 34_000
+
+# The fastest `MoveToCentre <pulses/s>` may ask for; a speed above it, or not a
+# whole number, is answered bad_speed and the cart stays put. With no speed the
+# move runs at seek_speed. 44,600 pulses/s is the rig's top rate, the one every
+# command is clamped to (real-loop-dia.md, the command's sequence). The move
+# ramps up to its speed and brakes to rest at the centre by the same rule as
+# the commands (motion.toml's jump_limit), so it loses no step at any speed.
+centre_speed_max = 44_600
+
+# A switch the cart starts a move on counts only once the cart has moved this
+# many pulses off it, so its contact bouncing as the cart leaves is not taken
+# for a trip. If it still reads pressed then, the cart is driving into it, the
+# wrong way, and the move stops. 400 pulses is 6 mm, 200 ms at seek_speed. A
+# choice, not a measurement of these switches: both switches have read
+# released within 100 pulses (1.5 mm) on the rig.
+release_pulses = 400

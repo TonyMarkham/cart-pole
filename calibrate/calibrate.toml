@@ -4,13 +4,13 @@
 # Relative paths resolve against this file's folder.
 #
 # Rates are pulses/s, the unit the firmware drives. At the rig's 15 µm a
-# pulse (96 mm per turn ÷ (200 × 32), trainer/settings.toml [drive]),
+# pulse (96 mm per turn ÷ (200 × 32), __synthetic__/trainer/python/settings.toml [drive]),
 # 1,000 pulses/s is 15 mm/s.
 
 [calibrate]
 # The drive figures, used only to report the measured span in mm: the
 # trainer's [drive] table.
-drive_settings = "../trainer/settings.toml"
+drive_settings = "../__synthetic__/trainer/python/settings.toml"
 
 # Whether every power-up or reset homes and centres the cart by itself.
 # false: the board waits for the page's Calibrate button.

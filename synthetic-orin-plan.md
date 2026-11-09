@@ -15,10 +15,11 @@ Status (2026-10-23): **steps 1–6 done, Done-when 1–4 met on this PC**
 
 Since (2026-10-24, committed; the *Superseded* notes below say what each
 replaced): the diagram's Orin runs end to end with the real player. Code
-in `orin/src/`, settings in `orin/settings.toml` (was
+in `__synthetic__/orin/python/src/`, settings in `__synthetic__/orin/python/settings.toml` (was
 `ObjectDetection.toml`). At launch it pre-warms the pool at the six gaps
-`--pool-gaps` gives (no-detection entries; the orchestrator draws the gaps,
-and the Orin holds no timing of its own, user 2026-10-30), opens the frame
+`--pool-gaps` gives (no-detection entries; the gaps come from the
+orchestrator's schedule, the captures of steps −5 to −1, user
+2026-11-08, and the Orin holds no timing of its own, user 2026-10-30), opens the frame
 socket at `--frames-listen` (`frame_socket.py`, one camera), connects to
 the orchestrator and, once Unity connects, sends `{"type":
 "registered"}` (4–8). Each pose is forwarded to Unity as the trigger, the
@@ -75,7 +76,7 @@ leg as it runs today.
 
 ## Facts this plan builds on
 
-- **Today's turn** (`orchestrator/src/main.rs`, `unity-player-plan.md`
+- **Today's turn** (`__synthetic__/orchestrator/rust/crates/orchestrator/src/main.rs`, `unity-player-plan.md`
   *Settled decisions*): the orchestrator is the WebSocket server; the
   Unity player connects as a client (`-orchestrator ws://…`). Per frame
   the orchestrator sends one text message `{"id", "joints"}` and the
@@ -89,13 +90,20 @@ leg as it runs today.
   the command into each 2 ms step's `ctrl`. (When this plan was
   written, `--detect` ran the Rust `object-detection` crate on each
   frame in-process; step 6 removed it.)
-- **The marker frame** (`synthetic-loop-dia.md`, *Contracts*): 4 slots in class order (0 Left,
+- **The detection** (`synthetic-loop-dia.md`, *Contracts*): 4 slots in class order (0 Left,
   1 Right, 2 Pivot, 3 End), each the box center `(x, y)` normalized to
   [0, 1] of the frame, or `(−1, −1)` when not detected.
+- **The calibration and the points** (user, 2026-11-01; `synthetic-loop-dia.md`,
+  *Calibration*): one Orin launched with `--calibrate FILE` finds the matrix that turns
+  pixels into metres, and every training instance's Orin, launched with
+  `--homography FILE`, holds it in memory and passes Pivot and End through it. `src/`
+  holds this as `calibration.py`, `measure.py`, `lens.py` and `fit.py`, with
+  `test_calibration.py`. This plan's older text below speaks of 4 slots and 54 floats
+  in the pool: the diagram is right.
 - **The policy input** (`synthetic-loop-dia.md`, *Contracts*): the pool, the last **6**
-  marker frames, newest first, each keyed by its **age** — milliseconds
+  frames' Pivot and End, newest first, each keyed by its **age** — milliseconds
   of simulated time before the current capture (newest 0, older
-  negative): 6 × (1 + 8) = 54 floats.
+  negative): 6 × (1 + 4) = 30 floats.
 - **MuJoCo's clock is the authority** (`synthetic-loop-dia.md`): every time in
   the loop is simulated time, `data.time`.
 - **The detector this plan reuses** (`detector-plan.md` *Results*,
@@ -147,8 +155,8 @@ leg as it runs today.
   *Superseded (`synthetic-loop-dia.md`):* the Orin pre-warms the pool
   at launch with six entries of no detection (−1, −1), at the gaps
   `--pool-gaps` gives, newest gap first; every frame, the first included,
-  is then one push. The orchestrator draws the gaps (user, 2026-10-30:
-  *The initial pool*); the Orin draws nothing, and takes no seed and no
+  is then one push. The orchestrator gives the gaps, from its schedule
+  (user, 2026-10-30 and 2026-11-08: *The initial pool*); the Orin picks nothing, and takes no seed and no
   band.
 - **`--detect` is superseded** by `--orin`: in-process tract detection
   ran ~110 ms per frame on this PC and is no longer the robot's
@@ -208,15 +216,15 @@ Requirements (the observations are wrong without them):
 - **O4 — lockstep.** One reply per frame, in order; the orchestrator
   does not step MuJoCo until it has the reply. *Superseded
   (`synthetic-loop-dia.md`):* one reply per frame, in order, still
-  holds; MuJoCo steps on the old command up to the arrival step (capture
-  time + the orchestrator's RND(MIN, MAX) ms latency) and is frozen there
-  until the reply is in. Between commands the Orin gets nothing: it works
-  only when the orchestrator sends a pose (*Nothing happens between
-  commands*).
+  holds; at each capture, from the orchestrator's schedule, MuJoCo waits
+  on that timestep until the reply is in (the diagram's *MuJoCo's time and
+  the PC's*, user 2026-11-08). Between captures the Orin gets nothing: it
+  works only when the orchestrator sends a pose (*Nothing happens between
+  events*).
 
 Recommendations (choices, with the reason):
 
-- **R1 — dependencies, in their own uv project `orin/`** at the repo
+- **R1 — dependencies, in their own uv project `__synthetic__/orin/python/`** at the repo
   root (Python 3.12, `uv.lock` committed): `tensorrt-cu12` (NVIDIA's
   TensorRT wheels for Windows/Linux; matching CUDA runtime comes with
   them — unverified on this PC until step 1), `cuda-python` (device
@@ -224,7 +232,7 @@ Recommendations (choices, with the reason):
   `websockets` (the client). **Needs the user's OK** (installs).
   The same project is what the real Orin will run; only the frame
   source differs (camera vs orchestrator).
-- **R2 — the engine is built by a script in `orin/`** with TensorRT's
+- **R2 — the engine is built by a script in `__synthetic__/orin/python/`** with TensorRT's
   Python builder from `best.onnx` (FP16, the robot's precision), saved
   beside `best.onnx` (gitignored) — the Windows wheels ship no
   `trtexec`. An engine is specific to its GPU and TensorRT version, so
@@ -234,7 +242,7 @@ Recommendations (choices, with the reason):
   with a new key for the engine path — one place for the detector's
   parameters, as the user set for the crate. The Rust loader learns the
   key so its strict parse keeps passing. *Superseded (user,
-  2026-10-23):* the file is now **`orin/settings.toml`**, beside the
+  2026-10-23):* the file is now **`__synthetic__/orin/python/settings.toml`**, beside the
   project's `pyproject.toml`, the crate's keys and loader gone with the
   crate. The scripts read it by default (`--config` overrides it for
   `synthetic_orin.py`); the engine path stays the `--engine` argument.
@@ -242,17 +250,18 @@ Recommendations (choices, with the reason):
   <command>`), as it launches the player, and passes it `--orchestrator
   ws://…` and the run's `--out` folder. `synthetic-loop-dia.md` adds
   `--frames-listen ADDR` (the frame socket Unity connects to) and
-  `--pool-gaps d₁,…,d₆` (the pre-warm gaps, ms, the orchestrator's draws).
+  `--pool-gaps d₁,…,d₆` (the pre-warm gaps, ms, from the orchestrator's
+  schedule: steps −5 to −1's captures, d₆ = d₅, *The initial pool*).
 
 ## Steps
 
-1. **Environment.** After the OK on R1: `orin/` uv project; check that
+1. **Environment.** After the OK on R1: `__synthetic__/orin/python/` uv project; check that
    TensorRT loads and sees the 3090. *Check:* a one-line script prints
    TensorRT's version and the GPU name.
-2. **Engine.** `orin/src/build_engine.py` builds the FP16 engine from
+2. **Engine.** `__synthetic__/orin/python/src/build_engine.py` builds the FP16 engine from
    `best.onnx`. *Check:* it loads, and its tensors are input
    `[1, 1, 640, 640]`, output `[1, 8, 8400]`.
-3. **Detector** (O1, O3): `orin/` detector module — decode, letterbox,
+3. **Detector** (O1, O3): `__synthetic__/orin/python/` detector module — decode, letterbox,
    TensorRT, slot rule. *Check:* Done-when 1 on `mount2-render-vel`,
    with the time per frame printed.
 4. **Synthetic Orin process** (O2, O4, *Messages*): WebSocket client,
@@ -271,25 +280,25 @@ time, the real Orin's camera capture, and what becomes of the Rust
 `object-detection` crate (superseded as the loop's and the robot's
 detector; retired, user 2026-10-23, `detector-plan.md`). *Superseded
 (`synthetic-loop-dia.md`):* the reply has no `command` field, because the
-policy is in the trainer; the delay D is the orchestrator's RND(MIN, MAX) ms
-latency (`synthetic-loop-dia.md`).
+policy is in the trainer; the delay is the orchestrator's schedule of
+the rig's stretches (`synthetic-loop-dia.md`, *Timing*, 2026-11-08).
 
 ## Placeholders
 
 - **T = 20 ms** (`--frame-interval-ms`) until the Orin's frame interval
   is measured; the start fill uses whatever T the run uses.
   *Superseded (`synthetic-loop-dia.md`):* there is no frame interval;
-  the orchestrator draws each capture's time from the command rate.
+  the orchestrator's schedule places each capture (*Timing*, 2026-11-08).
 - **Confidence 0.25** (`ObjectDetection.toml`), as in `detector-plan.md`.
 - **GPU vs CPU inference** — the same model on this PC's GPU and on the
   robot can differ slightly; compare once.
 
 ## Results (2026-10-23, executed on this PC)
 
-*The scripts have since moved to `orin/src/` (2026-10-23): read
-`orin/<script>.py` below as `orin/src/<script>.py`.*
+*The scripts have since moved to `__synthetic__/orin/python/src/` (2026-10-23): read
+`orin/<script>.py` below as `__synthetic__/orin/python/src/<script>.py`.*
 
-- **Step 1 — gate passed.** `orin/` uv project, Python 3.12.14 (uv
+- **Step 1 — gate passed.** `__synthetic__/orin/python/` uv project, Python 3.12.14 (uv
   managed). The first resolve took `tensorrt-cu12` 11.4.0.106: it loads
   and sees the 3090 (compute capability 8.6), but TensorRT 11 has no
   `BuilderFlag.FP16` — every network is strongly typed, so FP16 needs an
@@ -330,7 +339,7 @@ latency (`synthetic-loop-dia.md`).
   reply. `cargo run --release -p orchestrator -- --player
   unity/projects/cart-pole/Build/SimulationLoop.exe --physics --control
   sine:0.4,4 --frames 250 --out target/orin-loop-vel --orin uv run
-  --project orin python orin/synthetic_orin.py --config
+  --project __synthetic__/orin/python python orin/synthetic_orin.py --config
   ObjectDetection.toml --engine
   training/runs/cp2-640-base/weights/best_fp16.engine`: 250
   observations, all four slots detected in every frame; frame 0's

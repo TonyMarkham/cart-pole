@@ -1,0 +1,78 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 780 700" width="780" height="700" font-family="Segoe UI, Helvetica, Arial, sans-serif">
+  <title>The gap 1 LED on the Orin's 40-pin header</title>
+  <rect x="0" y="0" width="780" height="700" fill="#ffffff"/>
+
+  <text x="30" y="34" font-size="20" font-weight="600" fill="#1a1a1a">The gap 1 LED: one resistor and one LED on the Orin's 40-pin header</text>
+
+  <!-- The header, seen from above, pin 1 at the top left. Odd pins in the left column (x 225), even in the right (x 265); row r at y = 70 + (r - 1) * 22. -->
+  <rect x="200" y="56" width="90" height="452" rx="6" fill="#2b2b2b"/>
+  <text x="245" y="528" font-size="12" fill="#444" text-anchor="middle">40-pin header</text>
+  <text x="245" y="544" font-size="12" fill="#444" text-anchor="middle">(J12, seen from above)</text>
+
+  <g fill="#c9a227">
+    <rect x="219" y="64" width="12" height="12"/>
+    <circle cx="265" cy="70" r="6"/>
+    <circle cx="225" cy="92" r="6"/><circle cx="265" cy="92" r="6"/>
+    <circle cx="225" cy="114" r="6"/><circle cx="265" cy="114" r="6"/>
+    <circle cx="225" cy="136" r="6"/><circle cx="265" cy="136" r="6"/>
+    <circle cx="225" cy="158" r="6"/><circle cx="265" cy="158" r="6"/>
+    <circle cx="225" cy="180" r="6"/><circle cx="265" cy="180" r="6"/>
+    <circle cx="225" cy="202" r="6"/><circle cx="265" cy="202" r="6"/>
+    <circle cx="225" cy="224" r="6"/><circle cx="265" cy="224" r="6"/>
+    <circle cx="225" cy="246" r="6"/><circle cx="265" cy="246" r="6"/>
+    <circle cx="225" cy="268" r="6"/><circle cx="265" cy="268" r="6"/>
+    <circle cx="225" cy="290" r="6"/><circle cx="265" cy="290" r="6"/>
+    <circle cx="225" cy="312" r="6"/><circle cx="265" cy="312" r="6"/>
+    <circle cx="225" cy="334" r="6"/><circle cx="265" cy="334" r="6"/>
+    <circle cx="225" cy="356" r="6"/><circle cx="265" cy="356" r="6"/>
+    <circle cx="225" cy="378" r="6"/><circle cx="265" cy="378" r="6"/>
+    <circle cx="225" cy="400" r="6"/><circle cx="265" cy="400" r="6"/>
+    <circle cx="225" cy="422" r="6"/><circle cx="265" cy="422" r="6"/>
+    <circle cx="225" cy="444" r="6"/><circle cx="265" cy="444" r="6"/>
+    <circle cx="225" cy="466" r="6"/><circle cx="265" cy="466" r="6"/>
+    <circle cx="225" cy="488" r="6"/><circle cx="265" cy="488" r="6"/>
+  </g>
+
+  <!-- The two pins used: 33 (GPIO) and 34 (GND), both in row 17. -->
+  <circle cx="225" cy="422" r="9" fill="none" stroke="#e8761a" stroke-width="3"/>
+  <circle cx="265" cy="422" r="9" fill="none" stroke="#111" stroke-width="3"/>
+
+  <g font-size="12" fill="#1a1a1a">
+    <text x="194" y="74" text-anchor="end">pin 1, 3.3 V</text>
+    <text x="282" y="52">pin 2, 5 V</text>
+    <text x="150" y="414" text-anchor="end" fill="#b85a0f" font-weight="600">pin 33, GPIO</text>
+    <text x="300" y="414" font-weight="600">pin 34, GND</text>
+  </g>
+
+  <!-- Wire from pin 33 (GPIO), out to the left, down, and across to the resistor. -->
+  <path d="M225 422 H160 V610 H440" fill="none" stroke="#e8761a" stroke-width="4" stroke-linejoin="round"/>
+
+  <!-- The resistor: 1 kΩ is brown (1), black (0), red (× 100), gold (± 5%). -->
+  <rect x="440" y="598" width="70" height="24" rx="8" fill="#e9d3a8" stroke="#8a6d3b" stroke-width="2"/>
+  <rect x="454" y="598" width="6" height="24" fill="#8b4513"/>
+  <rect x="466" y="598" width="6" height="24" fill="#111"/>
+  <rect x="478" y="598" width="6" height="24" fill="#d32f2f"/>
+  <rect x="496" y="598" width="4" height="24" fill="#c9a227"/>
+  <text x="475" y="588" font-size="13" fill="#1a1a1a" text-anchor="middle">1 kΩ resistor</text>
+  <text x="475" y="642" font-size="11" fill="#555" text-anchor="middle">brown, black, red, gold</text>
+
+  <!-- Resistor to the LED's anode. -->
+  <line x1="510" y1="610" x2="600" y2="610" stroke="#e8761a" stroke-width="4"/>
+
+  <!-- The LED, pointing the way current flows: anode on the left, cathode on the right. -->
+  <polygon points="600,590 600,630 634,610" fill="#ff5252" stroke="#7a1010" stroke-width="2"/>
+  <line x1="636" y1="590" x2="636" y2="630" stroke="#7a1010" stroke-width="4"/>
+  <g stroke="#ff5252" stroke-width="2" fill="none">
+    <path d="M618 586 L630 570"/><path d="M626 573 L630 570 L629 575"/>
+    <path d="M630 590 L642 574"/><path d="M638 577 L642 574 L641 579"/>
+  </g>
+  <text x="618" y="562" font-size="13" fill="#1a1a1a" text-anchor="middle">LED</text>
+  <text x="596" y="672" font-size="11" fill="#555" text-anchor="end">long leg (anode)</text>
+  <text x="640" y="672" font-size="11" fill="#555">short leg (cathode), flat edge</text>
+  <line x1="590" y1="662" x2="604" y2="634" stroke="#999" stroke-width="1"/>
+  <line x1="650" y1="662" x2="638" y2="634" stroke="#999" stroke-width="1"/>
+
+  <!-- From the LED's cathode back to pin 34 (GND). -->
+  <path d="M636 610 H720 V422 H265" fill="none" stroke="#111" stroke-width="4" stroke-linejoin="round"/>
+
+</svg>

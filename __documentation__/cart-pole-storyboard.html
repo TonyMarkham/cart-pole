@@ -1,0 +1,1022 @@
+<title>Cart-Pole Storyboard</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Architects+Daughter&family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: a drafting table. Blueprint paper underneath, a title block at the
+   top, storyboard frames in a grid; each frame shows its chalk caption and the
+   paper card that lands. One deliberate world, so one theme. */
+:root {
+  --paper: #0e3a68;
+  --paper-deep: #0a2c52;
+  --grid-minor: rgba(196, 222, 255, 0.07);
+  --grid-major: rgba(196, 222, 255, 0.16);
+  --chalk: #f2f7ff;
+  --chalk-dim: #a8c4e8;
+  --card: #eef2f3;
+  --card-ink: #12304f;
+  --card-dim: #4a6480;
+  --redline: #ff6a4d;
+  --pencil: #ffd36e;
+  --frame-line: rgba(196, 222, 255, 0.35);
+
+  --f-hand: "Architects Daughter", "Comic Sans MS", cursive;
+  --f-label: "Barlow Condensed", "Arial Narrow", "Helvetica Neue", sans-serif;
+  --f-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  background-color: var(--paper);
+  background-image:
+    linear-gradient(var(--grid-major) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-major) 1px, transparent 1px),
+    linear-gradient(var(--grid-minor) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-minor) 1px, transparent 1px);
+  background-size: 120px 120px, 120px 120px, 24px 24px, 24px 24px;
+  color: var(--chalk);
+  font-family: var(--f-body);
+  font-size: 15px;
+  line-height: 1.55;
+}
+
+.sheet {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding-block: 40px 72px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: grid;
+  gap: 56px;
+}
+
+/* ---------- Title block ---------- */
+.titleblock {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0;
+  border: 2px solid var(--chalk);
+}
+.titleblock .name {
+  padding: 22px 24px;
+  border-right: 2px solid var(--chalk);
+  min-width: 0;
+}
+.eyebrow {
+  font-family: var(--f-mono);
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--chalk-dim);
+  margin: 0 0 6px;
+}
+h1 {
+  font-family: var(--f-label);
+  font-weight: 700;
+  font-size: clamp(40px, 7vw, 76px);
+  line-height: 0.95;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+  margin: 0;
+  text-wrap: balance;
+}
+.titleblock .lede {
+  margin: 14px 0 0;
+  max-width: 60ch;
+  color: var(--chalk-dim);
+}
+.titleblock dl {
+  margin: 0;
+  display: grid;
+  grid-template-columns: auto auto;
+  font-family: var(--f-mono);
+  font-size: 12px;
+}
+.titleblock dt, .titleblock dd {
+  margin: 0;
+  padding: 8px 14px;
+  border-bottom: 1px solid var(--frame-line);
+}
+.titleblock dt {
+  color: var(--chalk-dim);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  border-right: 1px solid var(--frame-line);
+}
+.titleblock dl > :nth-last-child(-n+2) { border-bottom: 0; }
+
+@media (max-width: 760px) {
+  .titleblock { grid-template-columns: 1fr; }
+  .titleblock .name { border-right: 0; border-bottom: 2px solid var(--chalk); }
+}
+
+/* ---------- Legend + want ---------- */
+.opening {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+  gap: 40px;
+  align-items: center;
+}
+@media (max-width: 860px) { .opening { grid-template-columns: 1fr; } }
+
+.legend h2, .thread-head h2, .closing h2 {
+  font-family: var(--f-label);
+  font-weight: 600;
+  font-size: 26px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  margin: 0 0 12px;
+  text-wrap: balance;
+}
+.legend ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 12px;
+}
+.legend li {
+  display: grid;
+  grid-template-columns: 92px minmax(0, 1fr);
+  gap: 14px;
+  align-items: baseline;
+  color: var(--chalk-dim);
+}
+.legend li b { color: var(--chalk); font-weight: 500; }
+.sw-hand { font-family: var(--f-hand); color: var(--chalk); font-size: 17px; }
+.sw-card {
+  display: inline-block;
+  background: var(--card);
+  color: var(--card-ink);
+  font-family: var(--f-label);
+  font-weight: 600;
+  font-size: 13px;
+  padding: 2px 8px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.sw-stamp {
+  display: inline-block;
+  font-family: var(--f-label);
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: 0.14em;
+  color: var(--redline);
+  border: 2px solid var(--redline);
+  padding: 0 6px;
+  transform: rotate(-4deg);
+}
+.sw-ref { font-family: var(--f-mono); font-size: 12px; color: var(--pencil); }
+
+.want-stage {
+  position: relative;
+  padding: 36px 16px 28px;
+  display: grid;
+  justify-items: center;
+  gap: 18px;
+}
+.want-stage .say { text-align: center; }
+.want {
+  background: var(--card);
+  color: var(--card-ink);
+  width: min(420px, 100%);
+  padding: 22px 24px 20px;
+  transform: rotate(-1.5deg);
+  box-shadow: 0 18px 30px rgba(3, 18, 38, 0.55), 0 2px 0 rgba(3, 18, 38, 0.4);
+  animation: drop 900ms cubic-bezier(.2, .9, .3, 1.25) both;
+  position: relative;
+}
+.want .tag {
+  font-family: var(--f-mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--card-dim);
+}
+.want h2 {
+  font-family: var(--f-label);
+  font-weight: 700;
+  font-size: 40px;
+  line-height: 1;
+  text-transform: uppercase;
+  margin: 6px 0 10px;
+}
+.want p { margin: 0; color: var(--card-dim); }
+.want .pin {
+  position: absolute;
+  top: -9px;
+  left: 50%;
+  width: 18px;
+  height: 18px;
+  margin-left: -9px;
+  border-radius: 50%;
+  background: var(--redline);
+  box-shadow: 0 3px 4px rgba(3, 18, 38, 0.5);
+}
+
+/* ---------- Threads + panels ---------- */
+.thread { display: grid; gap: 22px; }
+.thread-head {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 6px 18px;
+  align-items: baseline;
+  border-top: 1px dashed var(--frame-line);
+  padding-top: 18px;
+}
+.thread-head .letter {
+  font-family: var(--f-label);
+  font-weight: 700;
+  font-size: 54px;
+  line-height: 0.8;
+  color: var(--pencil);
+  grid-row: span 2;
+}
+.thread-head h2 { margin: 0; }
+.thread-head p { margin: 0; color: var(--chalk-dim); max-width: 70ch; }
+
+.panels {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr));
+  gap: 22px;
+}
+
+.panel {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  border: 1px solid var(--frame-line);
+  background: rgba(10, 44, 82, 0.55);
+  min-width: 0;
+}
+
+.frame {
+  position: relative;
+  min-height: 260px;
+  padding: 16px 18px 22px;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  gap: 14px;
+  border-bottom: 1px solid var(--frame-line);
+}
+.beat {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  font-family: var(--f-mono);
+  font-size: 12px;
+  color: var(--chalk-dim);
+  letter-spacing: 0.08em;
+}
+.say {
+  font-family: var(--f-hand);
+  font-size: 18px;
+  line-height: 1.3;
+  color: var(--chalk);
+  margin: 0;
+  padding-right: 34px;
+  text-wrap: balance;
+}
+.card {
+  align-self: center;
+  justify-self: center;
+  width: min(92%, 300px);
+  background: var(--card);
+  color: var(--card-ink);
+  padding: 14px 16px 14px;
+  box-shadow: 0 12px 20px rgba(3, 18, 38, 0.5), 0 1px 0 rgba(3, 18, 38, 0.35);
+  position: relative;
+  transform: rotate(var(--tilt, -1deg));
+}
+.panels .panel:nth-child(3n+1) .card { --tilt: -1.6deg; }
+.panels .panel:nth-child(3n+2) .card { --tilt: 1.2deg; }
+.panels .panel:nth-child(3n) .card { --tilt: -0.4deg; }
+
+.card .ref {
+  font-family: var(--f-mono);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  color: var(--card-dim);
+  text-transform: uppercase;
+}
+.card h3 {
+  font-family: var(--f-label);
+  font-weight: 700;
+  font-size: 24px;
+  line-height: 1.05;
+  text-transform: uppercase;
+  margin: 2px 0 6px;
+  text-wrap: balance;
+}
+.card p {
+  margin: 0;
+  font-size: 13.5px;
+  line-height: 1.45;
+  color: var(--card-dim);
+}
+.card p + p { margin-top: 4px; }
+.card code {
+  font-family: var(--f-mono);
+  font-size: 12px;
+  color: var(--card-ink);
+}
+.stamp {
+  position: absolute;
+  top: -12px;
+  right: -6px;
+  font-family: var(--f-label);
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: 0.16em;
+  color: var(--redline);
+  border: 2px solid var(--redline);
+  background: rgba(238, 242, 243, 0.92);
+  padding: 1px 7px;
+  transform: rotate(6deg);
+}
+
+.notes {
+  margin: 0;
+  padding: 12px 18px 16px;
+  display: grid;
+  grid-template-columns: 86px minmax(0, 1fr);
+  gap: 6px 12px;
+  font-size: 13.5px;
+}
+.notes dt {
+  font-family: var(--f-mono);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--pencil);
+  padding-top: 2px;
+}
+.notes dd { margin: 0; color: var(--chalk-dim); }
+
+/* the finale */
+.panel.finale { grid-column: 1 / -1; }
+.panel.finale .frame { min-height: 280px; }
+.panel.finale .card { width: min(92%, 460px); }
+.panel.finale .card h3 { font-size: 40px; }
+.panel.finale .say { font-size: 24px; }
+
+/* ---------- Closing frame map ---------- */
+.closing { display: grid; gap: 18px; }
+.closing > p { margin: 0; color: var(--chalk-dim); max-width: 70ch; }
+.map {
+  border: 2px solid var(--chalk);
+  padding: 26px 20px 22px;
+  display: grid;
+  gap: 22px;
+  overflow-x: auto;
+}
+.map .want-mini {
+  justify-self: center;
+  background: var(--card);
+  color: var(--card-ink);
+  font-family: var(--f-label);
+  font-weight: 700;
+  font-size: 20px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 8px 18px;
+  position: relative;
+}
+.map .want-mini::after {
+  content: "BUILT";
+  position: absolute;
+  right: -30px;
+  top: -14px;
+  font-size: 13px;
+  letter-spacing: 0.16em;
+  color: var(--redline);
+  border: 2px solid var(--redline);
+  padding: 0 6px;
+  transform: rotate(10deg);
+  background: var(--paper);
+}
+.map .cols {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(120px, 1fr));
+  gap: 12px;
+  min-width: 900px;
+}
+.map .col h4 {
+  font-family: var(--f-label);
+  font-weight: 600;
+  font-size: 15px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--pencil);
+  margin: 0 0 8px;
+}
+.map .col ol {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+.map .col li {
+  background: rgba(238, 242, 243, 0.9);
+  color: var(--card-ink);
+  font-size: 12.5px;
+  line-height: 1.3;
+  padding: 5px 8px;
+  font-variant-numeric: tabular-nums;
+}
+.map .col li span {
+  font-family: var(--f-mono);
+  font-size: 11px;
+  color: var(--card-dim);
+  margin-right: 4px;
+}
+.map .balance {
+  justify-self: center;
+  font-family: var(--f-label);
+  font-weight: 700;
+  font-size: 22px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  background: var(--pencil);
+  color: var(--card-ink);
+  padding: 6px 18px;
+}
+
+.footnote {
+  font-family: var(--f-hand);
+  font-size: 17px;
+  color: var(--chalk-dim);
+  margin: 0;
+  max-width: 70ch;
+}
+
+/* ---------- Motion ---------- */
+@keyframes drop {
+  0%   { transform: translateY(-60px) rotate(-7deg); }
+  70%  { transform: translateY(4px) rotate(-1deg); }
+  100% { transform: translateY(0) rotate(-1.5deg); }
+}
+@keyframes land {
+  0%   { transform: translateY(-46px) rotate(calc(var(--tilt) * -4)); }
+  70%  { transform: translateY(3px) rotate(var(--tilt)); }
+  100% { transform: translateY(0) rotate(var(--tilt)); }
+}
+.panel:hover .card { animation: land 650ms cubic-bezier(.2, .9, .3, 1.25); }
+
+@media (prefers-reduced-motion: reduce) {
+  .want, .panel:hover .card { animation: none; }
+}
+</style>
+
+<main class="sheet">
+
+  <header class="titleblock">
+    <div class="name">
+      <p class="eyebrow">Storyboard · infographic animation</p>
+      <h1>Cart-Pole Storyboard</h1>
+      <p class="lede">One want, then every card that had to exist before it could come true. Each frame is one beat of the planned video: there, the handwritten line appears first, then the card lands on the blueprint table. This page only previews the landing: hover a frame to see its card drop.</p>
+    </div>
+    <dl>
+      <dt>Dwg</dt><dd>CP-STORY-01</dd>
+      <dt>Beats</dt><dd>24 + want</dd>
+      <dt>Scale</dt><dd>NTS</dd>
+      <dt>Source</dt><dd>project-key-points.md</dd>
+      <dt>Date</dt><dd>2026-11-09</dd>
+    </dl>
+  </header>
+
+  <section class="opening" aria-label="How to read and the opening frame">
+    <div class="legend">
+      <h2>How to read a frame</h2>
+      <ul>
+        <li><span class="sw-hand">…so I needed</span><span><b>The caption.</b> In the video, written on the table first, in your voice. It says why the next card had to exist.</span></li>
+        <li><span><span class="sw-card">Card</span></span><span><b>The card.</b> In the video, drops or flies in after the caption. Title, two or three lines, and a picture.</span></li>
+        <li><span><span class="sw-stamp">Roadblock</span></span><span><b>A roadblock.</b> The plan hit a wall here, and the card is what got around it.</span></li>
+        <li><span class="sw-ref">KP 7</span><span><b>Key point.</b> The section of <code>project-key-points.md</code> the card comes from.</span></li>
+      </ul>
+    </div>
+
+    <div class="want-stage">
+      <p class="say">Frame 0 · the empty blueprint table. Then:</p>
+      <div class="want">
+        <span class="pin" aria-hidden="true"></span>
+        <span class="tag">I wanted</span>
+        <h2>A real cart-pole balance bot</h2>
+        <p>Trained entirely in simulation, then dropped onto the real rig. In the video, this card stays pinned at the top of the table from here to the end.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== A · THE BODY ===================== -->
+  <section class="thread">
+    <div class="thread-head">
+      <span class="letter">A</span>
+      <h2>The body</h2>
+      <p>Before anything can learn to balance, there has to be a rig to balance on.</p>
+    </div>
+    <div class="panels">
+
+      <article class="panel">
+        <div class="frame">
+          <span class="beat">01</span>
+          <p class="say">…so first I needed the robot itself.</p>
+          <div class="card">
+            <span class="ref">KP 1</span>
+            <h3>Mechanical design</h3>
+            <p>The whole rig modelled in FreeCAD, every nut, bolt and washer from the Fasteners Workbench.</p>
+            <p>Assembly nodes mark where the ArUco markers and MuJoCo sites go.</p>
+          </div>
+        </div>
+        <dl class="notes">
+          <dt>On card</dt><dd>The FreeCAD assembly, rotated slowly.</dd>
+          <dt>Motion</dt><dd>Drops straight down below the want card. The first card on the table.</dd>
+        </dl>
+      </article>
+
+      <article class="panel">
+        <div class="frame">
+          <span class="beat">02</span>
+          <p class="say">…but FreeCAD's STEP export loses the density.</p>
+          <div class="card">
+            <span class="stamp">Roadblock</span>
+            <span class="ref">KP 1</span>
+            <h3>STEP density patcher</h3>
+            <p>A Python tool reads each part's density in FreeCAD and writes it into the exported STEP file.</p>
+          </div>
+        </div>
+        <dl class="notes">
+          <dt>On card</dt><dd>Two lines of STEP text: before without density, after with it.</dd>
+          <dt>Motion</dt><dd>Slides in and tucks half under card 01, like a note clipped to it.</dd>
+        </dl>
+      </article>
+
+      <article class="panel">
+        <div class="frame">
+          <span class="beat">03</span>
+          <p class="say">…and a driver strong enough to move it.</p>
+          <div class="card">
+            <span class="stamp">Roadblock</span>
+            <span class="ref">KP 15</span>
+            <h3>DM542 driver</h3>
+            <p>The DRV8825 simply could not move the NEMA 23 motor. The DM542 replaced it, at 1/32 microstepping.</p>
+          </div>
+        </div>
+        <dl class="notes">
+          <dt>On card</dt><dd>Both drivers side by side, the DRV8825 crossed out in red.</dd>
+          <dt>Motion</dt><dd>A DRV8825 card lands, then the DM542 drops on top and covers it. The same "replaced" gag returns at beat 13.</dd>
+        </dl>
+      </article>
+
+    </div>
+  </section>
+
+  <!-- ===================== B · THE DIGITAL TWIN ===================== -->
+  <section class="thread">
+    <div class="thread-head">
+      <span class="letter">B</span>
+      <h2>The digital twin</h2>
+      <p>The same rig, from the same CAD, has to exist in Unity for pictures and in MuJoCo for physics.</p>
+    </div>
+    <div class="panels">
+
+      <article class="panel">
+        <div class="frame">
+          <span class="beat">04</span>
+          <p class="say">…I wanted the tools in Rust. But OpenCascade is C++.</p>
+          <div class="card">
+            <span class="stamp">Roadblock</span>
+            <span class="ref">KP 2</span>
+            <h3>OpenCascade C ABI</h3>
+            <p><code>occt-dev</code>: build recipes and prebuilt libraries for Windows, Linux and macOS.</p>
+            <p>A small C ABI in greyhound-snake exposes just the parts needed.</p>
+          </div>
+        </div>
+        <dl class="notes">
+          <dt>On card</dt><dd>Three stacked layers: C++ · C ABI · Rust and C#.</dd>
+          <dt>Motion</dt><dd>Flies in from the left, the first card of a new column.</dd>
+        </dl>
+      </article>
+
+      <article class="panel">
+        <div class="frame">
+          <span class="beat">05</span>
+          <p class="say">…to turn exact CAD surfaces into meshes.</p>
+          <div class="card">
+            <span class="ref">KP 4</span>
+            <h3>STEP to mesh</h3>
+            <p>A Rust utility that tessellates STEP geometry with OCCT.</p>
+          </div>
+        </div>
+        <dl class="notes">
+          <dt>On card</dt><dd>The cart as a wireframe, then shaded.</dd>
+          <dt>Motion</dt><dd>Drops below card 04.</dd>
+        </dl>
+      </article>
+
+      <article class="panel">
+        <div class="frame">
+          <span class="beat">06</span>
+          <p class="say">…so Unity could open a STEP file by itself.</p>
+          <div class="card">
+            <span class="ref">KP 5</span>
+            <h3>STEP importer for Unity</h3>
+            <p>Drop a STEP file into Assets and it becomes a GameObject. The STEP file is never touched.</p>
+          </div>
+        </div>
+        <dl class="notes">
+          <dt>On card</dt><dd>Unity's Project window with the .step asset expanded into its parts.</dd>
+          <dt>Motion</dt><dd>Drops below card 05.</dd>
+        </dl>
+      </article>
+
+      <article class="panel">
+        <div class="frame">
+          <span class="beat">07</span>
+          <p class="say">…and to describe its physics for MuJoCo.</p>
+          <div class="card">
+            <span class="ref">KP 6</span>
+            <h3>MJCF authoring in Unity</h3>
+            <p>Editors for joints, actuators and sites, and one button that exports a MuJoCo-ready MJCF file.</p>
+          </div>
+        </div>
+        <dl class="notes">
+          <dt>On card</dt><dd>The inspector on one side, the exported XML on the other.</dd>
+          <dt>Motion</dt><dd>Drops below card 06, closing the column.</dd>
+        </dl>
+      </article>
+
+    </div>
+  </section>
+
+  <!-- ===================== C · THE EYES ===================== -->
+  <section class="thread">
+    <div class="thread-head">
+      <span class="letter">C</span>
+      <h2>The eyes</h2>
+      <p>The robot only knows where the pole is from what its camera sees.</p>
+    </div>
+    <div class="panels">
+
+      <article class="panel">
+        <div class="frame">
+          <span class="beat">08</span>
+          <p class="say">…the robot needed eyes.</p>
+          <div class="card">
+            <span class="ref">KP 7</span>
+            <h3>Four ArUco markers</h3>
+            <p>50 mm each: the pole's pivot, the pole's tip, and both ends of the rail.</p>
+          </div>
+        </div>
+        <dl class="notes">
+          <dt>On card</dt><dd>The four printed markers.</dd>
+          <dt>Motion</dt><dd>Flies in from the right, a new column.</dd>
+        </dl>
+      </article>
+
+      <article class="panel">
+        <div class="frame">
+          <span class="beat">09</span>
+          <p class="say">…but OpenCV couldn't read 50 mm markers from 2 m away.</p>
+          <div class="card">
+            <span class="stamp">Roadblock</span>
+            <span class="ref">KP 7</span>
+            <h3>Train a detector</h3>
+            <p>A YOLO model learns to find the four markers instead, one class per marker.</p>
+          </div>
+        </div>
+        <dl class="notes">
+          <dt>On card</dt><dd>A camera frame of the rig from 2 m, markers too small to read.</dd>
+          <dt>Motion</dt><dd>An "OpenCV" card lands and gets a red X; the detector card drops beside it.</dd>
+        </dl>
+      </article>
+
+      <article class="panel">
+        <div class="frame">
+          <span class="beat">10</span>
+          <p class="say">…and a detector needs thousands of labelled pictures.</p>
+          <div class="card">
+            <span class="ref">KP 7</span>
+            <h3>Synthetic image generator</h3>
+            <p>Unity renders the rig on 4 desks in 3 HDRI studios, with random camera, light, cart and pole.</p>
+            <p>11,000 images: 10,000 to train, 1,000 to check.</p>
+          </div>
+        </div>
+        <dl class="notes">
+          <dt>On card</dt><dd>A contact sheet of rendered frames, filling in fast.</dd>
+          <dt>Motion</dt><dd>A small stack of image cards fans out, then squares up into one card.</dd>
+        </dl>
+      </article>
+
+      <article class="panel">
+        <div class="frame">
+          <span class="beat">11</span>
+          <p class="say">…and every label had to be exactly right.</p>
+          <div class="card">
+            <span class="ref">KP 7</span>
+            <h3>Exact labels, checked in 8K</h3>
+            <p>Boxes come from Unity's own transforms (<code>WorldToViewportPoint</code>).</p>
+            <p>An 8K render checks each marker; any the pole hides is dropped.</p>
+          </div>
+        </div>
+        <dl class="notes">
+          <dt>On card</dt><dd>One frame with its boxes, then a zoom into an 8K crop.</dd>
+          <dt>Motion</dt><dd>Drops onto card 10, slightly offset.</dd>
+        </dl>
+      </article>
+
+      <article class="panel">
+        <div class="frame">
+          <span class="beat">12</span>
+          <p class="say">…and that check needed OpenCV. Also C++.</p>
+          <div class="card">
+            <span class="stamp">Roadblock</span>
+            <span class="ref">KP 3</span>
+            <h3>OpenCV C ABI</h3>
+            <p><code>opencv-dev</code>: prebuilt libraries for three platforms, and a small C ABI in greyhound-snake.</p>
+          </div>
+        </div>
+        <dl class="notes">
+          <dt>On card</dt><dd>The same three layers as card 04, with OpenCV on the bottom.</dd>
+          <dt>Motion</dt><dd>Lands next to card 04 in column B, matching it: the pattern repeats.</dd>
+        </dl>
+      </article>
+
+      <article class="panel">
+        <div class="frame">
+          <span class="beat">13</span>
+          <p class="say">…and the eyes had to be fast.</p>
+          <div class="card">
+            <span class="stamp">Roadblock</span>
+            <span class="ref">KP 15</span>
+            <h3>Jetson Orin Nano Super</h3>
+            <p>8–10 ms per frame with TensorRT, against 80–125 ms for the best Raspberry Pi 5 options.</p>
+          </div>
+        </div>
+        <dl class="notes">
+          <dt>On card</dt><dd>The two times as bars, the Pi's ten times longer.</dd>
+          <dt>Motion</dt><dd>The beat 03 gag again: a Pi 5 card lands, the Orin drops on top of it.</dd>
+        </dl>
+      </article>
+
+      <article class="panel">
+        <div class="frame">
+          <span class="beat">14</span>
+          <p class="say">…then I trained it.</p>
+          <div class="card">
+            <span class="ref">KP 7</span>
+            <h3>The eyes work</h3>
+            <p>About 20 hours of training across two models.</p>
+            <p>Tested on the real rig: a 100% hit rate.</p>
+          </div>
+        </div>
+        <dl class="notes">
+          <dt>On card</dt><dd>A real camera frame, all four markers boxed.</dd>
+          <dt>Motion</dt><dd>Drops at the bottom of column C and the column's cards glow once.</dd>
+        </dl>
+      </article>
+
+    </div>
+  </section>
+
+  <!-- ===================== D · THE MUSCLES ===================== -->
+  <section class="thread">
+    <div class="thread-head">
+      <span class="letter">D</span>
+      <h2>The muscles</h2>
+      <p>Something has to turn each decision into the motor's next pulse rate, and it had to be Rust.</p>
+    </div>
+    <div class="panels">
+
+      <article class="panel">
+        <div class="frame">
+          <span class="beat">15</span>
+          <p class="say">…an Arduino in Rust. But there was no usable HAL.</p>
+          <div class="card">
+            <span class="stamp">Roadblock</span>
+            <span class="ref">KP 11</span>
+            <h3>My own HAL</h3>
+            <p><code>unor4-hal</code>, written from scratch for the UNO R4.</p>
+            <p>Compile-time hardware validation: <code>`A0` has no GPT output</code> fails at <code>cargo check</code>.</p>
+          </div>
+        </div>
+        <dl class="notes">
+          <dt>On card</dt><dd>That compiler error, in a terminal.</dd>
+          <dt>Motion</dt><dd>Lands hard, with a small shake: the biggest roadblock of the story.</dd>
+        </dl>
+      </article>
+
+      <article class="panel">
+        <div class="frame">
+          <span class="beat">16</span>
+          <p class="say">…and a HAL needs proof.</p>
+          <div class="card">
+            <span class="ref">KP 11</span>
+            <h3>The R3 test bench</h3>
+            <p>An older UNO R3, running <code>.ino</code> tests, measures the R4's pins.</p>
+            <p>33 of 33 checks pass, spread over three flashes.</p>
+          </div>
+        </div>
+        <dl class="notes">
+          <dt>On card</dt><dd>The photo of the R3 and R4 wired together.</dd>
+          <dt>Motion</dt><dd>Two small board cards slide in from either side and join into one.</dd>
+        </dl>
+      </article>
+
+      <article class="panel">
+        <div class="frame">
+          <span class="beat">17</span>
+          <p class="say">…the board had to hear the Orin without polling.</p>
+          <div class="card">
+            <span class="stamp">Roadblock</span>
+            <span class="ref">KP 12</span>
+            <h3>WiFi bridge fork</h3>
+            <p>Push mode: each UDP datagram goes to the processor as it arrives, and an interrupt wakes it.</p>
+          </div>
+        </div>
+        <dl class="notes">
+          <dt>On card</dt><dd>Two timelines: polling's constant checks, push's single wake-up.</dd>
+          <dt>Motion</dt><dd>Drops below card 16.</dd>
+        </dl>
+      </article>
+
+      <article class="panel">
+        <div class="frame">
+          <span class="beat">18</span>
+          <p class="say">…then the firmware itself.</p>
+          <div class="card">
+            <span class="ref">KP 13</span>
+            <h3>The controller</h3>
+            <p>A 3-byte command over WiFi; it sleeps until an interrupt wakes it.</p>
+            <p>Limit switches, a soft limit and FAULT keep the cart on the rail.</p>
+          </div>
+        </div>
+        <dl class="notes">
+          <dt>On card</dt><dd>The UNO R4 on the rig, with the DM542 beside it.</dd>
+          <dt>Motion</dt><dd>Drops below card 17.</dd>
+        </dl>
+      </article>
+
+      <article class="panel">
+        <div class="frame">
+          <span class="beat">19</span>
+          <p class="say">…and I needed to flash it from my desk.</p>
+          <div class="card">
+            <span class="ref">KP 14</span>
+            <h3>Arduino manager</h3>
+            <p>A Raspberry Pi beside the rig logs the board's USB serial line and flashes new firmware on request.</p>
+          </div>
+        </div>
+        <dl class="notes">
+          <dt>On card</dt><dd>The manager's web page with the live serial log.</dd>
+          <dt>Motion</dt><dd>Drops at the bottom of column D.</dd>
+        </dl>
+      </article>
+
+    </div>
+  </section>
+
+  <!-- ===================== E · THE CLOCK ===================== -->
+  <section class="thread">
+    <div class="thread-head">
+      <span class="letter">E</span>
+      <h2>The clock</h2>
+      <p>The real robot is never instant. Training has to include its delays, so they had to be measured first.</p>
+    </div>
+    <div class="panels">
+
+      <article class="panel">
+        <div class="frame">
+          <span class="beat">20</span>
+          <p class="say">…the policy had to feel the real delays.</p>
+          <div class="card">
+            <span class="ref">KP 8</span>
+            <h3>Timing measurements</h3>
+            <p>Seven gaps measured on the real loop, from the camera's exposure to the motor's new rate.</p>
+            <p>Training draws four random stretches from them, and loses 1 command in 3,000.</p>
+          </div>
+        </div>
+        <dl class="notes">
+          <dt>On card</dt><dd>The loop as a ring, each stretch a coloured arc with its range in ms.</dd>
+          <dt>Motion</dt><dd>Lands in the middle of the table, where threads C and D meet: it measures both.</dd>
+        </dl>
+      </article>
+
+    </div>
+  </section>
+
+  <!-- ===================== F · THE LEARNING ===================== -->
+  <section class="thread">
+    <div class="thread-head">
+      <span class="letter">F</span>
+      <h2>The learning</h2>
+      <p>Everything above comes together in simulation, where the policy practises millions of times.</p>
+    </div>
+    <div class="panels">
+
+      <article class="panel">
+        <div class="frame">
+          <span class="beat">21</span>
+          <p class="say">…it needed to know what "good" looks like.</p>
+          <div class="card">
+            <span class="ref">KP 9</span>
+            <h3>The reward</h3>
+            <p>DeepMind's dm_control cart-pole reward: upright × small control × small velocity × centred.</p>
+          </div>
+        </div>
+        <dl class="notes">
+          <dt>On card</dt><dd>The four factors as four dials, multiplied.</dd>
+          <dt>Motion</dt><dd>Drops alone at the right edge, a new column.</dd>
+        </dl>
+      </article>
+
+      <article class="panel">
+        <div class="frame">
+          <span class="beat">22</span>
+          <p class="say">…and somewhere to practise.</p>
+          <div class="card">
+            <span class="ref">KP 10</span>
+            <h3>The synthetic loop</h3>
+            <p>MuJoCo, the Unity camera and stand-ins for the Orin and Arduino, 12 at once. It sees only detected markers.</p>
+            <p>6,000,000 steps in about 19.5 hours.</p>
+          </div>
+        </div>
+        <dl class="notes">
+          <dt>On card</dt><dd>The 3 × 4 grid of training windows, all moving.</dd>
+          <dt>Motion</dt><dd>Thin lines draw from columns B, C, D and E into this card before it lands: it uses all of them.</dd>
+        </dl>
+      </article>
+
+    </div>
+  </section>
+
+  <!-- ===================== G · THE REAL THING ===================== -->
+  <section class="thread">
+    <div class="thread-head">
+      <span class="letter">G</span>
+      <h2>The real thing</h2>
+      <p>The trained policy leaves the simulator and goes onto the robot.</p>
+    </div>
+    <div class="panels">
+
+      <article class="panel">
+        <div class="frame">
+          <span class="beat">23</span>
+          <p class="say">…and a brain on the real robot.</p>
+          <div class="card">
+            <span class="ref">KP 15</span>
+            <h3>The brain</h3>
+            <p>The same loop, in Rust on the Orin. Camera calibrated to 0.20 px.</p>
+            <p>Run and STOP from a page in Rust compiled to WebAssembly.</p>
+          </div>
+        </div>
+        <dl class="notes">
+          <dt>On card</dt><dd>The <code>/run</code> page with its Run and STOP buttons.</dd>
+          <dt>Motion</dt><dd>Drops at the bottom centre, under everything else.</dd>
+        </dl>
+      </article>
+
+      <article class="panel finale">
+        <div class="frame">
+          <span class="beat">24</span>
+          <p class="say">…and then it balanced.</p>
+          <div class="card">
+            <span class="ref">KP 15 · 2026-11-09</span>
+            <h3>It balances</h3>
+            <p>On its first day on the rig, the 6M-step policy swung the pole up in 3.4 s and held it within 10° of upright for the rest of a 30 s run.</p>
+          </div>
+        </div>
+        <dl class="notes">
+          <dt>On card</dt><dd>The video of the real rig balancing, playing inside the card.</dd>
+          <dt>Motion</dt><dd>Every other card dims. This one drops last, dead centre. Then the want card at the top gets a red BUILT stamp.</dd>
+        </dl>
+      </article>
+
+    </div>
+  </section>
+
+  <!-- ===================== CLOSING ===================== -->
+  <section class="closing">
+    <h2>The last frame</h2>
+    <p>The camera pulls back to show the whole table: the want pinned at the top, seven columns of cards beneath it, and the balancing rig at the bottom.</p>
+    <div class="map" role="img" aria-label="The final table layout: the want card at the top, seven columns of cards, and It balances at the bottom">
+      <div class="want-mini">A real cart-pole balance bot</div>
+      <div class="cols">
+        <div class="col"><h4>A · Body</h4><ol><li><span>01</span>Mechanical design</li><li><span>02</span>Density patcher</li><li><span>03</span>DM542 driver</li></ol></div>
+        <div class="col"><h4>B · Twin</h4><ol><li><span>04</span>OCCT C ABI</li><li><span>12</span>OpenCV C ABI</li><li><span>05</span>STEP to mesh</li><li><span>06</span>STEP importer</li><li><span>07</span>MJCF authoring</li></ol></div>
+        <div class="col"><h4>C · Eyes</h4><ol><li><span>08</span>ArUco markers</li><li><span>09</span>Train a detector</li><li><span>10</span>Image generator</li><li><span>11</span>Labels in 8K</li><li><span>13</span>Jetson Orin</li><li><span>14</span>The eyes work</li></ol></div>
+        <div class="col"><h4>D · Muscles</h4><ol><li><span>15</span>My own HAL</li><li><span>16</span>R3 test bench</li><li><span>17</span>WiFi bridge fork</li><li><span>18</span>The controller</li><li><span>19</span>Arduino manager</li></ol></div>
+        <div class="col"><h4>E · Clock</h4><ol><li><span>20</span>Timing measurements</li></ol></div>
+        <div class="col"><h4>F · Learning</h4><ol><li><span>21</span>The reward</li><li><span>22</span>The synthetic loop</li></ol></div>
+        <div class="col"><h4>G · Real</h4><ol><li><span>23</span>The brain</li></ol></div>
+      </div>
+      <div class="balance">It balances</div>
+    </div>
+    <p class="footnote">The order of the beats is a reconstruction from the key points. Swap any two cards where the real story went differently.</p>
+  </section>
+
+</main>

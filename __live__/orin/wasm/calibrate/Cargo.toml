@@ -1,0 +1,22 @@
+[package]
+name                 = "calibrate-page"
+version              = { workspace = true }
+edition              = { workspace = true }
+description          = "The calibration page, in the browser: finds the rail's ends and centre, and measures the seven poses the camera's matrix is fitted from"
+publish              = false
+
+[dependencies]
+error-location       = { workspace = true }
+js-sys               = { workspace = true }
+serde                = { workspace = true }
+serde_json           = { workspace = true }
+thiserror            = { workspace = true }
+wasm-bindgen         = { workspace = true }
+wasm-bindgen-futures = { workspace = true }
+web-sys              = {
+                         workspace = true,
+                         features = ["Event", "HtmlButtonElement", "HtmlDialogElement", "HtmlInputElement"]
+}
+
+[lints]
+workspace            = true

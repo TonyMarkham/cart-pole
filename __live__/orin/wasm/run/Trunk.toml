@@ -1,0 +1,4 @@
+[build]
+public_url = "/run/"
+# Built here on the PC; the Orin's folder carries only this output.
+dist = "../../rust/pages/run"

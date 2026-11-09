@@ -1,0 +1,21 @@
+[package]
+name              = "arduino-manager"
+version           = { workspace = true }
+edition           = { workspace = true }
+description       = "The service beside the rig's Arduino: the web page, the log and flashing, over the Arduino's USB serial line"
+publish           = false
+
+[dependencies]
+anyhow            = { workspace = true }
+axum              = { workspace = true }
+chrono            = { workspace = true }
+clap              = { workspace = true }
+futures-util      = { workspace = true }
+serde             = { workspace = true }
+tokio             = { workspace = true, features = ["sync", "io-util"] }
+tokio-serial      = { workspace = true }
+tokio-util        = { workspace = true }
+toml              = { workspace = true }
+
+[lints]
+workspace = true

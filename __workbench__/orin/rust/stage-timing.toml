@@ -1,0 +1,64 @@
+# stage-timing's settings: `stage-timing stage-timing.toml`, run on the Orin
+# from this folder, with no run going in the brain and calibrate_service.py not
+# using the camera. Paths are relative to this file; a leading ~ is the home
+# folder. stage-timing-short.toml is the same with fewer frames, to check the
+# program end to end before a full run.
+
+[camera]
+# The camera exactly as the brain runs it: these are the brain's values,
+# copied from __live__/orin/rust/settings.toml [camera], where each is
+# explained. Change one, change both, or this times another camera.
+sensor_id = 0
+sensor_mode = 0
+width = 1_456
+height = 1_088
+framerate = 60
+tnr_mode = 0
+ee_mode = 0
+exposure_ns = 1_000_000
+gain = 180
+settle_frames = 30
+
+[worker]
+# The brain's own worker and matrix, its [brain] values in
+# __live__/orin/rust/settings.toml, so the stages timed are the brain's: the
+# Python project's folder on the Orin, the command run there, and how long it
+# gets to load the TensorRT engine and the policy, ms.
+worker_dir = "~/live-orin-python"
+worker = ["uv", "run", "python", "src/brain_worker.py"]
+worker_start_timeout_ms = 60_000
+
+# The fitted matrix, the brain's [brain] homography.
+homography = "~/live-orin-python/homography.json"
+
+[run]
+# The loop's pace, the brain's [brain] values: no wait after each command, so
+# the next frame is the camera's next after the pass, and the pre-warmed
+# pool's gap, ms.
+delay_ms = 0
+pre_warm_gap_ms = 40.0
+
+# How long to wait for any frame before the run stops, ms. The first frame
+# comes only after the camera software has started, about 1.85 s on
+# 2026-11-08 (camera-timing.toml, frame_timeout_ms), so 5,000 as there.
+frame_timeout_ms = 5_000
+
+[send]
+# Where the command datagrams go: the workbench PC, not the rig's Arduino, so
+# the cart never moves. Port 9 is the "discard" port: nothing on the PC reads
+# it. The send is timed until the Orin's system has the datagram, which does
+# not wait for it to arrive anywhere.
+address = "192.168.0.245"
+port = 9
+
+[test]
+# How many passes of the loop to time, one frame each: 3,000 is the top of
+# the 300-3,000 real-timings.md asks for per gap. At the brain's measured
+# cadence, 33.3 ms (real-timings.md, gap 9), that is about 100 s.
+frames = 3_000
+
+# How often to print how far the run has got, in frames; 0 for never.
+progress_every = 500
+
+# Where each run's folder goes.
+output_dir = "runs"

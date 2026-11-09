@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Arduino pins</title>
+<link data-trunk rel="rust" data-wasm-opt="0">
+<style>
+:root {
+  color-scheme: light dark;
+  --page: #f6f7f7; --text: #1d2629; --quiet: #586569; --line: #d3dadc; --panel: #ffffff;
+  --board: #0f6f7f; --board-edge: #0a5562; --part: #2d2317; --metal: #a9aeb0; --silk: #e8f4f6;
+  --led: #d9a441; --header: #2a2117; --hole: #8f8373;
+  --ok: #1a7f4b; --warn: #b4560b; --info: #1f5fa8; --none: #71797c;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --page: #14191b; --text: #e6ecee; --quiet: #9eabaf; --line: #313b3f; --panel: #1d2427;
+    --ok: #48c088; --warn: #ec9a4e; --info: #6ea8e8; --none: #8d979b;
+  }
+}
+* { box-sizing: border-box; }
+body { margin: 0 auto; max-width: 900px; padding: 16px; background: var(--page); color: var(--text);
+  font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+h1 { font-size: 26px; margin: 8px 0; }
+h2 { font-size: 18px; margin: 28px 0 8px; }
+p { margin: 8px 0; }
+code { font-size: 14px; }
+#connection { padding: 8px 12px; border-radius: 6px; background: var(--panel); border: 1px solid var(--line);
+  border-left: 5px solid var(--none); overflow-wrap: anywhere; }
+#connection.ok { border-left-color: var(--ok); }
+#connection.warn { border-left-color: var(--warn); }
+svg { display: block; width: 100%; height: auto; margin: 16px 0; }
+svg text { font-family: inherit; }
+.card { fill: var(--panel); stroke: var(--line); }
+.card-pin { font-size: 20px; font-weight: 700; fill: var(--text); }
+.card-role { font-size: 13px; fill: var(--quiet); }
+.card-state { font-size: 13px; font-weight: 700; }
+.card-level { font-size: 13px; fill: var(--quiet); }
+.leader { fill: none; stroke-width: 2; }
+.silk { fill: var(--silk); font-size: 13px; }
+.part-label { fill: var(--silk); font-size: 14px; text-anchor: middle; }
+.ok { fill: var(--ok); stroke: var(--ok); }
+.warn { fill: var(--warn); stroke: var(--warn); }
+.info { fill: var(--info); stroke: var(--info); }
+.none { fill: var(--none); stroke: var(--none); }
+text.ok, text.warn, text.info, text.none { stroke: none; }
+.leader.ok, .leader.warn, .leader.info, .leader.none { fill: none; }
+.table-wrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; min-width: 620px; background: var(--panel); }
+th, td { border: 1px solid var(--line); padding: 7px 9px; text-align: left; vertical-align: top; font-size: 14px; }
+th { color: var(--quiet); font-weight: 600; }
+td.state { font-weight: 700; }
+</style>
+</head>
+<body>
+<h1>The Arduino's pins</h1>
+<p>The rig's Arduino (an UNO R4 WiFi) reaches the cart's two limit switches and its
+motor driver through a few pins. This page shows which pins those are and what each
+one reads right now, so the wiring can be checked without plugging in a USB cable.</p>
+<p id="connection" role="status">Asking the board for its first reading.</p>
+
+<div id="board"></div>
+
+<h2>Every pin the rig uses</h2>
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Pin</th><th>Inside the chip</th><th>Wired to</th><th>What it does</th><th>Now</th></tr></thead>
+  <tbody id="rows"></tbody>
+</table>
+</div>
+
+<h2>How to read this</h2>
+<p><b>High and low.</b> A pin is either high (at the board's 5 V, reported as 1) or low
+(at 0 V, reported as 0). The Arduino reports the level and nothing more; this page adds
+the meaning.</p>
+<p><b>How a reading happens.</b> Between readings the board's processor is asleep. Its WiFi
+chip wakes it with an interrupt (a signal that stops whatever the processor is doing, or ends
+its sleep) when a message arrives, so it never has to keep checking for one. Every
+<span id="poll-ms">few hundred</span> ms while this page is open, the page asks the Orin, the Orin
+sends the board one short UDP message (UDP is a way of sending a single message over the network
+with no connection set up and no guarantee it arrives), and the board reads its pins and sends the
+levels back.</p>
+<p><b>Inputs and outputs.</b> D2 and D3 are inputs: the level is measured on the pin at
+that moment. D4, D5 and D6 are outputs: the level is the one the firmware is setting,
+not a measurement of the wire, so an output can look right with its wire unplugged.</p>
+<p><b>Limit switches.</b> A limit switch sits at each end of the rail and the cart presses
+it on arrival. Its contact is closed until pressed, which holds the pin low. Pressing it
+opens the contact and the pin goes high, and so does a broken wire, so a fault looks like
+a press rather than a safe reading. With a USB cable from the Raspberry Pi plugged into the
+board, both switches have read high with neither pressed, though not every time
+(<code>__live__/rpi/rust/crates/arduino-manager/README.md</code>), so be wary of those readings
+with that cable in.</p>
+<p><b>The motor driver's upside-down signals.</b> Each output reaches the DM542 motor driver
+through a small transistor, so low switches the driver's input on and high leaves it off.
+That is why D6 low turns the motor off and D4 pulses low (<code>control-design.md</code>,
+<i>Why the transistors</i>). Which way the cart goes for Plus and Minus depends on the motor's
+wiring and is not fixed here.</p>
+<p><b>Power.</b> The board runs from its barrel jack. VIN and the GND beside it are not
+connected. The jack, 5V and GND are not signals the firmware reads, so they have no live status.
+If the board answers, it has power, though that power may be coming from a USB cable.</p>
+<p><b>Two separate sides.</b> The Arduino controls only the DM542's 5 V side. The motor side runs
+on 24 V from its own power supply. The two are kept separate to avoid differing grounds, so no 24 V
+wire reaches this board.</p>
+<p><b>Not used.</b> D7 was the driver's enable pin before 2026-10-27, and D8 was the old
+DRV8825 driver's fault line; the DM542 has none. Neither is connected now. The WiFi chip
+talks to the processor on P501 and P502, which are inside the board and on no header.</p>
+<p><b>Where this comes from.</b> Roles: the pin map in <code>control-design.md</code>. Chip
+pins: <code>unor4-hal</code>'s <code>gpio/pins.rs</code>. Board layout: redrawn and simplified
+from the top view on <a href="https://docs.arduino.cc/hardware/uno-r4-wifi/">Arduino's page for
+the board</a>. Check any wire against the labels printed on the board itself.</p>
+</body>
+</html>

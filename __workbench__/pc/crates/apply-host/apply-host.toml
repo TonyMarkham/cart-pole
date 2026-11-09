@@ -1,0 +1,56 @@
+# The apply test's settings: `apply-host apply-host.toml`. Paths are relative
+# to this file.
+
+[r3]
+# The R3's USB port and speed: the apply_timer sketch's SERIAL_BAUD. Opening
+# the port resets an R3, so the host waits for the sketch's READY line.
+port = "COM4"
+baud = 115_200
+ready_timeout_ms = 5_000
+
+[r4]
+# The R4's USB port and speed: the firmware's config/usb.toml baud.
+port = "COM3"
+baud = 115_200
+# How long to keep asking STATUS until the R4 answers that it is running:
+# its WiFi join takes up to about 25 s (its config/wifi_timing.toml).
+status_timeout_ms = 40_000
+
+[apply]
+# The two rates the commands alternate between, pulses/s. Each must give a
+# whole number of the R4's 48 MHz counts per pulse, so the step generator
+# runs it exactly: 48,000,000 / 38,400 = 1,250 and / 40,000 = 1,200. Their
+# difference, 1,600, must be at most one tick's ramp step, m × 2 ms
+# (the firmware's config/motion.toml jump_limit, 900,000: 1,800), so each
+# command finishes in the tick that takes it and the rate is steady until
+# the next.
+rate_low = 38_400
+rate_high = 40_000
+
+# Commands sent before the R3 starts timing, so the ramp has reached the
+# two rates from rest, and then the commands of the measurement itself.
+warmup_datagrams = 50
+datagrams = 3_000
+
+# The gap between commands, ms, drawn evenly from this band: 33–50 ms is the
+# simulator's 20–30 Hz command rate (gym.toml [env]).
+gap_min_ms = 33
+gap_max_ms = 50
+
+# How long the R3 waits after a mark for the new rate before it reports
+# none, µs: far beyond the 2–4 ms the design expects.
+apply_timeout_us = 10_000
+
+# How long the PC waits for the R3's line about each command, ms: the R3's
+# timeout, the line's few ms, and the WiFi hop's longest seen, 606 ms
+# (real-timings.md, gap 7).
+result_timeout_ms = 1_000
+
+# The histogram's bin width, µs.
+histogram_bin_us = 50
+
+# The random draws' seed: the same seed gives the same gaps.
+seed = 1
+
+# Where each run's folder goes.
+output_dir = "runs"

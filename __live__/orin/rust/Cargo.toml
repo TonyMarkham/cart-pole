@@ -1,0 +1,52 @@
+# The Orin's workspace: this folder is pushed to the Orin and built there, so
+# nothing here may point outside it. The browser pages are built on the PC, from
+# ../wasm, and only their output reaches this folder, in pages/.
+[workspace]
+members         = [
+                    "crates/brain",
+                    "crates/image-push",
+                    "crates/webserver",
+]
+resolver        = "3"
+
+[workspace.package]
+version         = "0.1.0"
+edition         = "2024"
+
+[workspace.dependencies]
+axum            = {
+                    version = "0.8.9",
+                    features = ["ws"]
+}
+clap            = {
+                    version = "4.6.7",
+                    features = ["derive"]
+}
+error-location  = { version = "0.1.0" }
+serde           = {
+                    version = "1.0.229",
+                    features = ["derive"]
+}
+serde_json      = { version = "1.0.154" }
+thiserror       = { version = "2.0.21" }
+tokio           = {
+                    version = "1.54.1",
+                    features = ["macros", "net", "rt-multi-thread", "sync", "time"]
+}
+toml            = { version = "1.1.8" }
+tower-http      = {
+                    version = "0.7.1",
+                    features = ["fs"]
+}
+ureq            = {
+                    version = "3.5.0",
+                    default-features = false
+}
+
+[workspace.lints.clippy]
+unwrap_used     = "deny"
+expect_used     = "deny"
+panic           = "deny"
+
+[workspace.lints.rust]
+unused_must_use = "deny"

@@ -1,0 +1,20 @@
+[package]
+name           = "webserver"
+version        = { workspace = true }
+edition        = { workspace = true }
+description    = "The Orin's webserver: serves the browser pages, pushes images to the viewer, asks the rig's Arduino for its pins and its moves, and passes measurements on to calibrate_service.py"
+publish        = false
+
+[dependencies]
+axum           = { workspace = true }
+error-location = { workspace = true }
+serde          = { workspace = true }
+serde_json     = { workspace = true }
+thiserror      = { workspace = true }
+tokio          = { workspace = true }
+toml           = { workspace = true }
+tower-http     = { workspace = true }
+ureq           = { workspace = true }
+
+[lints]
+workspace      = true

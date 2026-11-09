@@ -11,7 +11,7 @@ sessions can decide from facts instead of researching again.
 Status: **research** (2026-10-24), read from the projects' docs, source
 and PyPI pages (*Sources*). It decides nothing: each decision still lands
 in `synthetic-loop-dia.md` first (`AGENTS.md`). Nothing here is
-installed; adding Gymnasium or SB3 to `trainer/` needs the user's
+installed; adding Gymnasium or SB3 to `__synthetic__/trainer/python/` needs the user's
 permission. Sections marked **For the loop** are this doc's reading of a
 fact against the diagram, not decisions.
 

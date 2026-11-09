@@ -1,0 +1,8 @@
+[submodule "submodules/dm_control"]
+	path = submodules/dm_control
+	url = https://github.com/google-deepmind/dm_control.git
+	branch = main
+	shallow = true
+[submodule "submodules/orin-cam"]
+	path = submodules/orin-cam
+	url = https://github.com/TonyMarkham/orin-cam.git

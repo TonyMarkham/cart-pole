@@ -1,0 +1,14 @@
+# IDE
+.idea/
+
+# Rust
+target/
+
+# The browser pages, built on the PC from ../wasm and pushed with this folder.
+# Anchored to this folder, so it never hides a source folder of the same name:
+# unanchored, it hid crates/webserver/src/pages/
+/pages/
+
+# The server's and the brain's messages, when they run in the background
+webserver.out
+brain.out

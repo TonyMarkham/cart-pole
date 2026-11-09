@@ -1,0 +1,16 @@
+[package]
+name            = "stage-timing"
+version         = { workspace = true }
+edition         = { workspace = true }
+description     = "Gaps 2-6 on the Orin: runs the brain's loop with its camera, worker, matrix and policy, and times each stage from a frame arriving to its command being sent"
+publish         = false
+
+[dependencies]
+anyhow          = { workspace = true }
+clap            = { workspace = true }
+serde           = { workspace = true }
+serde_json      = { workspace = true }
+toml            = { workspace = true }
+
+[lints]
+workspace = true

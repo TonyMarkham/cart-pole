@@ -19,7 +19,8 @@ built. Written down after the first jump-limit run so it is not lost.
 - **The bridge:** that ESP32-S3's firmware. The user's fork,
   `D:\git\unor4-wifi-interrupt-bridge` (branch `feature/interrupt`,
   release `v0.6.0-interrupt.2`), adds a UDP push mode to Arduino's
-  0.6.0. Which build is on the rig's board is not recorded.
+  0.6.0. The rig's board has the fork (user, 2026-10-31); it reported
+  0.6.102, this release, the same day.
 - **The Pi:** a Raspberry Pi beside the rig, on the home network. Which
   one, and its OS, is open (*Open questions*); the Pi 5 the Orin
   replaced (`AGENTS.md`) may serve.
