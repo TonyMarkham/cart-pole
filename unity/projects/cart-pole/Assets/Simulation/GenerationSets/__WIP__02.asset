@@ -10,9 +10,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7d11bda1606478948b74105441095944, type: 3}
-  m_Name: Set-01 1
+  m_Name: __WIP__02
   m_EditorClassIdentifier: Simulation.CartPole.SyntheticDataGen.Runtime::Simulation.CartPole.SyntheticDataGen.GenerationSetSO
-  m_Seed: 1001
+  m_Seed: 2002
   m_States: 50
   m_FixedPoses:
   - {fileID: 11400000, guid: b9f390d8d838e534abd799e2e916947a, type: 2}
@@ -37,7 +37,7 @@ MonoBehaviour:
   m_CameraLateralRange:
     x: -0.1
     y: 0.1
-  m_MaxZ: 2.5
+  m_MaxZ: 2.25
   m_Desks:
   - {fileID: 11400000, guid: 687552c19743502dfbc751022127a864, type: 2}
   - {fileID: 11400000, guid: ae800926c503bd1fe9d83db7034295fc, type: 2}
