@@ -7,11 +7,17 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-using Greyhound.Step;
+using Greyhound.MuJoCo;
 using Simulation.CartPole.SyntheticDataGen;
 
 using UnityEngine;
 using UnityEngine.SceneManagement;
+
+// Greyhound.MuJoCo also has a Joint (the MJCF attributes a Joint asset
+// holds), and UnityEngine has a physics Joint: the asset types are named
+// through aliases so neither is ambiguous.
+using MuJoCoJoint = Greyhound.MuJoCo.ScriptableObjects.Joint;
+using MuJoCoRoot = Greyhound.MuJoCo.ScriptableObjects.Root;
 
 namespace Simulation.CartPole.SimLoop
 {
@@ -31,13 +37,15 @@ namespace Simulation.CartPole.SimLoop
     // "qpos": 0.05}, {"name": "04-Pole.Hinge.joint", "qpos": 3.14}]} - MJCF
     // joint names, MuJoCo's runtime units (slide meters, hinge radians).
     //
-    // The joints are the StepJoint assets themselves: each holds its part's
-    // sibling-index path and its MJCF mirror (type, axis, pivot), and its
-    // asset name is the MJCF <joint name> - the wire key. The STEP instance
-    // and its parts are resolved at runtime; nothing is authored on the
-    // instance, and nothing resolved here is written back to it. The
-    // rig's marker quads are added to the instance at startup (RigSO.Apply)
-    // and exist only while the scene runs.
+    // The joints are the MuJoCo package's Joint assets themselves, the
+    // sub-assets of the rig's MuJoCo Root asset: each holds its part's
+    // sibling-index path (body) and its MJCF <joint> (joint: name, type,
+    // axis, pivot), and joint.name is the MJCF <joint name> - the wire key.
+    // The Root's root is the STEP assembly the paths index into. The STEP
+    // instance and its parts are resolved at runtime; nothing is authored
+    // on the instance, and nothing resolved here is written back to it.
+    // The rig's marker quads are added to the instance at startup
+    // (RigSO.Apply) and exist only while the scene runs.
     public sealed class SimulationLoopController : MonoBehaviour
     {
         // Unity <-> MJCF swaps Y and Z (greyhound's exporter: Unity axis
@@ -64,14 +72,14 @@ namespace Simulation.CartPole.SimLoop
         // waits: blocking its main thread would stall the editor itself.
         private const int IdleWaitMilliseconds = 100;
 
-        [SerializeField] private StepJointSet m_JointSet;
-        public StepJointSet JointSet => m_JointSet;
+        [SerializeField] private MuJoCoRoot m_MuJoCoRoot;
+        public MuJoCoRoot MuJoCoRoot => m_MuJoCoRoot;
 
-        [SerializeField] private StepJoint m_Hinge;
-        public StepJoint Hinge => m_Hinge;
+        [SerializeField] private MuJoCoJoint m_Hinge;
+        public MuJoCoJoint Hinge => m_Hinge;
 
-        [SerializeField] private StepJoint m_Slide;
-        public StepJoint Slide => m_Slide;
+        [SerializeField] private MuJoCoJoint m_Slide;
+        public MuJoCoJoint Slide => m_Slide;
 
         // The rig's markers are applied to the STEP instance at startup -
         // the same RigSO.Apply the dataset generator calls - so the
@@ -164,7 +172,7 @@ namespace Simulation.CartPole.SimLoop
             if (instance == null)
             {
                 Debug.LogError(
-                    $"[SimulationLoopController] no instance of '{m_JointSet.stepAssetPath}' " +
+                    $"[SimulationLoopController] no instance of '{m_MuJoCoRoot.root.name}' " +
                     "in the active scene", this);
                 Stop(1);
                 return;
@@ -204,12 +212,16 @@ namespace Simulation.CartPole.SimLoop
         private List<string> ConfigurationProblems()
         {
             var problems = new List<string>();
-            if (m_JointSet == null)
+            if (m_MuJoCoRoot == null)
             {
-                problems.Add("no StepJointSet assigned");
+                problems.Add("no MuJoCo Root assigned");
             }
-            CheckJoint(problems, m_Hinge, "hinge", StepJointType.Hinge);
-            CheckJoint(problems, m_Slide, "slide", StepJointType.Slide);
+            else if (m_MuJoCoRoot.root == null)
+            {
+                problems.Add($"MuJoCo Root '{m_MuJoCoRoot.name}' has no STEP assembly (root)");
+            }
+            CheckJoint(problems, m_Hinge, "hinge", JointType.Hinge);
+            CheckJoint(problems, m_Slide, "slide", JointType.Slide);
             if (m_Rig == null)
             {
                 problems.Add("no RigSO assigned - the frames would carry no markers");
@@ -221,25 +233,36 @@ namespace Simulation.CartPole.SimLoop
             return problems;
         }
 
-        private void CheckJoint(List<string> problems, StepJoint joint, string role, StepJointType type)
+        private void CheckJoint(List<string> problems, MuJoCoJoint joint, string role, JointType type)
         {
             if (joint == null)
             {
                 problems.Add($"no {role} joint assigned");
                 return;
             }
-            if (joint.mj.type != type)
+            if (joint.joint == null)
             {
-                problems.Add($"{role} joint '{joint.name}' is a {joint.mj.type}, not a {type}");
+                problems.Add($"{role} joint asset '{joint.name}' holds no MJCF joint");
+                return;
             }
-            if (m_JointSet != null && !m_JointSet.joints.Contains(joint))
+            var mjcfName = joint.joint.name;
+            if (joint.joint.type != type)
             {
-                problems.Add($"{role} joint '{joint.name}' is not in joint set '{m_JointSet.name}'");
+                problems.Add($"{role} joint '{mjcfName}' is a {joint.joint.type}, not a {type}");
             }
-            // The exporter writes <joint name> as the asset name with every
+            if (m_MuJoCoRoot != null && !m_MuJoCoRoot.joints.Contains(joint))
+            {
+                problems.Add($"{role} joint '{mjcfName}' is not in MuJoCo Root '{m_MuJoCoRoot.name}'");
+            }
+            if (string.IsNullOrEmpty(mjcfName))
+            {
+                problems.Add($"{role} joint asset '{joint.name}' has no MJCF name");
+                return;
+            }
+            // The exporter writes <joint name> from joint.name with every
             // character outside [A-Za-z0-9_.-] replaced by '_'; a name that
             // changes under that rule would never match what MuJoCo sends.
-            foreach (var character in joint.name)
+            foreach (var character in mjcfName)
             {
                 var allowed = (character >= 'a' && character <= 'z') ||
                     (character >= 'A' && character <= 'Z') ||
@@ -248,25 +271,25 @@ namespace Simulation.CartPole.SimLoop
                 if (!allowed)
                 {
                     problems.Add(
-                        $"{role} joint name '{joint.name}' has '{character}', which the MJCF " +
-                        "exporter rewrites to '_' - rename the asset to [A-Za-z0-9_.-] only");
+                        $"{role} joint name '{mjcfName}' has '{character}', which the MJCF " +
+                        "exporter rewrites to '_' - rename it to [A-Za-z0-9_.-] only");
                     break;
                 }
             }
         }
 
-        // The STEP instance, matched against the joint set's STEP asset
+        // The STEP instance, matched against the MuJoCo Root's STEP assembly
         // (SyntheticDataGenerator's rule): in the editor a scene root whose
-        // prefab source is the stored STEP path, else - and in a player,
-        // always - a root named after the STEP asset's file. Active scene
+        // prefab source is that assembly's asset path, else - and in a
+        // player, always - a root named after the assembly. Active scene
         // only.
         private Transform FindStepInstance()
         {
-            var stepPath = m_JointSet.stepAssetPath;
-            var stepName = Path.GetFileNameWithoutExtension(stepPath);
+            var stepName = m_MuJoCoRoot.root.name;
             foreach (var sceneRoot in SceneManager.GetActiveScene().GetRootGameObjects())
             {
 #if UNITY_EDITOR
+                var stepPath = UnityEditor.AssetDatabase.GetAssetPath(m_MuJoCoRoot.root);
                 if (!string.IsNullOrEmpty(stepPath))
                 {
                     var source = UnityEditor.PrefabUtility.GetNearestPrefabInstanceRoot(sceneRoot);
@@ -287,12 +310,17 @@ namespace Simulation.CartPole.SimLoop
 
         // The part a joint's sibling-index path walks to from the instance
         // root, with its rest pose; null (and an error) where the path no
-        // longer resolves.
-        private PartPose CapturePose(Transform root, StepJoint joint)
+        // longer resolves. SiblingPath.SELF names the node it is at, so a
+        // path of [SELF] is the instance root itself.
+        private PartPose CapturePose(Transform root, MuJoCoJoint joint)
         {
             var node = root;
             foreach (var index in joint.body.indices)
             {
+                if (index == SiblingPath.SELF)
+                {
+                    continue;
+                }
                 if (node == null || index < 0 || index >= node.childCount)
                 {
                     node = null;
@@ -303,7 +331,7 @@ namespace Simulation.CartPole.SimLoop
             if (node == null || joint.body.indices.Length == 0)
             {
                 Debug.LogError(
-                    $"[SimulationLoopController] joint '{joint.name}': part '{joint.body.name}' " +
+                    $"[SimulationLoopController] joint '{joint.joint.name}': part '{joint.body.targetName}' " +
                     $"[{string.Join("/", joint.body.indices)}] not found under '{root.name}'",
                     this);
                 return null;
@@ -317,24 +345,24 @@ namespace Simulation.CartPole.SimLoop
         }
 
         // Drives the parts to a state: each value goes to the joint whose
-        // asset name equals its MJCF name. mj.axis and mj.pos are in the
-        // part's own frame, so the motion is composed onto the rest pose in
-        // that frame:
+        // joint.name equals its MJCF name. joint.axis and joint.pos are in
+        // the part's own frame, so the motion is composed onto the rest pose
+        // in that frame:
         //   slide: shift the rest position by axis * qpos meters;
         //   hinge: rotate by MjcfToUnityHingeSign * qpos about axis, then
-        //          shift so the pivot (mj.pos) stays where it was at rest.
+        //          shift so the pivot (joint.pos) stays where it was at rest.
         public void Apply(string jointName, float qpos)
         {
-            if (jointName == m_Slide.name)
+            if (jointName == m_Slide.joint.name)
             {
                 m_SlidePose.node.localPosition = m_SlidePose.localPosition +
-                    m_SlidePose.localRotation * (m_Slide.mj.axis.normalized * qpos);
+                    m_SlidePose.localRotation * (m_Slide.joint.axis.normalized * qpos);
             }
-            else if (jointName == m_Hinge.name)
+            else if (jointName == m_Hinge.joint.name)
             {
                 var degrees = MjcfToUnityHingeSign * qpos * Mathf.Rad2Deg;
-                var swing = Quaternion.AngleAxis(degrees, m_Hinge.mj.axis.normalized);
-                var pivot = m_Hinge.mj.pos;
+                var swing = Quaternion.AngleAxis(degrees, m_Hinge.joint.axis.normalized);
+                var pivot = m_Hinge.joint.pos;
                 m_HingePose.node.localRotation = m_HingePose.localRotation * swing;
                 m_HingePose.node.localPosition = m_HingePose.localPosition +
                     m_HingePose.localRotation * (pivot - swing * pivot);
@@ -343,7 +371,7 @@ namespace Simulation.CartPole.SimLoop
             {
                 Debug.LogWarning(
                     $"[SimulationLoopController] ignoring unknown joint '{jointName}' " +
-                    $"(driving '{m_Slide.name}' and '{m_Hinge.name}')", this);
+                    $"(driving '{m_Slide.joint.name}' and '{m_Hinge.joint.name}')", this);
             }
         }
 

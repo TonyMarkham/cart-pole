@@ -10,15 +10,15 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: cc4d64d224c59051bae3bf24c54006c2, type: 3}
-  m_Name: Pivot
+  m_Name: Pole-Tip
   m_EditorClassIdentifier: Assembly-CSharp::CartPole.Vision.MarkerSO
-  label: Pivot
-  arUcoId: 0920
+  label: End
+  arUcoId: 0937
   anchor:
-    indices: 04000000350000000c000000i
-    name: empty002
-  stepAssetPath: Assets/asy-cart-pole.step
-  prefab: {fileID: 815139214850007104, guid: 0d34c713986c417b48059f59c9003e5d, type: 3}
+    indices: 04000000350000000d000000i
+    name: marker-tip
+  stepAssetPath: Assets/Simulation/Robot/asy-cart-pole.step
+  prefab: {fileID: 7570106523277935833, guid: f97f4fba07e37060f911926662ee5a6e, type: 3}
   size: 0.05
   localOffset: {x: 0, y: 0, z: -0.002}
   localEuler: {x: 0, y: 0, z: 0}

@@ -13,5 +13,11 @@ namespace Simulation.CartPole.SyntheticDataGen
 
         internal const string GenerationSetMenuName = "Simulation/Generation Set";
         internal const string GenerationSetFileName = "Generation Set";
+
+        internal const string FixedPoseMenuName = "Simulation/Fixed Pose";
+        internal const string FixedPoseFileName = "Fixed Pose";
+
+        internal const string PropPoseMenuName = "Simulation/Props/Prop Pose";
+        internal const string PropPoseFileName = "Prop Pose";
     }
 }

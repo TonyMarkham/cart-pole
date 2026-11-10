@@ -26,6 +26,7 @@ namespace Simulation.CartPole.SyntheticDataGen.Editor
         private Label m_outputEmptyWarning;
         private Label m_desksEmptyWarning;
         private Label m_skyboxesEmptyWarning;
+        private Label m_fixedPosesWarning;
         private VisualElement m_outputDirectorySlot;
 
         public override VisualElement CreateInspectorGUI()
@@ -49,6 +50,7 @@ namespace Simulation.CartPole.SyntheticDataGen.Editor
             m_outputEmptyWarning = root.Q<Label>("output-empty-warning");
             m_desksEmptyWarning = root.Q<Label>("desks-empty-warning");
             m_skyboxesEmptyWarning = root.Q<Label>("skyboxes-empty-warning");
+            m_fixedPosesWarning = root.Q<Label>("fixed-poses-warning");
             m_outputDirectorySlot = root.Q<VisualElement>("output-directory-slot");
 
             RebuildDropZone();
@@ -108,6 +110,31 @@ namespace Simulation.CartPole.SyntheticDataGen.Editor
                 RandomizeOn("m_RandomizeDesks") && ArrayEmpty("m_Desks"));
             Toggle(m_skyboxesEmptyWarning,
                 RandomizeOn("m_RandomizeSkyboxes") && ArrayEmpty("m_Skyboxes"));
+
+            // The fixed-pose count and list must agree, and the count
+            // fits inside States: each mismatch makes a different dataset
+            // than the form suggests (the runner logs the same rules).
+            var poses = serializedObject.FindProperty("m_FixedPoses")?.arraySize ?? 0;
+            var frames = serializedObject.FindProperty("m_FixedPoseFrames")?.intValue ?? 0;
+            var states = serializedObject.FindProperty("m_States")?.intValue ?? 0;
+            string problem = null;
+            if (frames > 0 && poses == 0)
+            {
+                problem = "fixed-pose frames are set but no fixed poses are assigned — every frame is random";
+            }
+            else if (frames <= 0 && poses > 0)
+            {
+                problem = "fixed poses are assigned but fixed-pose frames is 0 — none of them run";
+            }
+            else if (frames > states)
+            {
+                problem = "fixed-pose frames exceed States — only States frames run";
+            }
+            if (m_fixedPosesWarning != null)
+            {
+                m_fixedPosesWarning.text = problem ?? "";
+                Toggle(m_fixedPosesWarning, problem != null);
+            }
         }
 
         private bool RandomizeOn(string propertyName)

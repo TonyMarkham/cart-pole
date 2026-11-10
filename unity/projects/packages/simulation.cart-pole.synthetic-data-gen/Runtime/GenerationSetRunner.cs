@@ -9,16 +9,24 @@ using UnityEngine;
 namespace Simulation.CartPole.SyntheticDataGen
 {
     // One set's run: draw states until the set's state count is
-    // captured. Each state is a synchronous main-thread chunk - apply
-    // the environment (desk, skybox, light - absolute ranges), drive
-    // the rig through the drawn state (rig-local ranges), place the
-    // camera at the drawn absolute pose, compensate the frustum,
+    // captured. The set's fixed-pose frames come first: capture i takes
+    // fixed pose i mod the pose count while i is below FixedPoseFrames,
+    // and a random rig state after. Each state is a synchronous
+    // main-thread chunk - apply the environment (desk, skybox, light -
+    // absolute ranges), drive the rig through the drawn state (rig-local
+    // ranges) or the fixed pose and its props, place the
+    // camera at its authored pose plus the drawn offsets, compensate the frustum,
     // render the greyscale capture frame, run the 8K verification
     // gate, and write the gated artifacts - all before the next draw.
     // Between states the run awaits, so the player loop and the editor
     // UI keep running: the process never reads as unresponsive. A draw
     // whose frustum compensation exceeds the set's Max Z is not
-    // captured and does not count toward States.
+    // captured and does not count toward States; a discarded fixed-pose
+    // frame is retried with the same pose and a fresh environment and
+    // camera, so the sequence stays in step. A set with no fixed-pose
+    // frames makes the same
+    // random draws in the same order as before they existed, so its
+    // seed replays the same dataset.
     internal sealed class GenerationSetRunner
     {
         // The wholesale-failure breaker: this many consecutive frames
@@ -38,9 +46,12 @@ namespace Simulation.CartPole.SyntheticDataGen
         private readonly Light directionalLight;
         private readonly RobotBounds robotBounds;
         private readonly bool keepBoundsInFrustum;
-        private readonly float cameraBaseZ;
+        private readonly Vector3 cameraBasePosition;
+        private readonly Quaternion cameraBaseRotation;
 
         private System.Random random;
+        private List<FixedPoseSO> fixedPoses;
+        private int fixedPoseFrames;
         private DatasetWriter writer;
         private VerificationGate gate;
         private List<Transform> markers;
@@ -57,7 +68,8 @@ namespace Simulation.CartPole.SyntheticDataGen
             Light directionalLight,
             RobotBounds robotBounds,
             bool keepBoundsInFrustum,
-            float cameraBaseZ)
+            Vector3 cameraBasePosition,
+            Quaternion cameraBaseRotation)
         {
             this.set = set;
             this.rig = rig;
@@ -66,7 +78,8 @@ namespace Simulation.CartPole.SyntheticDataGen
             this.directionalLight = directionalLight;
             this.robotBounds = robotBounds;
             this.keepBoundsInFrustum = keepBoundsInFrustum;
-            this.cameraBaseZ = cameraBaseZ;
+            this.cameraBasePosition = cameraBasePosition;
+            this.cameraBaseRotation = cameraBaseRotation;
         }
 
         internal async Task RunAsync()
@@ -87,8 +100,11 @@ namespace Simulation.CartPole.SyntheticDataGen
             gate = new VerificationGate(captureCamera);
             var environment = new EnvironmentRandomizer(
                 set, random, directionalLight);
+            fixedPoses = ResolveFixedPoses();
+            fixedPoseFrames = ResolveFixedPoseFrames();
             Debug.Log(
-                $"[GenerationSetRunner] '{set.name}': {set.States} states, " +
+                $"[GenerationSetRunner] '{set.name}': {set.States} states " +
+                $"({fixedPoseFrames} fixed-pose frames first, over {fixedPoses.Count} poses), " +
                 $"seed {set.Seed} -> {writer.RunDirectory}");
             var captures = 0;
             var attempts = 0;
@@ -110,7 +126,10 @@ namespace Simulation.CartPole.SyntheticDataGen
                         $"partial run at {writer.RunDirectory}");
                     break;
                 }
-                if (DrawAndCapture(environment))
+                var fixedPose = captures < fixedPoseFrames
+                    ? fixedPoses[captures % fixedPoses.Count]
+                    : null;
+                if (DrawAndCapture(environment, fixedPose))
                 {
                     captures++;
                 }
@@ -149,24 +168,65 @@ namespace Simulation.CartPole.SyntheticDataGen
 
         // One draw through the whole pipeline; false means the draw was
         // discarded on the Max Z cap (nothing rendered, nothing
-        // written, does not count toward States).
-        private bool DrawAndCapture(EnvironmentRandomizer environment)
+        // written, does not count toward States). With a fixed pose the
+        // rig takes that pose instead of a random state, and the pose's
+        // props exist for this draw only. The draw order - environment,
+        // rig, camera - is the random sequence a seed replays.
+        private bool DrawAndCapture(EnvironmentRandomizer environment, FixedPoseSO fixedPose)
         {
             environment.Apply();
-            rig.ApplyState(
-                assemblyInstance,
-                Draw(rig.CartPositionRange),
-                Draw(rig.PoleRotationRange));
+            var props = new List<GameObject>();
+            if (fixedPose != null)
+            {
+                rig.ApplyState(assemblyInstance, fixedPose.CartPosition, fixedPose.PoleRadians);
+                foreach (var propPose in fixedPose.Props)
+                {
+                    var prop = propPose != null ? propPose.Place(assemblyInstance) : null;
+                    if (prop != null)
+                    {
+                        props.Add(prop);
+                    }
+                }
+            }
+            else
+            {
+                rig.ApplyState(
+                    assemblyInstance,
+                    Draw(rig.CartPositionRange),
+                    Draw(rig.PoleRotationRange));
+            }
+            try
+            {
+                return PlaceCameraAndCapture();
+            }
+            finally
+            {
+                // Destroy is deferred to the end of the frame; inactive
+                // now, the props can never reach the next draw's renders.
+                foreach (var prop in props)
+                {
+                    prop.SetActive(false);
+                    Object.Destroy(prop);
+                }
+            }
+        }
+
+        // The camera draw, the frustum fit, and the render, gate and
+        // write of one frame; false means the Max Z cap discarded it.
+        // Each enabled range is an offset from the camera's authored
+        // pose: lateral along world X and height along world Y in
+        // meters, pitch and yaw in degrees about the authored
+        // orientation. A disabled range adds nothing and draws nothing.
+        private bool PlaceCameraAndCapture()
+        {
+            var lateral = set.RandomizeCameraLateral ? Draw(set.CameraLateralRange) : 0f;
+            var height = set.RandomizeCameraHeight ? Draw(set.CameraHeightRange) : 0f;
+            var pitch = set.RandomizeCameraPitch ? Draw(set.CameraPitchRange) : 0f;
+            var yaw = set.RandomizeCameraYaw ? Draw(set.CameraYawRange) : 0f;
             var transform = captureCamera.transform;
             transform.SetPositionAndRotation(
-                new Vector3(
-                    Draw(set.CameraLateralRange),
-                    Draw(set.CameraHeightRange),
-                    cameraBaseZ),
-                Quaternion.Euler(
-                    Draw(set.CameraPitchRange),
-                    Draw(set.CameraYawRange),
-                    0f));
+                cameraBasePosition + new Vector3(lateral, height, 0f),
+                cameraBaseRotation * Quaternion.Euler(pitch, yaw, 0f));
             var bounds = robotBounds.Bounds;
             if (keepBoundsInFrustum && !FrustumFitter.Fit(captureCamera, bounds, set.MaxZ))
             {
@@ -265,6 +325,55 @@ namespace Simulation.CartPole.SyntheticDataGen
                 return false;
             }
             return true;
+        }
+
+        // The set's fixed poses without empty list entries, each skipped
+        // entry named once.
+        private List<FixedPoseSO> ResolveFixedPoses()
+        {
+            var resolved = new List<FixedPoseSO>();
+            foreach (var pose in set.FixedPoses)
+            {
+                if (pose == null)
+                {
+                    Debug.LogWarning(
+                        $"[GenerationSetRunner] '{set.name}': an empty fixed pose entry is skipped");
+                    continue;
+                }
+                resolved.Add(pose);
+            }
+            return resolved;
+        }
+
+        // How many of the run's frames take a fixed pose: FixedPoseFrames,
+        // capped at States, and none without a pose to take. Each
+        // mismatch between the count and the list is named, because the
+        // run would otherwise quietly make a different dataset.
+        private int ResolveFixedPoseFrames()
+        {
+            var frames = set.FixedPoseFrames;
+            if (frames > 0 && fixedPoses.Count == 0)
+            {
+                Debug.LogWarning(
+                    $"[GenerationSetRunner] '{set.name}': {frames} fixed-pose frames but no " +
+                    "fixed poses - every frame draws a random rig state");
+                return 0;
+            }
+            if (frames <= 0 && fixedPoses.Count > 0)
+            {
+                Debug.LogWarning(
+                    $"[GenerationSetRunner] '{set.name}': {fixedPoses.Count} fixed poses but " +
+                    "0 fixed-pose frames - none of them run");
+                return 0;
+            }
+            if (frames > set.States)
+            {
+                Debug.LogWarning(
+                    $"[GenerationSetRunner] '{set.name}': {frames} fixed-pose frames but " +
+                    $"{set.States} States - only {set.States} run");
+                return set.States;
+            }
+            return Mathf.Max(0, frames);
         }
 
         private float Draw(float2 range)

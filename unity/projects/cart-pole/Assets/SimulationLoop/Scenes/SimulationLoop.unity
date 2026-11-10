@@ -171,6 +171,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 4686495883008454800, guid: db4039a097603222aa79557805afca4e, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -497,6 +501,11 @@ MonoBehaviour:
   m_ShadowLayerMask: 1
   m_RenderingLayers: 1
   m_ShadowRenderingLayers: 1
+--- !u!1 &698405589 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: -3307206622709248564, guid: db4039a097603222aa79557805afca4e, type: 3}
+  m_PrefabInstance: {fileID: 139312804}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &832575517
 GameObject:
   m_ObjectHideFlags: 0
@@ -544,6 +553,55 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1523003293
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1523003295}
+  - component: {fileID: 1523003294}
+  m_Layer: 0
+  m_Name: MarkerManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1523003294
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1523003293}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b18e9c8002ae2d37eb5d0811eda83258, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Simulation.CartPole.SyntheticDataGen.Runtime::CartPole.Vision.MarkerManager
+  robot: {fileID: 698405589}
+  rig: {fileID: 11400000, guid: 719e7b1fdddd2ec6382007133fae387e, type: 2}
+  disableAnchorRenderers: 1
+  disableAnchorColliders: 1
+  applyOnStart: 1
+--- !u!4 &1523003295
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1523003293}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -0, y: 0, z: -0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -637,9 +695,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 69fef82262a37ab4495e7c382b751224, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Simulation.CartPole.SimLoop.Runtime::Simulation.CartPole.SimLoop.SimulationLoopController
-  m_JointSet: {fileID: 11400000, guid: 8cadb91f77a9547bb96d92c7e759076c, type: 2}
-  m_Hinge: {fileID: 11400000, guid: ee77d7eded69da1d4b33f98c36863e37, type: 2}
-  m_Slide: {fileID: 11400000, guid: dcb236f48d40df238966c80b9edfea18, type: 2}
+  m_MuJoCoRoot: {fileID: 11400000, guid: 4a81285728f18294e9239b4e4ddca089, type: 2}
+  m_Hinge: {fileID: -4343962865673530790, guid: 4a81285728f18294e9239b4e4ddca089, type: 2}
+  m_Slide: {fileID: -770849578500289707, guid: 4a81285728f18294e9239b4e4ddca089, type: 2}
   m_Rig: {fileID: 11400000, guid: 719e7b1fdddd2ec6382007133fae387e, type: 2}
   m_RenderCamera: {fileID: 330585545}
   m_EditorOrinUrl: ws://127.0.0.1:9001
@@ -654,3 +712,4 @@ SceneRoots:
   - {fileID: 2033612144}
   - {fileID: 377579689}
   - {fileID: 1920650100}
+  - {fileID: 1523003295}

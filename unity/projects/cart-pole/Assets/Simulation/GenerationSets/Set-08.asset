@@ -14,6 +14,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: Simulation.CartPole.SyntheticDataGen.Runtime::Simulation.CartPole.SyntheticDataGen.GenerationSetSO
   m_Seed: 8008
   m_States: 1000
+  m_FixedPoses:
+  - {fileID: 11400000, guid: b9f390d8d838e534abd799e2e916947a, type: 2}
+  - {fileID: 11400000, guid: 4d2132ec659df8748acde856e763cd4c, type: 2}
+  m_FixedPoseFrames: 25
   m_OutputDirectory: D:/git/cart-pole/datasets/generated
   m_CameraImageWidth: 1456
   m_CameraImageHeight: 1088
@@ -27,13 +31,13 @@ MonoBehaviour:
     y: 5
   m_RandomizeCameraHeight: 1
   m_CameraHeightRange:
-    x: 0.125
-    y: 0.375
+    x: -0.1
+    y: 0.1
   m_RandomizeCameraLateral: 1
   m_CameraLateralRange:
-    x: -0.125
-    y: 0.125
-  m_MaxZ: 3.5
+    x: -0.1
+    y: 0.1
+  m_MaxZ: 2.25
   m_Desks:
   - {fileID: 11400000, guid: 687552c19743502dfbc751022127a864, type: 2}
   - {fileID: 11400000, guid: ae800926c503bd1fe9d83db7034295fc, type: 2}

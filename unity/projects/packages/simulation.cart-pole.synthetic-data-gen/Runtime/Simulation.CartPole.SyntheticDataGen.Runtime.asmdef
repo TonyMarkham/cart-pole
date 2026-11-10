@@ -3,7 +3,8 @@
     "rootNamespace": "Simulation.CartPole.SyntheticDataGen",
     "references": [
         "com.greyhound.step.runtime",
-        "com.greyhound.vision.runtime"
+        "com.greyhound.vision.runtime",
+        "com.greyhound.mujoco.runtime"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

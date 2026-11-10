@@ -3,6 +3,7 @@
     "rootNamespace": "Simulation.CartPole.SimLoop",
     "references": [
         "com.greyhound.step.runtime",
+        "com.greyhound.mujoco.runtime",
         "Simulation.CartPole.SyntheticDataGen.Runtime"
     ],
     "includePlatforms": [],

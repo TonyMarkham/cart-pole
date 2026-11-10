@@ -10,10 +10,10 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ec90fa719c21c2905a60e62418981c9e, type: 3}
-  m_Name: Desk (Executive)
+  m_Name: Desk (Sit-Stand)
   m_EditorClassIdentifier: Assembly-CSharp::CartPole.Vision.DeskSO
   label: Classic
-  prefab: {fileID: 919132149155446097, guid: 2f3e2fc8ca1cbb66fbea45c8c5ead3ef, type: 3}
+  prefab: {fileID: 919132149155446097, guid: d048177df0579c6b697eed0ded6bfcce, type: 3}
   position: {x: 0, y: 1, z: -0.08}
   localEuler: {x: 0, y: 0, z: 0}
   scale: {x: 1, y: 1, z: 1}

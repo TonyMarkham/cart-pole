@@ -3,6 +3,9 @@
         <ui:Label text="Generation Set" class="section-title" />
         <ue:PropertyField binding-path="m_Seed" />
         <ue:PropertyField binding-path="m_States" />
+        <ue:PropertyField binding-path="m_FixedPoses" />
+        <ue:PropertyField binding-path="m_FixedPoseFrames" />
+        <ui:Label name="fixed-poses-warning" class="warning" text="" />
         <ue:PropertyField binding-path="m_OutputDirectory" />
         <ui:Label name="output-empty-warning" class="warning" text="output directory is empty — drop an Explorer/Finder directory to set it" />
         <ui:VisualElement name="output-directory-slot" />

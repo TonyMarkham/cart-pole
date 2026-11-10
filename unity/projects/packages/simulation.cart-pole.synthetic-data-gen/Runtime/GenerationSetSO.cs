@@ -21,7 +21,19 @@ namespace Simulation.CartPole.SyntheticDataGen
 
         [SerializeField] private int m_States;
         public int States => m_States;
-        
+
+        // The first FixedPoseFrames frames take their cart and pole from
+        // the fixed poses, in sequence (frame i uses pose i mod the pose
+        // count), and count toward States: 1000 States with 200 fixed-
+        // pose frames and 2 poses captures 100 of each pose, alternating,
+        // then 800 random rig states. Every frame, fixed or random, still
+        // draws its environment and camera.
+        [SerializeField] private List<FixedPoseSO> m_FixedPoses = new();
+        public IReadOnlyList<FixedPoseSO> FixedPoses => m_FixedPoses;
+
+        [SerializeField] private int m_FixedPoseFrames;
+        public int FixedPoseFrames => m_FixedPoseFrames;
+
         [SerializeField] private string m_OutputDirectory;
         public string OutputDirectory => m_OutputDirectory;
 

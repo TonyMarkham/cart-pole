@@ -10,15 +10,15 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: cc4d64d224c59051bae3bf24c54006c2, type: 3}
-  m_Name: Left
+  m_Name: Motor
   m_EditorClassIdentifier: Assembly-CSharp::CartPole.Vision.MarkerSO
-  label: Left
-  arUcoId: 0376
+  label: Right
+  arUcoId: 0596
   anchor:
-    indices: 0300000025000000i
-    name: empty001
-  stepAssetPath: Assets/asy-cart-pole.step
-  prefab: {fileID: 2074349162340591243, guid: 924b2b8fe08c0aabf8ec686f16d1a7c3, type: 3}
+    indices: 000000001d000000i
+    name: marker-motor
+  stepAssetPath: Assets/Simulation/Robot/asy-cart-pole.step
+  prefab: {fileID: 4157401687642900028, guid: a6e0d5adf9d24ab718c42760d303514b, type: 3}
   size: 0.05
   localOffset: {x: 0, y: 0, z: -0.002}
   localEuler: {x: 0, y: 0, z: 0}

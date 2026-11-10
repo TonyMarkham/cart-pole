@@ -86,10 +86,11 @@ namespace Simulation.CartPole.SyntheticDataGen
                 Debug.LogWarning("[SyntheticDataGenerator] no generation sets assigned");
                 return;
             }
-            // The camera pose's Z anchor: the draw sets (lateral,
-            // height) absolutely and keeps the authored Z, which the
+            // The camera's authored pose, read once before any set runs:
+            // every draw offsets it (lateral, height, pitch, yaw) and the
             // frustum fit then compensates along the view axis.
-            var cameraBaseZ = camera.transform.position.z;
+            var cameraBasePosition = camera.transform.position;
+            var cameraBaseRotation = camera.transform.rotation;
             try
             {
                 foreach (var set in m_Sets)
@@ -106,7 +107,8 @@ namespace Simulation.CartPole.SyntheticDataGen
                         m_DirectionalLight,
                         m_RobotBounds,
                         m_KeepBoundsInFrustrum,
-                        cameraBaseZ);
+                        cameraBasePosition,
+                        cameraBaseRotation);
                     await runner.RunAsync();
                 }
             }
