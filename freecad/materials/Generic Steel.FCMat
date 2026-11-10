@@ -1,0 +1,12 @@
+---
+# Restored 2026-11-10 for this repo's parts. The UUID is the one the parts'
+# ShapeMaterial already points at; the name and density are the ones
+# step-mass.py wrote into freecad/step/asy-cart-pole.step from the original card.
+General:
+  UUID: "2135b6f2-3798-4aa2-92a8-216ad884abab"
+  Name: "Generic Steel"
+  Description: "Steel rods, screws, nuts, washers and ball bearings."
+Models:
+  Density:
+    UUID: '454661e5-265b-4320-8e6f-fcf6223ac3af'
+    Density: "7850 kg/m^3"

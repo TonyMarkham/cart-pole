@@ -44,10 +44,19 @@ The name match is how the patcher finds the source model.
 
 ## 3. Patch mass and density (bash terminal, any directory)
 
-```bash
-freecad.cmd /home/tony/git/cart-pole/freecad/tools/step-mass.py -- \
-    /home/tony/git/cart-pole/freecad/step/<part>.step
-```
+> ### Windows
+> ```bash
+> & "$env:LOCALAPPDATA\Programs\FreeCAD 1.1\bin\freecadcmd.exe" `
+>     D:\git\cart-pole\freecad\tools\step-mass.py `
+>     -- `
+>     D:\git\cart-pole\freecad\step\asy-cart-pole.step
+> ```
+
+> ### Linux / macOS
+> ```bash
+> freecad.cmd /home/tony/git/cart-pole/freecad/tools/step-mass.py -- \
+>     /home/tony/git/cart-pole/freecad/step/<part>.step
+> ```
 
 Notes:
 

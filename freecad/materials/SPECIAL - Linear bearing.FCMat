@@ -1,0 +1,12 @@
+---
+# Restored 2026-11-10 for this repo's parts. The UUID is the one the parts'
+# ShapeMaterial already points at; the name and density are the ones
+# step-mass.py wrote into freecad/step/asy-cart-pole.step from the original card.
+General:
+  UUID: "7a8b8b13-6c91-4c64-8e89-b108afb2e98b"
+  Name: "SPECIAL - Linear bearing"
+  Description: "The 16 mm linear bearing."
+Models:
+  Density:
+    UUID: '454661e5-265b-4320-8e6f-fcf6223ac3af'
+    Density: "4278 kg/m^3"

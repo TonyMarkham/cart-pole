@@ -1,5 +1,11 @@
 {
   "dependencies": {
+    "com.greyhound.mujoco": {
+      "version": "file:../../../../../greyhound-snake/dist/package/com.greyhound.mujoco",
+      "depth": 0,
+      "source": "local",
+      "dependencies": {}
+    },
     "com.greyhound.step": {
       "version": "file:../../../../../greyhound-snake/dist/package/com.greyhound.step",
       "depth": 0,

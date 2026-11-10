@@ -1,6 +1,7 @@
 {
   "dependencies": {
     "com.greyhound.step": "file:../../../../../greyhound-snake/dist/package/com.greyhound.step",
+    "com.greyhound.mujoco": "file:../../../../../greyhound-snake/dist/package/com.greyhound.mujoco",
     "simulation.cart-pole.synthetic-data-gen": "file:../../packages/simulation.cart-pole.synthetic-data-gen",
     "simulation.cart-pole.sim-loop": "file:../../packages/simulation.cart-pole.sim-loop",
     "com.greyhound.vision": "file:../../../../../greyhound-snake/dist/package/com.greyhound.vision",
