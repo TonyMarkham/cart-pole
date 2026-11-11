@@ -11,7 +11,9 @@ It reads `../datasets/generated/` (Unity's output, one `run_Set-NN_<timestamp>/`
 folder per generation set) and writes trained models to `runs/`.
 
 All the code here is new (2026-11-10). It replaces the repo root's
-`training/` folder and borrows nothing from it.
+`training/` folder and borrows nothing from it. That folder was removed on
+2026-11-11; the `training/` files cited below are in git at commit
+`ecced2cc`.
 
 ## What is in this folder
 

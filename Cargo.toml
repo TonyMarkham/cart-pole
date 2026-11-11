@@ -18,6 +18,9 @@ members           = [
                       "__workbench__/pc/crates/bench-host",
                       "__workbench__/pc/crates/wifi-host"
 ]
+
+
+
 # What a plain `cargo build` at the root builds. The __live__ members are left
 # out: the firmware compiles only for the board, from its own folder (its
 # .cargo/config.toml names the target), and the pages with `trunk`, from theirs.
@@ -27,16 +30,15 @@ default-members   = [
                       "__synthetic__/orchestrator/rust/crates/orchestrator",
                       "__synthetic__/orchestrator/rust/crates/physics"
 ]
-# aruco-gen is the superseded DICT_4X4_50 generator, kept for reference
-# only (AGENTS.md); excluded so it builds standalone and stays untouched.
-exclude           = [
-                      "aruco"
-]
 resolver          = "3"
+
+
 
 [workspace.package]
 version           = "0.1.0"
 edition           = "2024"
+
+
 
 [workspace.dependencies]
 anyhow            = { version = "1.0.104" }
@@ -88,6 +90,8 @@ arduino           = { path = "__synthetic__/orchestrator/rust/crates/arduino" } 
 physics           = { path = "__synthetic__/orchestrator/rust/crates/physics" }  # Custom MuJoCo ABI
 unor4-hal         = { path = "../unor4-hal/crates/unor4-hal" }  # Custom HAL
 
+
+
 # The board's images. A profile of its own, because a workspace has one
 # [profile.release] and this one would change every PC crate's build.
 [profile.firmware]
@@ -97,10 +101,14 @@ lto               = true
 codegen-units     = 1
 debug             = true # keeps cargo size and backtraces readable
 
+
+
 [workspace.lints.clippy]
 unwrap_used       = "deny"
 expect_used       = "deny"
 panic             = "deny"
+
+
 
 [workspace.lints.rust]
 unused_must_use   = "deny"

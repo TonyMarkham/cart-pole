@@ -17,7 +17,7 @@ namespace Simulation.CartPole.SyntheticDataGen
     public static class GreyscaleEncoder
     {
         // The q90 contract: train and inference share the same lossy
-        // statistics (DATASETS.md, Image spec).
+        // statistics.
         public const int Quality = 90;
 
         public static byte[] Encode(Texture2D source)

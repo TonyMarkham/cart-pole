@@ -7,6 +7,9 @@ StepperOnline 23HS32-4004S (NEMA 23, 2.4 N·m, 4.0 A), read 2026-10-25.
 It is a reference, not a plan: what the rig derives from these figures
 (the corner speed, the top rate, the force) is `rig-drive-research.md`'s.
 
+`mujoco-plan.md`, cited below as an earlier source, was removed on
+2026-11-11; it is in git at commit `ecced2cc`.
+
 ## Sources
 
 All three are the maker's (StepperOnline, OMC), read 2026-10-25:

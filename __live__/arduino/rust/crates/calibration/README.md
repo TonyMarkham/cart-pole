@@ -1,17 +1,13 @@
 # calibration — the rig's Arduino, set up for real operation
 
 The robot has to know where its cart is, and the stepper reports nothing,
-so a calibration has to find that out before every run. The older `calibrate`
-firmware does home the cart, but it was built to measure how hard the motor can
-be driven before the belt skips teeth. This crate is the firmware for the
-calibration the robot actually operates with.
+so a calibration has to find that out before every run. This crate is the
+firmware for the calibration the robot actually operates with.
 
 **Today it reports its pins and moves the cart to either end of the rail.** It
 joins the WiFi and sleeps. When a message asks, it answers with the level of
-every pin the rig uses, for the
-[page on the Orin's webserver](../../../../orin/rust/README.md), or moves the
-cart slowly to a limit switch or the rail's centre (*The moves*). While this firmware is on the board the older `calibrate`
-firmware's page and buttons are gone; upload `calibrate` again to get them back.
+every pin the rig uses, for the page on the Orin's webserver, or moves the
+cart slowly to a limit switch or the rail's centre (*The moves*).
 
 ## The moves
 
@@ -56,8 +52,7 @@ status  result         pin   the cart
 - **`status`** is 200 when the cart did what was asked and 4xx when it did not, with
   HTTP's meanings: 400 a bad request, 408 out of time, 409 not possible as things
   stand. The board speaks UDP, so this is a number in the answer, not an HTTP
-  status. The Orin's webserver returns it as one, for its
-  [calibration page](../../../../orin/rust/README.md).
+  status. The Orin's webserver returns it as one, for its calibration page.
 - **`pin`** is the switch that stopped the cart, whichever it is, so a wrong
   guess about which end is which shows here.
 - **`pulses`** is how far it went. From one switch to the other, that is the
@@ -156,7 +151,7 @@ is enabled).
 [control-design.md](../../../../../control-design.md) has the wiring.
 
 **It never polls for a message.** Polling means asking over and over
-whether anything has arrived, as the older `calibrate` firmware does. This
+whether anything has arrived. This
 board's WiFi chip runs the user's
 [interrupt bridge](https://github.com/TonyMarkham/unor4-wifi-interrupt-bridge)
 (the WiFi chip's own firmware), whose **push mode** sends each datagram to
@@ -285,6 +280,6 @@ wifi: bridge 0.6.102; push mode on
 wifi: joined; listening at 192.168.0.220 UDP port 4210
 ```
 
-Then open the [pin page](../../../../orin/rust/README.md), which shows
+Then open the pin page on the Orin's webserver, which shows
 whether the board answers. A browser pointed at the board's own address gets
 nothing, because this firmware has no web page.

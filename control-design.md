@@ -19,6 +19,10 @@ breadboard (`control-breadboard.svg`), and `calibrate` homed the cart
 and centred it: span 59,828 pulses, 897.4 mm. The firmware's pulse
 timing now meets the DM542's (*What the firmware still needs*).
 
+The `calibrate` firmware, `jump-limit-experiment.md` and
+`synthetic-arduino-plan.md`, cited below, were removed on 2026-11-11;
+they are in git at commit `ecced2cc`.
+
 ## Assumptions
 
 - **The DM542 follows Leadshine's DM542 manual** (*DM542 Fully Digital
@@ -266,10 +270,10 @@ instant it trips (`jump-limit-experiment.md`, section 4). The switches are sense
 switched into power (user, 2026-10-25): each is only an input to the
 Arduino, and nothing in the circuit cuts the driver or the motor when
 one trips. What a trip means (note the count, stop sending pulses) is
-the firmware's. `calibrate` treats either switch as an end of the rail
-and names the pin that tripped at each end (user, 2026-10-27), so its
-homing does not depend on which switch is wired to which pin; both ends
-tripping one pin halts it as a wiring fault.
+the firmware's. `calibrate` treated either switch as an end of the rail
+and named the pin that tripped at each end (user, 2026-10-27), so its
+homing did not depend on which switch is wired to which pin; both ends
+tripping one pin halted it as a wiring fault.
 
 ```
  D2 ── switch NC   (one switch; the other is the same on D3)
@@ -287,7 +291,7 @@ tripping one pin halts it as a wiring fault.
   interrupt handler, not by polling.
 - **No resistor, no capacitor, no 5 V.** The pull-up that makes the pin
   read high when the contact opens is the board's own, switched on by
-  the firmware (`calibrate/src/axis.rs`, `into_input_pullup`). The
+  the firmware (in `calibrate`, `src/axis.rs`, `into_input_pullup`). The
   switches worked wired this way, with no added parts (user,
   2026-10-27).
 - Each switch's two wires are twisted together and kept apart from the
@@ -357,17 +361,17 @@ cannot run until it has a STEP output on the board's timer whose rate
 changes while running, and a pulse count; `unor4-hal` has neither yet
 (`rig-drive-research.md`, *The user's `unor4-hal`*).
 
-The `calibrate` firmware (`calibrate/src/axis.rs`) does not wait for
-that: it makes every pulse itself, in software, and counts it. It
-drives the pins the PNP way: D4 rests high and pulses low, D6 low
-disables the driver. Its timing is set in `calibrate.toml` and checked
+The `calibrate` firmware (its `src/axis.rs`) did not wait for
+that: it made every pulse itself, in software, and counted it. It
+drove the pins the PNP way: D4 rests high and pulses low, D6 low
+disables the driver. Its timing was set in its `calibrate.toml` and checked
 against the DM542's at build time: each pulse 5 µs on (`pulse_low_ns`,
 the DM542 needs 2.5 µs on and 2.5 µs off), DIR set 5 µs before it
-(`dir_setup_ns`, the DM542's t2). It also runs the jump-limit
+(`dir_setup_ns`, the DM542's t2). It also ran the jump-limit
 experiment (`jump-limit-experiment.md`) from its page, timing a trial's
-pulses on the processor's cycle counter so each jump lands where the
-plan puts it. It halts when D8 reads low; D8 is unconnected and its
-pull-up holds it high, so that check never trips.
+pulses on the processor's cycle counter so each jump landed where the
+plan put it. It halted when D8 read low; D8 is unconnected and its
+pull-up holds it high, so that check never tripped.
 
 ## Sources
 

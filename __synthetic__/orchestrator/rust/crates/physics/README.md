@@ -7,8 +7,8 @@ bridge: it links `mujoco.dll` into the orchestrator's process and gives
 it a small, safe Rust type, `Physics`, that loads the cart-pole's MJCF,
 sets the cart's speed, steps time forward and reads back the two joints,
 the twelve sites, and the pole's speed, centre of mass, mass and inertia.
-The plan behind it, with what was decided and measured, is
-`mujoco-plan.md`.
+The plan behind it, with what was decided and measured, was
+`mujoco-plan.md` (removed 2026-11-11; in git at commit `ecced2cc`).
 
 It is not a general MuJoCo binding. It declares only the eighteen C
 functions the cart-pole needs, and it refuses any model that is not one

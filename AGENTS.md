@@ -25,15 +25,14 @@ receives that pool, in metres, for the policy and,
 for the reward alone, each capture's true site positions from MuJoCo
 and the pole's true speed and centre of mass, with
 its mass, inertia and centre-of-mass distance once per run; the policy's input is still the pool. The older
-StateServer TCP bridge (`StateServer.cs` + `vision/gym_state_sender.py`)
-is not part of that loop.
+StateServer TCP bridge (`StateServer.cs`) is not part of that loop.
 
 **Not a toy** Every part stands in for the real rig
 and keeps its real limits: the MJCF comes from the rig's CAD, the command
 is the stepper's pulse rate, and the policy sees only what the robot will
 see — detected markers, with the detector's delay — never the
 simulator's true state. Gymnasium's own `CartPole-v1` and
-`InvertedPendulum-v5` are reference tasks only (`gymnasium-research.md`):
+`InvertedPendulum-v5` are reference tasks only:
 never the task, and never a shortcut around the loop.
 
 **Written for laymen** The repo and all its features
@@ -60,8 +59,8 @@ from other numbers, and never a hand calculation standing in for it,
 not even as a test's expected value.
 
 The repo owns the **dataset semantics**: desk/skybox/light randomization,
-the automated generation sets, capture, YOLO label writing, the
-StateServer bridge, and the gym-side client. It consumes the **greyhound-snake** packages for
+the automated generation sets, capture, YOLO label writing, and the
+StateServer bridge. It consumes the **greyhound-snake** packages for
 everything below that: STEP import, mass properties, MJCF export, and the
 native OpenCV ArUco detection the dataset verification now runs on.
 
@@ -128,12 +127,13 @@ adds repo structure around them, never overrides them.
   capabilities that existed only to serve the replaced design are dropped
   with it. Do not re-introduce them as optional extras or "your call"
   questions.
-- **Plans are not truth.** `ArUco.md` here and the design docs in the
+- **Plans are not truth.** The plans here and the design docs in the
   greyhound repo (`vision.md`, `unity-mujoco.md`, `occt-to-unity.md`) state
   intent and research, not current state. Before asserting what the repo
   does today, verify against landed sources. When citing a plan, name it
-  as a plan. (Worked example: `ArUco.md` specifies `DICT_4X4_50` ids 0–3;
-  the landed markers are `DICT_4X4_1000` tags 376/596/920/937.)
+  as a plan. (Worked example: the removed `ArUco.md` specified
+  `DICT_4X4_50` ids 0–3; the landed markers are `DICT_4X4_1000` tags
+  376/596/920/937.)
 - **`synthetic-loop-dia.md` is the single source of truth for the
   synthetic loop's design** Where a loop plan
   (a participant plan) disagrees with the diagram, the
@@ -166,14 +166,14 @@ adds repo structure around them, never overrides them.
   the Python checker retired; verification runs in-process through the
   `com.greyhound.vision` package's native shim. Remaining Python lives
   in five places, each for a stated reason: `__synthetic__/trainer/python/` (the RL trainer,
-  a `uv` project around Gymnasium, the learning tooling,
-  `trainer-plan.md`), `freecad/tools/step-mass.py`
-  (FreeCAD's scripting API is Python-only), `vision/gym_state_sender.py`
-  (the gym-side client), `__synthetic__/orin/python/` (the synthetic Orin, a `uv` project:
-  detection on the robot is Python, because OpenCV +
-  TensorRT beat the Rust POC on the Orin, `detector-plan.md` *Results*),
-  and `training/` (the detector training, a `uv` project around
-  Ultralytics).
+  a `uv` project around Gymnasium, the learning tooling),
+  `freecad/tools/step-mass.py`
+  (FreeCAD's scripting API is Python-only), `__synthetic__/orin/python/`
+  (the synthetic Orin) and `__live__/orin/python/` (the real Orin), both `uv`
+  projects because detection on the robot is Python: OpenCV +
+  TensorRT beat the Rust POC on the Orin (`detector-plan.md` *Results*,
+  removed), and `__object_detection__/train/` (the detector training, a `uv`
+  project around Ultralytics).
 - **The user understands before anything lands.** Code, comments, and docs
   are written so the reader can verify claims by hand and never have to
   ask what a value means. A question from the user is a defect report —
@@ -266,16 +266,24 @@ adds repo structure around them, never overrides them.
 
 ## Repository map
 
-- `ArUco.md` — the codified marker research: OpenCV 4.x-verified dictionary
-  facts, gotchas (bit 1 = white; the black ring is `borderBits`, not the
-  codeword), hand-extracted grids, physical sizing, and the camera
-  resolution budget (Pi GS camera, IMX296, 1440x1080, ~2.41 m over the
-  2000 mm stage). Original plan used `DICT_4X4_50` ids 0–3 — superseded by
-  the landed `DICT_4X4_1000` tags; the doc's OpenCV facts still hold.
-- `aruco/` — `aruco-gen`, the original standalone DICT_4X4_50 SVG
-  generator crate. Superseded by greyhound's `crates/aruco` +
-  `aruco-cli` (DICT_4X4_1000, quiet-zone margin, PNG output). Kept for
-  reference; do not extend it — greyhound's is the dictionary source.
+- **Removed on 2026-11-11** (user: they no longer added value), all in git
+  at commit `ecced2cc`; docs that still cite one say it was removed:
+  - folders: `aruco/` (`aruco-gen`, superseded by greyhound's
+    `aruco-cli`), `bench-station/` (replaced by `arduino-manager`),
+    `calibrate/` (the older WiFi firmware with the jump-limit
+    experiment), `training/` (replaced by `__object_detection__/train/`),
+    `vision/` (`gym_state_sender.py`), `weights/`, and the tracked files of
+    `datasets/`;
+  - root docs: `ArUco.md`, `GENERATOR.md`, `bench-station-plan.md`,
+    `decisions.md`, `detector-plan.md`, `gymnasium-research.md`,
+    `hal-flash-memory-support.md`, `hard-coded-in-error.md`,
+    `jump-limit-experiment.md`, `jump-limit-results.md`, `mujoco-plan.md`,
+    `orchestrator-plan.md`, `real-arduino-plan.md`, `real-open-issues.md`,
+    `real-orin-plan.md`, `real-pi-plan.md`, `reward-recommend-fable.md`,
+    `reward-research.md`, `rl-rewrite-plan.md`, `robot-plan.md`,
+    `synthetic-arduino-plan.md`, `synthetic-orin-plan.md`,
+    `trainer-observations.md`, `trainer-plan.md`, `training-plan.md`,
+    `unity-player-plan.md`, `zz_uno-plan.md`.
 - `markers/` — the four printed markers as SVG + PNG pairs
   (`marker_0376/0596/0920/0937`), aruco-cli output with the quiet zone
   baked in. These are the physical prints; the Unity-side copies live
@@ -331,51 +339,31 @@ adds repo structure around them, never overrides them.
   applies only to that unwired component; the automated generator has no
   such toggles, and its verification runs in memory and writes no
   instrument files.
-- `datasets/` — the dataset trees, in the one format `DATASETS.md`
-  defines (Ultralytics' layout: `images/` and `labels/` paired by stem,
-  a `data.yaml` at the tree root): `generated/` (the synthetic corpus,
-  one `run_Set-NN_<timestamp>/` folder per generation-set run),
-  `real-1440/` and `real-640/` (real-rig frames), and `calibration/`.
-  Only the real and calibration trees' `data.yaml` files and the
-  `.gitignore`s are committed; every image and label is ignored, and the
-  generated corpus is regenerable by design (its `.gitignore` says so).
-  Verified by `git ls-files datasets` (2026-10-23).
-- `vision/gym_state_sender.py` — the gym-side `StateServer` client
-  (`UnityVisionClient`): pushes `data.qpos` as JSON lines, receives JPEG
-  frames. Retiring to a Rust CLI is planned (greyhound `vision.md` V4) —
-  plan, not landed.
 - `unity/projects/packages/` — the project's own UPM packages, `file:`
   entries in the Unity manifest: `simulation.cart-pole.synthetic-data-gen`
   (the automated dataset generator, the generation sets' runtime, the
   marker and desk SOs) and `simulation.cart-pole.sim-loop`
   (`SimulationLoopController`, the standalone player's renderer for the
-  synthetic loop, `unity-player-plan.md`).
-- `bench-station/` — kept for one reason: to remind the user
-  to bring the skip test, the jump-limit experiment and its `POST /trial`
-  route, into `__live__/rpi/rust/crates/arduino-manager`, which replaces it for
-  everything else. Do not extend it.
+  synthetic loop).
 - `__synthetic__/` — the synthetic loop's code, moved here on 2026-11-01
   and kept apart from `__live__/`. Each part is a folder by language:
   `orchestrator/rust/`, `orin/python/` and `trainer/python/`. The Unity project
-  and its sim-loop package, `training/`, `datasets/` and the root plans stay
+  and its sim-loop package, `__object_detection__/` and the root plans stay
   where they are. `__synthetic__/README.md` has the layout.
-- **The Rust workspace** (`Cargo.toml` at the repo root; `aruco/`
-  excluded) — the synthetic loop's parts, each with its plan, under
-  `__synthetic__/orchestrator/rust/crates/`:
+- **The Rust workspace** (`Cargo.toml` at the repo root) — the synthetic
+  loop's parts under `__synthetic__/orchestrator/rust/crates/`:
   `orchestrator/` (the loop's driver; it began as the Unity leg's stub),
   `physics/` (MuJoCo in-process, linked from `orchestrator.toml`'s
   `mujoco_dir`, the file beside `crates/`; the MJCF and its names come from
-  the trainer's `settings.toml` `[mjcf]` on the orchestrator's command line,
-  `mujoco-plan.md`), `arduino/` (the loop's synthetic Arduino,
-  `synthetic-arduino-plan.md`).
-  Roles by the crates' own header comments and the plans. The Rust
+  the trainer's `settings.toml` `[mjcf]` on the orchestrator's command line),
+  `arduino/` (the loop's synthetic Arduino).
+  Roles by the crates' own header comments. The Rust
   detector crate, `object-detection/`, was retired on 2026-10-23:
-  a Pi-era POC whose question `detector-plan.md` answered, the Python
-  synthetic Orin being faster on the Orin. Its `ObjectDetection.toml`
+  a Pi-era POC whose question the removed `detector-plan.md` answered, the
+  Python synthetic Orin being faster on the Orin. Its `ObjectDetection.toml`
   moved to `__synthetic__/orin/python/settings.toml`, the Orin's detector configuration.
 - `__live__/` — what runs on the real rig, one folder per computer.
-  `__live__/README.md` says what is built, moved and started where; each
-  part's own README has the commands. **It is kept apart from the repo**: nothing in it runs on the PC. `__live__/orin/rust` and
+  Each part's own README has the commands. **It is kept apart from the repo**: nothing in it runs on the PC. `__live__/orin/rust` and
   `__live__/rpi/rust` are each a workspace with its crates in `crates/`, pushed
   to and built on that computer, so nothing in them points outside them.
   **The Orin's brain is `__live__/orin/rust/crates/brain`** (its README), the
@@ -423,59 +411,31 @@ adds repo structure around them, never overrides them.
   the bench is borrowed, and the R3's validator part is re-flashed from
   there afterwards. `__workbench__/README.md` has the steps.
 - `__synthetic__/orin/python/` — the synthetic Orin, a `uv` project: Python + TensorRT
-  detection, the 6-entry pool, the WebSocket client (`synthetic-orin-plan.md`).
+  detection, the 6-entry pool, the WebSocket client.
   The root holds the uv files and `settings.toml` (the detector's
   settings); the code is in `__synthetic__/orin/python/src/`.
-- `training/` — the detector training, a `uv` project: the numbered
-  docs `01`–`07` and appendices, `src/` (`build_dataset.py`,
-  `convert_proposals.py`, `dataset_stats.py`), and `runs/` (gitignored;
-  see *The trained detector*).
-- `__object_detection__/` — the detector training's new home, begun
+- `__object_detection__/` — the detector training's home, begun
   2026-11-10 for the 16,000-frame corpus (`datasets/generated/`, Set-01…16).
   **All of its code is new**: nothing is moved or copied
-  from `training/`. Its layout mirrors the root's `datasets/` + `training/`
-  pair: `datasets/generated/` (the Unity runs, moved here) and `train/` —
+  from the removed `training/`. Its layout mirrors the old root
+  `datasets/` + `training/` pair: `datasets/generated/` (the Unity runs,
+  moved here) and `train/` —
   the `uv` project, its `README.md` (every step, with its command and where
   its results go), and `runs/` (gitignored). **`data.yaml` comes from Unity's generator**, as part of the generated data, not from a
   training script.
-- `weights/yolo26n.pt` — tracked (commit `9297d40a`, "Train object
-  detection"); no doc names its use.
 - **Plans and design docs at the root** — `synthetic-loop-dia.md` (the
-  planned sequence of one run, the source of truth for the loop plans),
-  one plan per diagram participant, named after it: `orchestrator-plan.md`, `mujoco-plan.md`,
-  `trainer-plan.md`, `synthetic-arduino-plan.md`,
-  `synthetic-orin-plan.md`, `unity-player-plan.md`; `real-loop-dia.md`
-  (the planned sequence of one run on the real rig, the single source of
-  truth for the real plans) and its plans, one per
-  computer: `real-orin-plan.md` (the brain, the webserver and its pages),
-  `real-arduino-plan.md` (the board's firmware) and `real-pi-plan.md`
-  (`arduino-manager`); `detector-plan.md`
-  (the retired Rust detector crate's plan, kept for its *Results*: the
-  measurements that chose the Orin and Python); `DATASETS.md` (the one dataset format) and
-  `GENERATOR.md` (the generator's binding directives, which win over
-  `DATASETS.md` where they conflict); `training-plan.md` (the YOLO
-  training plan); `gymnasium-research.md` (research, not a plan: what
-  Gymnasium 1.4 and Stable-Baselines3 2.9 require of an environment,
-  read against the loop, for the trainer's open decisions);
-  `rig-drive-research.md` (research, not a plan: whether the UNO R4
+  planned sequence of one run, the source of truth for the loop plans);
+  `real-loop-dia.md` (the planned sequence of one run on the real rig, the
+  single source of truth for the real loop); `rig-drive-research.md` (research, not a plan: whether the UNO R4
   WiFi, the DRV8825 and the stepper can make the top speed, with every
   calculation and source; written before the DM542 replaced the DRV8825
-  on 2026-10-26); `reward-research.md` (research, not a plan:
-  the published cart-pole swing-up rewards and discounts, quoted from
-  their sources, and run 1's episodes scored under each);
+  on 2026-10-26);
   `real-timings.md` (not a plan: every gap in time on the real loop, from
   the camera's exposure to the motor's new rate, each with its clock, its
   method and its measured spread, or TBD; begun 2026-11-07);
   `real-timing-conclusion.md` (suggestions, not a plan: what
   `real-timings.md`'s measurements suggest for the synthetic loop's timing
-  draws, and how the draws run in MuJoCo's time; 2026-11-08);
-  `trainer-observations.md` (not a plan: the
-  user's journal of how we learned from the policy learning.
-  Each training run gets an entry with its reward, its exact
-  command, the measurements and what they showed, and each change made
-  because of it. The user is new to reinforcement learning and wants the
-  information: explain each idea where it comes up, with the numbers,
-  rather than keeping entries short).
+  draws, and how the draws run in MuJoCo's time; 2026-11-08).
   Plans state intent, not current state (*Working with the user*).
 
 ## The trained detector
@@ -490,19 +450,23 @@ at `weights/best.pt`. Best mAP50-95 read from each run's `results.csv`
   640, the one the robot runs. Best mAP50-95 0.971 at epoch 494 of 500.
   Beside `best.pt`: `best.onnx` (exported 2026-10-17) and
   `best_fp16.engine` (TensorRT FP16 for this PC's 3090, built
-  2026-10-23, `synthetic-orin-plan.md`).
+  2026-10-23).
 - **`training/runs/cp2-1440-base/`** — the **metrology model**, imgsz
   1440, for proposals and audits on the 3090. Best mAP50-95 0.982 at
   epoch 324 (early-stopped at 374).
 
 The roles and per-class figures are in `training/05-POST_TRAINING.md`
-(Steps 3–4).
+(Steps 3–4). `training/` was removed on 2026-11-11: its docs are in git at
+commit `ecced2cc`, and its runs, never in git, are no longer on this PC's
+disk. The Orin keeps its own copy of the deployment model (`model` and
+`engine` in `__live__/orin/python/settings.toml`). Its successor is trained
+in `__object_detection__/train/`.
 
 ## The real robot (what the synthetic loop stands in for)
 
 - **The robot's computer is a Jetson Orin Nano Super**, replacing the Raspberry Pi 5: TensorRT FP16 detects in
   8–10 ms per frame on it, against 80–125 ms for the best Pi 5 options
-  (`detector-plan.md`, *Results*). "The Pi" in older plans names that
+  (`detector-plan.md`, *Results*, removed). "The Pi" in older plans names that
   computer's role, the robot side of the loop, not the board. Its code
   is built on the device: the repo is cloned there and compiled (for the Pi; unchanged for the Orin). Requirement: every
   dependency of the robot-side code builds there — aarch64 Linux,
@@ -513,7 +477,8 @@ The roles and per-class figures are in `training/05-POST_TRAINING.md`
   `__synthetic__/` share no code: what both need is copied. Detection on
   the robot runs in Python — on the Orin, OpenCV
   pre-processing + TensorRT ran 11.9–14.5 ms per frame against 18.7–19.1 ms
-  for the Rust POC in the same session (`detector-plan.md`, *Results*).
+  for the Rust POC in the same session (`detector-plan.md`, *Results*,
+  removed).
 - **On the rig, the Orin sends the command packets to the Arduino over
   WiFi.**
 - **The orchestrator alone times perception**. In the
@@ -525,14 +490,15 @@ The roles and per-class figures are in `training/05-POST_TRAINING.md`
   Orin holds no timing of its own, and the firmware holds none to remove:
   its ramp is the motor's limit, unrelated to perception. The orchestrator
   has no real counterpart, so on the rig the Orin runs this timer itself
-  (`robot-plan.md`).
+  (`robot-plan.md`, removed).
 - **The Uno is dumb**: its firmware has as few
   decision choices as possible. Any firmware behaviour reduces to a fixed
   rule applied per tick or per command; never propose one that makes
   choices. Example, agreed the same day and not yet in
   `synthetic-loop-dia.md` or code: the step-acceleration ceiling, where
   every tick moves the sent rate towards the last command by at most
-  `m × dt` (`m` the jump limit, `jump-limit-results.md`; `dt` the tick).
+  `m × dt` (`m` the jump limit, `jump-limit-results.md`, removed; `dt` the
+  tick).
 - **The product owner dislikes polling and prefers interrupts**. Code waits for an interrupt to
   tell it something happened, rather than checking again and again.
 - **The Arduino has the interrupt bridge**. Its WiFi chip
@@ -582,7 +548,7 @@ The roles and per-class figures are in `training/05-POST_TRAINING.md`
 - **YOLO labels**: `class x_center y_center w h`, normalized, top-left
   origin (y flipped from Unity's bottom-up viewport). One
   `labels/frame_NNNNNN.txt` per `images/frame_NNNNNN.jpg`, paired by
-  stem (`DATASETS.md`).
+  stem.
 - **The never-wipe rule, write-once form** (`VerificationGate`,
   `DatasetWriter`): per captured frame an 8K greyscale render
   (7680x4320) through a telephoto twin of the capture camera is cut into
@@ -612,10 +578,9 @@ The roles and per-class figures are in `training/05-POST_TRAINING.md`
 - **StateServer protocol**: one JSON object per line in (`id`, `joints[]`
   of `name`/`qpos`, optional rig payload); response = 4-byte
   little-endian length header + JPEG bytes. The server side is
-  `StateServer.cs`; the client contract is what `gym_state_sender.py`
-  speaks. The synthetic loop does not use it: the Unity player speaks
-  WebSocket messages instead (`unity-player-plan.md`, *Settled
-  decisions*; `synthetic-loop-dia.md`).
+  `StateServer.cs`; its only client, `vision/gym_state_sender.py`, was
+  removed. The synthetic loop does not use it: the Unity player speaks
+  WebSocket messages instead (`synthetic-loop-dia.md`).
 - **Artifact naming** in a generated run (`DatasetWriter`): one
   `run_<set>_<timestamp>/` folder per set run under the set's output
   directory, holding `images/frame_NNNNNN.jpg`,

@@ -1,5 +1,0 @@
-# The WiFi network calibrate joins. Copy this file to wifi.toml (which
-# git ignores) and fill in your network. The board's radio is 2.4 GHz
-# only: a 5 GHz network is never found.
-ssid = "your-network"
-password = "your-password"

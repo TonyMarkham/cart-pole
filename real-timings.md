@@ -343,7 +343,7 @@ How the draws run (user, 2026-11-08):
 >   106.0 ms and was likewise the only one over 30 ms. The mean and standard
 >   deviation include it. An earlier measurement, **11.9–14.5 ms per frame**
 >   from a scratch test outside the brain on 2026-10-23 (`detector-plan.md`,
->   *Results*), is a range only, with no count, mean or standard deviation;
+>   *Results*; removed 2026-11-11, in git at commit `ecced2cc`), is a range only, with no count, mean or standard deviation;
 >   what it included has not been compared with this.
 > - **What this means:** finding the four markers is nearly all of the
 >   brain's share: 22.3 ms of the 23.5 ms median of gaps 2–6. The other four

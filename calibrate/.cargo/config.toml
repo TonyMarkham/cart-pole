@@ -1,4 +1,0 @@
-[build]
-# The RA4M1 is an Arm Cortex-M4 with a single-precision FPU (RA4M1
-# datasheet, features): ARMv7E-M, hard-float.
-target = "thumbv7em-none-eabihf"

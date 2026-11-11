@@ -13,9 +13,11 @@ driver figures below are the DRV8825's.
 Status: **research** (2026-10-24), from the parts' documentation, the
 RA4M1 manual and the user's `unor4-hal`; nothing here is measured on the
 rig yet. It decides nothing: the values the loop uses are in
-`synthetic-loop-dia.md` (*Numbers*), `mujoco-plan.md` (*The actuator's
-values*), the MJCF's `ctrlrange` (the cart top speed) and the
-trainer's `settings.toml` `[drive]` (the drive figures).
+`synthetic-loop-dia.md` (*Numbers*), the MJCF's `ctrlrange` (the cart top
+speed) and the trainer's `settings.toml` `[drive]` (the drive figures).
+
+Two of its sources, `mujoco-plan.md` and `trainer-plan.md`, were removed
+on 2026-11-11; they are in git at commit `ecced2cc`.
 
 ## The answer
 

@@ -1252,8 +1252,9 @@ source used it. Nothing borrowed here has been tested on this rig yet.
     [dm_control `cartpole.py`](https://raw.githubusercontent.com/google-deepmind/dm_control/main/dm_control/suite/cartpole.py)).
     Simulation.
 
-[^3]: **ArUco markers.** The four printed markers and their dictionary
-    are described in `ArUco.md` in this repo; the detector that finds
+[^3]: **ArUco markers.** The four printed markers are in `markers/` in
+    this repo: tags 376, 596, 920 and 937 of OpenCV's `DICT_4X4_1000`
+    dictionary (`AGENTS.md`, *Verified contracts*); the detector that finds
     them is the trained YOLO model (`AGENTS.md`, *The trained detector*).
 
 [^4]: **A reward made of scores multiplied together.** DeepMind's
@@ -1300,7 +1301,8 @@ source used it. Nothing borrowed here has been tested on this rig yet.
 [^10]: **Why `r_target_speed` exists.** This project's first training run
     learned to spin the pole, because each turn sweeps the tip past the
     star (`trainer-observations.md`, *What the policy actually does: it
-    spins the pole*, and *Why spinning is a trap*). Every reward tried
+    spins the pole*, and *Why spinning is a trap*; removed 2026-11-11, in
+    git at commit `ecced2cc`). Every reward tried
     since has ended in spinning too (user, 2026-10-28). Simulation.
 
 [^12]: **Moving energy and height energy.** A turning body's moving

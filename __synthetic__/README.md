@@ -59,6 +59,6 @@ uv run --project __synthetic__/trainer/python python __synthetic__/trainer/pytho
 ```
 
 These stay outside this folder: the Unity project and its sim-loop package
-(`unity/`, which dataset generation shares), the detector's training (`training/`,
-`datasets/`), and the plans at the repo's root. `synthetic-loop-dia.md` is the
+(`unity/`, which dataset generation shares), the detector's training and its
+datasets (`__object_detection__/`), and the plans at the repo's root. `synthetic-loop-dia.md` is the
 design this folder's code follows.

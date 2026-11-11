@@ -8,12 +8,14 @@ the Arduino and the motor. It is the real counterpart of
 (*What exists today*, at the end).
 
 **This diagram is the single source of truth for the real loop** (user,
-2026-11-03). Three plans are written from it alone, one per computer:
-`real-orin-plan.md` (the brain, the webserver and its pages),
-`real-arduino-plan.md` (the board's firmware) and `real-pi-plan.md`
-(`arduino-manager`). Where a plan disagrees with this diagram, the diagram is
-right and the plan is out of date. A change to the real loop's design lands
-here first.
+2026-11-03). A change to the real loop's design lands here first.
+
+The three plans written from it, one per computer (`real-orin-plan.md`, the
+brain, the webserver and its pages; `real-arduino-plan.md`, the board's
+firmware; `real-pi-plan.md`, `arduino-manager`), were removed on 2026-11-11,
+with `robot-plan.md`, `real-open-issues.md`, `synthetic-arduino-plan.md` and
+`jump-limit-results.md`, which are cited below as sources. All are in git at
+commit `ecced2cc`.
 
 The **policy** is the small neural network that training produced: it reads
 36 numbers and answers with one, the command for the cart. On the rig nothing
@@ -979,7 +981,7 @@ to show whether the delay and the losses came from the sleep.
 | How the webserver reaches the brain: `/run/start`, `/run/stop`, `/run/status` | built in the webserver (2026-11-07); run on the Orin 2026-11-09 |
 | `/run` with Run, STOP and Re-centre | built, `__live__/orin/wasm/run`, with the board's `state` added to `/run/status` and the `/calibrate` moves refused during a run (2026-11-09); loaded on the Orin and showed the brain idle and the board calibrated; its buttons not yet pressed on the rig |
 | `/homography` and the board's `MoveBy` | not built |
-| The Arduino Settings page | not built (`real-orin-plan.md`) |
+| The Arduino Settings page | not built |
 | The board's commands: ramp, timer, pulse count, cached rail, soft limit | built, `controller`, checked on the rig 2026-11-06 |
 | The board's five states, `state`, the UNCALIBRATED and FAULT STATE replies | built, `controller` |
 | The board's unasked FAULT STATE message | built, `controller`, checked on the rig 2026-11-06 |
@@ -987,21 +989,14 @@ to show whether the delay and the losses came from the sleep.
 | A switch trip during the move to the centre: FAULT | not built |
 | A seek's answer telling its starting switch still pressed after `release_pulses` from the other end's trip | not built |
 | `pins` on `controller`, which the `/arduino` page and the WiFi round trip use | not built |
-| `runtime_end_margin` in the Uno's data flash, and the settings messages | not built; `controller` uses the 1,000 default (`real-arduino-plan.md`) |
-| `arduino-manager`'s three settings options | not built (`real-pi-plan.md`) |
+| `runtime_end_margin` in the Uno's data flash, and the settings messages | not built; `controller` uses the 1,000 default |
+| `arduino-manager`'s three settings options | not built |
 | D measured | not done |
 
 ## References
 
-- `real-orin-plan.md`, `real-arduino-plan.md`, `real-pi-plan.md`: the plans
-  written from this diagram, one per computer.
 - `synthetic-loop-dia.md`: the synthetic loop, whose contracts this keeps.
-- `robot-plan.md`: the user's 2026-10-29 decisions for the two real
-  computers. It predates the 2026-11-01 split of live and synthetic code: its
-  "one source built two ways" is out of date (`AGENTS.md`).
 - `calibrate-w-homography.md`: the camera's calibration and the per-frame
   mapping.
-- `synthetic-arduino-plan.md`: the ramp and the board's timer.
-- `jump-limit-results.md`: m.
 - `motor-spec.md`: the top pulse rate per supply.
-- `__live__/README.md` and each part's README: what runs where today.
+- Each part's README: what runs where today.

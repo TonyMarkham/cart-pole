@@ -10,6 +10,11 @@ timestep, picture, capture state, stretch 1–3, wait, lost, landed, gobbled,
 …) are that file's *Glossary*'s, here and in every plan and setting that
 follows from this one.
 
+Several sources cited below were removed on 2026-11-11 and are in git at
+commit `ecced2cc`: `orchestrator-plan.md`, `trainer-observations.md`,
+`gymnasium-research.md`, `reward-research.md`, `jump-limit-results.md`
+and `rl-rewrite-plan.md`.
+
 The orchestrator stands in for the physical world: MuJoCo and the synthetic
 Arduino are libraries inside it, and it is the only participant that sends
 MuJoCo anything. The synthetic Orin is the robot's detector: it triggers the
@@ -992,7 +997,7 @@ left out the camera, the policy and the WiFi.
   the content, not the channel count: Unity's `GreyscaleEncoder` (the
   dataset generator's own) writes BT.601 luma into all three RGB
   channels, and the Orin decodes it to one channel. The size is exactly
-  half the IMX296's native 1456×1088 (`DATASETS.md`, *Image spec*).
+  half the IMX296's native 1456×1088.
 - **The detection (13):** 4 slots in class order — 0 Left (tag 376), 1
   Right (596), 2 Pivot (920), 3 End (937), the repo's class-id contract.
   Each slot is the box center `(x, y)`, normalized to [0, 1], or `(−1, −1)`

@@ -5,14 +5,12 @@ happened goes to a USB port nobody is watching. `arduino-manager` is a
 service for a computer plugged into that Arduino by USB, so the board can
 be logged and reflashed from the desk.
 
-It is the older `bench-station` without the jump-limit experiment, which
-measures the motor's limit and has no part in operating the robot. What it
-keeps:
+What it does:
 
 - **the page,** which shows the serial line and the log and links to the
-  board's own page. Like the bench station's, it has no buttons. That link
-  and the sentence beside it are true only while `calibrate` is on the board;
-  the `calibration` firmware has no page, so with it the link goes nowhere.
+  board's own page (`board_page` in `arduino-manager.toml`). It has no
+  buttons. Neither the `calibration` nor the `controller` firmware serves a
+  page, so with either on the board the link goes nowhere.
 - **the log:** every line that crosses the serial line goes to a file,
   timestamped, with a new file each time the line opens.
 - **flashing:** `POST /flash` takes the `.bin` the PC built and uploads it
@@ -22,9 +20,10 @@ keeps:
   command down the serial line (*The protocol*).
 
 **What it still needs:** Arduino firmware that speaks *The protocol*.
-Neither `calibrate` nor the `calibration` firmware does yet,
-so the command routes get no replies. The page, the log and flashing work
-without it.
+The `calibration` firmware doesn't. The `controller` firmware prints `READY`
+when it starts and answers `STATUS`, but no other command, so the other
+command routes get no replies. The page, the log and flashing work without
+it.
 
 **Keep the USB cable out while the rig runs.** With a computer's USB cable
 connected, both limit-switch inputs (D2, D3) have read open, so homing
@@ -122,7 +121,7 @@ cargo clippy --workspace --all-targets
 tar --exclude=target --exclude=logs --exclude=flash -czf ../../../target/arduino-manager.tgz .
 ```
 
-**3. Move the package** to the Pi's home folder ([how](../../../../README.md)).
+**3. Move the package** to the Pi's home folder ([how](../../../../readme-old.md)).
 
 ### On the Pi
 
@@ -145,13 +144,6 @@ as in step 7, `Ctrl+C` signals don't reach it, so use this:
 
 ```bash
 pkill -x arduino-manager
-```
-
-`bench-station` uses the same port, 8080, and the same serial line, so if that's
-the one running, stop it instead:
-
-```bash
-pkill -x bench-station
 ```
 
 **7. Start it.** This keeps it running after the terminal closes, though not after
@@ -177,12 +169,6 @@ start it (step 7). Replace `<date-time>` with the one in the file's name:
 
 ```bash
 cp ~/arduino-manager-program-backup-<date-time> ~/arduino-manager/target/release/arduino-manager
-```
-
-To go back to `bench-station` instead, stop the manager, then:
-
-```bash
-cd ~/bench-station && nohup ./target/release/bench-station bench-station.toml > service.out 2>&1 &
 ```
 
 ## Flash from the PC

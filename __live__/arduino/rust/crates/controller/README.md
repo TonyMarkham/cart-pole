@@ -18,13 +18,15 @@ one firmware at a time.
 
 ## Settings
 
-[config.toml](config.toml) holds the values someone might change between
-builds, each explained where it is set:
+[config/](config/) holds the values someone might change between builds, one
+file per part, each value explained where it is set. Among them:
 
-- **`dir_positive`:** the level on the DIR pin, D5, that moves the cart the
-  positive way, towards the motor's end. Not yet checked on the rig.
-- **`pulse_low_ns`:** how long each pulse to the motor driver lasts.
-- **`[usb] baud`:** the USB serial line's speed. It must match `baud` in the
+- **`dir_positive`** (`stepper.toml`): the level on the DIR pin, D5, that
+  moves the cart the positive way, towards the motor's end. Not yet checked
+  on the rig.
+- **`pulse_low_ns`** (`stepper.toml`): how long each pulse to the motor
+  driver lasts.
+- **`baud`** (`usb.toml`): the USB serial line's speed. It must match `baud` in the
   manager's
   [arduino-manager.toml](../../../../rpi/rust/crates/arduino-manager/arduino-manager.toml).
 

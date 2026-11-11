@@ -16,6 +16,9 @@ the pole's angle, as DeepMind's cart-pole does
 derived on the Orin from the detections. The synthetic loop has its own calibration
 (*In the synthetic loop*), and shares no code with this one.
 
+`robot-plan.md` and `ArUco.md`, cited below, were removed on 2026-11-11;
+they are in git at commit `ecced2cc`.
+
 ## The problem
 
 The detector finds the four ArUco markers in each 728×544 frame and
@@ -269,9 +272,9 @@ accuracy needs the fit's residuals, from a real calibration.
 
 **The frames.** The sensor's full 1456x1088, halved exactly to 728x544 in greyscale
 by the camera software, then encoded as a JPEG at quality 90 for the detector: the
-format of the 146 real images in `datasets/real-640`, on which the model has been run
-(the model itself was trained on the synthetic 1456x1088 images, `datasets/generated`,
-which YOLO scaled down).
+format of the 146 real images that were in `datasets/real-640` (removed 2026-11-11), on
+which the model has been run (the model itself was trained on the synthetic 1456x1088
+images then in `datasets/generated`, which YOLO scaled down).
 
 Follows from rules already set:
 
@@ -532,9 +535,8 @@ rpi/rust                         on the Pi: flashes the board and logs it.
 __synthetic__                    its own calibration, built and measured (In the synthetic loop).
 ```
 
-The older folders stay where they are: `calibrate/` and `bench-station/` measure the
-motor's limits, and `__synthetic__/orin/python/` is the synthetic Orin, whose detector `__live__/orin/python`
-copied on 2026-11-01 (user: a copy for now, the obsolete code to be cleaned up later).
+The older `__synthetic__/orin/python/` stays where it is: it is the synthetic Orin, whose
+detector `__live__/orin/python` copied on 2026-11-01 (user: a copy for now, the obsolete code to be cleaned up later).
 
 ### How each part builds
 
