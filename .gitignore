@@ -18,6 +18,11 @@ __pycache__/
 
 # Runs: predict/val outputs (proposals, annotated JPGs, val reports)
 runs/
+!__object_detection__/train/runs/
+__object_detection__/train/runs/**
+!__object_detection__/train/runs/**/
+!__object_detection__/train/runs/*/weights/best.pt
+!__object_detection__/train/runs/*/weights/best.onnx
 
 # Datasets: the real trees' skeletons are tracked (yamls, folder
 # placeholders); all data - frames, labels, caches - stays local.

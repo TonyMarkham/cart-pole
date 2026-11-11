@@ -183,3 +183,56 @@ the computer. A **uv project** is a folder that has a `pyproject.toml`.
 >> ├── results.csv    one row per epoch: every loss and val score
 >> └── *.png          plots of the same, and example val frames with their boxes
 >> ```
+
+> ## Step 4 — export the model to ONNX (not run yet)
+>
+> `best.pt` is PyTorch's own file: only PyTorch and Ultralytics can load it.
+> **ONNX** is a standard file format for trained models that other software
+> loads without either of them. Neither robot loads `best.pt`: both load a
+> `best.onnx` and compile it with **TensorRT**, NVIDIA's engine for running
+> models fast on its own graphics chips. The synthetic Orin reads its path
+> from `__synthetic__/orin/python/settings.toml`, the real Orin from
+> `__live__/orin/python/settings.toml`.
+>
+> > [!IMPORTANT]
+> > Run from `__object_detection__/train/`
+>
+>> ### PowerShell
+>> ```pwsh
+>> uv run yolo export `
+>>     model=D:/git/cart-pole/__object_detection__/train/runs/640-base/weights/best.pt `
+>>     format=onnx `
+>>     imgsz=640
+>> ```
+>
+>> ### What each setting means
+>>
+>> The command is the one the old `training/` project exported the robot's
+>> current model with (`training/05-POST_TRAINING.md`), pointed at this
+>> folder's run.
+>>
+>> - **`yolo export`**: Ultralytics' command for writing a trained model out
+>>   in another format.
+>> - **`model=…/best.pt`**: the model Step 3 picked, the epoch with the best
+>>   val score.
+>> - **`format=onnx`**: the format to write.
+>> - **`imgsz=640`**: the frame size the exported model takes, fixed at
+>>   640 × 640: the size it was trained at in Step 3, and the size the robots
+>>   feed it (`input_size = 640` in both `settings.toml` files).
+>
+>> ### Expected Results:
+>> `best.onnx` is written next to `best.pt`:
+>>
+>> ```text
+>> D:/git/cart-pole/__object_detection__/train/runs/640-base/weights/
+>> ├── best.pt      the model from Step 3
+>> └── best.onnx    the same model as ONNX, about 10 MB
+>> ```
+>>
+>> About 10 MB because the old model's export, the same network at the same
+>> size, is 10,665,224 bytes
+>> (`training/runs/cp2-640-base/weights/best.onnx`).
+>>
+>> Pointing the two `settings.toml` files at the new `best.onnx`, copying it to
+>> the Orin, and building the TensorRT engines happen in those folders, not
+>> here.
