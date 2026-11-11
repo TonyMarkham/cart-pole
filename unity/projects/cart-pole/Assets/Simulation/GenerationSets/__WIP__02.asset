@@ -13,11 +13,11 @@ MonoBehaviour:
   m_Name: __WIP__02
   m_EditorClassIdentifier: Simulation.CartPole.SyntheticDataGen.Runtime::Simulation.CartPole.SyntheticDataGen.GenerationSetSO
   m_Seed: 2002
-  m_States: 50
+  m_States: 20
   m_FixedPoses:
   - {fileID: 11400000, guid: b9f390d8d838e534abd799e2e916947a, type: 2}
   - {fileID: 11400000, guid: 4d2132ec659df8748acde856e763cd4c, type: 2}
-  m_FixedPoseFrames: 10
+  m_FixedPoseFrames: 4
   m_OutputDirectory: D:/temp/generated
   m_CameraImageWidth: 1456
   m_CameraImageHeight: 1088
