@@ -19,7 +19,7 @@ use unor4_hal::{
 /// wake does what the controller's does: on a tick, take the count, check it
 /// against the stop points, step the ramp, cap it by the soft limit, and
 /// queue it; on a datagram, re-aim the ramp. So the time from the mark to
-/// the new rate on STEP is the controller's gap 8 (`real-timings.md`). The
+/// the new rate on STEP is the controller's gap 8 (`__documentation__/real-timings.md`). The
 /// differences, each a few clock cycles at most:
 /// - no limit switches to read (the controller reads two switches first);
 /// - the stop points are `BENCH_STOP_POINT` away, never reached;

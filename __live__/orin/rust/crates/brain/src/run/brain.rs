@@ -38,7 +38,7 @@ impl Brain {
 
     /// Run: refused, with the reason, while a run is going, while
     /// `calibrate_service.py` has the camera, when the matrix may not be used,
-    /// or when the run's folder cannot be made (`real-loop-dia.md`, *The run
+    /// or when the run's folder cannot be made (`__documentation__/real-loop-dia.md`, *The run
     /// and idle states*). Otherwise the loop starts on a thread of its own and
     /// this returns at once. Blocking: run it off the server's threads.
     pub(crate) fn start(&self) -> Result<(), String> {
@@ -103,7 +103,7 @@ impl Brain {
     }
 
     /// Idle: asks the loop to stop and waits until it has, so that when this
-    /// returns no command will follow (`real-loop-dia.md`, *The run and idle
+    /// returns no command will follow (`__documentation__/real-loop-dia.md`, *The run and idle
     /// states*, STOP). It does not wait for the camera to close: that follows
     /// on the run's thread, and `start` waits for it. Idle while idle changes
     /// nothing. Blocking.

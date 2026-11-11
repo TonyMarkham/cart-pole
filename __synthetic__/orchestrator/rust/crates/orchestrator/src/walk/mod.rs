@@ -115,7 +115,7 @@ impl Walk {
     }
 
     /// The motor changes due on this timestep, in step order, by the
-    /// gobble rule (synthetic-loop-dia.md, *The gobble rule*).
+    /// gobble rule (__documentation__/synthetic-loop-dia.md, *The gobble rule*).
     fn land_motor_changes(&mut self) {
         let now = self.now;
         let mut due: Vec<InFlight> = self

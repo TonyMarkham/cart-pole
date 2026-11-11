@@ -1,5 +1,5 @@
 # How the board runs the Orin's commands: the ramp each 2 ms tick follows, and
-# the fastest it may go (real-loop-dia.md, *The command and the Arduino's Run*).
+# the fastest it may go (__documentation__/real-loop-dia.md, *The command and the Arduino's Run*).
 
 # The jump limit m, pulses/s²: each tick moves the sent rate towards the
 # command by at most m × 2 ms, rounded down, 2,058 pulses/s. 15% below the
@@ -15,6 +15,6 @@
 jump_limit = 900_000
 
 # The top rate, pulses/s: every command is clamped to ± this. 44,600 is the
-# rig's top rate on its 24 V supply (motor-spec.md, *The top pulse rate per
+# rig's top rate on its 24 V supply (__documentation__/motor-spec.md, *The top pulse rate per
 # supply*).
 top_rate = 44_600

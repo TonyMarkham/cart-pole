@@ -72,7 +72,7 @@ pub(crate) const DATAGRAM_MAX: usize = 32;
 pub(crate) const ADDRESS_MAX: usize = 15;
 
 /// A command's size, bytes: the sign, then the size as a u16, little-endian
-/// (real-loop-dia.md, *Contracts*).
+/// (__documentation__/real-loop-dia.md, *Contracts*).
 pub(crate) const COMMAND_SIZE: u32 = 3;
 
 /// A command's sign byte: 0 negative, 1 positive. Any other is ignored on the

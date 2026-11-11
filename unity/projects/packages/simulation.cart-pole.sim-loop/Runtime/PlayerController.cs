@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace Simulation.CartPole.SimLoop
 {
-    // The standalone player's own window (synthetic-loop-dia.md, Training
+    // The standalone player's own window (__documentation__/synthetic-loop-dia.md, Training
     // instances, The windows): the orchestrator lays the training
     // instances' windows out in a grid and launches each player with
     // -window-position x,y, pixels from the top-left corner of the display

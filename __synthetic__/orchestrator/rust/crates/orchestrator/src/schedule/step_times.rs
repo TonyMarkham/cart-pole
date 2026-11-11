@@ -1,5 +1,5 @@
 /// One step's four timings, in whole timesteps from step 0's capture
-/// (synthetic-loop-dia.md, *A step's four timings*): each the exact running
+/// (__documentation__/synthetic-loop-dia.md, *A step's four timings*): each the exact running
 /// total rounded to the nearest timestep, halfway going later.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct StepTimes {

@@ -4,7 +4,7 @@
 //! clock-sync line from the PC, and reports the stamps over USB. The PC
 //! synchronises this clock to its own from the syncs, and so times the WiFi
 //! hop, from its send to the board having the datagram, on one clock, the
-//! PC's (`real-timings.md`, gap 7).
+//! PC's (`__documentation__/real-timings.md`, gap 7).
 
 #![no_std]
 #![no_main]

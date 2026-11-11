@@ -1,4 +1,4 @@
-/// The pole's state at one instant (synthetic-loop-dia.md, Contracts, the
+/// The pole's state at one instant (__documentation__/synthetic-loop-dia.md, Contracts, the
 /// pole): everything that swings on the pole joint, the body holding the
 /// joint and every body under it. Every field is MuJoCo's own value.
 #[derive(Debug, Clone, Copy, PartialEq)]

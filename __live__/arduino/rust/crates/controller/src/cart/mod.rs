@@ -437,7 +437,7 @@ impl Cart {
     /// it and the pulses. It sleeps the whole way, woken by a switch, a
     /// datagram or the move timer. Only `Stop` and a command with a bad sign
     /// byte, a fault, are taken: any other datagram is dropped unanswered
-    /// (real-open-issues.md, issue 5; real-loop-dia.md, *The command*).
+    /// (real-open-issues.md, issue 5; __documentation__/real-loop-dia.md, *The command*).
     ///
     /// `leaving`: a switch the cart starts on, whose presses count only once
     /// the cart has moved `release_pulses` off it. `limit`: the longest the

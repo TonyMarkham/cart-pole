@@ -32,7 +32,7 @@ const STRAYS_FILE: &str = "strays.txt";
 /// once, in one short line.
 const R3_ANSWER_MS: u64 = 2_000;
 
-/// A positive command's sign byte (real-loop-dia.md, *Contracts*): both rates
+/// A positive command's sign byte (__documentation__/real-loop-dia.md, *Contracts*): both rates
 /// run the same way, so DIR never changes.
 const SIGN_POSITIVE: u8 = 1;
 

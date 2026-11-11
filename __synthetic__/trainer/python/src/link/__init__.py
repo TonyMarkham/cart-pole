@@ -1,6 +1,6 @@
 """The trainer link behind one interface (rl-rewrite-plan.md, 3.2):
 
-- `ask() -> RunValues`: the run's values (synthetic-loop-dia.md, Contracts,
+- `ask() -> RunValues`: the run's values (__documentation__/synthetic-loop-dia.md, Contracts,
   the run's values), called once, right after the link is opened and
   before anything else; the caller builds the run's facts from them;
 - `next_captures() -> {instance: Capture}`: the advanced instances' next

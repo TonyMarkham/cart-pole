@@ -1,4 +1,4 @@
-/// One band of a random timing, ms: RND(min, max) (synthetic-loop-dia.md,
+/// One band of a random timing, ms: RND(min, max) (__documentation__/synthetic-loop-dia.md,
 /// *Timing*, *The random timings*).
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Band {

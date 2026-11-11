@@ -1,5 +1,5 @@
 /// What the pole's energy needs and the pose never changes, read once at
-/// load from the model (synthetic-loop-dia.md, Contracts, the run's values).
+/// load from the model (__documentation__/synthetic-loop-dia.md, Contracts, the run's values).
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct PoleBody {
     /// kg: `body_subtreemass` of the pole joint's body.

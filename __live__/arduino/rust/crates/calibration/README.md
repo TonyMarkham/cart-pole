@@ -13,7 +13,7 @@ cart slowly to a limit switch or the rail's centre (*The moves*).
 
 The camera calibration needs the cart standing at a known place, and the two
 limit switches are the places the board can find by itself
-([the plan](../../../../../calibrate-w-homography.md), *The calibration
+([the plan](../../../../../__documentation__/calibrate-w-homography.md), *The calibration
 sequence*). So the Orin asks for each move with one datagram:
 
 ```text
@@ -148,7 +148,7 @@ D4, D5 and D6 are outputs, owned by the HAL's step generator, which cannot
 read them back: each is reported as the level the generator was told to hold
 (STEP high at rest, DIR the latest move's direction, ENA high once the driver
 is enabled).
-[control-design.md](../../../../../control-design.md) has the wiring.
+[__documentation__/control-design.md](../../../../../__documentation__/control-design.md) has the wiring.
 
 **It never polls for a message.** Polling means asking over and over
 whether anything has arrived. This

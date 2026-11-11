@@ -39,7 +39,7 @@ uv run --project __synthetic__/trainer/python python __synthetic__/trainer/pytho
 **The calibration.** The detector gives pixels and the policy needs metres, so every
 launch first brings up one Orin and one player to find the matrix between the two, and
 writes it to `homography.json` in the run's `--out` folder. A launch whose fit fails
-stops there. [The diagram](../synthetic-loop-dia.md) has the sequence, under
+stops there. [The diagram](../__documentation__/synthetic-loop-dia.md) has the sequence, under
 *Calibration*, and each point's error is printed as it runs. Its settings are
 `[calibration]` in `orin/python/settings.toml` and `calibration_stop_gap` in
 `trainer/python/settings.toml`.
@@ -60,5 +60,5 @@ uv run --project __synthetic__/trainer/python python __synthetic__/trainer/pytho
 
 These stay outside this folder: the Unity project and its sim-loop package
 (`unity/`, which dataset generation shares), the detector's training and its
-datasets (`__object_detection__/`), and the plans at the repo's root. `synthetic-loop-dia.md` is the
-design this folder's code follows.
+datasets (`__object_detection__/`), and the plans in `__documentation__/`.
+`__documentation__/synthetic-loop-dia.md` is the design this folder's code follows.

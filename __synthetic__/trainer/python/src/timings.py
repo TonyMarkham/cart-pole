@@ -1,5 +1,5 @@
 """The random timings' bands and the loss: settings.toml [orchestrator]
-(synthetic-loop-dia.md, Timing; user, 2026-11-08)."""
+(__documentation__/synthetic-loop-dia.md, Timing; user, 2026-11-08)."""
 
 from dataclasses import dataclass
 
@@ -35,7 +35,7 @@ class Timings:
         """The most two captures can be apart before rounding: this step's
         stretch 2 and wait, and its picture's stretch 1 against the next's,
         frame_ready_max + to_uno_max + next_frame_ready_max - frame_ready_min
-        (48 + 27.8 + 16.7 - 43 = 49.5 ms today; synthetic-loop-dia.md, The
+        (48 + 27.8 + 16.7 - 43 = 49.5 ms today; __documentation__/synthetic-loop-dia.md, The
         schedule). Every pick is below its band's max, so no gap reaches it."""
         b = self.bands
         return b["frame_ready"][1] + b["to_uno"][1] + b["next_frame_ready"][1] - b["frame_ready"][0]

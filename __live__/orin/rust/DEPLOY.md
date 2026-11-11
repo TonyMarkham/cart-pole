@@ -413,7 +413,7 @@ The Orin is `robo-orin`, at `192.168.0.215`, login `tony`.
 > > its state: one `state` datagram to the address and port in
 > > `settings.toml`'s `[arduino]`, and its answer printed. The board's
 > > firmware, `controller`, answers `state` in every state. It does not answer
-> > `pins` yet (`real-loop-dia.md`, *What exists today*), so the webserver's
+> > `pins` yet (`__documentation__/real-loop-dia.md`, *What exists today*), so the webserver's
 > > `/arduino/pins` says `no answer within 1000 ms` even when the board is
 > > there.
 > >

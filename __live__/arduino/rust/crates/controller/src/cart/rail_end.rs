@@ -18,7 +18,7 @@ impl RailEnd {
     }
 
     /// The rate that drives the cart towards this end at `speed` pulses/s. A
-    /// positive rate runs towards the motor's end (real-loop-dia.md, *DIR's
+    /// positive rate runs towards the motor's end (__documentation__/real-loop-dia.md, *DIR's
     /// level for a positive command*), so the idler's end is negative.
     pub(crate) const fn rate(self, speed: i32) -> i32 {
         match self {

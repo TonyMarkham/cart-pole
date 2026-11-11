@@ -2,7 +2,7 @@ use crate::constants::DATAGRAM_MAX;
 
 /// One datagram the bridge pushed: its size, as its header gave it, and the
 /// start of its payload. The size is what tells a command from a text
-/// message: a command is exactly 3 bytes (real-loop-dia.md, *Contracts*).
+/// message: a command is exactly 3 bytes (__documentation__/real-loop-dia.md, *Contracts*).
 #[derive(Clone, Copy, Debug)]
 pub(crate) struct Datagram {
     bytes: [u8; DATAGRAM_MAX],

@@ -1,7 +1,7 @@
 use std::str::FromStr;
 
 /// A pair of whole pixel values written `x,y` — a window's place or its size
-/// (synthetic-loop-dia.md, Training instances, The windows).
+/// (__documentation__/synthetic-loop-dia.md, Training instances, The windows).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Pixels {
     pub x: i32,

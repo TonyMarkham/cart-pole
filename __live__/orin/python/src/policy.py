@@ -1,5 +1,5 @@
 """The trained policy, run with numpy alone: no PyTorch on the Orin
-(real-loop-dia.md, The policy on the Orin).
+(__documentation__/real-loop-dia.md, The policy on the Orin).
 
 The policy is the actor of a SAC training run in the synthetic loop, written by
 the trainer's export_policy.py as policy.npz. On the rig it gives its best guess
@@ -29,7 +29,7 @@ from pathlib import Path
 
 import numpy as np
 
-ENTRIES = 6  # the pool's entries (synthetic-loop-dia.md, Contracts, the pool)
+ENTRIES = 6  # the pool's entries (__documentation__/synthetic-loop-dia.md, Contracts, the pool)
 ROW = 5  # an entry: its age, then Pivot's and End's (x, z)
 LAYERS = ("hidden_1", "hidden_2", "output")
 

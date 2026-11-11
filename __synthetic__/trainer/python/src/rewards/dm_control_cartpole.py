@@ -19,7 +19,7 @@ document's exp(-1/2 (d / margin x scale)^2) with scale = sqrt(-2 ln at_margin), 
 that exponent is (d / margin)^2 x ln at_margin. At 5 rad/s, margin 5, at_margin 0.1:
 0.1 ** 1 = 0.1, the document's table.
 
-Every input but the command is MuJoCo's (synthetic-loop-dia.md, The reward), from
+Every input but the command is MuJoCo's (__documentation__/synthetic-loop-dia.md, The reward), from
 capture t+1: angle and speed its pole state (the pole joint's qpos and qvel), Cart and
 Cart Target its sites. angle is 0 hanging and pi upright, while DeepMind's theta is 0
 upright, hence the minus sign in cos_theta.

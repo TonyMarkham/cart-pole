@@ -2,7 +2,7 @@
 
 The balance policy has to train against real physics, not a scripted
 sweep, and the orchestrator is the only participant that drives it
-(`synthetic-loop-dia.md`). MuJoCo is a C library, so this crate is the
+(`__documentation__/synthetic-loop-dia.md`). MuJoCo is a C library, so this crate is the
 bridge: it links `mujoco.dll` into the orchestrator's process and gives
 it a small, safe Rust type, `Physics`, that loads the cart-pole's MJCF,
 sets the cart's speed, steps time forward and reads back the two joints,

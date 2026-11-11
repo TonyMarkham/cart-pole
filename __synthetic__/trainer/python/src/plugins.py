@@ -44,7 +44,7 @@ FOLDERS = {"observation": "observations", "action": "actions", "reward": "reward
 class RunFacts:
     """What a plugin may need to know about the run beyond its own table:
     the longest gap between captures the random timings allow, and the run's
-    values the orchestrator answers with (synthetic-loop-dia.md, Contracts,
+    values the orchestrator answers with (__documentation__/synthetic-loop-dia.md, Contracts,
     the run's values)."""
 
     capture_gap_max_ms: float  # ms: the bands' longest gap between captures, before rounding
@@ -58,7 +58,7 @@ class RunFacts:
 
     def longest_gap_ms(self) -> float:
         """The most two captures are apart on the timestep's grid
-        (synthetic-loop-dia.md, The schedule): each capture is rounded to the
+        (__documentation__/synthetic-loop-dia.md, The schedule): each capture is rounded to the
         nearest timestep, so a gap moves by less than one timestep, and every
         gap is below capture_gap_max_ms; the largest whole number of
         timesteps under capture_gap_max_ms + one timestep is the timestep x
@@ -71,7 +71,7 @@ class RunFacts:
 class History:
     """An instance's last commands this episode, newest first, zero-filled
     to `length` at the episode's start (the reset leaves the cart at rest:
-    command 0, synthetic-loop-dia.md, The policy sees its last commands)."""
+    command 0, __documentation__/synthetic-loop-dia.md, The policy sees its last commands)."""
 
     actions: tuple[float, ...]  # the policy's actions a, clipped to [-1, 1]
     commands: tuple[int, ...]  # the commands sent, pulses/s

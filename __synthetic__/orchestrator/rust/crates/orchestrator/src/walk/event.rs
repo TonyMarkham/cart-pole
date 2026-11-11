@@ -1,4 +1,4 @@
-/// What the walk stops for (synthetic-loop-dia.md, the loop, 11–21): MuJoCo
+/// What the walk stops for (__documentation__/synthetic-loop-dia.md, the loop, 11–21): MuJoCo
 /// waits on that timestep until the orchestrator has dealt with it.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Event {

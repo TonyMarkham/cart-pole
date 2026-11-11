@@ -1,6 +1,6 @@
 """The brain's worker: the Python the Rust brain calls for the two things that
 have to be Python on the robot, finding the markers (TensorRT) and the policy's
-inference (`policy.py`), and nothing else (real-loop-dia.md, The run and idle
+inference (`policy.py`), and nothing else (__documentation__/real-loop-dia.md, The run and idle
 states, how the Rust brain uses Python).
 
 The brain starts this as a child process when the brain itself starts, and it
@@ -20,7 +20,7 @@ between a frame and its answer:
       out a, one little-endian f64
 
 The frame is encoded as JPEG quality 90 and decoded again before detection,
-because that is how the training frames were made (real-loop-dia.md, The pool on
+because that is how the training frames were made (__documentation__/real-loop-dia.md, The pool on
 the rig, difference 2). A frame the detector refuses answers every class not
 found and says why on standard error: a failed frame ends nothing (The run and
 idle states). Everything this prints goes to standard error, because standard

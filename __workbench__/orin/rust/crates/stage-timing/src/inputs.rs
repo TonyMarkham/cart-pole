@@ -1,6 +1,6 @@
 use crate::{constants::ROW, history::History, pool::Pool};
 
-/// The policy's inputs, as it trained on them (`real-loop-dia.md`, *The pool
+/// The policy's inputs, as it trained on them (`__documentation__/real-loop-dia.md`, *The pool
 /// on the rig*): the pool's 30 numbers, newest entry first, each age divided by
 /// the age unit so it reaches the network in seconds, then the actions of the
 /// last commands, newest first. 36 with 6 past commands.

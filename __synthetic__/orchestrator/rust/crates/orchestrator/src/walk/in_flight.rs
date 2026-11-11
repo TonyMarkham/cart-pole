@@ -1,4 +1,4 @@
-/// A command sent and not yet landed or gobbled (synthetic-loop-dia.md,
+/// A command sent and not yet landed or gobbled (__documentation__/synthetic-loop-dia.md,
 /// *Commands in flight*).
 #[derive(Clone, Copy, Debug)]
 pub struct InFlight {

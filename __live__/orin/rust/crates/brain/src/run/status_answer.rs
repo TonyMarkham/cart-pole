@@ -2,7 +2,7 @@ use crate::run::{run_state::RunState, shared::Shared};
 
 use serde::Serialize;
 
-/// The brain's answer to every request (`real-loop-dia.md`, *Contracts*, the
+/// The brain's answer to every request (`__documentation__/real-loop-dia.md`, *Contracts*, the
 /// brain's requests): its state, the words for `/run` to show, the run's
 /// folder and how many frames it has acted on.
 #[derive(Debug, Serialize)]

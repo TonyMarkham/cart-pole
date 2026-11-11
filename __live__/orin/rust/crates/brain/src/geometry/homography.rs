@@ -13,7 +13,7 @@ use std::{fs, path::Path};
 /// [x' y' w'] = H [u v 1]      x = x' / w'    z = y' / w'
 /// ```
 ///
-/// (`calibrate-w-homography.md`, *Per frame*; `cv2.perspectiveTransform`).
+/// (`__documentation__/calibrate-w-homography.md`, *Per frame*; `cv2.perspectiveTransform`).
 #[derive(Clone, Debug, PartialEq)]
 pub(crate) struct Homography {
     matrix: [[f64; 3]; 3],

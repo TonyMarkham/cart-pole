@@ -1,7 +1,7 @@
 /// MJCF names as in the model's `<joint name>` / actuator element
 /// `name` / `<site name>`. The joint names are also the wire keys of the
 /// player's state message. The sites are named by role
-/// (synthetic-loop-dia.md, Contracts, the sites).
+/// (__documentation__/synthetic-loop-dia.md, Contracts, the sites).
 #[derive(Debug, Clone)]
 pub struct Names {
     pub cart_joint: String,

@@ -1,5 +1,5 @@
 """Writes a trained policy as one numpy file the Orin can run without PyTorch
-(real-loop-dia.md, The policy on the Orin).
+(__documentation__/real-loop-dia.md, The policy on the Orin).
 
 The rig needs only SAC's actor, the network that picks the command, and only
 its best guess: a = tanh(mean), with no randomness. The actor's best guess is
@@ -86,7 +86,7 @@ def actor_weights(model: SAC) -> dict[str, np.ndarray]:
 
 def run_values(manifest: dict) -> dict[str, np.ndarray]:
     """The values the brain builds the inputs and the command with, from the run's
-    manifest (real-loop-dia.md, The policy on the Orin)."""
+    manifest (__documentation__/real-loop-dia.md, The policy on the Orin)."""
     observation = manifest["plugins"]["observation"]
     if observation["name"] != "pool_and_commands" or manifest["plugins"]["action"]["name"] != "linear_rate":
         raise SystemExit("export_policy: only the pool_and_commands inputs and the linear_rate command are written")

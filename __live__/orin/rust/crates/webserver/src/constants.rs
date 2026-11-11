@@ -97,7 +97,7 @@ pub(crate) const BRAIN_IDLE_PATH: &str = "/idle";
 pub(crate) const BRAIN_STATUS_PATH: &str = "/status";
 
 /// The command 0, which brings the cart to rest: the 3-byte command of
-/// `real-loop-dia.md`, *Contracts*, a positive sign (1) and a size of 0,
+/// `__documentation__/real-loop-dia.md`, *Contracts*, a positive sign (1) and a size of 0,
 /// little-endian. STOP sends it; the board takes a command only in CALIBRATED
 /// and MOVING, and ramps to rest on it.
 pub(crate) const COMMAND_ZERO: [u8; 3] = [1, 0, 0];

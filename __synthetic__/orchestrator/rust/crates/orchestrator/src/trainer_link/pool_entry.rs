@@ -11,7 +11,7 @@ use serde::Serialize;
 /// and `sites` and `pole` its true site positions and pole state, for the
 /// reward and the record alone. `fault` is true when the synthetic Arduino
 /// went into FAULT after the instance's last send: the entry is then the next
-/// step's, its episode over (synthetic-loop-dia.md, *The rail's ends*).
+/// step's, its episode over (__documentation__/synthetic-loop-dia.md, *The rail's ends*).
 #[derive(Serialize)]
 pub struct PoolEntry<'a> {
     pub instance: usize,

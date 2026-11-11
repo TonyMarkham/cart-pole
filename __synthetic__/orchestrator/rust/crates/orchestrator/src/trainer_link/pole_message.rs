@@ -4,7 +4,7 @@ use serde::Serialize;
 /// 17: one capture's pole state in its pool entry, `{"speed": ω, "angle":
 /// θ, "com": [x, y, z], "hinge": [x, y, z]}`: the pole joint's speed in
 /// rad/s and angle in rad, the pole's centre of mass and the hinge point,
-/// MuJoCo's world frame in meters (synthetic-loop-dia.md, Contracts, the
+/// MuJoCo's world frame in meters (__documentation__/synthetic-loop-dia.md, Contracts, the
 /// pole). Read at the capture's step with its pose and sites; for the
 /// reward and the record alone.
 #[derive(Serialize, Debug)]

@@ -15,12 +15,12 @@ generate labeled synthetic-vision datasets. The trained detector
 Jetson Orin Nano Super (replacing the Raspberry Pi 5:
 TensorRT FP16 built from the ONNX export, *The real robot*) with the Pi
 global-shutter camera (IMX296) against the real rig. The balance policy
-trains in the **synthetic loop** (`synthetic-loop-dia.md`, the source of
+trains in the **synthetic loop** (`__documentation__/synthetic-loop-dia.md`, the source of
 truth for the loop plans): the Rust orchestrator steps MuJoCo
 in-process, the synthetic Orin triggers the standalone Unity player
 (`SimulationLoop.exe`) over WebSocket and detects the markers in its
 frames, passing Pivot and End through the matrix its calibration found
-(`synthetic-loop-dia.md`, *Calibration*), and the trainer
+(`__documentation__/synthetic-loop-dia.md`, *Calibration*), and the trainer
 receives that pool, in metres, for the policy and,
 for the reward alone, each capture's true site positions from MuJoCo
 and the pole's true speed and centre of mass, with
@@ -134,7 +134,7 @@ adds repo structure around them, never overrides them.
   as a plan. (Worked example: the removed `ArUco.md` specified
   `DICT_4X4_50` ids 0–3; the landed markers are `DICT_4X4_1000` tags
   376/596/920/937.)
-- **`synthetic-loop-dia.md` is the single source of truth for the
+- **`__documentation__/synthetic-loop-dia.md` is the single source of truth for the
   synthetic loop's design** Where a loop plan
   (a participant plan) disagrees with the diagram, the
   diagram is right and the plan is out of date. A change to the loop's
@@ -348,7 +348,7 @@ adds repo structure around them, never overrides them.
 - `__synthetic__/` — the synthetic loop's code, moved here on 2026-11-01
   and kept apart from `__live__/`. Each part is a folder by language:
   `orchestrator/rust/`, `orin/python/` and `trainer/python/`. The Unity project
-  and its sim-loop package, `__object_detection__/` and the root plans stay
+  and its sim-loop package, `__object_detection__/` and `__documentation__/` stay
   where they are. `__synthetic__/README.md` has the layout.
 - **The Rust workspace** (`Cargo.toml` at the repo root) — the synthetic
   loop's parts under `__synthetic__/orchestrator/rust/crates/`:
@@ -369,7 +369,7 @@ adds repo structure around them, never overrides them.
   **The Orin's brain is `__live__/orin/rust/crates/brain`** (its README), the
   Rust orchestrator that runs the balance loop on the rig, with its Python
   worker `__live__/orin/python/src/brain_worker.py` for detection and the
-  policy's inference; both built 2026-11-07 from `real-loop-dia.md`, and
+  policy's inference; both built 2026-11-07 from `__documentation__/real-loop-dia.md`, and
   first run on the rig 2026-11-09, where the 6M-step policy (run
   `20261108_115227`) balanced the pole. Only
   the firmware (`__live__/arduino/rust/crates/calibration` and
@@ -392,7 +392,7 @@ adds repo structure around them, never overrides them.
   Timer1. `uno_4r/crates/bench-firmware` is R4 firmware copying the
   controller's MOVING loop with D3 marking each sleep; `uno_r3/` holds the
   R3's sketches (`awake_timer`); `pc/crates/bench-host` is the PC program
-  that runs the awake test. The WiFi test (gap 7 of `real-timings.md`) has
+  that runs the awake test. The WiFi test (gap 7 of `__documentation__/real-timings.md`) has
   its own pair: `uno_4r/crates/wifi-firmware` (GPT320 as a free-running
   48 MHz clock, stamps over USB) and `pc/crates/wifi-host` (the USB clock
   sync and the fit; the PC's clock is the one clock). The apply test (gap 8)
@@ -423,19 +423,22 @@ adds repo structure around them, never overrides them.
   the `uv` project, its `README.md` (every step, with its command and where
   its results go), and `runs/` (gitignored). **`data.yaml` comes from Unity's generator**, as part of the generated data, not from a
   training script.
-- **Plans and design docs at the root** — `synthetic-loop-dia.md` (the
-  planned sequence of one run, the source of truth for the loop plans);
-  `real-loop-dia.md` (the planned sequence of one run on the real rig, the
-  single source of truth for the real loop); `rig-drive-research.md` (research, not a plan: whether the UNO R4
-  WiFi, the DRV8825 and the stepper can make the top speed, with every
-  calculation and source; written before the DM542 replaced the DRV8825
-  on 2026-10-26);
-  `real-timings.md` (not a plan: every gap in time on the real loop, from
-  the camera's exposure to the motor's new rate, each with its clock, its
-  method and its measured spread, or TBD; begun 2026-11-07);
-  `real-timing-conclusion.md` (suggestions, not a plan: what
+- **`__documentation__/` — the plans and design docs**, moved there from
+  the repo root on 2026-11-11 (`AGENTS.md` and `index.html` stay at the
+  root): `synthetic-loop-dia.md` (the planned sequence of one run, the
+  source of truth for the loop plans); `real-loop-dia.md` (the planned
+  sequence of one run on the real rig, the single source of truth for the
+  real loop); `rig-drive-research.md` (research, not a plan: whether the
+  UNO R4 WiFi, the DRV8825 and the stepper can make the top speed, with
+  every calculation and source; written before the DM542 replaced the
+  DRV8825 on 2026-10-26); `real-timings.md` (not a plan: every gap in time
+  on the real loop, from the camera's exposure to the motor's new rate,
+  each with its clock, its method and its measured spread, or TBD; begun
+  2026-11-07); `real-timing-conclusion.md` (suggestions, not a plan: what
   `real-timings.md`'s measurements suggest for the synthetic loop's timing
-  draws, and how the draws run in MuJoCo's time; 2026-11-08).
+  draws, and how the draws run in MuJoCo's time; 2026-11-08); and
+  `calibrate-w-homography.md`, `control-design.md`, `motor-spec.md`,
+  `herdr.md` and `project-key-points.md`.
   Plans state intent, not current state (*Working with the user*).
 
 ## The trained detector
@@ -484,9 +487,9 @@ in `__object_detection__/train/`.
 - **The orchestrator alone times perception**. In the
   synthetic loop it makes each episode's schedule at the reset, from the
   rig's measured stretches (`__synthetic__/trainer/python/settings.toml`
-  `[orchestrator]`, `real-timing-conclusion.md`, 2026-11-08), and nothing
+  `[orchestrator]`, `__documentation__/real-timing-conclusion.md`, 2026-11-08), and nothing
   happens between the schedule's events: no render, no detection, no
-  message (`synthetic-loop-dia.md`, *Timing*). The synthetic
+  message (`__documentation__/synthetic-loop-dia.md`, *Timing*). The synthetic
   Orin holds no timing of its own, and the firmware holds none to remove:
   its ramp is the motor's limit, unrelated to perception. The orchestrator
   has no real counterpart, so on the rig the Orin runs this timer itself
@@ -495,7 +498,7 @@ in `__object_detection__/train/`.
   decision choices as possible. Any firmware behaviour reduces to a fixed
   rule applied per tick or per command; never propose one that makes
   choices. Example, agreed the same day and not yet in
-  `synthetic-loop-dia.md` or code: the step-acceleration ceiling, where
+  `__documentation__/synthetic-loop-dia.md` or code: the step-acceleration ceiling, where
   every tick moves the sent rate towards the last command by at most
   `m × dt` (`m` the jump limit, `jump-limit-results.md`, removed; `dt` the
   tick).
@@ -534,7 +537,7 @@ in `__object_detection__/train/`.
   converted after capture), and the JPEGs that result — channel count,
   size, quality. Why it matters: the detector trained on, and the loop
   feeds it, 728×544 q90 frames of BT.601 luma written into three equal
-  RGB channels (`synthetic-loop-dia.md`, *Contracts*, the frame). The
+  RGB channels (`__documentation__/synthetic-loop-dia.md`, *Contracts*, the frame). The
   Orin decodes to one channel either way, but the real frames must match
   that image domain.
 
@@ -580,7 +583,7 @@ in `__object_detection__/train/`.
   little-endian length header + JPEG bytes. The server side is
   `StateServer.cs`; its only client, `vision/gym_state_sender.py`, was
   removed. The synthetic loop does not use it: the Unity player speaks
-  WebSocket messages instead (`synthetic-loop-dia.md`).
+  WebSocket messages instead (`__documentation__/synthetic-loop-dia.md`).
 - **Artifact naming** in a generated run (`DatasetWriter`): one
   `run_<set>_<timestamp>/` folder per set run under the set's output
   directory, holding `images/frame_NNNNNN.jpg`,

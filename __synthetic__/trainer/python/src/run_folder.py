@@ -200,12 +200,12 @@ def refusal(saved: dict, now: dict) -> str | None:
     values set the observation's bounds (the timestep) and the action's
     scale (the top pulse rate), so other values would make the stored
     actions mean other pulse rates; a run saved with command rates, before
-    the rig's timings (synthetic-loop-dia.md, Timing, 2026-11-08), held each
+    the rig's timings (__documentation__/synthetic-loop-dia.md, Timing, 2026-11-08), held each
     stored action for a command rate's gap, which no longer exists.
     The reward may change: a resume rescores it (train.py)."""
     if "command_rates" in saved:
         return (f"the run was saved with the command rates {saved['command_rates']}, before the rig's timings "
-                "replaced them (synthetic-loop-dia.md, Timing): each stored action was held for another time, "
+                "replaced them (__documentation__/synthetic-loop-dia.md, Timing): each stored action was held for another time, "
                 "so start a new run")
     if saved.get("run_values") != now["run_values"]:
         return (f"the run was saved with the run's values {saved.get('run_values')} and the orchestrator now "

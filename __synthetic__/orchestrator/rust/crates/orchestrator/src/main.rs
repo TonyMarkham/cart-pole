@@ -48,7 +48,7 @@ use std::{
 use tokio::net::TcpStream;
 use tokio_tungstenite::{WebSocketStream, accept_async, tungstenite::Message};
 
-// The most training instances in one run (synthetic-loop-dia.md, Training
+// The most training instances in one run (__documentation__/synthetic-loop-dia.md, Training
 // instances), --instance-rows × --instance-columns.
 const INSTANCES_MAX: usize = 12;
 
@@ -56,7 +56,7 @@ const INSTANCES_MAX: usize = 12;
 // own after its socket closes before it is killed.
 
 // Everything the orchestrator prints goes to stderr (eprintln!): stdout is
-// the trainer link alone (synthetic-loop-dia.md, Trainer link).
+// the trainer link alone (__documentation__/synthetic-loop-dia.md, Trainer link).
 #[tokio::main]
 async fn main() -> Result<()> {
     let args = Args::parse();
@@ -109,7 +109,7 @@ async fn main() -> Result<()> {
     calibrate(&args, ports[0], command, &homography, size, connect_timeout).await?;
     let homography_argument = homography.display().to_string();
 
-    // 2–5 for every instance (synthetic-loop-dia.md, Training instances):
+    // 2–5 for every instance (__documentation__/synthetic-loop-dia.md, Training instances):
     // MuJoCo and the synthetic Arduino, then the synthetic Orin, which
     // pre-warms its pool at the gaps it is given, opens the frame socket,
     // then connects to the instance's control socket. Every Orin is
@@ -210,7 +210,7 @@ async fn main() -> Result<()> {
     result
 }
 
-// The calibration (synthetic-loop-dia.md, Calibration, C1–C10): one Orin and
+// The calibration (__documentation__/synthetic-loop-dia.md, Calibration, C1–C10): one Orin and
 // one player, on instance 0's ports, find the matrix and write it to
 // `homography`, then exit, so the training instances start with nothing
 // left over from it: no window, no render count, no MuJoCo state.
@@ -339,7 +339,7 @@ async fn measure_and_fit(
 // once, with the reason in its own output on stderr.
 
 // Instance k's ports: --orin-port + 2k and --unity-port + 2k
-// (synthetic-loop-dia.md, Training instances). Every port of the group must
+// (__documentation__/synthetic-loop-dia.md, Training instances). Every port of the group must
 // be its own, so neither the connection order nor the messages have to tell
 // the participants apart.
 fn instance_ports(args: &Args, count: usize) -> Result<Vec<(u16, u16)>> {
@@ -385,18 +385,18 @@ fn instance_folder(out: &Path, k: usize) -> Result<PathBuf> {
 // then each capture's). Held until its step's send, so the sites and pole
 // state that go to the trainer (17) show the instant the picture shows.
 
-// The two limit switches (synthetic-loop-dia.md, The rail's ends): each is
+// The two limit switches (__documentation__/synthetic-loop-dia.md, The rail's ends): each is
 // closed when its strike-face gap, the cart's clearance to that base in m,
 // is at most the stop gap.
 
 // The random timings' bands from their flags (Timing).
 
-// One training instance (synthetic-loop-dia.md, Training instances): its
+// One training instance (__documentation__/synthetic-loop-dia.md, Training instances): its
 // world and its episode's walk, its synthetic Orin and its player, always
 // together, the captures waiting for their sends, and the line it owes.
 
-// First the run's values (synthetic-loop-dia.md, Contracts), then one
-// round per pass (synthetic-loop-dia.md, Training instances): every
+// First the run's values (__documentation__/synthetic-loop-dia.md, Contracts), then one
+// round per pass (__documentation__/synthetic-loop-dia.md, Training instances): every
 // advanced instance walks at the same time to its next send or a FAULT,
 // each waiting at its captures for its own Orin; their owed lines go to the
 // trainer in one line, and its answers, for any pending instances, say
@@ -584,7 +584,7 @@ fn run_physics(args: &Args, sim: &mut Simulation) -> Result<()> {
 // The MJCF and its names come only from the command line (the trainer's
 // settings.toml [mjcf]).
 
-// The run's values (synthetic-loop-dia.md, Contracts): MuJoCo's, from the
+// The run's values (__documentation__/synthetic-loop-dia.md, Contracts): MuJoCo's, from the
 // loaded model, and the top pulse rate, the synthetic Arduino's clamp.
 
 // The synthetic Arduino's Config (3): the drive figures and the jump limit
@@ -606,7 +606,7 @@ fn run_physics(args: &Args, sim: &mut Simulation) -> Result<()> {
 // speed, so the velocity stays inside ctrlrange.
 
 // Each window's size in the grid that fills the screen, when the arguments
-// give a screen (synthetic-loop-dia.md, Training instances, The windows).
+// give a screen (__documentation__/synthetic-loop-dia.md, Training instances, The windows).
 fn screen_window_size(args: &Args) -> Result<Option<Pixels>> {
     let (Some(x), Some(y)) = (args.screen_width, args.screen_height) else {
         return Ok(None);
@@ -620,7 +620,7 @@ fn screen_window_size(args: &Args) -> Result<Option<Pixels>> {
 // connects itself. Its window has instance k's place in the grid.
 
 // 6: the player, told its Orin's frame socket and, with a grid, its
-// borderless window's place and size (synthetic-loop-dia.md, Training
+// borderless window's place and size (__documentation__/synthetic-loop-dia.md, Training
 // instances, The windows). kill_on_drop: an early error return drops the
 // handle, and the player must not outlive the orchestrator that launched
 // it.
@@ -628,7 +628,7 @@ fn screen_window_size(args: &Args) -> Result<Option<Pixels>> {
 // The pool's six pre-warm gaps for the Orin's command line, each as the
 // shortest text that reads back to the same f64.
 
-// The synthetic Orin (synthetic-loop-dia.md, 4 and C3): the given program and
+// The synthetic Orin (__documentation__/synthetic-loop-dia.md, 4 and C3): the given program and
 // arguments, plus the control socket's address, the frame socket's address,
 // the instance's folder and what it runs as, `role`; kill_on_drop as for the
 // player.

@@ -1,6 +1,6 @@
 """Measures how long a message takes to go from the Orin to the Arduino over WiFi and
 back. The delay D, from a frame's exposure to its command reaching the board, includes
-the WiFi hop, which the Orin's clock cannot time on its own (real-loop-dia.md,
+the WiFi hop, which the Orin's clock cannot time on its own (__documentation__/real-loop-dia.md,
 Measuring D). A reply from the board can.
 
 The board already answers one request without moving anything: "pins", with its

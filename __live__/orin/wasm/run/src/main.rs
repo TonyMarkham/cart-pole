@@ -1,7 +1,7 @@
 //! The run page: Run and STOP for the balance loop on the rig, and the
 //! brain's and the board's state. The brain runs the loop and the webserver
 //! passes the page's presses on to it; this page only asks and shows
-//! (`real-loop-dia.md`, *The run and idle states*; `real-orin-plan.md`, O9).
+//! (`__documentation__/real-loop-dia.md`, *The run and idle states*; `real-orin-plan.md`, O9).
 
 mod board_answer;
 mod constants;
@@ -107,7 +107,7 @@ async fn press_centre(page: Rc<Page>) {
 
 /// STOP, then a fresh look. It also sends the board `Stop`, on its own, so
 /// it ends a Re-centre without waiting for the run's stop: during a move the
-/// board takes only `Stop`, and drops it at any other time (`real-loop-dia.md`,
+/// board takes only `Stop`, and drops it at any other time (`__documentation__/real-loop-dia.md`,
 /// *The run and idle states*, Re-centre). STOP is never disabled, so a second
 /// press while the first is on its way sends both again, which is harmless:
 /// the board is already bringing the cart to rest.

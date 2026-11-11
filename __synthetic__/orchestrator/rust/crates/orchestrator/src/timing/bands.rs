@@ -22,7 +22,7 @@ pub struct Bands {
 impl Bands {
     /// Fails unless every band is finite with 0 ≤ min ≤ max, the loss is at
     /// least 1, and the bands keep the orders the walk relies on
-    /// (synthetic-loop-dia.md, *The schedule*, *Captures stay in order*).
+    /// (__documentation__/synthetic-loop-dia.md, *The schedule*, *Captures stay in order*).
     /// Each order is an exact gap of at least one timestep, which two
     /// roundings to the nearest timestep can never bring to 0:
     /// - each stretch's min: a step's own timings never share a timestep;

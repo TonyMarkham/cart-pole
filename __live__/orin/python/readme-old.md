@@ -94,7 +94,7 @@ cd ~/live-orin-python && .venv/bin/python src/test_calibration.py
 you measure the gap from the cart's face to the rail support it faces, and type it into
 the calibration page. A measurement at an end won't start without one.
 
-**The seven poses** are the synthetic loop's (`synthetic-loop-dia.md`, *The seven
+**The seven poses** are the synthetic loop's (`__documentation__/synthetic-loop-dia.md`, *The seven
 poses*): the pole hanging at each end and at the centre, and at each end also held
 level, pointing away from the centre, and held straight up. The hanging poses alone
 cover only the rail and the hanging pole, while a swinging End reaches the pole's
@@ -108,7 +108,7 @@ horizontal and the up points are unreliable"). `[calibration] fit_leave_out` in
 hanging poses alone, 6 points, and a left-out pose need not be measured. In a fit of
 all seven on 2026-11-09 the held poses were the worst points, up to 24 px against the
 1 px limit; with them left out the worst was 0.20 px. `fit_leave_out = []` fits all
-seven again ([real-loop-dia.md](../../../real-loop-dia.md), *The calibration on the
+seven again ([__documentation__/real-loop-dia.md](../../../__documentation__/real-loop-dia.md), *The calibration on the
 rig*).
 
 **What survives a restart:** each pose's result and each end's gap are saved to
@@ -243,7 +243,7 @@ command = round(a x 44,600) pulses/s
 `relu(v)` is max(v, 0), for each number on its own; `tanh` squeezes any number
 into [-1, 1]. The 36 inputs are the pool's 6 entries, newest first, each its age
 in ms ÷ 1,000 and Pivot's and End's (x, z) in metres, (-1, -1) for a marker not
-found, then the last 6 values of a, newest first ([real-loop-dia.md](../../../real-loop-dia.md),
+found, then the last 6 values of a, newest first ([__documentation__/real-loop-dia.md](../../../__documentation__/real-loop-dia.md),
 *The pool on the rig*).
 
 **What is in the file:**
@@ -264,7 +264,7 @@ A file written before 2026-11-09 also holds `command_rate_min_hz` and
 `command_rate_max_hz`, the band of command rates its run trained at. A run since
 2026-11-08 trains on the rig's measured timings and has no command rate, so the
 band left the file; an older file still loads, and its two extra values are
-ignored ([real-loop-dia.md](../../../real-loop-dia.md), *The policy on the Orin*).
+ignored ([__documentation__/real-loop-dia.md](../../../__documentation__/real-loop-dia.md), *The policy on the Orin*).
 
 **Today's file** is run `20261108_115227`'s last save, 6,000,000 steps, commit
 `7a5e28c1` with uncommitted changes, the first run trained on the rig's own
@@ -295,7 +295,7 @@ commands.
 
 **Why:** each command reaches the board over WiFi, and that hop is part of the delay
 D the policy must live with, from a frame's exposure to its command reaching the
-board ([real-loop-dia.md](../../../real-loop-dia.md), *Measuring D*). The Orin's
+board ([__documentation__/real-loop-dia.md](../../../__documentation__/real-loop-dia.md), *Measuring D*). The Orin's
 clock cannot time a one-way hop, but it can time a question and its answer.
 
 `src/wifi_round_trip.py` sends the board its existing `pins` request (the one the

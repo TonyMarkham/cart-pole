@@ -1,5 +1,5 @@
 /// The twelve sites' world positions for the current `qpos`, by role
-/// (synthetic-loop-dia.md, Contracts, the sites), in MuJoCo's world frame:
+/// (__documentation__/synthetic-loop-dia.md, Contracts, the sites), in MuJoCo's world frame:
 /// meters, z up (Unity's (x, y, z) is MuJoCo's (x, z, y)). Left, Right,
 /// Pivot and End are the markers' centres; Target is fixed where End sits
 /// with the cart centred and the pole upright; Dynamic Target rides the

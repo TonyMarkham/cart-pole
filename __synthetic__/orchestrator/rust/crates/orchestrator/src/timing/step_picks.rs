@@ -1,5 +1,5 @@
 /// One step's five picks, in the order they are made
-/// (synthetic-loop-dia.md, *The schedule*, *The order of the picks*), ms.
+/// (__documentation__/synthetic-loop-dia.md, *The schedule*, *The order of the picks*), ms.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct StepPicks {
     pub frame_ready: f64,

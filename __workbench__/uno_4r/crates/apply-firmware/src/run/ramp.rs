@@ -13,7 +13,7 @@ const STEP: i64 = JUMP_LIMIT as i64 * TICK_US as i64 / MICROS_PER_SECOND as i64;
 /// copied from the synthetic Arduino's `Ramp`
 /// (`__synthetic__/orchestrator/rust/crates/arduino/src/ramp.rs`). Live and
 /// synthetic share no code, so the rule is copied, not shared
-/// (real-loop-dia.md, *The command and the Arduino's Run*).
+/// (__documentation__/real-loop-dia.md, *The command and the Arduino's Run*).
 ///
 /// Rules (each checkable by hand):
 /// - The command is the last one received, clamped to ±`top_rate`.

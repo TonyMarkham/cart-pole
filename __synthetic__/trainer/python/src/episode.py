@@ -3,7 +3,7 @@
 Per instance it keeps the previous capture, the command history and the
 step count, and turns each new capture into the `StepInputs` of the step
 just finished (rl-rewrite-plan.md, 3.2). The first-step rule is
-synthetic-loop-dia.md's (The reward): capture 0, the episode's first observation,
+__documentation__/synthetic-loop-dia.md's (The reward): capture 0, the episode's first observation,
 is not scored; the first scored step is c_0 with capture 1, taking capture
 0's sites and pole state as the previous ones, and c_(-1) = 0, the stepper
 at rest after the reset.

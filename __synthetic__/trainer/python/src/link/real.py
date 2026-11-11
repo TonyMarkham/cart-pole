@@ -1,7 +1,7 @@
 """The real link: the trainer launches the orchestrator and speaks the lines.
 
 The trainer owns the run, so it starts the orchestrator with the command
-settings.toml names (synthetic-loop-dia.md, 1) and learns how the run ended
+settings.toml names (__documentation__/synthetic-loop-dia.md, 1) and learns how the run ended
 (26). The link is the orchestrator's stdin and stdout, held here as pipes
 (The trainer link): first, once, the request for the run's values and its
 answer (Contracts, the run's values); then one stdout line holds the
@@ -23,7 +23,7 @@ from settings import Settings
 
 CLOSED = 0  # the orchestrator's exit code for a closed run (26); 1 is failed
 
-# A pool entry's keys (synthetic-loop-dia.md, Contracts, the pool and the fault).
+# A pool entry's keys (__documentation__/synthetic-loop-dia.md, Contracts, the pool and the fault).
 ENTRY_KEYS = {"instance", "id", "time", "pool", "sites", "pole", "fault"}
 
 REQUEST = {"request": "run"}  # the trainer's first stdin line (Contracts, the run's values)
@@ -57,7 +57,7 @@ def read_captures(line: str, last_ids: dict[int, int]) -> dict[int, Capture]:
     exactly the advanced instances, each with an id later than its last
     (-1 before the first). Ids count every capture, and a reset drops the
     one or two taken after the last send, so they rise but may skip
-    (synthetic-loop-dia.md, Reset in place). Anything else on stdout means
+    (__documentation__/synthetic-loop-dia.md, Reset in place). Anything else on stdout means
     the link is broken."""
     try:
         message = json.loads(line)

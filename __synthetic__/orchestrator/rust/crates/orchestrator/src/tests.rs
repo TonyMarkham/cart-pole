@@ -27,7 +27,7 @@ fn line(answers: &str) -> String {
     format!(r#"{{"answers": [{answers}]}}"#)
 }
 
-// The answers (synthetic-loop-dia.md, Training instances and Contracts,
+// The answers (__documentation__/synthetic-loop-dia.md, Training instances and Contracts,
 // 18): per instance, continue with the command, reset with the next
 // episode's seed, or stop.
 #[test]
@@ -54,7 +54,7 @@ fn an_answer_is_continue_reset_or_stop() {
     assert!(parse_answers(&line(stop), &[true, true], &[]).is_ok());
 }
 
-// The run's values (synthetic-loop-dia.md, Contracts): the trainer's first
+// The run's values (__documentation__/synthetic-loop-dia.md, Contracts): the trainer's first
 // line asks for them, and the orchestrator's first line answers with the
 // seven values it is given.
 #[test]
@@ -114,7 +114,7 @@ fn a_line_may_answer_some_pending_instances() {
     assert!(parse_answers(&line(""), &[true], &[]).is_err(), "no answer");
 }
 
-// An instance whose episode ended in FAULT (synthetic-loop-dia.md, The
+// An instance whose episode ended in FAULT (__documentation__/synthetic-loop-dia.md, The
 // rail's ends) is answered with reset or stop; a continue fails the run.
 // Instance 1 faulted, instance 0 did not.
 #[test]
@@ -225,7 +225,7 @@ fn a_command_is_lost_when_its_drop_comes_out_1() {
     assert!((0..100).all(|_| timing.pick_lost(1)));
 }
 
-// The order of the picks (synthetic-loop-dia.md, The schedule): stretch 1,
+// The order of the picks (__documentation__/synthetic-loop-dia.md, The schedule): stretch 1,
 // stretch 2, stretch 3, the wait, the drop, each the next output of one
 // stream. With every band 0–1 ms, each pick is that output's u.
 #[test]
@@ -697,7 +697,7 @@ fn the_ramp_ticks_once_a_timestep() -> Result<()> {
     Ok(())
 }
 
-// The windows' grid (synthetic-loop-dia.md, Training instances, The
+// The windows' grid (__documentation__/synthetic-loop-dia.md, Training instances, The
 // windows): 4 columns of 960×752 cells from (0, 0) put instances 0–3 on
 // the top row and 4–5 below, from the left.
 #[test]
@@ -718,7 +718,7 @@ fn the_windows_fill_the_grid_row_by_row() {
     );
 }
 
-// Filling the screen (synthetic-loop-dia.md, Training instances, The
+// Filling the screen (__documentation__/synthetic-loop-dia.md, Training instances, The
 // windows): 3840×2112 in 2 rows and 3 columns is windows of 3840 ÷ 3 = 1280 by
 // 2112 ÷ 2 = 1056. The last instance's window ends exactly at the screen's
 // corner.
@@ -757,7 +757,7 @@ fn a_window_place_is_x_comma_y() {
     assert!("9.5,0".parse::<Pixels>().is_err());
 }
 
-// The close handshake (synthetic-loop-dia.md, the note at 22): a ping still
+// The close handshake (__documentation__/synthetic-loop-dia.md, the note at 22): a ping still
 // unread when the server closes must not cost the client the close frame.
 // The client pings, as the Orin's keepalive does; the server reads nothing
 // until it has sent its close, as at the end of a run. The client must get
@@ -881,7 +881,7 @@ fn the_five_numbers_print_with_their_units() {
 
 // 17: a pool entry carries its capture's MuJoCo time, its twelve sites
 // beside the pool, each a world [x, y, z] in meters, keyed by role, and its
-// pole state (synthetic-loop-dia.md, Contracts, the sites and the pole).
+// pole state (__documentation__/synthetic-loop-dia.md, Contracts, the sites and the pole).
 // The pole's numbers are arbitrary: this checks the message's shape.
 #[test]
 fn a_pool_entry_carries_its_captures_time_sites_and_pole() -> Result<()> {

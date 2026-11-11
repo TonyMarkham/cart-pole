@@ -139,7 +139,7 @@ fn main() -> ! {
             }
             Ok(Incoming::Wifi(datagram)) => match WifiMessage::parse(&datagram) {
                 // A bad sign byte is a fault from any state, and is answered
-                // as every datagram in FAULT is (real-loop-dia.md, *The
+                // as every datagram in FAULT is (__documentation__/real-loop-dia.md, *The
                 // command*).
                 Some(WifiMessage::BadSign) => {
                     state = state.next(Event::BadSign);

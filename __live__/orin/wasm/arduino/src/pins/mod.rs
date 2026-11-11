@@ -17,7 +17,7 @@ use crate::{
 const PRESSED: Meaning = Meaning::new("Pressed, or wire open", Tone::Warn);
 const RELEASED: Meaning = Meaning::new("Released", Tone::Ok);
 
-/// Every pin the rig uses: `control-design.md`, *The pin map*. Chip pins are
+/// Every pin the rig uses: `__documentation__/control-design.md`, *The pin map*. Chip pins are
 /// unor4-hal's `gpio/pins.rs`.
 pub(crate) const PINS: [PinInfo; 8] = [
     PinInfo {

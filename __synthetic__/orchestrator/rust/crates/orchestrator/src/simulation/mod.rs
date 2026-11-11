@@ -132,7 +132,7 @@ impl Simulation {
         Schedule::make(seed, &self.bands, self.max_episode_steps, self.timestep_ms)
     }
 
-    // R1–R3 (synthetic-loop-dia.md, Reset in place): the next episode, back
+    // R1–R3 (__documentation__/synthetic-loop-dia.md, Reset in place): the next episode, back
     // at the start pose, t = 0, ctrl 0; the synthetic Arduino back to rest
     // and out of FAULT. The schedule (R4) is the caller's, from the seed.
     pub(crate) fn reset(&mut self) -> Result<()> {
@@ -167,7 +167,7 @@ impl Simulation {
         Ok(velocity)
     }
 
-    // The truth log's row for one capture (synthetic-loop-dia.md, Truth
+    // The truth log's row for one capture (__documentation__/synthetic-loop-dia.md, Truth
     // log): its episode, capture time and true pose, beside what the Orin
     // observed in that picture, the pool's newest entry — empty without the
     // Orin (--no-render). `{}` writes a float as the shortest text that

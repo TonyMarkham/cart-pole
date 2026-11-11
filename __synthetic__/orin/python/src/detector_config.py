@@ -32,7 +32,7 @@ class DetectorConfig:
             confidence=float(raw["confidence"]),
             classes=list(raw["classes"]),
         )
-        # The marker frame has exactly four slots (synthetic-loop-dia.md, Contracts).
+        # The marker frame has exactly four slots (__documentation__/synthetic-loop-dia.md, Contracts).
         if len(config.classes) != 4:
             raise ValueError(f"{path}: classes must name 4 slots, got {config.classes}")
         return config

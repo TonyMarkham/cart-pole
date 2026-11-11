@@ -13,7 +13,7 @@ use std::{
 
 /// One run's log: its folder, made at the Run press, and `frames.jsonl` in it,
 /// one line per frame, flushed as each is written so a crash keeps every line
-/// before it (`real-loop-dia.md`, *The log*).
+/// before it (`__documentation__/real-loop-dia.md`, *The log*).
 pub(crate) struct RunLog {
     pub(crate) dir: PathBuf,
     file: BufWriter<File>,

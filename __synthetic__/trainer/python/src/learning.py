@@ -1,6 +1,6 @@
 """The training run's tables in the gym file: [train] (how long, how often
 it saves, where) and [sac] (Stable-Baselines3 SAC's arguments by their SB3
-names; synthetic-loop-dia.md, The policy learns by SAC).
+names; __documentation__/synthetic-loop-dia.md, The policy learns by SAC).
 """
 
 import math

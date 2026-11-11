@@ -24,7 +24,7 @@ const PINGS_FILE: &str = "pings.csv";
 const HISTOGRAM_FILE: &str = "histogram.csv";
 const STRAYS_FILE: &str = "strays.txt";
 
-/// A command's sign byte (real-loop-dia.md, *Contracts*): 0 negative, 1
+/// A command's sign byte (__documentation__/real-loop-dia.md, *Contracts*): 0 negative, 1
 /// positive.
 const SIGN_NEGATIVE: u8 = 0;
 const SIGN_POSITIVE: u8 = 1;

@@ -1,5 +1,5 @@
 //! The brain's requests, on the Orin's own address, which the webserver
-//! forwards the page's buttons to (`real-loop-dia.md`, *Contracts*, the
+//! forwards the page's buttons to (`__documentation__/real-loop-dia.md`, *Contracts*, the
 //! brain's requests). Each answers the brain's status; a refused Run answers
 //! it with 409 and the reason in `message`.
 

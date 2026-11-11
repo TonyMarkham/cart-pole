@@ -157,7 +157,7 @@ by a few clock cycles at most.
 
 ## The WiFi test: how long a datagram takes to reach the R4
 
-**What it answers:** gap 7 of `real-timings.md`, the WiFi hop: from a
+**What it answers:** gap 7 of `__documentation__/real-timings.md`, the WiFi hop: from a
 datagram leaving the sender to the board's processor having it whole. The
 PC stands in for the Orin as the sender.
 
@@ -223,7 +223,7 @@ default, about 3 minutes. Each run's folder,
 
 ## The apply test: how long the R4 takes to act on a command
 
-**What it answers:** gap 8 of `real-timings.md`: from the board's processor
+**What it answers:** gap 8 of `__documentation__/real-timings.md`: from the board's processor
 having a command whole to the step generator running at the command's new
 rate. By design it is 2–4 ms: up to 2 ms waiting for the next tick, then
 2 ms more, because a rate queued at one tick runs from the next.
@@ -283,7 +283,7 @@ folder, `pc/crates/apply-host/runs/apply_<seconds>/`, holds:
 
 ## The camera test: how long the camera takes to deliver a frame
 
-**What it answers:** gap 1 of `real-timings.md`: from the camera exposing a
+**What it answers:** gap 1 of `__documentation__/real-timings.md`: from the camera exposing a
 frame to the frame being read, the moment the brain's log calls `arrived`.
 GStreamer's stamp can't give it, because GStreamer stamps a frame when it
 passes it on, not when the sensor exposed it.
@@ -345,7 +345,7 @@ run's folder, `runs/camera_<seconds>/`, holds:
 
 ## The stage test: how long each stage of the brain takes
 
-**What it answers:** gaps 2 to 6 of `real-timings.md`, one by one: the
+**What it answers:** gaps 2 to 6 of `__documentation__/real-timings.md`, one by one: the
 brain's share of the loop, from a frame arriving to its command leaving. The
 brain's own log stamps only those two ends (`arrived` and `sent`), so the
 five together are measured, about 23 ms, but not how they split.

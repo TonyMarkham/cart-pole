@@ -2,7 +2,7 @@ use crate::constants::{CLASSES, DETECTION_FLOATS};
 
 use serde::Serialize;
 
-/// One line of `frames.jsonl` (`real-loop-dia.md`, *The log*): `boxes`, per
+/// One line of `frames.jsonl` (`__documentation__/real-loop-dia.md`, *The log*): `boxes`, per
 /// class in class order the detector's centre, size and confidence; `points`,
 /// Pivot's and End's (x, z) in metres, or (−1, −1); `inputs`, the 36 numbers
 /// sent to the policy; `stamp`, the frame's GStreamer timestamp, ns; `a` and

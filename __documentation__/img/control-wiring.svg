@@ -1,9 +1,9 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 1225" width="1400" height="1225" font-family="Segoe UI, Arial, sans-serif" font-size="12">
-  <!-- The wiring of control-design.md: supply, rocker, Arduino UNO R4 WiFi,
+  <!-- The wiring of __documentation__/control-design.md: supply, rocker, Arduino UNO R4 WiFi,
        the three PNP stages, the DM542, motor, and the two limit switches. -->
   <rect width="1400" height="1225" fill="#ffffff"/>
   <text x="60" y="32" font-size="18" font-weight="bold" fill="#111">Cart-pole drive wiring</text>
-  <text x="290" y="32" font-size="12" fill="#555">from control-design.md</text>
+  <text x="290" y="32" font-size="12" fill="#555">from __documentation__/control-design.md</text>
 
   <defs>
     <style>

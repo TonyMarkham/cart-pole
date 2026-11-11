@@ -22,7 +22,7 @@ using MuJoCoRoot = Greyhound.MuJoCo.ScriptableObjects.Root;
 namespace Simulation.CartPole.SimLoop
 {
     // The simulated robot loop's Unity side, the Orin's camera
-    // (synthetic-loop-dia.md, 6-7, 12-13): the orchestrator launches the
+    // (__documentation__/synthetic-loop-dia.md, 6-7, 12-13): the orchestrator launches the
     // player with -orin ws://<host>:<port>, the synthetic Orin's frame
     // socket; this component connects there, and for every trigger - a
     // joint-state text message from the Orin - drives the cart and pole,
@@ -30,7 +30,7 @@ namespace Simulation.CartPole.SimLoop
     // 728x544 greyscale q90 JPEG the Orin's detector would see. One reply
     // per trigger, in order: lockstep. Nothing is rendered between
     // triggers, and the window shows the last frame sent
-    // (synthetic-loop-dia.md, Training instances, The players draw only
+    // (__documentation__/synthetic-loop-dia.md, Training instances, The players draw only
     // when asked).
     //
     // Message in: {"id": 7, "joints": [{"name": "02-Cart.Slider.joint",
@@ -55,7 +55,7 @@ namespace Simulation.CartPole.SimLoop
         // so slides need no sign.
         private const int MjcfToUnityHingeSign = -1;
 
-        // The frame contract (synthetic-loop-dia.md, Contracts): half the IMX296's native
+        // The frame contract (__documentation__/synthetic-loop-dia.md, Contracts): half the IMX296's native
         // 1456x1088. The 24 is the depth buffer's bit count - what lets
         // near surfaces hide far ones - matching the dataset generator.
         private const int FrameWidth = 728;
@@ -64,7 +64,7 @@ namespace Simulation.CartPole.SimLoop
 
         private const string OrinArgument = "-orin";
 
-        // The player draws only when asked (synthetic-loop-dia.md,
+        // The player draws only when asked (__documentation__/synthetic-loop-dia.md,
         // Training instances): between triggers Update sleeps on the inbox
         // instead of spinning, and wakes at least this often so the
         // window stays responsive and a closed socket is noticed. A

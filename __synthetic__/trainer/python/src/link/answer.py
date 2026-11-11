@@ -1,4 +1,4 @@
-"""The answer: the only thing the trainer sends back (synthetic-loop-dia.md,
+"""The answer: the only thing the trainer sends back (__documentation__/synthetic-loop-dia.md,
 18; Contracts, the answer).
 
 Continue with the command, reset in place with the next episode's seed

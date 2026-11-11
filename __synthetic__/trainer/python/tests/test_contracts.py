@@ -91,10 +91,10 @@ class Contracts(unittest.TestCase):
 
     def test_the_real_links_pools(self):
         """A pools line, the orchestrator's stdout line to the trainer
-        (synthetic-loop-dia.md, arrow 17; read by link/real.py), carries each
+        (__documentation__/synthetic-loop-dia.md, arrow 17; read by link/real.py), carries each
         entry's fault, and each instance's id must come after its last: ids
         count every capture, and a reset drops the one or two taken after the
-        last send, so they may skip (synthetic-loop-dia.md, Reset in place,
+        last send, so they may skip (__documentation__/synthetic-loop-dia.md, Reset in place,
         Contracts, the fault)."""
         import json
         from contracts import SITE_ROLES

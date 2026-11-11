@@ -41,7 +41,7 @@ const CTRL_LEN: usize = 1;
 const QVEL_LEN: usize = 2;
 
 // The named sites: Left, Right, Pivot, End, Target, Dynamic Target, Cart,
-// Cart Target and the four strike faces (synthetic-loop-dia.md, Contracts,
+// Cart Target and the four strike faces (__documentation__/synthetic-loop-dia.md, Contracts,
 // the sites).
 const SITES: usize = 12;
 

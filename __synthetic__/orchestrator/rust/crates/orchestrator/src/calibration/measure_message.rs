@@ -2,7 +2,7 @@ use crate::orin::joint_qpos::JointQpos;
 
 use serde::Serialize;
 
-/// Orchestrator → calibrating Orin (synthetic-loop-dia.md, Calibration, C6):
+/// Orchestrator → calibrating Orin (__documentation__/synthetic-loop-dia.md, Calibration, C6):
 /// measure this pose, whose Pivot and End truly are at these `(x, z)`, in metres.
 #[derive(Serialize, Debug)]
 pub struct MeasureMessage<'a> {

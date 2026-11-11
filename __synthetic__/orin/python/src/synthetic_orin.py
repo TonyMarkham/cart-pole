@@ -5,12 +5,12 @@ process does what the real Orin does with each camera frame - detect the
 four markers, keep the last six detections as the policy's timestamped
 window (synthetic-orin-plan.md). Its camera is the Unity player: it serves
 the frame socket Unity connects to, triggers each frame there with the
-pose the orchestrator sends, and gets the JPEG back (synthetic-loop-dia.md,
+pose the orchestrator sends, and gets the JPEG back (__documentation__/synthetic-loop-dia.md,
 4-14). It writes each frame to <out>/frame_NNNNNN.jpg and one observation
 line per frame to <out>/observations.jsonl, and replies to each pose with
 the pool (14). The policy has to know where things are in metres, so Pivot's
 and End's pixels go through the matrix the calibration found before they
-enter the pool (synthetic-loop-dia.md, Calibration).
+enter the pool (__documentation__/synthetic-loop-dia.md, Calibration).
 
 It runs in one of two ways, each with the same start and end:
 - --calibrate FILE: finds the matrix and writes it to FILE (calibration.py).
@@ -18,7 +18,7 @@ It runs in one of two ways, each with the same start and end:
 - --homography FILE --pool-gaps d1,...,d6: one training instance's Orin. It
   reads the matrix once here and holds it in memory for the whole run.
 
-The start (synthetic-loop-dia.md): pre-warm the pool, open the frame
+The start (__documentation__/synthetic-loop-dia.md): pre-warm the pool, open the frame
 socket (the note at 4); connect to the orchestrator's control socket (5);
 wait for Unity (7); tell the orchestrator {"type": "registered"} (8). The
 end: the orchestrator closes the control socket (22), this process closes
@@ -51,7 +51,7 @@ Rules:
   End's (x, z) in metres, or (-1, -1) where not detected); the 7th append
   drops the oldest. Ages = capture time - newest capture time
   (newest 0, older negative).
-- Pre-warm (synthetic-loop-dia.md, the note at 4; The initial pool): at
+- Pre-warm (__documentation__/synthetic-loop-dia.md, the note at 4; The initial pool): at
   launch, before any frame, the window is six entries of no detection,
   (-1, -1) x2, at times -d1, -(d1+d2), ..., -(d1+...+d6) before the first
   capture (t = 0). The gaps dk are the orchestrator's, --pool-gaps, from its
@@ -64,7 +64,7 @@ Rules:
   an episode after a reset sees the pool a fresh launch with that seed
   would. Frame ids count on across the run's episodes, so frame files and
   log lines stay unique.
-- A failed frame (synthetic-loop-dia.md, the note at 13; O3): Unity's
+- A failed frame (__documentation__/synthetic-loop-dia.md, the note at 13; O3): Unity's
   JPEG does not decode or is not 728x544. Its entry is (-1, -1) x2, the
   error is logged, and it does not fail the run on its own; when 3 of the
   pool's 6 entries are failed frames, the reply says failed and the run
@@ -109,20 +109,20 @@ from detector_config import DEFAULT_PATH, DetectorConfig
 from fit import Homography
 from frame_socket import FrameSocket
 
-# The loop's frame contract (synthetic-loop-dia.md, Contracts).
+# The loop's frame contract (__documentation__/synthetic-loop-dia.md, Contracts).
 FRAME_SIZE = (728, 544)
 
-# The policy input's window length (synthetic-loop-dia.md, Contracts).
+# The policy input's window length (__documentation__/synthetic-loop-dia.md, Contracts).
 WINDOW = 6
 
-# A slot or point with no detection (synthetic-loop-dia.md, Contracts).
+# A slot or point with no detection (__documentation__/synthetic-loop-dia.md, Contracts).
 NOT_DETECTED = (-1.0, -1.0)
 
-# What each pool entry holds: Pivot and End (synthetic-loop-dia.md, Contracts).
+# What each pool entry holds: Pivot and End (__documentation__/synthetic-loop-dia.md, Contracts).
 POINTS = 2
 
 # Failed frames among the pool's entries that fail the run
-# (synthetic-loop-dia.md, the note at 13).
+# (__documentation__/synthetic-loop-dia.md, the note at 13).
 FAILED_FRAMES_FAIL_RUN = 3
 
 
@@ -135,7 +135,7 @@ class Entry:
 
 def checked_gaps(gaps: object) -> list[float]:
     """Six finite gaps above 0 ms, from the orchestrator's schedule: an age must be
-    strictly older than the one before it (synthetic-loop-dia.md, Contracts)."""
+    strictly older than the one before it (__documentation__/synthetic-loop-dia.md, Contracts)."""
     if (not isinstance(gaps, list) or len(gaps) != WINDOW
             or not all(isinstance(g, (int, float)) and not isinstance(g, bool) and math.isfinite(g) and g > 0
                        for g in gaps)):
@@ -166,7 +166,7 @@ def pre_warm(gaps_ms: list[float]) -> collections.deque[Entry]:
 
 
 def reset(message: dict) -> collections.deque[Entry]:
-    """R6 (synthetic-loop-dia.md, Reset in place): the pool pre-warmed afresh
+    """R6 (__documentation__/synthetic-loop-dia.md, Reset in place): the pool pre-warmed afresh
     at the reset's gaps, exactly as at launch, so no entry of the last
     episode survives and failed frames count afresh."""
     window = pre_warm(checked_gaps(message.get("gaps")))

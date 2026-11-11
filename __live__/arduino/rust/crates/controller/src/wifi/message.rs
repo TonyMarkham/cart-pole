@@ -16,7 +16,7 @@ pub(crate) enum Message {
     /// direction.
     Command(i32),
     /// A command whose sign byte is neither 0 nor 1: a fault, by definition
-    /// (the user, 2026-11-06, real-loop-dia.md, *The command*).
+    /// (the user, 2026-11-06, __documentation__/real-loop-dia.md, *The command*).
     BadSign,
     /// `CalibrateIdlerTravelLimit`, `CalibrateMotorTravelLimit`, or
     /// `MoveToCentre` with or without a speed: a move of the calibration.
@@ -42,7 +42,7 @@ impl Message {
     }
 
     /// The command in `payload`: byte 0 the sign (0 negative, 1 positive),
-    /// bytes 1–2 the size, a little-endian u16 (real-loop-dia.md,
+    /// bytes 1–2 the size, a little-endian u16 (__documentation__/real-loop-dia.md,
     /// *Contracts*). A size of 0 is rest. Any other sign byte is `BadSign`,
     /// whatever the size.
     fn command(payload: &[u8]) -> Option<Self> {

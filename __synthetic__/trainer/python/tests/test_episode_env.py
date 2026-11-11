@@ -68,7 +68,7 @@ class Environment(unittest.TestCase):
         env.close()
 
     def test_a_fault_ends_the_episode(self):
-        """The synthetic Arduino's FAULT (synthetic-loop-dia.md, The rail's
+        """The synthetic Arduino's FAULT (__documentation__/synthetic-loop-dia.md, The rail's
         ends): the full rate right closes the right gap, 0.445 m, to the 5 mm
         stop gap at the tests' 0.9 m/s in 0.440 / 0.9 = 0.49 s, about 15 steps
         of 32.5 ms. The line comes with fault, the episode ends terminated with

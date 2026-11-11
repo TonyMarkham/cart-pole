@@ -1,4 +1,4 @@
-"""The training run: SAC learns the policy on the loop (synthetic-loop-dia.md,
+"""The training run: SAC learns the policy on the loop (__documentation__/synthetic-loop-dia.md,
 The policy learns by SAC; rl-rewrite-plan.md, 3.2).
 
 The policy has to learn from the loop itself for hours, so this runs

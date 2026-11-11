@@ -1,4 +1,4 @@
-/// One pose the calibration measures (synthetic-loop-dia.md, Calibration): the
+/// One pose the calibration measures (__documentation__/synthetic-loop-dia.md, Calibration): the
 /// two joints, and where MuJoCo says Pivot and End then are, each `(x, z)` in
 /// metres in the pole's plane.
 #[derive(Debug)]

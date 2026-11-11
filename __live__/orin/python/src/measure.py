@@ -1,5 +1,5 @@
 """Turns one stop's many detections of a still marker into one point, trusting no
-single detection (calibrate-w-homography.md, The measurement at a stop).
+single detection (__documentation__/calibrate-w-homography.md, The measurement at a stop).
 
 The detector can return a wrong box now and then, and one detection 20 px off
 would pull a plain mean of 30 by 0.7 px, more than the detector's own error. So

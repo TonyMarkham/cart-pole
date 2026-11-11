@@ -1,5 +1,5 @@
 //! The PC side of the bench's apply test (`__workbench__/README.md`, *The
-//! apply test*; `real-timings.md`, gap 8): how long the bench R4 takes from
+//! apply test*; `__documentation__/real-timings.md`, gap 8): how long the bench R4 takes from
 //! having a command whole to running at its new rate, timed by the R3 on
 //! one clock, its Timer1. The PC only sends the commands and collects the
 //! R3's results; it times nothing itself.

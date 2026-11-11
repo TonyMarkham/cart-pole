@@ -44,7 +44,7 @@ min_contrast = 20
 # every 16.7 ms, so about (1 ms + pulse) / 16.7 ms of flashes are seen: 9% at
 # 500 µs. The gap between flashes must be longer than gap 1 itself (the time
 # from the camera exposing a frame to that frame being read on the Orin, gap 1
-# of real-timings.md, which this test measures), so each lit frame can only
+# of __documentation__/real-timings.md, which this test measures), so each lit frame can only
 # belong to the flash before it: 8 frames is 133 ms.
 pulses = 200
 pulse_us = 500

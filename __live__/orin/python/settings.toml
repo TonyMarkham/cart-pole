@@ -270,7 +270,7 @@ min_images = 30
 max_images = 9999
 
 # A detection further from the middle of its marker's detections than this many
-# spreads is dropped before the mean. Proposed in calibrate-w-homography.md.
+# spreads is dropped before the mean. Proposed in __documentation__/calibrate-w-homography.md.
 clip_k = 3
 
 # The largest distance, in pixels, between a measured point and where the fitted
@@ -297,7 +297,7 @@ kept_path = "~/live-orin-python/kept_stops.json"
 max_gap_mm = 50
 
 # From the MJCF, the rig's CAD, in metres. Each is a site's position with the cart
-# centred and the pole hanging (calibrate-w-homography.md, The ground truth).
+# centred and the pole hanging (__documentation__/calibrate-w-homography.md, The ground truth).
 left_wall_x = -0.485          # 10-Left-Rail.Site
 right_wall_x = 0.470          # 12-Right-Rail.Site
 left_face_to_pivot = 0.035    # Pivot x - 11-Left-Cart.Site x
@@ -328,7 +328,7 @@ address = "192.168.0.220"
 port = 4210
 
 # How many requests, and the pause between one answer and the next request, ms.
-# 40 ms is about the policy's command gap, 33.3-50 ms (real-loop-dia.md, Timing).
+# 40 ms is about the policy's command gap, 33.3-50 ms (__documentation__/real-loop-dia.md, Timing).
 count = 1000
 gap_ms = 40
 

@@ -93,7 +93,7 @@ board, both switches have read high with neither pressed, though not every time
 with that cable in.</p>
 <p><b>The motor driver's upside-down signals.</b> Each output reaches the DM542 motor driver
 through a small transistor, so low switches the driver's input on and high leaves it off.
-That is why D6 low turns the motor off and D4 pulses low (<code>control-design.md</code>,
+That is why D6 low turns the motor off and D4 pulses low (<code>__documentation__/control-design.md</code>,
 <i>Why the transistors</i>). Which way the cart goes for Plus and Minus depends on the motor's
 wiring and is not fixed here.</p>
 <p><b>Power.</b> The board runs from its barrel jack. VIN and the GND beside it are not
@@ -105,7 +105,7 @@ wire reaches this board.</p>
 <p><b>Not used.</b> D7 was the driver's enable pin before 2026-10-27, and D8 was the old
 DRV8825 driver's fault line; the DM542 has none. Neither is connected now. The WiFi chip
 talks to the processor on P501 and P502, which are inside the board and on no header.</p>
-<p><b>Where this comes from.</b> Roles: the pin map in <code>control-design.md</code>. Chip
+<p><b>Where this comes from.</b> Roles: the pin map in <code>__documentation__/control-design.md</code>. Chip
 pins: <code>unor4-hal</code>'s <code>gpio/pins.rs</code>. Board layout: redrawn and simplified
 from the top view on <a href="https://docs.arduino.cc/hardware/uno-r4-wifi/">Arduino's page for
 the board</a>. Check any wire against the labels printed on the board itself.</p>

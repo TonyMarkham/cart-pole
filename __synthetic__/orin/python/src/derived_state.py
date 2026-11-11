@@ -4,7 +4,7 @@ from; its note 1, get_observation).
 
 DeepMind's simulator hands its policy these directly. The robot has no such sensor: it
 knows only where the detector found Pivot and End, so here they come from the pool, the
-last six frames' points in metres (calibrate-w-homography.md, Per frame).
+last six frames' points in metres (__documentation__/calibrate-w-homography.md, Per frame).
 
   cart        the cart's position along the rail, m: Pivot's x less the calibration's
               centre stop, so 0 centred and negative to the left as the camera sees it
@@ -21,16 +21,16 @@ to End: theta = atan2(dx, dz). Hanging, dx is 0 and dz is -0.45 m, so theta is p
 A single frame holds no speed, so each speed is a difference between two of the pool's
 entries: the newest, and the next older that saw what the speed needs, divided by the
 time between them. It is the average speed over that gap, so it describes a moment
-about half a gap old: 21 ms at the mean gap of 41.5 ms (synthetic-loop-dia.md).
+about half a gap old: 21 ms at the mean gap of 41.5 ms (__documentation__/synthetic-loop-dia.md).
 
 A value that needs a marker the frames did not see is None. What the policy should get
-instead is not decided (calibrate-w-homography.md, Open).
+instead is not decided (__documentation__/calibrate-w-homography.md, Open).
 """
 
 import math
 from dataclasses import asdict, dataclass
 
-# A point with no detection (synthetic-loop-dia.md, Contracts, the points).
+# A point with no detection (__documentation__/synthetic-loop-dia.md, Contracts, the points).
 NOT_DETECTED = (-1.0, -1.0)
 
 

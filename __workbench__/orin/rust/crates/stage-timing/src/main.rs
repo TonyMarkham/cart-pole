@@ -1,4 +1,4 @@
-//! Gaps 2 to 6 of `real-timings.md` on the Orin: how long each stage of the
+//! Gaps 2 to 6 of `__documentation__/real-timings.md` on the Orin: how long each stage of the
 //! brain's loop takes, from a frame arriving to its command leaving.
 //!
 //! The brain's log stamps only the two ends, `arrived` and `sent`. This runs

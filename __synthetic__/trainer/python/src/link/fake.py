@@ -7,7 +7,7 @@ It is a test fixture, not a model of the rig: the cart follows the command
 at once (MuJoCo's velocity servo, idealised), the pole is a damped
 pendulum on the cart, and the markers are the sites projected linearly
 into the frame, always detected. The geometry copies the sites
-(synthetic-loop-dia.md, Contracts, the sites, as MuJoCo gives them): End 0.450 m from
+(__documentation__/synthetic-loop-dia.md, Contracts, the sites, as MuJoCo gives them): End 0.450 m from
 the hinge, the rail centre 10 mm off the world origin, Target at
 (-0.010, -0.132, 0.532), Dynamic Target 0.450 m above the hinge, Cart at the
 slider joint (y 0, z 0.050) and Cart Target where it sits centred, and the
@@ -125,7 +125,7 @@ class Instance:
 
     def tripped(self) -> bool:
         """A limit switch is closed: a strike face within the stop gap of its
-        base (synthetic-loop-dia.md, The rail's ends)."""
+        base (__documentation__/synthetic-loop-dia.md, The rail's ends)."""
         s = self.rig.sites()
         return s.left_cart[0] - s.left_rail[0] <= self.stop_gap or s.right_rail[0] - s.right_cart[0] <= self.stop_gap
 

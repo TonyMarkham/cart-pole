@@ -6,7 +6,7 @@ use unor4_hal::step::TICK_US;
 /// trip position, on the cart's count. While the Orin's commands move the
 /// cart, the soft limit brings it to rest at a stop point and never past it,
 /// and the count passing one is the cart entering that end's protected zone
-/// (real-loop-dia.md, *The soft limit*; real-open-issues.md, issue 5).
+/// (__documentation__/real-loop-dia.md, *The soft limit*; real-open-issues.md, issue 5).
 /// Copied from the controller's `cart/stop_points.rs` with one change: its
 /// one-point form for the move to the centre, `at`, is left out, since the
 /// bench never centres. `passed` and `cap` are the controller's, unchanged,
@@ -35,7 +35,7 @@ impl StopPoints {
     ///
     /// Heading for an end, the rate is at most √(2 × m × d), d the pulses left
     /// to that end's stop point: braking as hard as m allows, the cart then
-    /// reaches 0 at the stop point (real-loop-dia.md, *The soft limit*). Moving
+    /// reaches 0 at the stop point (__documentation__/real-loop-dia.md, *The soft limit*). Moving
     /// away from an end is never capped. Two bounds keep it short of the stop
     /// point (real-open-issues.md's plan, D3):
     /// - a rate queued now runs from the next tick (unor4-hal

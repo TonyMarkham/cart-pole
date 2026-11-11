@@ -1,7 +1,7 @@
 """The frame socket: where the Unity player, the Orin's camera, connects.
 
 The Orin drives its camera - it sends the trigger and gets the frame back
-(synthetic-loop-dia.md, 12-13) - so it serves this socket and Unity is the
+(__documentation__/synthetic-loop-dia.md, 12-13) - so it serves this socket and Unity is the
 client (6-7). It takes exactly one camera: a second connection is refused.
 
 websockets' sync server runs each connection's handler in its own thread

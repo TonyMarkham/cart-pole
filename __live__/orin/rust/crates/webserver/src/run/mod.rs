@@ -1,5 +1,5 @@
 //! The `/run` page's routes: Run and STOP, passed on to the brain, and the
-//! brain's status (`real-loop-dia.md`, *The run and idle states*; *Contracts*,
+//! brain's status (`__documentation__/real-loop-dia.md`, *The run and idle states*; *Contracts*,
 //! the brain's requests). The brain alone sends commands during a run; STOP is
 //! the one time this server sends the board a command, the command 0.
 
@@ -38,7 +38,7 @@ pub(crate) async fn start(State(arduino): State<ArduinoState>) -> Response {
 /// STOP: first the brain is asked for idle, so no command follows; only then
 /// is the board sent the command 0, several times, since a datagram can be
 /// lost. The zeros go out whether or not the brain answered, so a brain that
-/// has crashed can't keep the cart moving (`real-loop-dia.md`, *The run and
+/// has crashed can't keep the cart moving (`__documentation__/real-loop-dia.md`, *The run and
 /// idle states*, two ways out of run). The answer is the brain's, with
 /// `zeros_sent` added, or the webserver's own if the brain gave none.
 pub(crate) async fn stop(State(arduino): State<ArduinoState>) -> Response {

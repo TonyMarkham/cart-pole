@@ -161,7 +161,7 @@ def rig_values(settings):
     """The run's values the orchestrator answers with for `settings` (a
     loaded settings.toml): MuJoCo's, from the built orchestrator's
     --run-values, which loads the model and prints the same line it answers
-    the trainer's request with (synthetic-loop-dia.md, Contracts, the run's
+    the trainer's request with (__documentation__/synthetic-loop-dia.md, Contracts, the run's
     values). Nothing here works them out."""
     import subprocess
     from link.real import orchestrator_environment, read_run

@@ -1,7 +1,7 @@
 use std::collections::VecDeque;
 
 /// The actions a of the last commands, newest first, 0 before the run's first
-/// (`real-loop-dia.md`, *The pool on the rig*, the 36 inputs). The brain
+/// (`__documentation__/real-loop-dia.md`, *The pool on the rig*, the 36 inputs). The brain
 /// sends the commands, so it has them.
 #[derive(Clone, Debug, PartialEq)]
 pub(crate) struct History {

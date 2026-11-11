@@ -1,10 +1,10 @@
 /// How long ENA must be set before DIR changes, ns: the DM542's t1, at least
-/// 5 µs (manual, section 10; `control-design.md`, the ENA+ row). The step
+/// 5 µs (manual, section 10; `__documentation__/control-design.md`, the ENA+ row). The step
 /// generator refuses to move until it has passed since `enable()`.
 pub(crate) const ENA_LEAD_NS: u32 = 5_000;
 
 /// How long DIR must be set before STEP's next pulse, ns: the DM542's t2, at
-/// least 5 µs (manual, section 10; `control-design.md`, the DIR+ row). The
+/// least 5 µs (manual, section 10; `__documentation__/control-design.md`, the DIR+ row). The
 /// step generator waits it after every DIR change.
 pub(crate) const DIR_SETUP_NS: u32 = 5_000;
 
@@ -102,10 +102,10 @@ pub(crate) const PIN_MOTOR: &str = "d2";
 
 /// A command's size, bytes: the sign, then the size as a u16, little-endian.
 /// The board tells a command from a text message by size alone
-/// (real-loop-dia.md, *Contracts*).
+/// (__documentation__/real-loop-dia.md, *Contracts*).
 pub(crate) const COMMAND_SIZE: u32 = 3;
 
-/// A command's sign byte: 0 negative, 1 positive (real-loop-dia.md,
+/// A command's sign byte: 0 negative, 1 positive (__documentation__/real-loop-dia.md,
 /// *Contracts*, the command). Any other is a fault (the user, 2026-11-06).
 pub(crate) const COMMAND_NEGATIVE: u8 = 0;
 pub(crate) const COMMAND_POSITIVE: u8 = 1;

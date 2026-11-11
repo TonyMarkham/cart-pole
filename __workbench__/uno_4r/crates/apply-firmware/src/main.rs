@@ -3,7 +3,7 @@
 //! step generator, following 3-byte commands that arrive over WiFi, and flips
 //! D3 the moment each command is whole. The R3 on the bench times that edge
 //! and every STEP pulse on its Timer1, so the time from a command's arrival
-//! to its new rate on STEP, gap 8 of `real-timings.md`, is measured on one
+//! to its new rate on STEP, gap 8 of `__documentation__/real-timings.md`, is measured on one
 //! clock, the R3's. Nothing moves: the bench's STEP and DIR go only to the R3.
 
 #![no_std]

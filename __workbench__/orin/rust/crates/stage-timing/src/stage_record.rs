@@ -1,7 +1,7 @@
 use crate::constants::NANOS_PER_MILLI;
 
 /// The gaps measured, in the order a frame passes through them
-/// (`real-timings.md`, gaps 2 to 6), as `summary.txt` names them.
+/// (`__documentation__/real-timings.md`, gaps 2 to 6), as `summary.txt` names them.
 pub(crate) const GAP_NAMES: [&str; 5] = [
     "gap 2, hand-off to the worker",
     "gap 3, detection",

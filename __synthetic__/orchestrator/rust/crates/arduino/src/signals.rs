@@ -1,8 +1,8 @@
 use crate::direction::Direction;
 
 /// The two signals the firmware gives the DM542 for one command
-/// (synthetic-loop-dia.md, 20): DIR from the sign, STEP rate (the pulses
-/// on the DM542's PUL input, control-design.md) from the
+/// (__documentation__/synthetic-loop-dia.md, 20): DIR from the sign, STEP rate (the pulses
+/// on the DM542's PUL input, __documentation__/control-design.md) from the
 /// magnitude, in pulses per second.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Dm542Signals {

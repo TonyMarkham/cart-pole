@@ -1,7 +1,7 @@
 use crate::constants::{COMMAND_NEGATIVE, COMMAND_POSITIVE, COMMAND_SIZE};
 
 /// The command for the cart: a pulse rate in pulses/s, its sign the direction,
-/// c = round(a × the top pulse rate) (`real-loop-dia.md`, *Contracts*, the
+/// c = round(a × the top pulse rate) (`__documentation__/real-loop-dia.md`, *Contracts*, the
 /// policy's output). On the wire it is 3 bytes: the sign, 0 negative and 1
 /// positive, then the rate's size as a `u16`, little-endian (*Contracts*, the
 /// command). A rate of 0 means rest, and is sent with the positive sign.

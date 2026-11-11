@@ -466,7 +466,7 @@
 >>> kind of play pays. It does not predict what the robot will learn to do.
 >>>
 >>> The recording is from before the command rate (2026-10-30,
->>> `synthetic-loop-dia.md`), when a step lasted 12.57 ms and an episode
+>>> `__documentation__/synthetic-loop-dia.md`), when a step lasted 12.57 ms and an episode
 >>> 1,500 steps. An episode is now about the same 19 s in 460 steps, so the
 >>> same play now scores about 460 ÷ 1,500, or 0.31, of each figure: a hold
 >>> pays 460, hanging about 3.4 (measured: 3.4 and 3.7 over two episodes of
@@ -1244,7 +1244,7 @@ source used it. Nothing borrowed here has been tested on this rig yet.
     only in the simulation, so the reward never has to be worked out on
     the real robot (`AGENTS.md`, *Not a toy* and *The real robot*), and
     every reward value comes from the sites (user, 2026-10-25;
-    `synthetic-loop-dia.md`, *Contracts*, the sites) and the pole's own
+    `__documentation__/synthetic-loop-dia.md`, *Contracts*, the sites) and the pole's own
     numbers from MuJoCo (user, 2026-10-28; *Contracts*, the pole and
     the run's values). DeepMind's
     cart-pole likewise scores from the simulator's own state
@@ -1324,7 +1324,7 @@ source used it. Nothing borrowed here has been tested on this rig yet.
     `mjData` (`include/mujoco/mjdata.h` of the 3.15.0 release). The
     physics crate reads them at every capture (`__synthetic__/orchestrator/rust/crates/physics/README.md`,
     `pole()`), and the orchestrator sends them with the sites
-    (`synthetic-loop-dia.md`, *Contracts*, the pole; user, 2026-10-28).
+    (`__documentation__/synthetic-loop-dia.md`, *Contracts*, the pole; user, 2026-10-28).
     The reward reads only the speed. Simulation.
 
 [^14]: **The natural frequency.** A pole swinging on a hinge is a
@@ -1336,7 +1336,7 @@ source used it. Nothing borrowed here has been tested on this rig yet.
 [^15]: **The pole's mass, centre of mass and inertia.** MuJoCo's own
     values, read by the physics crate when it loads the MJCF the run
     names (`__synthetic__/trainer/python/settings.toml` `[mjcf] model`) and sent once per run
-    in the run's values (`synthetic-loop-dia.md`, *Contracts*): the mass
+    in the run's values (`__documentation__/synthetic-loop-dia.md`, *Contracts*): the mass
     is MuJoCo's `body_subtreemass` of the hinge's body; `l_c` is the
     centre of mass's distance from the hinge's axis; `I` is the hinge's
     entry in MuJoCo's inertia matrix. The crate refuses to load if they

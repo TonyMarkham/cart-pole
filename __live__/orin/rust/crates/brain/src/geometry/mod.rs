@@ -1,5 +1,5 @@
 //! From the detector's pixels to metres in the pole's plane: the lens's bend
-//! undone, then the matrix the calibration fitted (`real-loop-dia.md`,
+//! undone, then the matrix the calibration fitted (`__documentation__/real-loop-dia.md`,
 //! *Contracts*, the points).
 
 pub(crate) mod homography;

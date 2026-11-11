@@ -31,7 +31,7 @@ pub struct SyntheticArduino {
 }
 
 impl SyntheticArduino {
-    /// Created with its `Config` and the loop's tick (synthetic-loop-dia.md,
+    /// Created with its `Config` and the loop's tick (__documentation__/synthetic-loop-dia.md,
     /// 3): every run starts the cart at 50% of the rail, a guarantee that
     /// stands in for the board's homing and calibration, so no start
     /// position is taken. At rest: command 0, sent rate 0, not in FAULT.

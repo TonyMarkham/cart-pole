@@ -43,7 +43,7 @@ apply_timeout_us = 10_000
 
 # How long the PC waits for the R3's line about each command, ms: the R3's
 # timeout, the line's few ms, and the WiFi hop's longest seen, 606 ms
-# (real-timings.md, gap 7).
+# (__documentation__/real-timings.md, gap 7).
 result_timeout_ms = 1_000
 
 # The histogram's bin width, µs.

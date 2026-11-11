@@ -3,7 +3,7 @@ use crate::{error::app_error::AppError, worker::policy_values::PolicyValues};
 use serde::Deserialize;
 
 /// The one JSON line the worker writes before anything else: the policy's
-/// values when it is ready, or the reason it is not (`real-loop-dia.md`,
+/// values when it is ready, or the reason it is not (`__documentation__/real-loop-dia.md`,
 /// *Contracts*, the brain's worker).
 #[derive(Debug, Deserialize)]
 pub(crate) struct ReadyLine {

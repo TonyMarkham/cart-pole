@@ -68,7 +68,7 @@ dir_setup_ns = 5000
 # and the level on D5 (DIR) that leads to it, high or low. This is the
 # Arduino's pin: its PNP transistor means a low pin lights the driver's DIR
 # input, so the driver's own input is the reverse.
-# control-design.md wires D2 to the left switch and D3 to the right. Which
+# __documentation__/control-design.md wires D2 to the left switch and D3 to the right. Which
 # end the idler is at, and which way DIR moves the cart, are NOT yet checked
 # on the rig: these are a first guess. If the guess is wrong, the cart still
 # stops at whichever switch it reaches, and the answer names that pin.

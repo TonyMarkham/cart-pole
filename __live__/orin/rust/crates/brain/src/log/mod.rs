@@ -1,4 +1,4 @@
-//! Each run's record on the Orin (`real-loop-dia.md`, *The log*). Nothing on
+//! Each run's record on the Orin (`__documentation__/real-loop-dia.md`, *The log*). Nothing on
 //! the rig knows the true state, so unlike the synthetic record there is no
 //! truth in it: what the detector saw, what the policy was given, and what was
 //! sent.

@@ -3,7 +3,7 @@ use crate::constants::{DETECTION_BYTES, DETECTION_FLOATS, F32_BYTES, NOT_DETECTE
 /// One class's box as the worker answers it: the centre and size normalised to
 /// the frame, 0 to 1, and the model's confidence. A marker not found is
 /// (−1, −1) with a size of 0 and the confidence the model gave its best
-/// candidate, under the threshold (`real-loop-dia.md`, *Contracts*, the
+/// candidate, under the threshold (`__documentation__/real-loop-dia.md`, *Contracts*, the
 /// brain's worker).
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub(crate) struct Detection {

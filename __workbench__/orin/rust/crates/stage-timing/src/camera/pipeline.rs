@@ -14,7 +14,7 @@ use crate::{
 /// frame comes with its timestamp, and the sink on standard output, which the
 /// brain reads. `-q` keeps GStreamer's own progress messages off that output;
 /// the camera software's messages go to standard error, which the brain
-/// leaves alone. `do-timestamp` is the decided stamp (`real-loop-dia.md`, *The
+/// leaves alone. `do-timestamp` is the decided stamp (`__documentation__/real-loop-dia.md`, *The
 /// pool on the rig*). Each element's name and property is a constant in
 /// `constants.rs`, with what it is for.
 pub(crate) fn arguments(camera: &CameraSettings) -> Vec<String> {

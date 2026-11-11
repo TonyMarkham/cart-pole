@@ -9,7 +9,7 @@ use std::{
 /// replaces it with every frame the camera makes, so the pipe never fills and
 /// the camera software never waits on the brain; the loop takes only the frame
 /// it asks for. Frames nobody asked for are dropped here, unread by the loop
-/// (`real-loop-dia.md`, *Timing*).
+/// (`__documentation__/real-loop-dia.md`, *Timing*).
 #[derive(Debug, Default)]
 pub(crate) struct Latest {
     state: Mutex<LatestState>,

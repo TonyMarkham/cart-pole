@@ -1,7 +1,7 @@
 use crate::board::travel::Travel;
 
 /// What the pole does in one of the seven poses (`fit.py`'s `POSES`, from
-/// `synthetic-loop-dia.md`, *The seven poses*). The hanging poses alone cover only
+/// `__documentation__/synthetic-loop-dia.md`, *The seven poses*). The hanging poses alone cover only
 /// the rail and the hanging pole, while a swinging End reaches the pole's length past
 /// them on either side and above, so at each end it is also held out and up.
 #[derive(Clone, Copy, Debug, PartialEq)]

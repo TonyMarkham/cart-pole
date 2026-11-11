@@ -29,7 +29,7 @@ use unor4_hal::wake::{WakeError, WakeTimer};
 /// is the one its last byte woke, and its stamp is a few µs after that
 /// byte. The board does nothing else: no step generator, no ticks, so no
 /// other work can delay a look (the rig's tick work, up to 50 µs, is
-/// `real-timings.md` gap 8a).
+/// `__documentation__/real-timings.md` gap 8a).
 pub(crate) struct Prober {
     clock: Clock,
     udp: UdpSocket,

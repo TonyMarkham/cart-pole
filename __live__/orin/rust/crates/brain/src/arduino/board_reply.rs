@@ -3,7 +3,7 @@ use crate::constants::{REPLY_FAULT, REPLY_STATUS_CONFLICT, REPLY_UNCALIBRATED};
 use serde::Deserialize;
 
 /// A reply from the board, in its one answer format: `status`, `result`,
-/// `message`, `pin` and `pulses` (`real-loop-dia.md`, *The board's states*,
+/// `message`, `pin` and `pulses` (`__documentation__/real-loop-dia.md`, *The board's states*,
 /// the replies). A command gets one only in FAULT and UNCALIBRATED, and
 /// either ends the run.
 #[derive(Debug, Deserialize, PartialEq)]

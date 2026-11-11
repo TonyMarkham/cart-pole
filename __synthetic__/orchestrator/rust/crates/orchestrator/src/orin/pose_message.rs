@@ -2,7 +2,7 @@ use crate::orin::joint_qpos::JointQpos;
 
 use serde::Serialize;
 
-/// Orchestrator → synthetic Orin (synthetic-loop-dia.md, 11), one text
+/// Orchestrator → synthetic Orin (__documentation__/synthetic-loop-dia.md, 11), one text
 /// message per observation: `{"id": 7, "time": 0.14, "joints":
 /// [{"name": "02-Cart.Slider.joint", "qpos": 0.05}, {"name":
 /// "04-Pole.Hinge.joint", "qpos": 3.14}]}`. `time` is the capture time in

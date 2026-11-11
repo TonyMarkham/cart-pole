@@ -42,7 +42,7 @@ const DATAGRAMS_HEADER: &str = "n,timed,sent_ms,rate";
 /// at 10 bits a byte at 115,200 baud: 260 × 20 × 10 / 115,200 ≈ 0.45 s.
 const R3_ANSWER_MS: u64 = 2_000;
 
-/// A command's sign byte (real-loop-dia.md, *Contracts*): 0 negative, 1
+/// A command's sign byte (__documentation__/real-loop-dia.md, *Contracts*): 0 negative, 1
 /// positive.
 const SIGN_NEGATIVE: u8 = 0;
 const SIGN_POSITIVE: u8 = 1;

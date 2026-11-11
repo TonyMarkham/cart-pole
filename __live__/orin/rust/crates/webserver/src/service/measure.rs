@@ -18,7 +18,7 @@ use serde_json::{Value, json};
 /// Starts a stop's measurement. It holds the moves' permit while it asks, and a
 /// move holds that permit while it asks whether a measurement is running, so one
 /// can never slip in beside the other. Refused while the brain has the camera
-/// for a run (`real-loop-dia.md`, *The run and idle states*).
+/// for a run (`__documentation__/real-loop-dia.md`, *The run and idle states*).
 pub(crate) async fn start(
     State(arduino): State<ArduinoState>,
     RawQuery(query): RawQuery,

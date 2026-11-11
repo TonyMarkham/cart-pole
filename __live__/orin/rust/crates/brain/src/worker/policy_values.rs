@@ -1,7 +1,7 @@
 use crate::error::app_error::AppError;
 
 /// The values the policy trained with, from `policy.npz` through the worker's
-/// ready line (`real-loop-dia.md`, *The policy on the Orin*): the inputs and
+/// ready line (`__documentation__/real-loop-dia.md`, *The policy on the Orin*): the inputs and
 /// the command are built with these, so they cannot drift from training.
 #[derive(Clone, Debug, PartialEq)]
 pub(crate) struct PolicyValues {

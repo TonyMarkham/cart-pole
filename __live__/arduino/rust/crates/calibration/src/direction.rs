@@ -14,7 +14,7 @@ impl Direction {
     /// The direction positive rates run: the step generator's forward level
     /// (`pins.rs`, `DIR`). A choice that keeps `calibration.toml`'s levels
     /// meaning what they say; the Run's positive direction is still open
-    /// (`real-loop-dia.md`, *DIR's level for a positive command*).
+    /// (`__documentation__/real-loop-dia.md`, *DIR's level for a positive command*).
     pub const FORWARD: Direction = Direction::High;
 
     /// The level on D5.

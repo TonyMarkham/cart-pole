@@ -31,7 +31,7 @@ from detector_config import DetectorConfig
 CENTER_PX = 1.0
 CONFIDENCE = 0.01
 
-# The loop's frame contract (synthetic-loop-dia.md, Contracts).
+# The loop's frame contract (__documentation__/synthetic-loop-dia.md, Contracts).
 FRAME_SIZE = (728, 544)
 
 

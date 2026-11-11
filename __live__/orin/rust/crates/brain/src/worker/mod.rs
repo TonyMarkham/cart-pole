@@ -1,6 +1,6 @@
 //! The brain's Python worker: a child process holding the TensorRT engine and
 //! `policy.npz`, which finds the markers in each frame and answers the
-//! policy's inputs, over its own pipes (`real-loop-dia.md`, *The run and idle
+//! policy's inputs, over its own pipes (`__documentation__/real-loop-dia.md`, *The run and idle
 //! states*, how the Rust brain uses Python).
 
 pub(crate) mod detection;

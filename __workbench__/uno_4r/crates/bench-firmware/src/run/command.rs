@@ -4,7 +4,7 @@ use crate::{
 };
 
 /// The rate in a 3-byte command, pulses/s: byte 0 the sign (0 negative, 1
-/// positive), bytes 1–2 the size, a little-endian u16 (real-loop-dia.md,
+/// positive), bytes 1–2 the size, a little-endian u16 (__documentation__/real-loop-dia.md,
 /// *Contracts*), parsed as the controller's `wifi/message.rs` does. None for
 /// any other datagram, or a bad sign byte, which the bench ignores.
 pub(crate) fn rate(datagram: &Datagram) -> Option<i32> {

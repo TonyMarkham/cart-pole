@@ -1,6 +1,6 @@
 //! Run's rule: Run is pressable only while the brain is idle and the board
 //! answers `"calibrated"`; otherwise the page shows why beside it
-//! (`real-loop-dia.md`, *The run and idle states*; `real-open-issues.md`,
+//! (`__documentation__/real-loop-dia.md`, *The run and idle states*; `real-open-issues.md`,
 //! issue 7, step 2, whose five reasons these are, word for word where it
 //! gives them).
 

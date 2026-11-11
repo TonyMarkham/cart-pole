@@ -6,7 +6,7 @@ use std::path::PathBuf;
 /// The synthetic loop's orchestrator (orchestrator-plan.md): steps MuJoCo
 /// (the MJCF --model names) and sends each capture state to the synthetic
 /// Orin, which triggers the Unity player and detects the markers
-/// (synthetic-loop-dia.md). The trainer launches it with all of its
+/// (__documentation__/synthetic-loop-dia.md). The trainer launches it with all of its
 /// arguments, from its settings.toml.
 #[derive(Parser, Debug)]
 #[command(version, about)]
@@ -16,7 +16,7 @@ pub struct Args {
     pub model: PathBuf,
 
     /// The MJCF's cart slide joint name; also the cart's wire key in the
-    /// pose message (synthetic-loop-dia.md, Contracts).
+    /// pose message (__documentation__/synthetic-loop-dia.md, Contracts).
     #[arg(long)]
     pub cart_joint: String,
 
@@ -29,7 +29,7 @@ pub struct Args {
     pub actuator: String,
 
     /// The MJCF's site at the Left marker's centre
-    /// (synthetic-loop-dia.md, Contracts, the sites).
+    /// (__documentation__/synthetic-loop-dia.md, Contracts, the sites).
     #[arg(long)]
     pub left_site: String,
 
@@ -82,7 +82,7 @@ pub struct Args {
 
     /// Motor full steps per pulley revolution: the trainer's settings.toml
     /// [drive] full_steps_per_rev. With --microsteps and --belt-um-per-rev
-    /// it gives the metres per step pulse (synthetic-loop-dia.md, Contracts,
+    /// it gives the metres per step pulse (__documentation__/synthetic-loop-dia.md, Contracts,
     /// the cart speed).
     #[arg(long, value_parser = clap::value_parser!(u32).range(1..))]
     pub full_steps_per_rev: u32,
@@ -97,12 +97,12 @@ pub struct Args {
     pub belt_um_per_rev: u32,
 
     /// m, the jump limit, pulses/s²: [drive] jump_limit, the fastest the
-    /// synthetic Arduino's ramp changes the sent rate (synthetic-loop-dia.md,
+    /// synthetic Arduino's ramp changes the sent rate (__documentation__/synthetic-loop-dia.md,
     /// The acceleration ceiling).
     #[arg(long, value_parser = clap::value_parser!(u32).range(1..))]
     pub jump_limit: u32,
 
-    /// The training instances' rows (synthetic-loop-dia.md, Training
+    /// The training instances' rows (__documentation__/synthetic-loop-dia.md, Training
     /// instances): --instance-rows × --instance-columns instances, at most
     /// 12, each its own MuJoCo, synthetic Arduino, synthetic Orin and Unity
     /// player. The trainer passes its settings.toml [orchestrator]
@@ -115,7 +115,7 @@ pub struct Args {
     #[arg(long, default_value_t = 1, value_parser = clap::value_parser!(u16).range(1..=12))]
     pub instance_columns: u16,
 
-    /// Instance 0's control socket port on 127.0.0.1 (synthetic-loop-dia.md,
+    /// Instance 0's control socket port on 127.0.0.1 (__documentation__/synthetic-loop-dia.md,
     /// 4–5): the orchestrator listens, the synthetic Orin connects.
     /// Instance k listens on --orin-port + 2k.
     #[arg(long, default_value_t = 9000)]
@@ -127,7 +127,7 @@ pub struct Args {
     #[arg(long, default_value_t = 9001)]
     pub unity_port: u16,
 
-    /// Instance 0's first episode's seed (synthetic-loop-dia.md, 4): the
+    /// Instance 0's first episode's seed (__documentation__/synthetic-loop-dia.md, 4): the
     /// source of its schedule (SplitMix64); instance k's is --seed + k.
     /// Later episodes' seeds come with their resets. The trainer passes its
     /// settings.toml [orchestrator] seed.
@@ -136,7 +136,7 @@ pub struct Args {
 
     /// Stretch 1's lower bound, ms, capture → picture ready: each step's
     /// stretch 1 is a seeded RND(--frame-ready-min, --frame-ready-max)
-    /// (synthetic-loop-dia.md, Timing). The trainer passes its settings.toml
+    /// (__documentation__/synthetic-loop-dia.md, Timing). The trainer passes its settings.toml
     /// [orchestrator] frame_ready_min, and each of the flags below the key
     /// of the same name.
     #[arg(long)]
@@ -176,14 +176,14 @@ pub struct Args {
     pub drop_one_message_in: u32,
 
     /// The episode's most steps, the gym file's [env] max_episode_steps:
-    /// each schedule holds steps −5 to this + 14 (synthetic-loop-dia.md, The
+    /// each schedule holds steps −5 to this + 14 (__documentation__/synthetic-loop-dia.md, The
     /// schedule).
     #[arg(long, value_parser = clap::value_parser!(u32).range(1..))]
     pub max_episode_steps: u32,
 
     /// How far short of each base the calibration's end stops are, m, and
     /// where the synthetic Arduino's limit switches trip: a switch is closed
-    /// when its strike-face gap is at most this (synthetic-loop-dia.md,
+    /// when its strike-face gap is at most this (__documentation__/synthetic-loop-dia.md,
     /// Calibration, The rail's ends). The trainer passes its settings.toml
     /// [orchestrator] calibration_stop_gap.
     #[arg(long)]
@@ -200,7 +200,7 @@ pub struct Args {
     pub no_launch: bool,
 
     /// The width in pixels the players' borderless windows fill, as a grid
-    /// of --instance-rows × --instance-columns (synthetic-loop-dia.md,
+    /// of --instance-rows × --instance-columns (__documentation__/synthetic-loop-dia.md,
     /// Training instances, The windows): width = ⌊this ÷ columns⌋, and
     /// instance k's player is launched with `-popupwindow`, `-screen-width`
     /// width and `-window-position x,y`, x = origin x + (k mod columns) ×
@@ -244,7 +244,7 @@ pub struct Args {
 
     /// The pole's start angle in radians, at rest (0 = hanging,
     /// π = upright). The cart always starts at the rail's center
-    /// (synthetic-loop-dia.md, 2), so it has no start value.
+    /// (__documentation__/synthetic-loop-dia.md, 2), so it has no start value.
     #[arg(long, default_value_t = 0.0, allow_hyphen_values = true)]
     pub start: f64,
 
@@ -253,7 +253,7 @@ pub struct Args {
     pub no_render: bool,
 
     /// Load the model, print the run's values line the trainer's request
-    /// is answered with (synthetic-loop-dia.md, Contracts, the run's
+    /// is answered with (__documentation__/synthetic-loop-dia.md, Contracts, the run's
     /// values) on stdout, and exit: no Orin, no player, no socket, no
     /// folder. MuJoCo's values for a test that needs them without the
     /// loop; the rest of the command line is read but not used.

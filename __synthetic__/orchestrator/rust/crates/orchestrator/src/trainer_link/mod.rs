@@ -59,7 +59,7 @@ pub fn check_answers(answers: &[Answer], pending: &[bool], faulted: &[bool]) -> 
     Ok(())
 }
 
-/// The trainer link (synthetic-loop-dia.md, *Trainer link*): the
+/// The trainer link (__documentation__/synthetic-loop-dia.md, *Trainer link*): the
 /// orchestrator's stdin and stdout, the pipes of the trainer that launched
 /// it. stdout carries these lines and nothing else; every other line the
 /// orchestrator or its children print goes to stderr.

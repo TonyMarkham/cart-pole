@@ -53,8 +53,8 @@ port = 9
 
 [test]
 # How many passes of the loop to time, one frame each: 3,000 is the top of
-# the 300-3,000 real-timings.md asks for per gap. At the brain's measured
-# cadence, 33.3 ms (real-timings.md, gap 9), that is about 100 s.
+# the 300-3,000 __documentation__/real-timings.md asks for per gap. At the brain's measured
+# cadence, 33.3 ms (__documentation__/real-timings.md, gap 9), that is about 100 s.
 frames = 3_000
 
 # How often to print how far the run has got, in frames; 0 for never.

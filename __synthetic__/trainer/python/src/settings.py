@@ -1,9 +1,9 @@
 """The trainer's settings: settings.toml (the run) and the gym file it names.
 
 settings.toml holds what the orchestrator is launched with
-(synthetic-loop-dia.md, 1): the command, the ports, the instances' grid and
+(__documentation__/synthetic-loop-dia.md, 1): the command, the ports, the instances' grid and
 the screen it fills, the seed, the random timings' bands and the loss
-(synthetic-loop-dia.md, Timing), the calibration stop gap, [mjcf] and
+(__documentation__/synthetic-loop-dia.md, Timing), the calibration stop gap, [mjcf] and
 [drive]. The gym file (settings.toml's [trainer] gym) holds a whole
 variant of the learning: [env], the four plugins ([observation], [action],
 [reward], [end]), [train] and [sac]. One value of it reaches the
@@ -30,7 +30,7 @@ from timings import Timings
 DEFAULT_PATH = Path(__file__).resolve().parent.parent / "settings.toml"
 
 SEED_LIMIT = 2**64  # the orchestrator reads the seed as a u64
-INSTANCES_MAX = 12  # the orchestrator's limit on rows x columns (synthetic-loop-dia.md, Training instances)
+INSTANCES_MAX = 12  # the orchestrator's limit on rows x columns (__documentation__/synthetic-loop-dia.md, Training instances)
 
 SITE_KEYS = ("left_site", "right_site", "pivot_site", "end_site", "target_site", "dynamic_target_site",
              "cart_site", "cart_target_site", "left_rail_site", "left_cart_site", "right_rail_site",
@@ -56,7 +56,7 @@ class Drive:
     """[drive]: the figures between a pulse rate and the cart's speed, which
     the MJCF does not hold (metres per pulse = belt_um_per_rev /
     (full_steps_per_rev x microsteps)), and the jump limit the drive's ramp
-    holds (synthetic-loop-dia.md, The acceleration ceiling)."""
+    holds (__documentation__/synthetic-loop-dia.md, The acceleration ceiling)."""
 
     full_steps_per_rev: int
     microsteps: int
@@ -226,7 +226,7 @@ def read_train(path: Path) -> Train:
 def read_max_episode_steps(path: Path) -> int:
     """[env] max_episode_steps alone from the gym file. It reaches the
     orchestrator on its command line, as --max-episode-steps, which sizes
-    each episode's schedule (synthetic-loop-dia.md, The schedule), before the
+    each episode's schedule (__documentation__/synthetic-loop-dia.md, The schedule), before the
     run's values Gym.load needs exist. Gym.load reads and checks it again
     with the rest of the file."""
     path = path.resolve()

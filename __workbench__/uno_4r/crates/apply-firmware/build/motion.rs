@@ -21,7 +21,7 @@ pub fn generate(config_dir: &Path, out_dir: &Path) -> Result<()> {
 
     let jump_limit = toml_value::whole(&table, JUMP_LIMIT_KEY, &path)?;
 
-    // The command's size is a u16 (real-loop-dia.md, *Contracts*), so a top
+    // The command's size is a u16 (__documentation__/real-loop-dia.md, *Contracts*), so a top
     // rate above 65,535 could never be asked for; the step generator takes a
     // signed rate.
     let top_rate = toml_value::whole(&table, TOP_RATE_KEY, &path)?;

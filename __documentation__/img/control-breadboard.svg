@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 560" width="680" height="560" font-family="Segoe UI, Arial, sans-serif">
-<!-- Breadboard layout of control-design.md's three S8550 stages: Q1 drives PUL from D4, Q2 DIR from D5, Q3 ENA from D6. -->
+<!-- Breadboard layout of __documentation__/control-design.md's three S8550 stages: Q1 drives PUL from D4, Q2 DIR from D5, Q3 ENA from D6. -->
 <rect width="680" height="560" fill="#ffffff"/>
 <defs><pattern id="h" x="81" y="0" width="18" height="18" patternUnits="userSpaceOnUse"><rect x="7" y="7" width="4" height="4" fill="#9c988c"/></pattern><pattern id="hb" x="81" y="121" width="18" height="18" patternUnits="userSpaceOnUse"><rect x="7" y="7" width="4" height="4" fill="#9c988c"/></pattern><pattern id="hc" x="81" y="229" width="18" height="18" patternUnits="userSpaceOnUse"><rect x="7" y="7" width="4" height="4" fill="#9c988c"/></pattern></defs>
 <rect x="62" y="60" width="572" height="312" rx="6" fill="#f4f1ea" stroke="#c9c4b8"/>
@@ -158,7 +158,7 @@
 <text x="640" y="416" text-anchor="middle" font-size="12" fill="#333" font-weight="normal">GND</text>
 <text x="668" y="432" text-anchor="middle" font-size="12" fill="#333" font-weight="normal">5V</text>
 <text x="400" y="440" text-anchor="middle" font-size="12" fill="#333" font-weight="normal">To the Arduino</text>
-<text x="40" y="470" text-anchor="start" font-size="12" fill="#333" font-weight="bold">Breadboard layout for the three S8550 stages (control-design.md)</text>
+<text x="40" y="470" text-anchor="start" font-size="12" fill="#333" font-weight="bold">Breadboard layout for the three S8550 stages (__documentation__/control-design.md)</text>
 <text x="40" y="487" text-anchor="start" font-size="12" fill="#333" font-weight="normal">S8550 (PNP): legs E, B, C from the left, flat face toward the centre gap (checked with a meter).</text>
 <text x="40" y="504" text-anchor="start" font-size="12" fill="#333" font-weight="normal">10 kΩ (brown, black, black, red, brown): base column to the + rail. Path: D4 → 1k → 1k → base → 10k → 5 V.</text>
 <text x="40" y="521" text-anchor="start" font-size="12" fill="#333" font-weight="normal">1 kΩ (brown, black, black, brown, brown): two in series, base column to the Arduino wire.</text>

@@ -6,7 +6,7 @@ use serde::Serialize;
 /// […], "dynamic_target": […], "cart": […], "cart_target": […],
 /// "left_rail": […], "left_cart": […], "right_rail": […],
 /// "right_cart": […]}`, MuJoCo's world frame in meters
-/// (synthetic-loop-dia.md, Contracts, the sites). Read at the capture's
+/// (__documentation__/synthetic-loop-dia.md, Contracts, the sites). Read at the capture's
 /// step with its pose, so they show the instant the frame shows; for the
 /// reward alone.
 #[derive(Serialize, Debug)]

@@ -1,5 +1,5 @@
 //! The PC side of the bench's WiFi test (`__workbench__/README.md`, *The
-//! WiFi test*; `real-timings.md`, gap 7): how long a datagram takes from
+//! WiFi test*; `__documentation__/real-timings.md`, gap 7): how long a datagram takes from
 //! leaving this PC to the bench R4's processor having it whole, timed on one
 //! clock, the PC's.
 //!

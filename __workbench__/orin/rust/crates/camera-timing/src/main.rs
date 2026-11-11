@@ -1,8 +1,8 @@
-//! Gap 1 of `real-timings.md` on the Orin: from the camera exposing a frame to
+//! Gap 1 of `__documentation__/real-timings.md` on the Orin: from the camera exposing a frame to
 //! the frame being read, the moment the brain's log calls `arrived`.
 //!
 //! The frame's own stamp can't give it: GStreamer stamps a frame when it
-//! passes it on, not when the sensor exposed it (`real-loop-dia.md`,
+//! passes it on, not when the sensor exposed it (`__documentation__/real-loop-dia.md`,
 //! *Difference 1*). So the Orin flashes an LED in the camera's view, wired to
 //! one of its GPIO pins (`__workbench__/orin/led-circuit.svg`), and stamps
 //! the flash and each frame's arrival on one clock, its own monotonic clock.

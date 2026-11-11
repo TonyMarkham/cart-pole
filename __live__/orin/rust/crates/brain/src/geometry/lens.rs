@@ -9,7 +9,7 @@ use serde_json::Value;
 /// The lens's bend, and how to undo it, in the pixels of the 728 × 544 frame.
 /// The lens bows straight lines outward from the picture's middle, which the
 /// matrix cannot follow, so every pixel is first moved to where a lens with no
-/// bend would have put it (`lens.py`; `calibrate-w-homography.md`, *The
+/// bend would have put it (`lens.py`; `__documentation__/calibrate-w-homography.md`, *The
 /// lens*). OpenCV's model: a pixel is taken to the normalised plane,
 /// `x = (u - cx) / fx`, `y = (v - cy) / fy`, and there the bend is
 ///

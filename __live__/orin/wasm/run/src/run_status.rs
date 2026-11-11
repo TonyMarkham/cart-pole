@@ -2,7 +2,7 @@ use crate::board_answer::BoardAnswer;
 
 use serde::Deserialize;
 
-/// The webserver's `/run/status`: the brain's status (`real-loop-dia.md`,
+/// The webserver's `/run/status`: the brain's status (`__documentation__/real-loop-dia.md`,
 /// *Contracts*, the brain's requests) and, while the brain is idle, the
 /// board's answer to `state`, or why there is none.
 #[derive(Debug, Deserialize)]

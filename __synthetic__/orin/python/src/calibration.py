@@ -1,5 +1,5 @@
 """The calibration: finds the matrix that turns pixels into metres, before training
-starts (synthetic-loop-dia.md, Calibration, C5-C10).
+starts (__documentation__/synthetic-loop-dia.md, Calibration, C5-C10).
 
 This Orin never sees a capture. The orchestrator sends it the poses, each with Pivot's
 and End's true (x, z) from MuJoCo. It renders each pose until enough images have both

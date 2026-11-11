@@ -15,7 +15,7 @@ the NEMA 23 motor's current (the user), so it is replaced by the DM542,
 which runs the motor at up to 4.2 A.
 
 Status: built and working (2026-10-27). The DM542 wiring is on a
-breadboard (`control-breadboard.svg`), and `calibrate` homed the cart
+breadboard (`__documentation__/img/control-breadboard.svg`), and `calibrate` homed the cart
 and centred it: span 59,828 pulses, 897.4 mm. The firmware's pulse
 timing now meets the DM542's (*What the firmware still needs*).
 
@@ -184,7 +184,7 @@ Q2 on D5 and DIR, and Q3 on D6 and ENA, are the same. D4, D5 and D6
 sit side by side on the header, in the order of Q1, Q2 and Q3 on the
 breadboard.
 
-**The breadboard layout** is `control-breadboard.svg`, hole by hole,
+**The breadboard layout** is `__documentation__/img/control-breadboard.svg`, hole by hole,
 with each resistor's value printed beside it. Each stage's path is
 pin → 1 kΩ → 1 kΩ → base → 10 kΩ → + rail. Two faults found in the
 first build (2026-10-27): the 1 kΩ and 10 kΩ swapped on every stage

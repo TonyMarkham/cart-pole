@@ -13,7 +13,7 @@ measures = "measures.toml"
 
 [orchestrator]
 # The trainer starts each run by launching the orchestrator with this
-# command (synthetic-loop-dia.md, 1): the program, then its arguments, one
+# command (__documentation__/synthetic-loop-dia.md, 1): the program, then its arguments, one
 # list item each. It runs in `cwd`, a folder relative to this file; "../../.." is
 # the repo root, which every path in the command is relative to, the
 # program's included.
@@ -28,7 +28,7 @@ measures = "measures.toml"
 cwd = "../../.."
 
 # The run's two sockets, both on 127.0.0.1, passed as --orin-port and
-# --unity-port. orin_port is the control socket (synthetic-loop-dia.md,
+# --unity-port. orin_port is the control socket (__documentation__/synthetic-loop-dia.md,
 # 4–5): the orchestrator listens, the synthetic Orin connects. unity_port
 # is the frame socket (6–7): the Unity player connects to it (the
 # orchestrator listens on it until the Orin serves it). They must differ.
@@ -36,7 +36,7 @@ orin_port = 9_000
 unity_port = 9_001
 
 # The training instances, as a grid of windows, passed as --instance-rows
-# and --instance-columns (synthetic-loop-dia.md, Training instances): rows x
+# and --instance-columns (__documentation__/synthetic-loop-dia.md, Training instances): rows x
 # columns instances, each its own MuJoCo, synthetic Arduino, synthetic Orin
 # and Unity window, all feeding the one policy. Instance k uses the ports
 # orin_port + 2k and unity_port + 2k, so 4 instances use 9000-9007 and 12 use
@@ -46,26 +46,26 @@ instance_rows = 3
 instance_columns = 4
 
 # The area the grid fills, in pixels, passed as --screen-width and
-# --screen-height (synthetic-loop-dia.md, Training instances, The windows):
+# --screen-height (__documentation__/synthetic-loop-dia.md, Training instances, The windows):
 # the orchestrator sizes each window from these. The height is the part
 # above the taskbar, since Windows keeps windows out from under it: this
 # display's 2160 less the taskbar's 48. Each at least 1.
 screen_width = 3_840
 screen_height = 2_112
 
-# The run's seed, passed as --seed (synthetic-loop-dia.md, 4): the first
+# The run's seed, passed as --seed (__documentation__/synthetic-loop-dia.md, 4): the first
 # episode's seed, from which the orchestrator makes its schedule; each later
 # episode's seed comes with its reset. The same seed and the same commands
-# give the same physics, bit for bit (synthetic-loop-dia.md, Determinism). A
+# give the same physics, bit for bit (__documentation__/synthetic-loop-dia.md, Determinism). A
 # whole number, 0 to 2**64 - 1.
 seed = 0
 
-# The random timings (synthetic-loop-dia.md, Timing; user, 2026-11-08), ms,
+# The random timings (__documentation__/synthetic-loop-dia.md, Timing; user, 2026-11-08), ms,
 # each passed as the flag of the same name with dashes (--frame-ready-min and
 # so on). At each reset the orchestrator picks every step's from them, RND(min,
 # max), every value equally likely (The schedule). Each band 0 <= min <= max,
 # and the orchestrator refuses bands that break the walk's orders. Each is the
-# rig's measured gap (real-timings.md; real-timing-conclusion.md, The random
+# rig's measured gap (__documentation__/real-timings.md; __documentation__/real-timing-conclusion.md, The random
 # timings). In frame_ready_* and next_frame_ready_*, "frame" means the picture.
 #
 # Stretch 1, capture -> the picture is ready for the Orin: gap 1, the camera,
@@ -88,18 +88,18 @@ change_motor_max = 123.3
 next_frame_ready_min = 0.0
 next_frame_ready_max = 16.7
 
-# One command in this many is lost (synthetic-loop-dia.md, Timing): a whole
+# One command in this many is lost (__documentation__/synthetic-loop-dia.md, Timing): a whole
 # number picked from 1 to it, lost when it comes out 1, so the command never
 # changes the motor. 1 datagram of 3,000 was lost on the rig's WiFi
-# (real-timings.md, gap 7). At least 1.
+# (__documentation__/real-timings.md, gap 7). At least 1.
 drop_one_message_in = 3_000
 
 # How far short of each base the calibration's end stops are, in metres, passed
-# as --calibration-stop-gap (synthetic-loop-dia.md, Calibration): about 5 mm
-# from the base on the real rig (calibrate-w-homography.md), where its limit
+# as --calibration-stop-gap (__documentation__/synthetic-loop-dia.md, Calibration): about 5 mm
+# from the base on the real rig (__documentation__/calibrate-w-homography.md), where its limit
 # switches trip. The synthetic Arduino's limit switches trip there too: a strike
 # face this close to its base, or closer, is a FAULT, which ends the episode
-# (synthetic-loop-dia.md, The rail's ends).
+# (__documentation__/synthetic-loop-dia.md, The rail's ends).
 calibration_stop_gap = 0.005
 
 # Not the whole command: the trainer inserts the grid, the screen, the two
@@ -115,7 +115,7 @@ calibration_stop_gap = 0.005
 # --jump-limit, so those never appear here.
 #
 # The players' borderless windows fill screen_width x screen_height
-# (synthetic-loop-dia.md, Training instances, The windows): the orchestrator
+# (__documentation__/synthetic-loop-dia.md, Training instances, The windows): the orchestrator
 # divides it into one window per instance. The grid starts at --window-origin
 # x,y (default 0,0) on the display the windows open on.
 command = [
@@ -128,7 +128,7 @@ command = [
 ]
 
 [mjcf]
-# The MJCF the run loads (synthetic-loop-dia.md, 2) and the names in it.
+# The MJCF the run loads (__documentation__/synthetic-loop-dia.md, 2) and the names in it.
 # They reach the orchestrator as --model, --cart-joint, --pole-joint,
 # --actuator and one --*-site flag per site below (--left-site ...
 # --right-cart-site), placed straight after the program (--orin takes
@@ -145,7 +145,7 @@ cart_joint = "02-Cart.Slider.joint"
 pole_joint = "04-Pole.Hinge.joint"
 actuator   = "03-Cart.Slider.Actuator"
 
-# As in the model's <site name> (synthetic-loop-dia.md, Contracts, the
+# As in the model's <site name> (__documentation__/synthetic-loop-dia.md, Contracts, the
 # sites): one at the centre of each marker, and Target, fixed where End
 # sits with the cart centred and the pole upright. The load fails if the
 # model lacks one.
@@ -172,18 +172,18 @@ right_rail_site = "12-Right-Rail.Site"
 right_cart_site = "13-Right-Cart.Site"
 
 [drive]
-# The drive between the command and the cart (synthetic-loop-dia.md,
+# The drive between the command and the cart (__documentation__/synthetic-loop-dia.md,
 # Contracts, the cart speed): metres per pulse = belt_um_per_rev /
 # (full_steps_per_rev x microsteps). The MJCF holds the cart top speed
 # (its actuator's ctrlrange) but not these. They reach the orchestrator as
 # --full-steps-per-rev, --microsteps, --belt-um-per-rev and --jump-limit,
 # placed straight after the program. Whole numbers, at least 1.
-full_steps_per_rev = 200   # the motor's 1.8° step (motor-spec.md)
-microsteps = 32            # the DM542's switches: 1/32 (control-design.md)
+full_steps_per_rev = 200   # the motor's 1.8° step (__documentation__/motor-spec.md)
+microsteps = 32            # the DM542's switches: 1/32 (__documentation__/control-design.md)
 belt_um_per_rev = 96_000    # 48T GT2 at 2 mm pitch (the CAD pulley)
 
 # m, pulses/s^2: the jump limit, the fastest the drive changes the rate it
-# sends (synthetic-loop-dia.md, The acceleration ceiling): every tick the
+# sends (__documentation__/synthetic-loop-dia.md, The acceleration ceiling): every tick the
 # sent rate moves towards the command by at most m x the tick, so a 2 ms
 # step moves it at most 2,058 pulses/s. 15% below the 1,210,937 measured on
 # the rig 2026-10-28 (jump-limit-results.md): the staircase's limit, the

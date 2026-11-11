@@ -1,7 +1,7 @@
 """Fits the homography, the matrix that turns the camera's pixels into metres in the
 pole's plane, from the seven poses' measured points
-(calibrate-w-homography.md, The calibration sequence). The poses are the synthetic
-loop's (synthetic-loop-dia.md, The seven poses): the pole hanging at each of the three
+(__documentation__/calibrate-w-homography.md, The calibration sequence). The poses are the synthetic
+loop's (__documentation__/synthetic-loop-dia.md, The seven poses): the pole hanging at each of the three
 stops, and at each end also held horizontal, pointing away from the centre, and
 straight up. The hanging poses alone cover only the rail and the hanging pole, while a
 swinging End reaches the pole's length past them on either side and above.

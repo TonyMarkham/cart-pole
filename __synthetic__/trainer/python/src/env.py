@@ -5,14 +5,14 @@
 - It is built on a link already opened (the run's launch, 1) and asked for
   the run's values, which the plugins were built with (gym.facts).
 - The first reset() returns every instance's first observation; every
-  later one resets every instance in place (synthetic-loop-dia.md, Reset
+  later one resets every instance in place (__documentation__/synthetic-loop-dia.md, Reset
   in place).
 - step(actions) maps each action to its command (the action plugin),
   checks it against the top pulse rate (the run's values), answers every
   instance with continue (18) and reads every next capture
   (17). The episode tracker turns each capture into the step's inputs; the
   reward plugin scores them; a capture with `fault` (the synthetic
-  Arduino's FAULT, synthetic-loop-dia.md, The rail's ends) ends the
+  Arduino's FAULT, __documentation__/synthetic-loop-dia.md, The rail's ends) ends the
   episode, and otherwise the end plugins may; the time limit truncates it
   after [env] max_episode_steps. An instance whose
   episode ends is answered at once, alone, with reset and its next

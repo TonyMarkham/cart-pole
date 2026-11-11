@@ -1,6 +1,6 @@
 use crate::config::Config;
 
-/// The acceleration ceiling (synthetic-loop-dia.md, *The acceleration
+/// The acceleration ceiling (__documentation__/synthetic-loop-dia.md, *The acceleration
 /// ceiling*): the two rates the firmware holds, and the one rule that
 /// joins them, the same on the board and in the loop.
 ///

@@ -1,5 +1,5 @@
 """The linear rate: the command is a x the top pulse rate (the run's
-values), rounded to the i32 (synthetic-loop-dia.md, The trainer's
+values), rounded to the i32 (__documentation__/synthetic-loop-dia.md, The trainer's
 environment). The action is one value a; beyond [-1, 1] it is clipped, so
 the command never asks past the top pulse rate, and the clipped a is what
 the history holds.

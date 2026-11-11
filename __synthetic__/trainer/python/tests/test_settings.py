@@ -48,7 +48,7 @@ class Loader(unittest.TestCase):
     def test_the_random_timings_reach_the_orchestrator(self):
         """settings.toml's bands and loss, and the gym file's
         max_episode_steps, are on the launch command as their flags, before
-        --orin takes every argument after it (synthetic-loop-dia.md, Timing)."""
+        --orin takes every argument after it (__documentation__/synthetic-loop-dia.md, Timing)."""
         settings, _ = self.fixture.load()
         command = settings.command(0, 1)
         flags = {"--frame-ready-min": "43.0", "--frame-ready-max": "48.0", "--to-uno-min": "20.5",
@@ -126,7 +126,7 @@ class Loader(unittest.TestCase):
                      r"reward\.small_velocity\.at_margin")
         self.refuses("[reward.centered]\nmargin = 2.0", "[reward.centered]\nmargin = -1", r"reward\.centered\.margin")
         self.refuses("[reward.centered]", "[reward.centereds]", r"reward\.centered.*margin")
-        # The command rate and the strike-gap end are gone (synthetic-loop-dia.md,
+        # The command rate and the strike-gap end are gone (__documentation__/synthetic-loop-dia.md,
         # Timing, The rail's ends): a gym file that still names them is refused.
         self.refuses("max_episode_steps = 60", "command_rate_min = 20.0\nmax_episode_steps = 60",
                      r"env: unknown key\(s\) \['command_rate_min'\]")

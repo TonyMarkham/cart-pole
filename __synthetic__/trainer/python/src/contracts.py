@@ -3,7 +3,7 @@ enters, so everything inside the trainer can trust it (rl-rewrite-plan.md,
 3.2).
 
 - `Pool`: the policy's whole view of the rig, the Orin's last six marker
-  frames (synthetic-loop-dia.md, Contracts, the pool).
+  frames (__documentation__/synthetic-loop-dia.md, Contracts, the pool).
 - `Sites`: MuJoCo's true positions at the capture, for the reward and the
   episode end alone, never the policy (Contracts, the sites).
 - `PoleState`: MuJoCo's true pole speed, angle, centre of mass and hinge
@@ -32,7 +32,7 @@ ROW = 1 + MARKERS * 2  # an entry: its age, then (x, z) per marker
 FLOATS = ENTRIES * ROW  # 30
 
 # Each entry holds Pivot, then End, in metres in the pole's plane
-# (synthetic-loop-dia.md, Contracts, the points).
+# (__documentation__/synthetic-loop-dia.md, Contracts, the points).
 PIVOT, END = range(MARKERS)
 
 NOT_DETECTED = (-1.0, -1.0)
@@ -176,7 +176,7 @@ def point(value: object, what: str) -> Point:
 @dataclass(frozen=True)
 class PoleState:
     """Everything that swings on the pole joint, at the capture, straight
-    from MuJoCo (synthetic-loop-dia.md, Contracts, the pole)."""
+    from MuJoCo (__documentation__/synthetic-loop-dia.md, Contracts, the pole)."""
 
     speed: float  # rad/s: the pole joint's qvel, signed about the joint's axis
     angle: float  # rad: the pole joint's qpos, 0 hanging, pi upright, counting on past a full turn
@@ -218,7 +218,7 @@ class PoleState:
 # ---- the capture ----------------------------------------------------------
 
 # The end reason of an episode the synthetic Arduino's FAULT ended
-# (synthetic-loop-dia.md, The rail's ends), as the environment and the
+# (__documentation__/synthetic-loop-dia.md, The rail's ends), as the environment and the
 # capture record write it.
 FAULT_END = "fault"
 
@@ -246,7 +246,7 @@ class Capture:
 
 # ---- the command ----------------------------------------------------------
 
-# The link's command is an i32 (synthetic-loop-dia.md, Contracts, the
+# The link's command is an i32 (__documentation__/synthetic-loop-dia.md, Contracts, the
 # command): a datatype limit. Its bound, +- the top pulse rate, is the run's
 # (RunValues), checked by the environment before each answer.
 I32_MIN, I32_MAX = -(2**31), 2**31 - 1
@@ -269,7 +269,7 @@ class Command:
 
 RUN_KEYS = ("cart_top_speed", "top_pulse_rate", "timestep", "pole_mass", "pole_com_distance", "pole_inertia",
             "gravity")
-# The pole's body: each a number > 0 (synthetic-loop-dia.md, Contracts, the
+# The pole's body: each a number > 0 (__documentation__/synthetic-loop-dia.md, Contracts, the
 # run's values).
 POLE_BODY_KEYS = RUN_KEYS[3:]
 
@@ -277,7 +277,7 @@ POLE_BODY_KEYS = RUN_KEYS[3:]
 @dataclass(frozen=True)
 class RunValues:
     """The orchestrator's answer to the trainer's request, from the model
-    MuJoCo loaded and [drive] (synthetic-loop-dia.md, Contracts, the run's
+    MuJoCo loaded and [drive] (__documentation__/synthetic-loop-dia.md, Contracts, the run's
     values). The model cannot change during the run, so one answer serves
     it."""
 
@@ -323,7 +323,7 @@ class RunValues:
 @dataclass(frozen=True)
 class StepInputs:
     """One scored step t: command c_t, scored with capture t+1
-    (synthetic-loop-dia.md, The reward)."""
+    (__documentation__/synthetic-loop-dia.md, The reward)."""
 
     previous: Sites  # capture t's sites
     current: Sites  # capture t+1's sites

@@ -1,5 +1,5 @@
 // apply_timer: the R3 on the HAL's bench as a timing instrument for gap 8 of
-// real-timings.md: from the bench R4's processor having a command whole to
+// __documentation__/real-timings.md: from the bench R4's processor having a command whole to
 // the step generator running at the command's new rate
 // (__workbench__/README.md, The apply test). The R4
 // (__workbench__/uno_4r/crates/apply-firmware) flips D3 the moment it has a

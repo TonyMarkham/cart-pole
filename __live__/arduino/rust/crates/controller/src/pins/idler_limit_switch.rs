@@ -7,7 +7,7 @@ use unor4_hal::gpio::{
 /// The limit switch at the idler's end, on D3. Its NC (normally closed)
 /// contact holds the pin to GND until the cart presses it, so a press reads
 /// high, and so does a broken wire. The board's own pull-up is the line's
-/// only one (control-design.md). `with_edge` latches each press in hardware,
+/// only one (__documentation__/control-design.md). `with_edge` latches each press in hardware,
 /// even one released before the processor looks, and `with_wake` makes the
 /// press end a `WFI`, so the board sleeps until the switch is pressed instead
 /// of reading it again and again.

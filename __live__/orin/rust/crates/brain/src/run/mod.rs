@@ -1,5 +1,5 @@
 //! The run: the brain's state, and the loop that is a run
-//! (`real-loop-dia.md`, *The run and idle states*; *The sequence*).
+//! (`__documentation__/real-loop-dia.md`, *The run and idle states*; *The sequence*).
 
 pub(crate) mod brain;
 pub(crate) mod run_loop;

@@ -22,12 +22,12 @@ pub(crate) const STATUS_ROUTE: &str = "/run/status";
 pub(crate) const CENTRE_ROUTE: &str = "/calibrate/centre";
 pub(crate) const MOVE_STOP_ROUTE: &str = "/calibrate/stop";
 
-/// The brain's two states, its `state` (`real-loop-dia.md`, *Contracts*, the
+/// The brain's two states, its `state` (`__documentation__/real-loop-dia.md`, *Contracts*, the
 /// brain's requests).
 pub(crate) const BRAIN_RUN: &str = "run";
 pub(crate) const BRAIN_IDLE: &str = "idle";
 
-/// The board's answers to `state`, its `result` (`real-loop-dia.md`, *The
+/// The board's answers to `state`, its `result` (`__documentation__/real-loop-dia.md`, *The
 /// board's states*; the controller firmware's `State::name`).
 pub(crate) const BOARD_CALIBRATED: &str = "calibrated";
 pub(crate) const BOARD_UNCALIBRATED: &str = "uncalibrated";

@@ -20,7 +20,7 @@ use std::{
 
 /// One run, from the camera opening to the reason it ended: STOP, the
 /// board's FAULT STATE or UNCALIBRATED reply, or a failure. The sequence is
-/// `real-loop-dia.md`'s (*The sequence*, the loop), one command per pass:
+/// `__documentation__/real-loop-dia.md`'s (*The sequence*, the loop), one command per pass:
 ///
 /// 1. the camera's next frame after the wait, with its stamp;
 /// 2. the worker finds the markers;

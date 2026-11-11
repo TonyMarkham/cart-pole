@@ -74,7 +74,7 @@ pub(crate) const WL_CONNECT_FAILED: u32 = 4;
 pub(crate) const DM542_STEP_HIGH_MIN_NS: u32 = 2_500;
 
 /// How long ENA must be set before DIR changes, ns: the DM542's t1, at least
-/// 5 µs (manual, section 10; `control-design.md`, the ENA+ row). The step
+/// 5 µs (manual, section 10; `__documentation__/control-design.md`, the ENA+ row). The step
 /// generator refuses to move until it has passed since `enable()`.
 pub(crate) const DM542_ENA_LEAD_NS: u32 = 5_000;
 

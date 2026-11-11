@@ -41,7 +41,7 @@ pub(crate) const U32_HEX_DIGITS: usize = 8;
 pub(crate) const BYTE_HEX_DIGITS: usize = 2;
 
 /// The datagrams the board stamps: exactly a command's size, so the WiFi
-/// chip's serial hand-off takes as long as a command's (real-loop-dia.md,
+/// chip's serial hand-off takes as long as a command's (__documentation__/real-loop-dia.md,
 /// *Contracts*: a command is 3 bytes).
 pub(crate) const PING_SIZE: u32 = 3;
 

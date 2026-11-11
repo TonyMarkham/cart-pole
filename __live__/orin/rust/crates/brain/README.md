@@ -7,7 +7,7 @@ Arduino, over and over until the person says stop. `brain` is that program,
 on the Jetson Orin Nano Super. It is its own program, a Rust orchestrator
 (user, 2026-11-04), and it calls Python only for the two things that have to
 be Python on the robot: finding the markers, with TensorRT, and the policy's
-inference, with `policy.py`. Its design is `real-loop-dia.md`, the single
+inference, with `policy.py`. Its design is `__documentation__/real-loop-dia.md`, the single
 source of truth for the real loop; this page says what the program does and
 how it is run. **Built on 2026-11-07; first run on the rig on 2026-11-09**,
 where the 6M-step policy swung the pole up in 3.4 s and held it within 10° of
@@ -106,7 +106,7 @@ On `[brain] address`, the Orin's own address (`127.0.0.1:8091`); the webserver's
 per frame, flushed as each is written: `boxes`, `points`, `inputs`, `stamp`
 (GStreamer's, ns), `a`, `c`, and `arrived` and `sent`, milliseconds since the
 Run press on the Orin's monotonic clock. Their difference is the brain's own
-share of the delay D (`real-loop-dia.md`, *Measuring D*).
+share of the delay D (`__documentation__/real-loop-dia.md`, *Measuring D*).
 
 ## The camera
 
@@ -187,4 +187,4 @@ uv run python src/test_brain_worker.py
 
 ## What is not yet done
 
-- D is not measured (`real-loop-dia.md`, *Measuring D*).
+- D is not measured (`__documentation__/real-loop-dia.md`, *Measuring D*).

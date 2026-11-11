@@ -63,7 +63,7 @@ impl Page {
     /// pressable, whatever the brain or the board says.
     pub(crate) fn show(&self, look: &Look) {
         let why = run_rule::why_not(look);
-        // Re-centre follows Run's rule (`real-loop-dia.md`, *The run and idle
+        // Re-centre follows Run's rule (`__documentation__/real-loop-dia.md`, *The run and idle
         // states*, Re-centre).
         let off = why.is_some() || self.pending.get();
         self.run.set_disabled(off);

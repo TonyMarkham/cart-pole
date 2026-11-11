@@ -23,7 +23,7 @@ pub(crate) enum Event {
     /// MOVING: a fault, whatever the count says (the user, 2026-11-07).
     SwitchTripped,
     /// A command arrived whose sign byte is neither 0 nor 1: by definition a
-    /// fault, from any state (the user, 2026-11-06, real-loop-dia.md, *The
+    /// fault, from any state (the user, 2026-11-06, __documentation__/real-loop-dia.md, *The
     /// command*).
     BadSign,
     /// A reset of the board: the only way out of FAULT, back to UNCALIBRATED

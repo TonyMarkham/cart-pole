@@ -12,7 +12,7 @@ use crate::{
 use axum::{extract::State, http::StatusCode, response::Response};
 
 /// Starts the lens view; it stops the live view. Refused while a measurement
-/// runs, and while the brain has the camera for a run (`real-loop-dia.md`, *The
+/// runs, and while the brain has the camera for a run (`__documentation__/real-loop-dia.md`, *The
 /// run and idle states*).
 pub(crate) async fn start(State(arduino): State<ArduinoState>) -> Response {
     if is_running(&arduino.run).await {

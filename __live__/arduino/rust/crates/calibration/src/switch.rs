@@ -1,4 +1,4 @@
-/// A limit switch, by the pin it is wired to (control-design.md: D2 and D3).
+/// A limit switch, by the pin it is wired to (__documentation__/control-design.md: D2 and D3).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Switch {
     D2,

@@ -20,7 +20,7 @@ confidence = 0.25
 classes = ["Left", "Right", "Pivot", "End"]
 
 [calibration]
-# The calibration before the training instances start (synthetic-loop-dia.md,
+# The calibration before the training instances start (__documentation__/synthetic-loop-dia.md,
 # Calibration), read by src/calibration.py.
 
 # How many images each of the seven poses is measured from. An image counts only

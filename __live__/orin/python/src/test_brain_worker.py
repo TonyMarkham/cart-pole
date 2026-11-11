@@ -1,5 +1,5 @@
 """Checks the worker's framing with a pretend detector and policy: the bytes the
-brain reads are exactly what the contract says (real-loop-dia.md, Contracts, the
+brain reads are exactly what the contract says (__documentation__/real-loop-dia.md, Contracts, the
 brain's worker). Needs no camera, GPU or TensorRT.
 
 usage (from __live__/orin/python): uv run python src/test_brain_worker.py

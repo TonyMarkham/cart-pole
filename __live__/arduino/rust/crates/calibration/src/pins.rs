@@ -29,9 +29,9 @@ use unor4_hal::{
     wake::{WakeSetup, WakeTimer, WakeTimerBuilder},
 };
 
-// The rig's pins, as control-design.md wires them. Each output reaches the
+// The rig's pins, as __documentation__/control-design.md wires them. Each output reaches the
 // DM542 driver through a PNP transistor, so a low pin lights its input and a
-// high one leaves it unlit (control-design.md, *Why the transistors*). Every
+// high one leaves it unlit (__documentation__/control-design.md, *Why the transistors*). Every
 // setup is a named `const`, so `cargo check` runs the HAL's checks on it (the
 // HAL's README, *Builders: write them as named `const`*).
 
@@ -50,7 +50,7 @@ const DIR: DirSetup<D5> = DirPinBuilder::new()
     .build();
 
 /// ENA on D6: a high pin leaves the driver's ENA input unlit, which enables
-/// it; a low one lights it and frees the motor (control-design.md, ENA+).
+/// it; a low one lights it and frees the motor (__documentation__/control-design.md, ENA+).
 const ENA: EnaSetup<D6> = EnaPinBuilder::new()
     .with_pin(pin_map::d6)
     .with_enabled(PinState::High)
@@ -75,7 +75,7 @@ pub const STEPPER: StepSetup<D4, NoDivider, D5, GPT321, GPT164, GPT165, D6> =
 
 /// The limit switches' NC contacts, on D2 and D3: high when pressed, and so is
 /// a broken wire. The board's own pull-ups are the lines' only ones
-/// (control-design.md). The edge latch (`with_edge`) catches each press in
+/// (__documentation__/control-design.md). The edge latch (`with_edge`) catches each press in
 /// hardware, even one released before the processor looks, and `with_wake`
 /// makes the press end a `WFI`, so a move sleeps until a switch is pressed
 /// instead of reading it over and over (the HAL's README, *Switches*).

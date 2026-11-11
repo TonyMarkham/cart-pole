@@ -78,7 +78,7 @@ timeout_ms = 5_000
 
 
 # The brain's own tables, read by the brain program, not the webserver
-# (real-loop-dia.md, The run and idle states; the brain's README).
+# (__documentation__/real-loop-dia.md, The run and idle states; the brain's README).
 
 [brain]
 # Where the brain answers the webserver's requests, the Orin's own address. It
@@ -98,7 +98,7 @@ worker = ["uv", "run", "python", "src/brain_worker.py"]
 worker_start_timeout_ms = 60_000
 
 # The wait after each command before the next frame is taken, ms (user,
-# 2026-11-02; real-loop-dia.md, Timing). The brain takes an image, gets the
+# 2026-11-02; __documentation__/real-loop-dia.md, Timing). The brain takes an image, gets the
 # points from detection, builds the inputs, asks the policy for a command and
 # sends it at once, then waits this long; the next image is the camera's next
 # frame after the wait. At 0 the loop runs as fast as the Orin can, about one
@@ -112,7 +112,7 @@ delay_ms = 0
 # the pool holds six entries with no detection, this far apart, so the first
 # frame's ages are 0, -32, -64, -96, -128 and -160. 32 is the mean gap between
 # the synthetic loop's pre-warm captures, 32.5 ms (15.5 to 49.5 ms), on its 2 ms
-# grid (synthetic-loop-dia.md, The initial pool).
+# grid (__documentation__/synthetic-loop-dia.md, The initial pool).
 pre_warm_gap_ms = 32.0
 
 # How long to wait for a frame before the camera counts as gone, ms. The camera
@@ -120,7 +120,7 @@ pre_warm_gap_ms = 32.0
 frame_timeout_ms = 2_000
 
 # Where each run's folder goes: runs/YYYYMMDD_HHMMSS (UTC, the Run press), each
-# with frames.jsonl (real-loop-dia.md, The log). Outside ~/orin-cam, because a
+# with frames.jsonl (__documentation__/real-loop-dia.md, The log). Outside ~/orin-cam, because a
 # deploy replaces that folder whole (DEPLOY.md, step 8). A leading ~ is the home
 # folder.
 runs_dir = "~/orin-runs"

@@ -3,19 +3,19 @@
 pub(crate) const SETTINGS_PATH: &str = "settings.toml";
 
 /// The frame the detector was trained on and the matrix was fitted to: the
-/// camera's 1456 × 1088 halved on each side (`real-loop-dia.md`, *Contracts*,
+/// camera's 1456 × 1088 halved on each side (`__documentation__/real-loop-dia.md`, *Contracts*,
 /// the frame). A frame of any other size is refused, never detected on.
 pub(crate) const FRAME_WIDTH: usize = 728;
 pub(crate) const FRAME_HEIGHT: usize = 544;
 pub(crate) const FRAME_BYTES: usize = FRAME_WIDTH * FRAME_HEIGHT;
 
 /// The pool: 6 entries, each its age then Pivot's and End's (x, z)
-/// (`real-loop-dia.md`, *Contracts*, the pool).
+/// (`__documentation__/real-loop-dia.md`, *Contracts*, the pool).
 pub(crate) const ENTRIES: usize = 6;
 pub(crate) const ROW: usize = 5;
 pub(crate) const POOL_FLOATS: usize = ENTRIES * ROW;
 
-/// A marker not found, in a slot and in a point (`real-loop-dia.md`,
+/// A marker not found, in a slot and in a point (`__documentation__/real-loop-dia.md`,
 /// *Contracts*, the detection and the points).
 pub(crate) const NOT_DETECTED: f64 = -1.0;
 
@@ -25,7 +25,7 @@ pub(crate) const CLASSES: usize = 4;
 pub(crate) const PIVOT_CLASS: usize = 2;
 pub(crate) const END_CLASS: usize = 3;
 
-/// The command's three bytes (`real-loop-dia.md`, *Contracts*, the command):
+/// The command's three bytes (`__documentation__/real-loop-dia.md`, *Contracts*, the command):
 /// the sign, then the rate's size as a `u16`, little-endian. Must match the
 /// controller firmware's `COMMAND_SIZE`, `COMMAND_NEGATIVE` and
 /// `COMMAND_POSITIVE` (`__live__/arduino/rust/crates/controller/src/constants.rs`).
@@ -34,7 +34,7 @@ pub(crate) const COMMAND_NEGATIVE: u8 = 0;
 pub(crate) const COMMAND_POSITIVE: u8 = 1;
 
 /// The `status` of the board's FAULT STATE and UNCALIBRATED replies, and the
-/// two `result`s that end a run (`real-loop-dia.md`, *The board's states*).
+/// two `result`s that end a run (`__documentation__/real-loop-dia.md`, *The board's states*).
 pub(crate) const REPLY_STATUS_CONFLICT: u64 = 409;
 pub(crate) const REPLY_FAULT: &str = "fault";
 pub(crate) const REPLY_UNCALIBRATED: &str = "uncalibrated";
@@ -73,7 +73,7 @@ pub(crate) const WORKER_STOP_TIMEOUT_MS: u64 = 1_000;
 /// stop, ms. A pass is at most `frame_timeout_ms` of waiting for a frame plus
 /// the worker's answers; this covers the rest. The camera's closing is not
 /// waited for: STOP's zeros must follow the last command at once
-/// (`real-loop-dia.md`, *The run and idle states*, STOP), and on 2026-11-07
+/// (`__documentation__/real-loop-dia.md`, *The run and idle states*, STOP), and on 2026-11-07
 /// they followed it five seconds late while the camera closed, and the board
 /// held the last command, full speed, to the soft limit.
 pub(crate) const IDLE_WAIT_MARGIN_MS: u64 = 1_000;
@@ -120,20 +120,20 @@ pub(crate) const ANY_PORT: u16 = 0;
 /// A little-endian `f64` on the worker's pipe, bytes.
 pub(crate) const F64_BYTES: usize = 8;
 
-/// The worker's two requests, the first byte of each (`real-loop-dia.md`,
+/// The worker's two requests, the first byte of each (`__documentation__/real-loop-dia.md`,
 /// *Contracts*, the brain's worker). Must match `brain_worker.py`'s
 /// `FRAME_REQUEST` and `POLICY_REQUEST`.
 pub(crate) const WORKER_FRAME_REQUEST: u8 = b'F';
 pub(crate) const WORKER_POLICY_REQUEST: u8 = b'P';
 
 /// A detection's five numbers, each a little-endian `f32`: centre x, centre y,
-/// width, height, confidence (`real-loop-dia.md`, *Contracts*, the brain's
+/// width, height, confidence (`__documentation__/real-loop-dia.md`, *Contracts*, the brain's
 /// worker).
 pub(crate) const DETECTION_FLOATS: usize = 5;
 pub(crate) const DETECTIONS_BYTES: usize = CLASSES * DETECTION_FLOATS * 4;
 
 /// The brain's own requests, which the webserver forwards to
-/// (`real-loop-dia.md`, *Contracts*, the brain's requests). Must match the
+/// (`__documentation__/real-loop-dia.md`, *Contracts*, the brain's requests). Must match the
 /// webserver's `BRAIN_RUN_PATH`, `BRAIN_IDLE_PATH` and `BRAIN_STATUS_PATH`.
 pub(crate) const RUN_ROUTE: &str = "/run";
 pub(crate) const IDLE_ROUTE: &str = "/idle";
@@ -143,7 +143,7 @@ pub(crate) const STATUS_ROUTE: &str = "/status";
 /// (`calibrate_service.py`, `do_GET`).
 pub(crate) const SERVICE_BUSY_PATH: &str = "/busy";
 
-/// The log file in each run's folder (`real-loop-dia.md`, *The log*).
+/// The log file in each run's folder (`__documentation__/real-loop-dia.md`, *The log*).
 pub(crate) const FRAMES_FILE: &str = "frames.jsonl";
 
 /// Undoing the lens's bend has no formula, so it is found by repeating until

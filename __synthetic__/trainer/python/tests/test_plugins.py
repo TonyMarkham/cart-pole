@@ -72,7 +72,7 @@ class DmControlCartpoleReward(unittest.TestCase):
                     self.assertAlmostEqual(f["upright"], upright, places=3)
 
     def test_a_pole_past_a_full_turn_scores_the_same(self):
-        """MuJoCo's angle counts on past a full turn (synthetic-loop-dia.md, the pole)."""
+        """MuJoCo's angle counts on past a full turn (__documentation__/synthetic-loop-dia.md, the pole)."""
         self.assertAlmostEqual(self.factors(rig(pole=math.pi + 4 * math.pi))["upright"], 1.0, places=12)
 
     def test_small_control_table(self):

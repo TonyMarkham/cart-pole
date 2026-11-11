@@ -10,11 +10,11 @@
 [env]
 # How far apart the steps come is no longer set here: the command rate
 # (command_rate_min and command_rate_max, 2026-10-30) gave way to the rig's
-# own timings (settings.toml [orchestrator]; synthetic-loop-dia.md, Timing;
+# own timings (settings.toml [orchestrator]; __documentation__/synthetic-loop-dia.md, Timing;
 # user, 2026-11-08). A run saved with command rates cannot resume.
 
 # Steps per episode before the time limit truncates it
-# (synthetic-loop-dia.md, The time limit): a step is one command, so 500
+# (__documentation__/synthetic-loop-dia.md, The time limit): a step is one command, so 500
 # steps is about 16.3 s of simulated time at the loop's mean of 32.5 ms between
 # captures. Passed to the orchestrator as --max-episode-steps: each episode's
 # schedule holds steps -5 to this + 14. A truncation is not an end: SAC keeps
@@ -30,7 +30,7 @@ plugin = "pool_and_commands"
 [observation.pool_and_commands]
 # The pool's 30 floats, then the actions of the last past_commands
 # commands, newest first, 0 before an episode's first
-# (synthetic-loop-dia.md, The policy sees its last commands). NFQ2.0's
+# (__documentation__/synthetic-loop-dia.md, The policy sees its last commands). NFQ2.0's
 # real cart-pole needed at least 2 and used 6 (reward-research.md).
 past_commands = 6
 
@@ -38,7 +38,7 @@ past_commands = 6
 # 1000 is seconds: the oldest age, about -250 ms, arrives as -0.25, on the scale
 # of the markers (within 1 m) and the actions (within 1). As raw ms the ages pinned
 # the actor's randomness at its limit for 80,000 steps
-# (synthetic-loop-dia.md, The policy sees its last commands).
+# (__documentation__/synthetic-loop-dia.md, The policy sees its last commands).
 age_unit_ms = 1_000.0
 
 [action]
@@ -98,7 +98,7 @@ floor = 0.5
 # Which episode-end conditions are checked, each after the step's reward
 # is paid (__synthetic__/trainer/python/src/endings/), besides the one that is
 # not a plugin: the synthetic Arduino's FAULT, when a limit switch trips
-# (synthetic-loop-dia.md, The rail's ends; user, 2026-11-08), which replaced
+# (__documentation__/synthetic-loop-dia.md, The rail's ends; user, 2026-11-08), which replaced
 # the strike-gap end. None today. A run saved with other end conditions, or
 # other values for them, cannot resume: a rescore cannot move where stored
 # episodes ended.
@@ -121,7 +121,7 @@ save_every = 10_000
 runs_dir = "runs"
 
 [sac]
-# Stable-Baselines3's SAC (synthetic-loop-dia.md, The policy learns by
+# Stable-Baselines3's SAC (__documentation__/synthetic-loop-dia.md, The policy learns by
 # SAC). Values are SB3's defaults except device, learning_starts, buffer_size,
 # learning_rate, gamma, gradient_steps and ent_coef.
 
@@ -142,7 +142,7 @@ batch_size = 256
 # !!!!! learning_rate = 0.0003 // Original Value !!!!!
 learning_rate = 0.000_1
 
-# The discount (synthetic-loop-dia.md, The discount): rewards about
+# The discount (__documentation__/synthetic-loop-dia.md, The discount): rewards about
 # 1 / (1 - gamma) steps ahead still count, 152 steps at 0.9934. Chosen as about
 # 6.3 s at the command rate's mean gap of 41.5 ms, the same time ahead as 0.998
 # at the old 12.57 ms; at the loop's mean of 32.5 ms between captures since
@@ -167,7 +167,7 @@ gradient_steps = 2
 # 0.1. SB3's "auto" starts at 1.0, and the reward here is about 0.06 a step, so the
 # bonus outweighed it about 150 to 1 at its worst in run 20261101_154007. A step
 # alive then cost more than an episode's end, so the policy learned to hit the wall
-# (synthetic-loop-dia.md, The randomness bonus). Read only by a new run: a resume
+# (__documentation__/synthetic-loop-dia.md, The randomness bonus). Read only by a new run: a resume
 # keeps the saved model's.
 ent_coef = "auto_0.1"
 

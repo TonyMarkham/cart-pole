@@ -1,5 +1,5 @@
 """Fits the homography, the matrix that turns the camera's pixels into metres in the
-pole's plane, from the calibration's measured points (synthetic-loop-dia.md,
+pole's plane, from the calibration's measured points (__documentation__/synthetic-loop-dia.md,
 Calibration). It also holds the fitted matrix for each frame after.
 
 The metres come from MuJoCo, which knows where each point truly is, so nothing here

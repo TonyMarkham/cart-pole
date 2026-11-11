@@ -1,4 +1,4 @@
-"""The pool and the last commands (synthetic-loop-dia.md, The trainer's
+"""The pool and the last commands (__documentation__/synthetic-loop-dia.md, The trainer's
 environment and The policy sees its last commands).
 
 The observation is the pool's 30 floats, per entry newest first its age, in
@@ -10,7 +10,7 @@ and the history alone, so no site can reach it.
 Why the unit: at 1,000 an age of -246 ms reaches the network as -0.246, beside
 markers within 1 and actions within 1. As raw ms the ages swamp every other
 input, and an untrained actor's log_std started anywhere from -4 to +12 across
-six seeds (synthetic-loop-dia.md, The policy sees its last commands).
+six seeds (__documentation__/synthetic-loop-dia.md, The policy sees its last commands).
 """
 
 from dataclasses import dataclass
@@ -29,7 +29,7 @@ class PoolAndCommands:
     age_unit_ms: float  # ms: each age is divided by this before the network sees it
     # Every gap between two entries is at most the run's longest gap: live or
     # pre-warm, each is the gap between two scheduled captures on the
-    # timestep's grid (synthetic-loop-dia.md, The schedule, The initial pool).
+    # timestep's grid (__documentation__/synthetic-loop-dia.md, The schedule, The initial pool).
     longest_gap_ms: float
 
     @property

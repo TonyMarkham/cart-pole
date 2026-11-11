@@ -9,14 +9,14 @@ use crate::{
 };
 
 /// The pre-warm's steps, −5 to −1: the pool's 6 entries less step 0's own
-/// (synthetic-loop-dia.md, *The initial pool*).
+/// (__documentation__/synthetic-loop-dia.md, *The initial pool*).
 pub const PRE_WARM_STEPS: i64 = POOL_ENTRIES as i64 - 1;
 
 /// Spare steps after the episode's last, since generating more than is
 /// needed costs nothing (user, 2026-11-08: steps 500 to 514 at 500).
 pub const SPARE_STEPS: i64 = 15;
 
-/// The episode's schedule (synthetic-loop-dia.md, *The schedule*): steps
+/// The episode's schedule (__documentation__/synthetic-loop-dia.md, *The schedule*): steps
 /// −5 to the episode's last + 15, made at the reset and never changed.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Schedule {
@@ -91,7 +91,7 @@ impl Schedule {
         self.timestep_ms
     }
 
-    /// The Orin's pre-warm gaps, ms (synthetic-loop-dia.md, *The initial
+    /// The Orin's pre-warm gaps, ms (__documentation__/synthetic-loop-dia.md, *The initial
     /// pool*): d₁ = 0 − C₋₁, d₂ = C₋₁ − C₋₂, …, d₅ = C₋₄ − C₋₅ from the
     /// rounded captures, and d₆ = d₅. Pushing step 0 drops the 6th entry at
     /// once, so d₆ never reaches the policy and any value would do.

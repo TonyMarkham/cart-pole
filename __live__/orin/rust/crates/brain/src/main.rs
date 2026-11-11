@@ -2,7 +2,7 @@
 //! takes each camera frame, has its Python worker find the markers, keeps the
 //! pool, has the worker ask the policy for a command, and sends the command
 //! to the Arduino, over and over until the person says stop or the board
-//! reports a fault (`real-loop-dia.md`, *The sequence*). It is its own
+//! reports a fault (`__documentation__/real-loop-dia.md`, *The sequence*). It is its own
 //! program, a Rust orchestrator, by the user's decision of 2026-11-04
 //! (`real-open-issues.md`, issue 3). Its settings are `[brain]` and `[camera]`
 //! in `settings.toml`, the file it shares with the webserver, read once at the
