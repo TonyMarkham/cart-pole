@@ -60,6 +60,15 @@ namespace Simulation.CartPole.SyntheticDataGen
         private Texture2D captureReadback;
         private int consecutiveUnconfirmed;
 
+        // The run folder this set wrote, null until RunAsync starts: the
+        // generator collects every set's folder for the tree's data.yaml.
+        internal string RunDirectory => writer?.RunDirectory;
+
+        // The frames this set wrote: 0 when RunAsync returned before
+        // capturing (markers that do not resolve), which leaves an empty
+        // run folder that data.yaml must not list.
+        internal int Frames => writer?.Frames ?? 0;
+
         internal GenerationSetRunner(
             GenerationSetSO set,
             RigSO rig,

@@ -10,9 +10,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: cc4d64d224c59051bae3bf24c54006c2, type: 3}
-  m_Name: Motor
+  m_Name: motor
   m_EditorClassIdentifier: Assembly-CSharp::CartPole.Vision.MarkerSO
-  label: Right
+  label: motor
   arUcoId: 0596
   anchor:
     indices: 000000001d000000i

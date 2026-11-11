@@ -81,9 +81,21 @@ namespace Simulation.CartPole.SyntheticDataGen
                 Debug.LogWarning("[SyntheticDataGenerator] no RobotBounds assigned - the frustum fit needs it");
                 return;
             }
-            if (m_Sets == null || m_Sets.Count == 0)
+            // At least two sets: data.yaml's last set is val and every
+            // earlier one is train, so one set would leave train empty.
+            var assignedSets = 0;
+            foreach (var set in m_Sets ?? new List<GenerationSetSO>())
             {
-                Debug.LogWarning("[SyntheticDataGenerator] no generation sets assigned");
+                if (set != null)
+                {
+                    assignedSets++;
+                }
+            }
+            if (assignedSets < 2)
+            {
+                Debug.LogWarning(
+                    $"[SyntheticDataGenerator] {assignedSets} generation set(s) assigned - " +
+                    "at least 2 are needed: the last is val, the rest are train");
                 return;
             }
             // The camera's authored pose, read once before any set runs:
@@ -91,6 +103,9 @@ namespace Simulation.CartPole.SyntheticDataGen
             // frustum fit then compensates along the view axis.
             var cameraBasePosition = camera.transform.position;
             var cameraBaseRotation = camera.transform.rotation;
+            var runDirectories = new List<string>();
+            GenerationSetSO lastSet = null;
+            string emptyRun = null;
             try
             {
                 foreach (var set in m_Sets)
@@ -110,6 +125,29 @@ namespace Simulation.CartPole.SyntheticDataGen
                         cameraBasePosition,
                         cameraBaseRotation);
                     await runner.RunAsync();
+                    if (runner.Frames == 0)
+                    {
+                        emptyRun = runner.RunDirectory;
+                    }
+                    runDirectories.Add(runner.RunDirectory);
+                    lastSet = set;
+                }
+                // Every set has written its run, so the yaml lists exactly
+                // this generation; it lands beside the runs, in the last
+                // set's output directory. An exception above skips it, and
+                // so does a set that wrote no frames: its empty folder
+                // would be listed, possibly as val.
+                if (emptyRun != null)
+                {
+                    Debug.LogError(
+                        $"[SyntheticDataGenerator] {emptyRun} has no frames - data.yaml not written");
+                }
+                else
+                {
+                    DatasetWriter.WriteDataYaml(lastSet.OutputDirectory, runDirectories, m_Rig);
+                    Debug.Log(
+                        $"[SyntheticDataGenerator] data.yaml: {runDirectories.Count - 1} train run(s), " +
+                        $"val {System.IO.Path.GetFileName(runDirectories[^1])} -> {lastSet.OutputDirectory}");
                 }
             }
             catch (Exception exception)

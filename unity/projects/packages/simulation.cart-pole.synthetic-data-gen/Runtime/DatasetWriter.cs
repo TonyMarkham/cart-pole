@@ -99,6 +99,48 @@ namespace Simulation.CartPole.SyntheticDataGen
 
         internal int Frames => frames;
 
+        // The tree's data.yaml, the one file Ultralytics trains from,
+        // written once a generation's sets have all run and listing only
+        // that generation's runs: the last set's run is val (the frames
+        // training scores against and never learns from), every earlier
+        // run is train. Each entry is the run folder's name, because a
+        // yaml without `path:` resolves entries from its own folder.
+        // `names:` is the rig's marker order, the same source as each
+        // run's markers.json, so a list position is a class id.
+        // `channels: 1` because every frame is greyscale (GENERATOR.md).
+        // The file is replaced whole: older runs left in the folder are
+        // never listed.
+        internal static void WriteDataYaml(
+            string outputDirectory, IReadOnlyList<string> runDirectories, RigSO rig)
+        {
+            var builder = new System.Text.StringBuilder();
+            builder.Append("train:\n");
+            for (var i = 0; i < runDirectories.Count - 1; i++)
+            {
+                builder.Append($"- {Path.GetFileName(runDirectories[i])}\n");
+            }
+            builder.Append("val:\n");
+            builder.Append($"- {Path.GetFileName(runDirectories[^1])}\n");
+            builder.Append("names:\n");
+            foreach (var marker in rig.Markers)
+            {
+                if (marker != null && marker.TagId >= 0)
+                {
+                    builder.Append($"- {marker.label}\n");
+                }
+            }
+            builder.Append($"channels: {GreyscaleChannels}\n");
+            File.WriteAllText($"{outputDirectory}/{DataYamlFileName}", builder.ToString());
+        }
+
+        // The file name training is pointed at
+        // (`data=../datasets/generated/data.yaml`, the train README).
+        private const string DataYamlFileName = "data.yaml";
+
+        // One channel: every frame is greyscale, a format constant
+        // (GENERATOR.md, "Greyscale everywhere").
+        private const int GreyscaleChannels = 1;
+
         [Serializable]
         private sealed class MarkerEntry
         {

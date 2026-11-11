@@ -430,6 +430,14 @@ adds repo structure around them, never overrides them.
   docs `01`–`07` and appendices, `src/` (`build_dataset.py`,
   `convert_proposals.py`, `dataset_stats.py`), and `runs/` (gitignored;
   see *The trained detector*).
+- `__object_detection__/` — the detector training's new home, begun
+  2026-11-10 for the 16,000-frame corpus (`datasets/generated/`, Set-01…16).
+  **All of its code is new**: nothing is moved or copied
+  from `training/`. Its layout mirrors the root's `datasets/` + `training/`
+  pair: `datasets/generated/` (the Unity runs, moved here) and `train/` —
+  the `uv` project, its `README.md` (every step, with its command and where
+  its results go), and `runs/` (gitignored). **`data.yaml` comes from Unity's generator**, as part of the generated data, not from a
+  training script.
 - `weights/yolo26n.pt` — tracked (commit `9297d40a`, "Train object
   detection"); no doc names its use.
 - **Plans and design docs at the root** — `synthetic-loop-dia.md` (the
