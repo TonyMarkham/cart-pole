@@ -421,7 +421,8 @@ adds repo structure around them, never overrides them.
   `datasets/` + `training/` pair: `datasets/generated/` (the Unity runs,
   moved here) and `train/` —
   the `uv` project, its `README.md` (every step, with its command and where
-  its results go), and `runs/` (gitignored). **`data.yaml` comes from Unity's generator**, as part of the generated data, not from a
+  its results go), and `runs/` (gitignored except each run's
+  `weights/best.pt` and `weights/best.onnx`, root `.gitignore`). **`data.yaml` comes from Unity's generator**, as part of the generated data, not from a
   training script.
 - **`__documentation__/` — the plans and design docs**, moved there from
   the repo root on 2026-11-11 (`AGENTS.md` and `index.html` stay at the

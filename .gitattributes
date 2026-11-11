@@ -1,4 +1,14 @@
-# A policy file is only ever replaced whole, never merged or edited a part at a
-# time (user, 2026-11-02): git shows no line-by-line diff of it and never merges
-# two versions, so a conflict is settled by keeping one file or the other.
+# Binary formats: no line-by-line diff, no line-ending conversion, no text
+# merge. Git already detects these from their content; listing them makes it
+# certain for every future file of the type.
+*.blend binary
+*.exr   binary
+*.fbx   binary
+*.FCStd binary
 *.npz binary
+*.onnx  binary
+*.pdf   binary
+*.png   binary
+*.pt    binary
+*.stl   binary
+*.xcf   binary
