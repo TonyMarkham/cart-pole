@@ -116,14 +116,14 @@ pub struct Args {
     pub instance_columns: u16,
 
     /// Instance 0's control socket port on 127.0.0.1 (__documentation__/synthetic-loop-dia.md,
-    /// 4–5): the orchestrator listens, the synthetic Orin connects.
+    /// 5–6): the orchestrator listens, the synthetic Orin connects.
     /// Instance k listens on --orin-port + 2k.
     #[arg(long, default_value_t = 9000)]
     pub orin_port: u16,
 
-    /// Instance 0's frame socket port on 127.0.0.1 (6–7): the synthetic Orin
-    /// listens on it (--frames-listen), the Unity player connects.
-    /// Instance k's is --unity-port + 2k.
+    /// Instance 0's frame socket port on 127.0.0.1 (4, 7): the Unity player
+    /// listens on it (-state-server), the synthetic Orin connects
+    /// (--frames-url). Instance k's is --unity-port + 2k.
     #[arg(long, default_value_t = 9001)]
     pub unity_port: u16,
 
@@ -189,13 +189,15 @@ pub struct Args {
     #[arg(long)]
     pub calibration_stop_gap: f64,
 
-    /// The built Unity player to launch with
-    /// `-orin ws://127.0.0.1:<unity-port>` (6).
+    /// The built Unity player, launched before its synthetic Orin with
+    /// `-player-mode SyntheticCamera -state-server <port>` (4): instance k's
+    /// port is --unity-port + 2k, and the calibration's player listens on
+    /// instance 0's.
     #[arg(long, required_unless_present_any = ["no_launch", "no_render"])]
     pub player: Option<PathBuf>,
 
-    /// Launch no player: editor Play mode is the camera, connecting to
-    /// the synthetic Orin's frame socket itself.
+    /// Launch no player: editor Play mode is the camera, and the synthetic
+    /// Orin connects to its StateServer on --unity-port.
     #[arg(long)]
     pub no_launch: bool,
 
@@ -220,8 +222,8 @@ pub struct Args {
     #[arg(long, default_value = "0,0", allow_hyphen_values = true)]
     pub window_origin: Pixels,
 
-    /// Seconds to wait for the synthetic Orin to connect, and then for
-    /// Unity to register with it, covering each one's startup.
+    /// Seconds to wait for the synthetic Orin to connect, and then for it
+    /// to connect to the player and say so, covering each one's startup.
     #[arg(long, default_value_t = 120)]
     pub connect_timeout: u64,
 
@@ -264,9 +266,9 @@ pub struct Args {
     /// command — program and arguments, e.g. `--orin uv run --project
     /// __synthetic__/orin/python python __synthetic__/orin/python/src/synthetic_orin.py --engine <file>` —
     /// appending `--orchestrator
-    /// ws://127.0.0.1:<orin-port> --frames-listen 127.0.0.1:<unity-port>
-    /// --out <out>` and either `--calibrate <file>` (C3) or `--pool-gaps
-    /// <d1,...,d6> --homography <file>` (4). Required unless
+    /// ws://127.0.0.1:<orin-port> --frames-url ws://127.0.0.1:<unity-port>/
+    /// --out <out>` and either `--calibrate <file>` (C4) or `--pool-gaps
+    /// <d1,...,d6> --homography <file>` (5). Required unless
     /// --no-render. Must come last: every argument after it is the command.
     #[arg(
         long,

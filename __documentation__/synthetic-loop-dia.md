@@ -266,7 +266,10 @@ orchestrator per instance would need something above them doing the
 same. The number of instances is set per run as `instance_rows` ×
 `instance_columns`, at most 12 (user, 2026-10-24: 6, then 12, a 4 × 3 grid
 of windows; 2026-10-31: rows and columns replaced `instances`), in the trainer's `settings.toml` `[orchestrator]`.
-Instance k (from 0) uses the ports `orin_port + 2k` and `unity_port + 2k`.
+Instance k (from 0) uses the ports `orin_port + 2k` and `unity_port + 2k`:
+the orchestrator listens on the first, for the Orin's control socket, and
+instance k's player on the second (`-state-server`), for the frame socket
+its Orin connects to (2026-11-12).
 This sequence shows one instance; the group works as follows.
 
 - **Each instance is the sequence above, on its own.** Its own MuJoCo
@@ -338,23 +341,23 @@ This sequence shows one instance; the group works as follows.
   taskbar takes 48, opened at y = 1032), so a grid that reached under the taskbar
   would overlap itself. The display's 2160 less the taskbar's 48 is 2112.
   **A window's size never touches the frames:** they render into their own
-  728×544 target, and the window only shows that target stretched to fit
-  (2 × 3 on 3840×2112 is 9% off in aspect, on screen only). `env_check`'s
+  728×544 target, apart from the window's own drawing, so a window of any
+  size or aspect changes only what is on screen. `env_check`'s
   one instance is a 1 × 1 grid: one window filling the area.
   The player must be built without Force Single Instance (user,
   2026-10-24), or every player after the first exits at launch.
-- **The players draw only when asked** (2026-10-24, after the resumed
+- **The players draw their windows every frame** (user, 2026-11-12). A
+  player's camera draws to its window every frame, as usual, and each
+  trigger (12) gets a separate render into the frame-sized target, made
+  right after the trigger's joints are posed, so the window never affects
+  a reply (`SimulationLoopController.cs`'s header). Why: a player that
+  drew only for triggers showed a black window. This undoes the older rule
+  that the players draw only when asked (2026-10-24, after the resumed
   first run measured six instances no faster than four,
-  `trainer-observations.md`). The GPU runs one process at a time, so
-  every render, detection and SAC update queues behind the others, and
-  each player used to redraw its window nonstop between triggers (about
-  2.2 CPU cores each, and a turn on the GPU per redraw). Now a player
-  renders the scene only for a trigger (12): the frame it sends is also
-  what its window shows, and nothing is rendered between triggers.
-  Between triggers the player sleeps until the next one arrives, waking
-  at least every 100 ms to keep the window responsive, so a trigger is
-  handled as soon as it arrives. The window holds the last frame while
-  an instance waits (during a reset, or while the trainer thinks).
+  `trainer-observations.md`): the GPU runs one process at a time, so every
+  render, detection and SAC update queues behind the others, and a player
+  redrawing nonstop cost about 2.2 CPU cores and a turn on the GPU per
+  redraw. Those costs are back.
 
 ```mermaid
 ---
@@ -382,12 +385,13 @@ sequenceDiagram
     O->>M: load + reset(start pose)
     O->>A: new(Config: [drive]'s three drive figures and its jump limit m, the cart top speed from MuJoCo's ctrlrange,<br/>and the tick: MuJoCo's timestep)<br/>the cart starts at 50% of the rail, guaranteed (stands in for homing), at rest: sent rate 0, command 0, not in FAULT
     Note over O: the first episode's schedule, from --seed (Timing, The schedule):<br/>steps −5 to 514, each with its capture, picture ready, send and motor change (or lost),<br/>2,600 picks, every time rounded to the nearest 2 ms timestep<br/>the last landed step: none
-    O->>N: launch --orchestrator ws://… --frames-listen ADDR --out DIR --pool-gaps d₁,…,d₆ --homography FILE<br/>d₁ … d₅ the gaps between the captures of steps 0, −1, …, −5 in the schedule (The initial pool), d₆ = d₅<br/>(the Orin picks nothing and holds no timing of its own)
-    Note over N: pre-warm: builds the 6-entry pool, slots (−1, −1),<br/>at times −d₁, −(d₁+d₂), …, −(d₁+…+d₆) before t = 0<br/>then opens the frame listener
-    N-->>O: connects (control socket: the listener is up)
-    O->>U: launch SimulationLoop.exe -orin ws://ADDR
-    U-->>N: connects (frame socket)
-    N-->>O: text {"type":"registered"}: Unity has registered (the frame socket is up)<br/>the observation side is ready: the trigger to start
+    O->>U: launch SyntheticCamera.exe -player-mode SyntheticCamera -state-server PORT<br/>PORT = unity_port + 2k (Training instances); first, since only a listening player can be connected to
+    Note over U: its StateServer listens on 127.0.0.1:PORT (the frame socket)<br/>it quits when its last client has gone, after one connected
+    O->>N: launch --orchestrator ws://… --frames-url ws://127.0.0.1:PORT/ --out DIR --pool-gaps d₁,…,d₆ --homography FILE<br/>d₁ … d₅ the gaps between the captures of steps 0, −1, …, −5 in the schedule (The initial pool), d₆ = d₅<br/>(the Orin picks nothing and holds no timing of its own)
+    Note over N: pre-warm: builds the 6-entry pool, slots (−1, −1),<br/>at times −d₁, −(d₁+d₂), …, −(d₁+…+d₆) before t = 0
+    N-->>O: connects (control socket)
+    N-->>U: connects (frame socket), trying again every connect_retry_millis<br/>until player_start_timeout_secs have passed (the Orin's settings.toml [frame_socket]):<br/>a starting player takes a moment to listen
+    N-->>O: text {"type":"registered"}: the Orin has connected to the player (the frame socket is up)<br/>the observation side is ready: the trigger to start
     O->>M: time(), pose(), sites(), pole()
     M-->>O: t, qpos (cart m, pole rad), the twelve sites' world positions (m),<br/>the pole state (its speed, angle, centre of mass and hinge point): step 0's capture state, at t = 0
     Note over O,T: the run's values, once, before the loop: the trainer's first stdin line {"request": "run"},<br/>answered by the orchestrator's first stdout line {"run": {"cart_top_speed", "top_pulse_rate", "timestep",<br/>"pole_mass", "pole_com_distance", "pole_inertia", "gravity"}}<br/>from the loaded model and [drive] (Contracts, the run's values), the trainer keeps them for the run
@@ -433,7 +437,7 @@ sequenceDiagram
     O->>N: close the control socket (on the trainer's stop, or a failed run)
     Note over O,N: the close is a handshake (RFC 6455 7.1.1): N answers with its own close frame,<br/>and O drops the connection only once that answer has come, reading until it does.<br/>Dropped with data unread (the Orin's keepalive ping), it is reset, and the reset<br/>discards O's close frame before N reads it (run 1, trainer-observations.md)
     N->>U: close the frame socket
-    U-->>O: exits
+    U-->>O: exits, its last client gone
     N-->>O: exits
     O-->>T: exits, closing stdout: code 0, closed (the Orin and the player have exited),<br/>or code 1, the run failed: training ends
 ```
@@ -510,9 +514,9 @@ sequenceDiagram
     participant U as Calibrating Unity player
     O->>M: C1: load the MJCF, and for each of the seven poses: reset(the pose), sites()
     M-->>O: C2: Pivot's and End's true (x, z) in that pose (nothing steps: the pole cannot fall)
-    O->>N: C3: launch --orchestrator ws://… --frames-listen ADDR --out DIR --calibrate DIR/homography.json<br/>on instance 0's ports
-    O->>U: C4: launch SimulationLoop.exe -orin ws://ADDR
-    N-->>O: C5: {"type":"registered"}: Unity has connected
+    O->>U: C3: launch SyntheticCamera.exe -player-mode SyntheticCamera -state-server PORT<br/>on instance 0's ports, as 4
+    O->>N: C4: launch --orchestrator ws://… --frames-url ws://127.0.0.1:PORT/ --out DIR --calibrate DIR/homography.json
+    N-->>O: C5: {"type":"registered"}: the Orin has connected to the player, as 6–8
     loop each of the seven poses
         O->>N: C6: {"type":"measure","pose":name,"joints":[cart, pole],"pivot":[x,z],"end":[x,z]}
         loop until [calibration] images have both Pivot and End
@@ -528,7 +532,7 @@ sequenceDiagram
     N-->>O: C9: {"type":"fitted","ok":bool,"worst_px":w,"lens_k":k}
     O->>N: C10: close the control socket, as 22
     N->>U: close the frame socket, as 23
-    U-->>O: exits
+    U-->>O: exits, its last client gone
     N-->>O: exits
     Note over O: not ok, or a pose never seen: the run fails before training starts<br/>ok: the training instances start (2), every Orin told --homography DIR/homography.json
 ```
@@ -822,7 +826,9 @@ CPU here, so the doubled step is not the network's arithmetic. Where
 the time went (measured 2026-10-24, `trainer-observations.md`): every
 process using the GPU takes turns on it, and the players' nonstop
 redraws made SAC's update wait; with the players drawing only when asked,
-the trainer's turn is about 17 ms for 1 or 6 instances. A time-limit truncation is
+the trainer's turn was about 17 ms for 1 or 6 instances. Since 2026-11-12
+the players draw their windows every frame again (*Training instances*),
+and this has not been measured since. A time-limit truncation is
 not an end: SAC keeps valuing the state it stopped in, and only the
 episode end, a FAULT (*The rail's ends*), ends the value.
 
@@ -859,7 +865,7 @@ episode starts. So the spacings between pre-warm entries come out like
 those between real captures, 15.5 to 49.5 ms, 32.5 ms on average, and on
 the same 2 ms grid. The orchestrator hands them to the Orin as gaps, in ms:
 d₁ = 0 − C₋₁, d₂ = C₋₁ − C₋₂, …, d₅ = C₋₄ − C₋₅, Cₖ step k's capture,
-`--pool-gaps` at launch (4) and the reset's `gaps` afterwards (R5). The
+`--pool-gaps` at launch (5) and the reset's `gaps` afterwards (R5). The
 Orin picks nothing. Step 0's own picture is one of the pool's 6 entries,
 so 5 pre-warm entries are all it needs. The Orin's pre-warm takes 6 gaps,
 and pushing step 0 drops the oldest entry at once, so that 6th gap never
@@ -882,11 +888,9 @@ commands, and true cart and pole, bit for bit. A reset with seed S makes
 the schedule afresh from it, so an episode after a reset repeats a fresh
 run with seed S, its ids offset by the captures before it. The observation is not bit-identical, by
 decision (user, 2026-10-24): Unity's SSAO (blue noise) changes its noise
-pattern on every render, and the player rendered between triggers, so a
-frame's shading jittered slightly from run to run. Since the players draw
-only when asked (*Training instances*), a run's nth frame is its player's
-nth render, so the frames may now repeat bit for bit; not yet checked,
-and not required. The detector found every
+pattern on every render, and the player renders between triggers (it
+draws its window every frame, *Training instances*), so a frame's shading
+can jitter slightly from run to run. The detector found every
 marker in every frame regardless; run to run, the detections differ by at
 most 0.04 px (2026-10-24), and so do `states.csv`'s observed columns and
 `observations.jsonl` (which also logs `detect_ms`, a wall-clock time).

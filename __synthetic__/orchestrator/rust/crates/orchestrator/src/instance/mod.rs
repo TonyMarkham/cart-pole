@@ -25,7 +25,6 @@ pub(crate) struct Instance {
     pub(crate) orin: WebSocketStream<TcpStream>,
     pub(crate) orin_child: Child,
     pub(crate) player: Option<Child>,
-    pub(crate) frames_url: String,
     // Ids count on across the instance's episodes.
     pub(crate) next_id: u32,
     // Captured steps, oldest first, until their sends.

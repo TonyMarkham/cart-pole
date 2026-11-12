@@ -7,6 +7,7 @@ break the other.
 
 ```text
 __synthetic__/
+├── 01-TRAIN.md               how to start a training session
 ├── generator/                hands generation sets to the Unity players that make the detector's training frames
 │   ├── proto/                generation_set.proto: what a generation set holds, for Rust and C#
 │   ├── master.json           the complete generation set every set in the pool starts from
@@ -14,7 +15,8 @@ __synthetic__/
 │   └── rust/
 │       ├── generator.toml    the generator's settings, read when it runs
 │       └── crates/
-│           └── generator/    reads and checks the pool (launching the players comes next);
+│           └── generator/    reads and checks the pool, launches the Unity players, hands
+│                             each the next set until the pool is empty, and writes data.yaml;
 │                             its generate-csharp binary rewrites the .proto's C# classes
 ├── orchestrator/rust/        stands in for the physical world
 │   ├── orchestrator.toml     where the MuJoCo physics library is, read when building
@@ -39,11 +41,21 @@ program is `target/release/orchestrator.exe`. Every command runs from the repo r
 cargo build --release -p orchestrator
 ```
 
+**The camera** is the Unity player
+`unity/projects/SyntheticCamera/Build/SyntheticCamera.exe`, the same program
+that makes the detector's frames; `__object_detection__/01-GENERATE.md`, Step 1,
+builds it. Every run launches its own players as cameras
+(`-player-mode SyntheticCamera`), each listening on its own port, and each Orin
+connects to its player. The synthetic Orin also needs the detector's TensorRT
+engine: `__object_detection__/04-SYNTHETIC_ORIN.md`.
+
 **To check the loop runs,** with one simulated robot, for one episode:
 
 ```bash
 uv run --project __synthetic__/trainer/python python __synthetic__/trainer/python/src/env_check.py 1
 ```
+
+**To train the policy:** [01-TRAIN.md](01-TRAIN.md).
 
 **The calibration.** The detector gives pixels and the policy needs metres, so every
 launch first brings up one Orin and one player to find the matrix between the two, and
@@ -57,6 +69,12 @@ stops there. [The diagram](../__documentation__/synthetic-loop-dia.md) has the s
 
 ```bash
 uv run --project __synthetic__/orin/python python __synthetic__/orin/python/src/test_calibration.py
+```
+
+**To check the five numbers the Orin works out from the pool,** with no player or GPU:
+
+```bash
+uv run --project __synthetic__/orin/python python __synthetic__/orin/python/src/test_derived_state.py
 ```
 
 **To write a trained policy for the real robot,** as one numpy file the Orin runs

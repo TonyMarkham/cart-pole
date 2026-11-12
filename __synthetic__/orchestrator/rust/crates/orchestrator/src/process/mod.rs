@@ -17,10 +17,24 @@ use tokio::{
 
 pub(crate) const CLIENT_EXIT_GRACE: Duration = Duration::from_secs(5);
 
+// The player's command line (PlayerController.cs and the StateServer in
+// com.greyhound.mujoco.runtime): the job it runs as, always the camera here,
+// so the prefab's default job never decides it; and the port its StateServer
+// listens on.
+const PLAYER_MODE_ARGUMENT: &str = "-player-mode";
+const CAMERA_MODE: &str = "SyntheticCamera";
+const STATE_SERVER_ARGUMENT: &str = "-state-server";
+
+// The frame socket's address as the synthetic Orin connects to it: the
+// player's StateServer on 127.0.0.1, the loop being on this workstation.
+pub(crate) fn frames_url(port: u16) -> String {
+    format!("ws://{}/", SocketAddr::from((Ipv4Addr::LOCALHOST, port)))
+}
+
 pub(crate) fn start_player(
     args: &Args,
     k: usize,
-    frames_url: &str,
+    port: u16,
     size: Option<Pixels>,
 ) -> Result<Option<Child>> {
     match (&args.player, args.no_launch) {
@@ -31,11 +45,11 @@ pub(crate) fn start_player(
                     size,
                 )
             });
-            Ok(Some(launch(k, player, frames_url, window)?))
+            Ok(Some(launch(k, player, port, window)?))
         }
         _ => {
             eprintln!(
-                "[{k}] --no-launch: enter Play mode in the editor; it connects to {frames_url}"
+                "[{k}] --no-launch: enter Play mode in the editor; the synthetic Orin connects to its StateServer on port {port}"
             );
             Ok(None)
         }
@@ -45,12 +59,19 @@ pub(crate) fn start_player(
 pub(crate) fn launch(
     k: usize,
     player: &Path,
-    frames_url: &str,
+    port: u16,
     window: Option<(Pixels, Pixels)>,
 ) -> Result<Child> {
     let mut command = Command::new(player);
-    command.arg("-orin").arg(frames_url);
-    let mut shown = format!("{} -orin {frames_url}", player.display());
+    command
+        .arg(PLAYER_MODE_ARGUMENT)
+        .arg(CAMERA_MODE)
+        .arg(STATE_SERVER_ARGUMENT)
+        .arg(port.to_string());
+    let mut shown = format!(
+        "{} {PLAYER_MODE_ARGUMENT} {CAMERA_MODE} {STATE_SERVER_ARGUMENT} {port}",
+        player.display()
+    );
     if let Some((
         Pixels { x, y },
         Pixels {

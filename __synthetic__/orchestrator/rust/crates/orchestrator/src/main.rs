@@ -28,7 +28,7 @@ use crate::{
         await_close, joint_qpos::JointQpos, launch_orin, pool_gaps_argument, receive_message,
         wait_registered,
     },
-    process::{CLIENT_EXIT_GRACE, accept, bind, start_player, stop},
+    process::{CLIENT_EXIT_GRACE, accept, bind, frames_url, start_player, stop},
     simulation::{Simulation, capture::Capture, physics_config, run_values},
     trainer_link::{TrainerLink, next::Next, pool_entry::PoolEntry, run_line},
     walk::{Walk, event::Event},
@@ -41,7 +41,6 @@ use futures_util::{SinkExt, future::try_join_all};
 use physics::Physics;
 use std::{
     collections::{HashSet, VecDeque},
-    net::{Ipv4Addr, SocketAddr},
     path::{Path, PathBuf},
     time::{Duration, Instant},
 };
@@ -109,10 +108,12 @@ async fn main() -> Result<()> {
     calibrate(&args, ports[0], command, &homography, size, connect_timeout).await?;
     let homography_argument = homography.display().to_string();
 
-    // 2–5 for every instance (__documentation__/synthetic-loop-dia.md, Training instances):
-    // MuJoCo and the synthetic Arduino, then the synthetic Orin, which
-    // pre-warms its pool at the gaps it is given, opens the frame socket,
-    // then connects to the instance's control socket. Every Orin is
+    // 2–6 for every instance (__documentation__/synthetic-loop-dia.md, Training instances):
+    // MuJoCo and the synthetic Arduino, then the player, listening on the
+    // instance's frame socket, then the synthetic Orin, which pre-warms its
+    // pool at the gaps it is given and connects to the instance's control
+    // socket. The player starts first because only a listening player can be
+    // connected to; the Orin retries until it is. Every player and Orin is
     // launched before any connection is awaited, so they start together.
     let mut launched = Vec::with_capacity(count);
     for (k, &(orin_port, unity_port)) in ports.iter().enumerate() {
@@ -123,22 +124,20 @@ async fn main() -> Result<()> {
         let walk = Walk::new(sim.schedule(seed));
         let (listener, url) =
             bind(orin_port, &format!("[{k}] control socket (synthetic Orin)")).await?;
-        let frames_listen = SocketAddr::from((Ipv4Addr::LOCALHOST, unity_port));
+        let player = start_player(&args, k, unity_port, size)?;
         let gaps = pool_gaps_argument(&walk.schedule().pool_gaps());
         let orin_child = launch_orin(
             k,
             command,
             &url,
-            frames_listen,
+            &frames_url(unity_port),
             &out,
             &["--pool-gaps", &gaps, "--homography", &homography_argument],
         )?;
-        launched.push((sim, walk, listener, orin_child, frames_listen));
+        launched.push((sim, walk, listener, orin_child, player));
     }
     let mut instances = Vec::with_capacity(count);
-    for (k, (sim, walk, listener, mut orin_child, frames_listen)) in
-        launched.into_iter().enumerate()
-    {
+    for (k, (sim, walk, listener, mut orin_child, player)) in launched.into_iter().enumerate() {
         let who = format!("synthetic Orin {k}");
         let stream = accept(&listener, &mut orin_child, &who, connect_timeout).await?;
         let orin = accept_async(stream)
@@ -151,21 +150,14 @@ async fn main() -> Result<()> {
             walk,
             orin,
             orin_child,
-            player: None,
-            frames_url: format!("ws://{frames_listen}"),
+            player,
             next_id: 0,
             held: VecDeque::new(),
             owed: None,
         });
     }
 
-    // 6: each player, pointed at its Orin's frame socket — or, with
-    // --no-launch, editor Play mode connects there itself.
-    for instance in &mut instances {
-        instance.player = start_player(&args, instance.k, &instance.frames_url, size)?;
-    }
-
-    // 7–8: each Unity connects to its Orin, and the Orin says so.
+    // 7–8: each Orin connects to its player, and says so.
     for instance in &mut instances {
         wait_registered(
             &mut instance.orin,
@@ -176,7 +168,7 @@ async fn main() -> Result<()> {
         .await
         .with_context(|| format!("instance {}", instance.k))?;
         eprintln!(
-            "[{}] Unity has registered with the synthetic Orin",
+            "[{}] the synthetic Orin has connected to the player",
             instance.k
         );
     }
@@ -230,14 +222,14 @@ async fn calibrate(
     };
     let out = instance_folder(&args.out, 0)?;
     let (listener, url) = bind(orin_port, "the calibration's control socket").await?;
-    let frames_listen = SocketAddr::from((Ipv4Addr::LOCALHOST, unity_port));
-    // C3
+    // C3–C4: the player first, listening, then the Orin, which connects to it.
+    let mut player = start_player(args, 0, unity_port, size)?;
     let file = homography.display().to_string();
     let mut orin_child = launch_orin(
         0,
         command,
         &url,
-        frames_listen,
+        &frames_url(unity_port),
         &out,
         &["--calibrate", &file],
     )?;
@@ -251,13 +243,12 @@ async fn calibrate(
     let mut orin = accept_async(stream)
         .await
         .context("calibrating synthetic Orin WebSocket handshake")?;
-    // C4–C5
-    let mut player = start_player(args, 0, &format!("ws://{frames_listen}"), size)?;
+    // C5
     wait_registered(&mut orin, &mut orin_child, player.as_mut(), connect_timeout)
         .await
         .context("the calibration")?;
     eprintln!(
-        "calibration: Unity has registered, measuring {} poses",
+        "calibration: the synthetic Orin has connected to the player, measuring {} poses",
         poses.len()
     );
     let names = (args.cart_joint.as_str(), args.pole_joint.as_str());
@@ -628,7 +619,7 @@ fn screen_window_size(args: &Args) -> Result<Option<Pixels>> {
 // The pool's six pre-warm gaps for the Orin's command line, each as the
 // shortest text that reads back to the same f64.
 
-// The synthetic Orin (__documentation__/synthetic-loop-dia.md, 4 and C3): the given program and
+// The synthetic Orin (__documentation__/synthetic-loop-dia.md, 5 and C4): the given program and
 // arguments, plus the control socket's address, the frame socket's address,
 // the instance's folder and what it runs as, `role`; kill_on_drop as for the
 // player.

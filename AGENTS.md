@@ -18,7 +18,8 @@ global-shutter camera (IMX296) against the real rig. The balance policy
 trains in the **synthetic loop** (`__documentation__/synthetic-loop-dia.md`, the source of
 truth for the loop plans): the Rust orchestrator steps MuJoCo
 in-process, the synthetic Orin triggers the standalone Unity player
-(`SimulationLoop.exe`) over WebSocket and detects the markers in its
+(`SyntheticCamera.exe`, run with `-player-mode SyntheticCamera`) over
+WebSocket and detects the markers in its
 frames, passing Pivot and End through the matrix its calibration found
 (`__documentation__/synthetic-loop-dia.md`, *Calibration*), and the trainer
 receives that pool, in metres, for the policy and,

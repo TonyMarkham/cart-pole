@@ -90,7 +90,7 @@
 > - Built a training loop where every part stands in for a piece of the real robot:
 >     - Orchestrator (Rust) - the loop's driver; stands in for the physical world and times every event
 >     - MuJoCo - the physics, run in-process from the MJCF exported by Unity
->     - Unity Player (`SimulationLoop.exe`) - the camera; renders each frame of the rig at 728x544 greyscale
+>     - Unity Player (`SyntheticCamera.exe`, as `-player-mode SyntheticCamera`) - the camera; renders each frame of the rig at 728x544 greyscale
 >     - Synthetic Orin (Python + TensorRT) - finds the markers with the same YOLO model the robot runs
 >     - Synthetic Arduino (Rust) - the stepper's pulse rate, its acceleration limit and the rail's limit switches
 >     - Trainer (Python, Stable-Baselines3 SAC) - the learner

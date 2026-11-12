@@ -24,7 +24,6 @@ use futures_util::{SinkExt, StreamExt};
 use physics::Names;
 use serde::de::DeserializeOwned;
 use std::{
-    net::SocketAddr,
     path::Path,
     process::{ExitStatus, Stdio},
     time::Duration,
@@ -39,7 +38,7 @@ pub(crate) fn launch_orin(
     k: usize,
     command: &[String],
     url: &str,
-    frames_listen: SocketAddr,
+    frames_url: &str,
     out: &Path,
     role: &[&str],
 ) -> Result<Child> {
@@ -47,7 +46,7 @@ pub(crate) fn launch_orin(
         .split_first()
         .ok_or_else(|| anyhow!("--orin needs a command"))?;
     eprintln!(
-        "[{k}] launching synthetic Orin: {} --orchestrator {url} --frames-listen {frames_listen} --out {} {}",
+        "[{k}] launching synthetic Orin: {} --orchestrator {url} --frames-url {frames_url} --out {} {}",
         command.join(" "),
         out.display(),
         role.join(" ")
@@ -56,8 +55,8 @@ pub(crate) fn launch_orin(
         .args(rest)
         .arg("--orchestrator")
         .arg(url)
-        .arg("--frames-listen")
-        .arg(frames_listen.to_string())
+        .arg("--frames-url")
+        .arg(frames_url)
         .arg("--out")
         .arg(out)
         .args(role)
@@ -93,29 +92,29 @@ pub(crate) async fn wait_registered(
         loop {
             tokio::select! {
                 message = orin.next() => {
-                    let message = message.ok_or_else(|| anyhow!("synthetic Orin disconnected before Unity registered"))??;
+                    let message = message.ok_or_else(|| anyhow!("synthetic Orin disconnected before it connected to the player"))??;
                     match message {
                         Message::Text(text) => {
                             let registered = serde_json::from_str::<Registered>(text.as_str())
                                 .with_context(|| format!("synthetic Orin message {:?}", text.as_str()))?;
                             if registered.kind != "registered" {
-                                bail!("synthetic Orin sent {:?} before Unity registered", text.as_str());
+                                bail!("synthetic Orin sent {:?} before it connected to the player", text.as_str());
                             }
                             return Ok(());
                         }
-                        Message::Binary(_) => bail!("synthetic Orin sent binary data before Unity registered"),
-                        Message::Close(frame) => bail!("synthetic Orin closed the socket before Unity registered: {frame:?}"),
+                        Message::Binary(_) => bail!("synthetic Orin sent binary data before it connected to the player"),
+                        Message::Close(frame) => bail!("synthetic Orin closed the socket before it connected to the player: {frame:?}"),
                         _ => {}
                     }
                 }
-                status = orin_child.wait() => bail!("synthetic Orin exited before Unity registered: {status:?}"),
-                status = &mut player_exit => bail!("the player exited before registering with the synthetic Orin: {status:?}"),
+                status = orin_child.wait() => bail!("synthetic Orin exited before it connected to the player: {status:?}"),
+                status = &mut player_exit => bail!("the player exited before the synthetic Orin connected to it: {status:?}"),
             }
         }
     };
     tokio::time::timeout(timeout, wait).await.map_err(|_| {
         anyhow!(
-            "Unity did not register with the synthetic Orin within {} s",
+            "the synthetic Orin did not connect to the player within {} s",
             timeout.as_secs()
         )
     })?

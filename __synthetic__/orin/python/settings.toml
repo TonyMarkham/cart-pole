@@ -19,6 +19,15 @@ confidence = 0.25
 # Class order = slot order = the model's class ids (its metadata names).
 classes = ["Left", "Right", "Pivot", "End"]
 
+[frame_socket]
+# The connection to the Unity player, the Orin's camera (src/frame_socket.py). The
+# player listens and the Orin connects; a player still starting refuses, so the Orin
+# tries again every connect_retry_millis until player_start_timeout_secs have passed.
+# The dataset generator's values for the same player
+# (__synthetic__/generator/rust/generator.toml).
+connect_retry_millis = 500
+player_start_timeout_secs = 60
+
 [calibration]
 # The calibration before the training instances start (__documentation__/synthetic-loop-dia.md,
 # Calibration), read by src/calibration.py.
@@ -42,7 +51,8 @@ clip_k = 3
 residual_px = 1.0
 
 # The simulated camera, to express the lens's bend (src/lens.py): the Main Camera's
-# m_FocalLength and m_SensorSize.x in unity/.../Assets/SimulationLoop/Scenes/SimulationLoop.unity.
+# m_FocalLength and m_SensorSize.x in
+# unity/packages/simulation.cart-pole.assets/assets/PlayerController.prefab.
 lens_focal_mm = 6.0
 sensor_width_mm = 4.968
 

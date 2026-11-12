@@ -22,7 +22,6 @@ import tomllib
 from pathlib import Path
 
 from websockets.sync.client import ClientConnection
-from websockets.sync.server import ServerConnection
 
 from detector import Detector, FrameError
 from detector_config import DetectorConfig
@@ -43,7 +42,7 @@ def load_settings(path: Path) -> dict:
 
 def measure_pose(
     detector: Detector,
-    camera: ServerConnection,
+    camera: ClientConnection,
     message: dict,
     calibration: dict,
     slots: tuple[int, int],
@@ -87,7 +86,7 @@ def run(
     detector: Detector,
     config: DetectorConfig,
     ws: ClientConnection,
-    camera: ServerConnection,
+    camera: ClientConnection,
     settings_path: Path,
     frame: tuple[int, int],
     path: Path,

@@ -29,9 +29,9 @@ cwd = "../../.."
 
 # The run's two sockets, both on 127.0.0.1, passed as --orin-port and
 # --unity-port. orin_port is the control socket (__documentation__/synthetic-loop-dia.md,
-# 4–5): the orchestrator listens, the synthetic Orin connects. unity_port
-# is the frame socket (6–7): the Unity player connects to it (the
-# orchestrator listens on it until the Orin serves it). They must differ.
+# 5–6): the orchestrator listens, the synthetic Orin connects. unity_port
+# is the frame socket (4, 7): the Unity player listens on it (-state-server),
+# the synthetic Orin connects. They must differ.
 orin_port = 9_000
 unity_port = 9_001
 
@@ -120,7 +120,7 @@ calibration_stop_gap = 0.005
 # x,y (default 0,0) on the display the windows open on.
 command = [
     "target/release/orchestrator.exe",
-    "--player", "unity/projects/cart-pole/Build/SimulationLoop.exe",
+    "--player", "unity/projects/SyntheticCamera/Build/SyntheticCamera.exe",
     "--out", "target/trainer-run",
     # --orin must come last: every argument after it is the Orin's command.
     "--orin", "uv", "run", "--project", "__synthetic__/orin/python", "python", "__synthetic__/orin/python/src/synthetic_orin.py",

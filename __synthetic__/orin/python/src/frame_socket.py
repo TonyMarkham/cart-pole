@@ -1,48 +1,60 @@
-"""The frame socket: where the Unity player, the Orin's camera, connects.
+"""The frame socket: the Orin's connection to its camera, the Unity player.
 
 The Orin drives its camera - it sends the trigger and gets the frame back
-(__documentation__/synthetic-loop-dia.md, 12-13) - so it serves this socket and Unity is the
-client (6-7). It takes exactly one camera: a second connection is refused.
+(__documentation__/synthetic-loop-dia.md, 12-13) - over a WebSocket the
+player serves: the player's StateServer listens on the port the orchestrator
+launched it with (-state-server), and the Orin connects to it (7).
 
-websockets' sync server runs each connection's handler in its own thread
-and closes the connection when the handler returns, so the handler hands
-the connection to the main thread and then waits until close() - the
-connection lives as long as the run.
+The orchestrator starts the player before the Orin, but a starting player
+takes a moment to listen. So a connection the player refuses is tried again
+every connect_retry_millis, until player_start_timeout_secs have passed since
+the first try ([frame_socket] in settings.toml): the rule and the values the
+dataset generator uses to connect to the same player
+(__synthetic__/generator/rust/generator.toml).
 """
 
-import queue
-import threading
+import time
+import tomllib
+from dataclasses import dataclass
+from pathlib import Path
 
-from websockets.sync.server import ServerConnection, serve
+from websockets.sync.client import ClientConnection, connect
 
 
-class FrameSocket:
-    def __init__(self, host: str, port: int):
-        self._camera: queue.Queue[ServerConnection] = queue.Queue(maxsize=1)
-        self._closing = threading.Event()
-        # No message-size limit, as on the control socket: a 728x544 frame
-        # is ~21 KB, and a contract breach is the detector's to report
-        # (a failed frame), not the transport's to drop.
-        self._server = serve(self._handler, host, port, max_size=None)
-        self._thread = threading.Thread(target=self._server.serve_forever, daemon=True)
-        self._thread.start()
+@dataclass(frozen=True)
+class FrameSocketSettings:
+    connect_retry_millis: int  # the wait between two tries, ms
+    player_start_timeout_secs: int  # how long the player may take to listen, s
 
-    def _handler(self, connection: ServerConnection) -> None:
+    @staticmethod
+    def load(path: Path) -> "FrameSocketSettings":
+        """[frame_socket] of the Orin's settings file."""
+        with open(path, "rb") as f:
+            raw = tomllib.load(f)["frame_socket"]
+        settings = FrameSocketSettings(
+            connect_retry_millis=int(raw["connect_retry_millis"]),
+            player_start_timeout_secs=int(raw["player_start_timeout_secs"]),
+        )
+        if settings.connect_retry_millis <= 0 or settings.player_start_timeout_secs <= 0:
+            raise ValueError(f"{path}: [frame_socket]'s values must be above 0, got {settings}")
+        return settings
+
+
+def connect_to_player(url: str, settings: FrameSocketSettings) -> ClientConnection:
+    """Connects to the player's frame socket at `url` (7), trying again while the
+    player is not yet listening. A refused connection is an OSError; any other
+    failure, such as a server that is not a WebSocket, ends the tries at once."""
+    deadline = time.monotonic() + settings.player_start_timeout_secs
+    while True:
         try:
-            self._camera.put_nowait(connection)
-        except queue.Full:
-            connection.close(reason="the synthetic Orin takes one camera")
-            return
-        self._closing.wait()
-
-    def wait_for_camera(self) -> ServerConnection:
-        """Blocks until Unity has connected (7)."""
-        return self._camera.get()
-
-    def close(self) -> None:
-        """Closes the camera's connection and the listener (23)."""
-        self._closing.set()
-        for connection in list(self._server.connections):
-            connection.close()
-        self._server.shutdown()
-        self._thread.join()
+            # No message-size limit, as on the control socket: a 728x544 frame
+            # is ~21 KB, and a contract breach is the detector's to report
+            # (a failed frame), not the transport's to drop.
+            return connect(url, max_size=None)
+        except OSError as error:
+            if time.monotonic() >= deadline:
+                raise ConnectionError(
+                    f"the player at {url} did not accept a connection within "
+                    f"{settings.player_start_timeout_secs} s: {error}"
+                ) from error
+            time.sleep(settings.connect_retry_millis / 1000)
