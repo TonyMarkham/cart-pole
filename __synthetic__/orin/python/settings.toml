@@ -4,7 +4,7 @@
 
 # The trained detector (gitignored; produced by training/), float ONNX:
 # the model __synthetic__/orin/python/src/build_engine.py builds the TensorRT engine from.
-model = "../../../training/runs/cp2-640-base/weights/best.onnx"
+model = "../../../__object_detection__/train/runs/640-21k/weights/best.onnx"
 
 # The model's square input size, pixels (its metadata imgsz).
 input_size = 640

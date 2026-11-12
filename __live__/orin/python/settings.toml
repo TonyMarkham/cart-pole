@@ -52,7 +52,7 @@ server = "http://localhost:8080"
 [stream]
 # The frames the detector gets. The sensor's full frame from [camera], halved
 # exactly on each side, in greyscale: the format of the real images the model has
-# already been run on (datasets/real-640).
+# already been run on (__documentation__/calibrate-w-homography.md, The frames).
 width = 728
 height = 544
 
@@ -60,8 +60,8 @@ height = 544
 jpeg_quality = 90
 
 # The shutter, ns: 1 ms, locked. With a global shutter that keeps the swinging pole's
-# end sharp, which automatic exposure would not. It is what the real images the model
-# has been run on used (training/06-REAL_LABELING.md).
+# end sharp, which automatic exposure would not. It is the shutter the real images
+# the model has been run on were taken with.
 exposure_ns = 1_000_000
 
 # The sensor's gain, locked. A 1 ms shutter lets in little light, and this makes up
@@ -79,12 +79,14 @@ settle_frames = 30
 
 [detector]
 # The trained detector, float ONNX: the model src/build_engine.py builds the
-# TensorRT engine from. It is not in git. This copy on the Orin has the same
-# checksum as training/runs/cp2-640-base/weights/best.onnx on the PC (2026-11-01).
-model = "~/orin-test/best.onnx"
+# TensorRT engine from. It is not in git. Each copy on the Orin is named after
+# its training run and checked by checksum against that run's best.onnx on the
+# PC (__object_detection__/03-REAL_ORIN.md, Step 1). best.onnx is the copy from
+# before the first such run.
+model = "~/orin-test/640-21k.onnx"
 
 # The TensorRT engine: the model compiled for this GPU, FP16, already on the Orin.
-engine = "~/orin-test/best_fp16.engine"
+engine = "~/orin-test/640-21k_fp16.engine"
 
 # The model's square input size, pixels (its metadata imgsz).
 input_size = 640

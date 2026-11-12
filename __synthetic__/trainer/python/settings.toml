@@ -124,7 +124,7 @@ command = [
     "--out", "target/trainer-run",
     # --orin must come last: every argument after it is the Orin's command.
     "--orin", "uv", "run", "--project", "__synthetic__/orin/python", "python", "__synthetic__/orin/python/src/synthetic_orin.py",
-    "--engine", "training/runs/cp2-640-base/weights/best_fp16.engine",
+    "--engine", "__object_detection__/train/runs/640-21k/weights/best_fp16.engine",
 ]
 
 [mjcf]

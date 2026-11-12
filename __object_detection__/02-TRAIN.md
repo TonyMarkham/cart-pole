@@ -3,28 +3,49 @@
 The robot balances the pole by watching four printed markers (ArUco tags) on
 the rig through its camera. A **detector** is a small neural network that takes
 one camera frame and returns a box around each marker it sees, with the
-marker's class: idler, motor, pivot or tip. This folder trains that detector,
+marker's class: idler, motor, pivot or tip. This file trains that detector,
 a YOLO model from Ultralytics, on frames that Unity rendered and labelled
-by itself, so no one had to label them by hand.
+by itself ([01-GENERATE.md](01-GENERATE.md)), so no one had to label them by
+hand.
 
-It reads `../datasets/generated/` (Unity's output, one `run_Set-NN_<timestamp>/`
-folder per generation set) and writes trained models to `runs/`.
+It reads `datasets/generated/` (Unity's output, one `run_Set-NN_<timestamp>/`
+folder per generation set) and writes trained models to `train/runs/`.
 
-All the code here is new (2026-11-10). It replaces the repo root's
+All the code in `train/` is new (2026-11-10). It replaces the repo root's
 `training/` folder and borrows nothing from it. That folder was removed on
 2026-11-11; the `training/` files cited below are in git at commit
 `ecced2cc`.
 
-## What is in this folder
+> ## WEIGHTS — the run's name
+>
+> Every command below names the training run with one shell variable,
+> `WEIGHTS`. Set it in each new PowerShell window before running any step:
+>
+>> ### PowerShell
+>> ```pwsh
+>> $WEIGHTS = "640-21k"
+>> ```
+>
+> Step 3 names the run's folder after it (`train/runs/$WEIGHTS/`), so a new run
+> needs a new name. [03-REAL_ORIN.md](03-REAL_ORIN.md) and
+> [04-SYNTHETIC_ORIN.md](04-SYNTHETIC_ORIN.md), which take the run's model to
+> the two Orins, set the same variable to the same name.
+
+## What is in `__object_detection__/`
 
 ```text
 __object_detection__/
+├── 01-GENERATE.md        making a batch of frames
+├── 02-TRAIN.md           this file: training the detector on them
+├── 03-REAL_ORIN.md       giving the real Orin the trained detector
+├── 04-SYNTHETIC_ORIN.md  giving the synthetic Orin the trained detector
 ├── datasets/generated/   the frames and labels Unity generated (not in git)
-└── train/                this folder
+└── train/                the uv project every command in this file runs from
     ├── pyproject.toml    the Python packages this project needs
     ├── uv.lock           the exact versions uv installed, so a rebuild matches
     ├── .venv/            the installed packages (not in git, made by uv sync)
-    └── README.md         this file
+    ├── yolo11n.pt        the starting model (Step 3; downloaded the first time)
+    └── runs/             the trained models, one folder per run (Step 3)
 ```
 
 **uv** is the tool that installs Python and the packages a project needs. It
@@ -33,7 +54,7 @@ the computer. A **uv project** is a folder that has a `pyproject.toml`.
 
 > ## Step 1 — set up the Python environment (done 2026-11-10)
 >
-> Run this once from this folder. Run it again whenever `pyproject.toml` changes:
+> Run this once from `train/`. Run it again whenever `pyproject.toml` changes:
 > 
 > > [!IMPORTANT]
 > > Run from `__object_detection__/train/`
@@ -97,8 +118,8 @@ the computer. A **uv project** is a folder that has a `pyproject.toml`.
 >> uv run python -c "import torch; print(torch.cuda.is_available(), torch.cuda.get_device_name(0))"
 >> ```
 >
-> `uv run` runs the command inside this folder's `.venv/`. Run it from this
-> folder: from anywhere else uv cannot find this project. On 2026-11-10 it
+> `uv run` runs the command inside `train/`'s `.venv/`. Run it from `train/`:
+> from anywhere else uv cannot find this project. On 2026-11-10 it
 > printed:
 >
 >> ### Expected Results:
@@ -116,12 +137,13 @@ the computer. A **uv project** is a folder that has a `pyproject.toml`.
 > pass checks it against frames it never learns from. Ultralytics does all of
 > it: the command below is the whole training program, with our settings.
 >
-> What it trains from is `../datasets/generated/data.yaml`. Unity writes that
-> file at the end of every generation, listing only the runs it just made: the
-> last generation set's run is **val** (the frames the model is scored on and
-> never learns from), every earlier one is **train**. For the corpus of
-> 2026-11-10 that is Set-01…15 for train (15,000 frames) and Set-16 for val
-> (1,000 frames).
+> What it trains from is `datasets/generated/data.yaml`. The dataset generator
+> writes that file at the end of every batch ([01-GENERATE.md](01-GENERATE.md),
+> Step 4), listing only the runs it just made: the runs of the sets that `val`
+> in `__synthetic__/generator/rust/generator.toml` names are **val** (the
+> frames the model is scored on and never learns from), every other run is
+> **train**. For the batch of 2026-11-12 that is Set-01…20 for train (20,000
+> frames) and Set-21 for val (1,000 frames).
 >
 > > [!IMPORTANT]
 > > Run from `__object_detection__/train/`
@@ -136,20 +158,21 @@ the computer. A **uv project** is a folder that has a `pyproject.toml`.
 >>     patience=50 `
 >>     device=0 `
 >>     project=D:/git/cart-pole/__object_detection__/train/runs `
->>     name=640-21k
+>>     name=$WEIGHTS
 >> ```
 >
 >> ### What each setting means
 >>
 >> The values are the ones the old `training/` project trained the robot's
->> current model with (`training/04-COMMANDS.md`, the `cp2-640-base` run).
+>> earlier model with (`training/04-COMMANDS.md`, the `cp2-640-base` run),
+>> except `epochs`, which was 500 there.
 >>
 >> - **`yolo detect train`**: `yolo` is Ultralytics' command, installed into
 >>   `.venv/` by Step 1. `detect` is the task (boxes around objects), `train`
 >>   the job.
 >> - **`model=yolo11n.pt`**: the starting model, YOLO11 nano, the smallest
 >>   YOLO11. It already knows how to find everyday objects, so training only
->>   has to teach it the four markers. If the file is not in this folder,
+>>   has to teach it the four markers. If the file is not in `train/`,
 >>   Ultralytics downloads it (about 5 MB, from its GitHub releases) the first
 >>   time.
 >> - **`data=…/data.yaml`**: the list of train and val runs, and the four class
@@ -161,24 +184,26 @@ the computer. A **uv project** is a folder that has a `pyproject.toml`.
 >> - **`batch=-1`**: how many frames the model sees before each adjustment.
 >>   `-1` lets Ultralytics measure the graphics card and pick the largest batch
 >>   that fits in about 60% of its memory.
->> - **`epochs=500`**: an **epoch** is one pass over all 15,000 training
->>   frames. 500 is the most the run will do.
+>> - **`epochs=1000`**: an **epoch** is one pass over all the training
+>>   frames, 20,000 in the batch of 2026-11-12. 1000 is the most the run will
+>>   do; `patience` can end it sooner, as it ended the `640-21k` run after
+>>   171 epochs (its `results.csv`, one row per epoch).
 >> - **`patience=50`**: stop early if the val score has not improved for 50
 >>   epochs in a row, since more passes are then only wasting time.
 >> - **`device=0`**: train on the first graphics card, the RTX 3090.
->> - **`project=…/runs` `name=640-base`**: the results go in
->>   `runs/640-base/`. If that folder already exists, Ultralytics makes
->>   `runs/640-base2/` instead of overwriting it.
+>> - **`project=…/runs` `name=$WEIGHTS`**: the results go in
+>>   `train/runs/$WEIGHTS/`. If that folder already exists, Ultralytics makes
+>>   `train/runs/${WEIGHTS}2/` instead of overwriting it.
 >
 >> ### Expected Results:
 >> While it runs, it prints one block per epoch: the losses (how wrong the
 >> boxes and classes still are on the training frames, falling as it learns),
 >> then the val scores per class. When it ends, the results are in
->> `D:/git/cart-pole/__object_detection__/train/runs/640-base/`, the `project=`
+>> `D:/git/cart-pole/__object_detection__/train/runs/$WEIGHTS/`, the `project=`
 >> folder plus the `name=`:
 >>
 >> ```text
->> D:/git/cart-pole/__object_detection__/train/runs/640-base/
+>> D:/git/cart-pole/__object_detection__/train/runs/$WEIGHTS/
 >> ├── weights/
 >> │   ├── best.pt    the model from the epoch with the best val score: the one to use
 >> │   └── last.pt    the model from the last epoch, to resume a stopped run
@@ -202,7 +227,7 @@ the computer. A **uv project** is a folder that has a `pyproject.toml`.
 >> ### PowerShell
 >> ```pwsh
 >> uv run yolo export `
->>     model=D:/git/cart-pole/__object_detection__/train/runs/640-base/weights/best.pt `
+>>     model=D:/git/cart-pole/__object_detection__/train/runs/$WEIGHTS/weights/best.pt `
 >>     format=onnx `
 >>     imgsz=640
 >> ```
@@ -210,8 +235,8 @@ the computer. A **uv project** is a folder that has a `pyproject.toml`.
 >> ### What each setting means
 >>
 >> The command is the one the old `training/` project exported the robot's
->> current model with (`training/05-POST_TRAINING.md`), pointed at this
->> folder's run.
+>> earlier model with (`training/05-POST_TRAINING.md`), pointed at a run in
+>> `train/runs/`.
 >>
 >> - **`yolo export`**: Ultralytics' command for writing a trained model out
 >>   in another format.
@@ -226,15 +251,16 @@ the computer. A **uv project** is a folder that has a `pyproject.toml`.
 >> `best.onnx` is written next to `best.pt`:
 >>
 >> ```text
->> D:/git/cart-pole/__object_detection__/train/runs/640-base/weights/
+>> D:/git/cart-pole/__object_detection__/train/runs/$WEIGHTS/weights/
 >> ├── best.pt      the model from Step 3
 >> └── best.onnx    the same model as ONNX, about 10 MB
 >> ```
 >>
->> About 10 MB because the old model's export, the same network at the same
->> size, is 10,665,224 bytes
->> (`training/runs/cp2-640-base/weights/best.onnx`).
+>> About 10 MB because the export of 2026-11-12,
+>> `train/runs/640-21k/weights/best.onnx`, the same network at the same size,
+>> is 10,665,246 bytes.
 >>
 >> Pointing the two `settings.toml` files at the new `best.onnx`, copying it to
->> the Orin, and building the TensorRT engines happen in those folders, not
->> here.
+>> the Orin, and building the TensorRT engines are in
+>> [03-REAL_ORIN.md](03-REAL_ORIN.md) and
+>> [04-SYNTHETIC_ORIN.md](04-SYNTHETIC_ORIN.md).

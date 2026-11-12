@@ -10,8 +10,8 @@ use std::{
 };
 
 /// The file training is pointed at, in the output folder beside the runs
-/// (`data=../datasets/generated/data.yaml`, __object_detection__/train's
-/// README).
+/// (`data=…/datasets/generated/data.yaml`, __object_detection__/02-TRAIN.md,
+/// Step 3).
 pub(crate) const DATA_YAML_FILE: &str = "data.yaml";
 
 /// Every frame is greyscale, one channel (GreyscaleEncoder in

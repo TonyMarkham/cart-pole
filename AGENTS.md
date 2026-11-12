@@ -437,9 +437,12 @@ adds repo structure around them, never overrides them.
   from the removed `training/`. Its layout mirrors the old root
   `datasets/` + `training/` pair: `datasets/generated/` (the Unity runs,
   moved here) and `train/` —
-  the `uv` project, its `README.md` (every step, with its command and where
-  its results go), and `runs/` (gitignored except each run's
-  `weights/best.pt` and `weights/best.onnx`, root `.gitignore`). **`data.yaml` comes from the dataset generator**
+  the `uv` project and `runs/` (gitignored except each run's
+  `weights/best.pt` and `weights/best.onnx`, root `.gitignore`). Every step,
+  with its command and where its results go, is in four numbered docs at
+  `__object_detection__/`'s root (2026-11-12): `01-GENERATE.md` (a batch of
+  frames), `02-TRAIN.md` (training and the ONNX export), `03-REAL_ORIN.md`
+  and `04-SYNTHETIC_ORIN.md` (giving each Orin the new model). **`data.yaml` comes from the dataset generator**
   (`__synthetic__/generator/rust/crates/generator`, the Rust orchestrator
   that runs the Unity players), as part of the generated data, not from a
   training script.
