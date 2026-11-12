@@ -1,0 +1,32 @@
+# A smoke run of the dataset generator (--config generator-smoke.toml): the
+# same master as generator.toml, but a pool of two tiny sets, so a first
+# end-to-end run (orchestrator -> players -> run folders -> data.yaml) takes
+# seconds instead of hours. Relative paths resolve against this file's folder.
+
+# The master set every smoke set is laid over; the same one the real pool uses.
+master = "../master.json"
+
+# The smoke pool: two sets of 10 frames each. Fixed-pose frames count toward
+# states, so with fixedPoseFrames 1 the first frame takes master.json's first
+# fixed pose (Idler) and the other 9 are random states.
+sets_dir = "../sets-smoke"
+
+# Smoke-02 is val, Smoke-01 train: data.yaml needs at least one of each.
+val = ["Smoke-02.json"]
+
+# Where the smoke dataset lands: inside the repo's target/ folder (the root
+# .gitignore ignores it), never the training corpus in
+# __object_detection__/datasets/generated/, whose data.yaml it would replace.
+output_dir = "../../../target/generator-smoke"
+
+# The players, as in generator.toml: the same 3 x 4 grid on the same screen,
+# of which only the first 2 cells start, one player per smoke set.
+player = "../../../unity/projects/SyntheticCamera/Build/SyntheticCamera.exe"
+instance_rows = 3
+instance_columns = 4
+screen_width = 3_840
+screen_height = 2_112
+first_port = 9101
+player_start_timeout_secs = 60
+connect_retry_millis = 500
+log_dir = "../../../target/generator-smoke/logs"

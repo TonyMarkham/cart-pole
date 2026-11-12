@@ -1,0 +1,58 @@
+# The dataset generator's settings, read at run time (--config). Relative paths
+# resolve against this file's folder.
+
+# The master set: a complete generation set (every field written) that each
+# set in the pool starts from. Outside sets_dir, so it is never a set itself.
+master = "../master.json"
+
+# The pool: one *.json file per set (protobuf's JSON form of
+# __synthetic__/generator/proto/generation_set.proto), each holding only the
+# fields that differ from the master.
+sets_dir = "../sets"
+
+# The val sets, by file name in sets_dir: their runs are listed under val: in
+# data.yaml (frames training scores against and never learns from); every
+# other set's run is train. One or more, e.g. ["Set-21.json", "Set-22.json"].
+val = ["Set-21.json"]
+
+# Where the dataset lands: each player writes its run_<set>_<timestamp>/ folder
+# here and the generator writes data.yaml here. This is the detector training's
+# corpus folder (__object_detection__/datasets/generated/, whose own .gitignore
+# keeps every run out of git).
+output_dir = "../../../__object_detection__/datasets/generated"
+#output_dir = "D:/temp/datasets/generated"
+
+# The Unity player build: the SyntheticCamera project's scene holds both modes,
+# and the generator launches it with -player-mode SyntheticGenerator.
+player = "../../../unity/projects/SyntheticCamera/Build/SyntheticCamera.exe"
+
+# The players, as a grid of windows: the policy trainer's layout and its key
+# names (__synthetic__/trainer/python/settings.toml; __documentation__/
+# synthetic-loop-dia.md, Training instances, The windows).
+# instance_rows x instance_columns players run at once, each taking the next
+# set from the pool when it finishes one (no more start than the pool has
+# sets). Their borderless windows fill screen_width x screen_height pixels
+# from the screen's top-left corner, left to right then down; each window is
+# screen_width / instance_columns wide and screen_height / instance_rows tall.
+# Example: 3 rows of 4 on 3840 x 2112 is 12 players in 960 x 704 windows; the
+# 2 rows of 3 set here are 6 players in 1280 x 1056 windows.
+# The capture renders off screen at the set's camera size, so the window size
+# changes nothing in the data.
+instance_rows = 2
+instance_columns = 3
+screen_width = 3_840
+screen_height = 2_112
+
+# Player k (from 0) listens on 127.0.0.1:first_port + k (-state-server).
+first_port = 9101
+
+# How long a player may take, in seconds, from launch to accepting the
+# connection (loading the scene, placing the markers) before the run stops.
+player_start_timeout_secs = 60
+
+# While a player starts, the generator retries connecting this often (ms).
+connect_retry_millis = 500
+
+# Each player's Unity log, player_<k>.log, goes in this folder (the repo's
+# target/ folder, which git ignores).
+log_dir = "../../../target/generator-logs"

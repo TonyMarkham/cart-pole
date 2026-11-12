@@ -1,18 +1,26 @@
 using System;
 using System.Collections.Generic;
-using Greyhound.Step;
+using Greyhound.MuJoCo;
+using Greyhound.Utilities;
 using UnityEngine;
+
+// UnityEngine also has a `Joint` (the physics component), and the MuJoCo
+// asset and its payload are both named Joint: the alias names the asset.
+using JointAsset = Greyhound.MuJoCo.ScriptableObjects.Joint;
 
 namespace CartPole.Vision
 {
     // Applies gym joint states (qpos) to the imported STEP assembly.
     //
-    // Each entry maps a gym-facing joint name to a StepJoint asset. The part
-    // node is resolved through the joint's sibling-index path (same mechanism
-    // the MJCF exporter uses), then driven in MJCF semantics:
+    // Each entry maps a gym-facing joint name to a MuJoCo Joint asset
+    // (com.greyhound.mujoco). The part node is resolved through the joint's
+    // sibling-index path (`body`, the same path the MJCF exporter writes),
+    // then driven in MJCF semantics:
     //   slide -> translate the part along its local axis by qpos (meters)
     //   hinge -> rotate the part about the local axis through the joint
     //            pivot by qpos (radians)
+    // Free and ball joints take more than one qpos value, so a single
+    // float cannot drive them; they are skipped.
     // Base poses are captured once from the assembled (qpos = 0) state, and
     // all math runs in world space so importer scale never leaks in.
     public sealed class JointDriver : MonoBehaviour
@@ -21,7 +29,7 @@ namespace CartPole.Vision
         public sealed class Entry
         {
             public string jointName;   // gym-facing name, matches MJCF <joint name>
-            public StepJoint joint;    // authoring asset (Greyhound.Step)
+            public JointAsset joint;   // authoring asset (Greyhound.MuJoCo)
             public Transform part;     // resolved node; auto-filled from the sibling path
         }
 
@@ -59,7 +67,7 @@ namespace CartPole.Vision
                     continue;
                 }
                 entry.part = node;
-                var axis = entry.joint.mj.axis;
+                var axis = entry.joint.joint.axis;
                 if (axis.sqrMagnitude < 1e-8f)
                 {
                     axis = Vector3.right;
@@ -70,14 +78,17 @@ namespace CartPole.Vision
                     position = node.position,
                     rotation = node.rotation,
                     axis = node.TransformDirection(axis.normalized),
-                    pivot = node.TransformPoint(entry.joint.mj.pos),
+                    pivot = node.TransformPoint(entry.joint.joint.pos),
                 };
                 poses.Add(pose);
                 byName[entry.jointName] = entry;
             }
         }
 
-        private Transform ResolvePart(StepJoint joint)
+        // Walks `body.indices` down from assemblyRoot. [SiblingPath.SELF]
+        // ([-1]) is assemblyRoot itself; [2, 0] is
+        // assemblyRoot.GetChild(2).GetChild(0); an empty path names no part.
+        private Transform ResolvePart(JointAsset joint)
         {
             if (assemblyRoot == null || joint.body == null ||
                 joint.body.indices == null || joint.body.indices.Length == 0)
@@ -87,6 +98,10 @@ namespace CartPole.Vision
             var t = assemblyRoot;
             foreach (var index in joint.body.indices)
             {
+                if (index == SiblingPath.SELF)
+                {
+                    continue;
+                }
                 if (t == null || index < 0 || index >= t.childCount)
                 {
                     return null;
@@ -114,13 +129,12 @@ namespace CartPole.Vision
                 {
                     continue;
                 }
-                switch (entry.joint.mj.type)
+                switch (entry.joint.joint.type)
                 {
-                    case StepJointType.Slide:
+                    case JointType.Slide:
                         entry.part.position = pose.position + pose.axis * pair.Value;
                         break;
-                    case StepJointType.Hinge:
-                    default:
+                    case JointType.Hinge:
                         var q = Quaternion.AngleAxis(pair.Value * Mathf.Rad2Deg, pose.axis);
                         entry.part.rotation = q * pose.rotation;
                         entry.part.position = pose.pivot + q * (pose.position - pose.pivot);
@@ -131,12 +145,15 @@ namespace CartPole.Vision
 
         // Ranges for random sampling: limited joints use their authored
         // limits; unlimited joints fall back to the provided span.
+        // "Limited" is limited = True, the same rule the MJCF exporter uses
+        // to decide whether it writes `range` at all (Auto writes no range,
+        // so MuJoCo treats the joint as unlimited).
         public void GetRange(Entry entry, float fallbackSpan, out float lo, out float hi)
         {
-            if (entry.joint != null && entry.joint.mj.limited)
+            if (entry.joint != null && entry.joint.joint.limited == FalseTrueAuto.True)
             {
-                lo = entry.joint.mj.rangeLo;
-                hi = entry.joint.mj.rangeHi;
+                lo = entry.joint.joint.rangeLo;
+                hi = entry.joint.joint.rangeHi;
                 return;
             }
             lo = -fallbackSpan;

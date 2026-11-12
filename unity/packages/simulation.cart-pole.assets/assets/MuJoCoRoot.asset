@@ -1,0 +1,644 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &-6953846311946350903
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f7a2995ade2807b4da04c24aa50880a1, type: 3}
+  m_Name: 15-Cart.Target.Site
+  m_EditorClassIdentifier: com.greyhound.mujoco.runtime::Greyhound.MuJoCo.ScriptableObjects.Site
+  body:
+    root: {fileID: -3307206622709248564, guid: a9e853b1aea28fe4bb2a3e0eb39e7795, type: 3}
+    indices: ffffffffi
+    targetName: asy-cart-pole
+  site:
+    name: 15-Cart.Target.Site
+    class: 
+    type: 0
+    group: 0
+    material: 
+    mesh: 
+    rgba: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+    size: {x: 0.005, y: 0.005, z: 0.005}
+    useFromto: 0
+    fromtoFrom: {x: 0, y: 0, z: 0}
+    fromtoTo: {x: 0, y: 0, z: 0}
+    pos: {x: -0.01, y: 0.05, z: 0}
+    quat: {x: 0, y: 0, z: 0, w: 1}
+    user: []
+--- !u!114 &-6687970696840532967
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f7a2995ade2807b4da04c24aa50880a1, type: 3}
+  m_Name: 06-Right.Site
+  m_EditorClassIdentifier: com.greyhound.mujoco.runtime::Greyhound.MuJoCo.ScriptableObjects.Site
+  body:
+    root: {fileID: -3307206622709248564, guid: a9e853b1aea28fe4bb2a3e0eb39e7795, type: 3}
+    indices: 000000001d000000i
+    targetName: marker-motor
+  site:
+    name: 06-Right.Site
+    class: 
+    type: 0
+    group: 0
+    material: 
+    mesh: 
+    rgba: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+    size: {x: 0.005, y: 0.005, z: 0.005}
+    useFromto: 0
+    fromtoFrom: {x: 0, y: 0, z: 0}
+    fromtoTo: {x: 0, y: 0, z: 0}
+    pos: {x: 0, y: 0, z: 0}
+    quat: {x: 0, y: 0, z: 0, w: 1}
+    user: []
+--- !u!114 &-5589447480270692180
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f7a2995ade2807b4da04c24aa50880a1, type: 3}
+  m_Name: 05-Left.Site
+  m_EditorClassIdentifier: com.greyhound.mujoco.runtime::Greyhound.MuJoCo.ScriptableObjects.Site
+  body:
+    root: {fileID: -3307206622709248564, guid: a9e853b1aea28fe4bb2a3e0eb39e7795, type: 3}
+    indices: 0300000025000000i
+    targetName: marker-idler
+  site:
+    name: 05-Left.Site
+    class: 
+    type: 0
+    group: 0
+    material: 
+    mesh: 
+    rgba: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+    size: {x: 0.005, y: 0.005, z: 0.005}
+    useFromto: 0
+    fromtoFrom: {x: 0, y: 0, z: 0}
+    fromtoTo: {x: 0, y: 0, z: 0}
+    pos: {x: 0, y: 0, z: 0}
+    quat: {x: 0, y: 0, z: 0, w: 1}
+    user: []
+--- !u!114 &-4343962865673530790
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c2027c3ee3ff9fc44aff9745aefef825, type: 3}
+  m_Name: 04-Pole.Hinge.joint
+  m_EditorClassIdentifier: com.greyhound.mujoco.runtime::Greyhound.MuJoCo.ScriptableObjects.Joint
+  body:
+    root: {fileID: -3307206622709248564, guid: a9e853b1aea28fe4bb2a3e0eb39e7795, type: 3}
+    indices: 0400000035000000i
+    targetName: asy-pole
+  joint:
+    name: 04-Pole.Hinge.joint
+    class: 
+    type: 1
+    group: 0
+    pos: {x: 0, y: 0, z: 0}
+    axis: {x: 0, y: 0, z: -1}
+    springdamper: {x: 0, y: 0}
+    limited: 2
+    actuatorfrclimited: 2
+    solreflimit:
+    - 0.02
+    - 1
+    solimplimit:
+    - 0.9
+    - 0.95
+    - 0.001
+    - 0.5
+    - 2
+    solreffriction:
+    - 0.02
+    - 1
+    solimpfriction:
+    - 0.9
+    - 0.95
+    - 0.001
+    - 0.5
+    - 2
+    stiffness:
+    - 0
+    rangeLo: 0
+    rangeHi: 0
+    actuatorfrcrangeLo: 0
+    actuatorfrcrangeHi: 0
+    actuatorgravcomp: 0
+    margin: 0
+    ref: 0
+    springref: 0
+    armature: 0
+    damping:
+    - 0
+    frictionloss: 0.00018
+    user: []
+--- !u!114 &-3831362450512606182
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f7a2995ade2807b4da04c24aa50880a1, type: 3}
+  m_Name: 16-Cart.Site
+  m_EditorClassIdentifier: com.greyhound.mujoco.runtime::Greyhound.MuJoCo.ScriptableObjects.Site
+  body:
+    root: {fileID: -3307206622709248564, guid: a9e853b1aea28fe4bb2a3e0eb39e7795, type: 3}
+    indices: 04000000i
+    targetName: asy-cart
+  site:
+    name: 16-Cart.Site
+    class: 
+    type: 0
+    group: 0
+    material: 
+    mesh: 
+    rgba: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+    size: {x: 0.005, y: 0.005, z: 0.005}
+    useFromto: 0
+    fromtoFrom: {x: 0, y: 0, z: 0}
+    fromtoTo: {x: 0, y: 0, z: 0}
+    pos: {x: 0, y: 0, z: 0}
+    quat: {x: 0, y: 0, z: 0, w: 1}
+    user: []
+--- !u!114 &-2664917682557269024
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f7a2995ade2807b4da04c24aa50880a1, type: 3}
+  m_Name: 14-Dynamic.End.Target.Site
+  m_EditorClassIdentifier: com.greyhound.mujoco.runtime::Greyhound.MuJoCo.ScriptableObjects.Site
+  body:
+    root: {fileID: -3307206622709248564, guid: a9e853b1aea28fe4bb2a3e0eb39e7795, type: 3}
+    indices: 04000000i
+    targetName: asy-cart
+  site:
+    name: 14-Dynamic.End.Target.Site
+    class: 
+    type: 0
+    group: 0
+    material: 
+    mesh: 
+    rgba: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+    size: {x: 0.005, y: 0.005, z: 0.005}
+    useFromto: 0
+    fromtoFrom: {x: 0, y: 0, z: 0}
+    fromtoTo: {x: 0, y: 0, z: 0}
+    pos: {x: 0, y: 0.482, z: -0.132}
+    quat: {x: 0, y: 0, z: 0, w: 1}
+    user: []
+--- !u!114 &-770849578500289707
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c2027c3ee3ff9fc44aff9745aefef825, type: 3}
+  m_Name: 02-Cart.Slider.joint
+  m_EditorClassIdentifier: com.greyhound.mujoco.runtime::Greyhound.MuJoCo.ScriptableObjects.Joint
+  body:
+    root: {fileID: -3307206622709248564, guid: a9e853b1aea28fe4bb2a3e0eb39e7795, type: 3}
+    indices: 04000000i
+    targetName: asy-cart
+  joint:
+    name: 02-Cart.Slider.joint
+    class: 
+    type: 0
+    group: 0
+    pos: {x: 0, y: 0, z: 0}
+    axis: {x: 1, y: 0, z: 0}
+    springdamper: {x: 0, y: 0}
+    limited: 1
+    actuatorfrclimited: 2
+    solreflimit:
+    - 0.02
+    - 1
+    solimplimit:
+    - 0.9
+    - 0.95
+    - 0.001
+    - 0.5
+    - 2
+    solreffriction:
+    - 0.02
+    - 1
+    solimpfriction:
+    - 0.9
+    - 0.95
+    - 0.001
+    - 0.5
+    - 2
+    stiffness:
+    - 0
+    rangeLo: -0.45
+    rangeHi: 0.45
+    actuatorfrcrangeLo: 0
+    actuatorfrcrangeHi: 0
+    actuatorgravcomp: 0
+    margin: 0
+    ref: 0
+    springref: 0
+    armature: 0
+    damping:
+    - 0
+    frictionloss: 0.05
+    user: []
+--- !u!114 &-621060477368882853
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f7a2995ade2807b4da04c24aa50880a1, type: 3}
+  m_Name: 13-Right-Cart.Site
+  m_EditorClassIdentifier: com.greyhound.mujoco.runtime::Greyhound.MuJoCo.ScriptableObjects.Site
+  body:
+    root: {fileID: -3307206622709248564, guid: a9e853b1aea28fe4bb2a3e0eb39e7795, type: 3}
+    indices: 040000000000000001000000i
+    targetName: Pillow Block
+  site:
+    name: 13-Right-Cart.Site
+    class: 
+    type: 0
+    group: 0
+    material: 
+    mesh: 
+    rgba: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+    size: {x: 0.005, y: 0.005, z: 0.005}
+    useFromto: 0
+    fromtoFrom: {x: 0, y: 0, z: 0}
+    fromtoTo: {x: 0, y: 0, z: 0}
+    pos: {x: 0, y: 0, z: -0.035}
+    quat: {x: 0, y: 0, z: 0, w: 1}
+    user: []
+--- !u!114 &-94605094531284301
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9bcf0addb73b83943899fc75e37ffc91, type: 3}
+  m_Name: 03-Cart.Slider.Actuator
+  m_EditorClassIdentifier: com.greyhound.mujoco.runtime::Greyhound.MuJoCo.ScriptableObjects.Actuator
+  target: {fileID: -770849578500289707}
+  jointinparent: {fileID: 0}
+  site: {fileID: 0}
+  refsite: {fileID: 0}
+  slidersite: {fileID: 0}
+  cranksite: {fileID: 0}
+  actuator:
+    name: 03-Cart.Slider.Actuator
+    type: 1
+    class: 
+    group: 0
+    nsample: 0
+    interp: 0
+    delay: 0
+    ctrlLo: -0.669
+    ctrlHi: 0.669
+    user: []
+    ctrllimited: 1
+    forcelimited: 1
+    inheritrange: 0
+    forceLo: -106
+    forceHi: 106
+    lengthrangeLo: 0
+    lengthrangeHi: 0
+    gear:
+    - 1
+    - 0
+    - 0
+    - 0
+    - 0
+    - 0
+    damping:
+    - 0
+    armature: 0.227
+    cranklength: 0
+    kp: 1
+    kv: 100
+    dampratio: 0
+    timeconst: 0
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b5e068f8282a50042a2148c8c278c81d, type: 3}
+  m_Name: MuJoCoRoot
+  m_EditorClassIdentifier: com.greyhound.mujoco.runtime::Greyhound.MuJoCo.ScriptableObjects.Root
+  root: {fileID: -3307206622709248564, guid: a9e853b1aea28fe4bb2a3e0eb39e7795, type: 3}
+  rootMobility: 1
+  timestepSeconds: 0.002
+  impratio: 1
+  tolerance: 0.00000001
+  ls_tolerance: 0.01
+  noslip_tolerance: 0.000001
+  ccd_tolerance: 0.000001
+  sleep_tolerance: 0.001
+  gravity: {x: 0, y: -9.81, z: 0}
+  wind: {x: 0, y: 0, z: 0}
+  magnetic: {x: 0, y: 0, z: -0.5}
+  density: 0
+  viscosity: 0
+  o_margin: 0
+  o_solref:
+  - 0.02
+  - 1
+  o_solimp:
+  - 0.9
+  - 0.95
+  - 0.001
+  - 0.5
+  - 2
+  o_friction:
+  - 1
+  - 1
+  - 0.005
+  - 0.0001
+  - 0.0001
+  integrator: 3
+  cone: 0
+  jacobian: 2
+  solver: 2
+  iterations: 100
+  ls_iterations: 50
+  noslip_iterations: 0
+  ccd_iterations: 35
+  sdf_iterations: 10
+  sdf_initpoints: 40
+  actuatorgroupdisable: 
+  flag:
+    constraint: 1
+    equality: 1
+    frictionloss: 1
+    limit: 1
+    contact: 1
+    spring: 1
+    damper: 1
+    gravity: 1
+    clampctrl: 1
+    warmstart: 1
+    filterparent: 1
+    actuation: 1
+    refsafe: 1
+    sensor: 1
+    midphase: 1
+    eulerdamp: 1
+    autoreset: 1
+    nativeccd: 1
+    island: 1
+    multiccd: 1
+    override: 0
+    energy: 0
+    fwdinv: 0
+    invdiscrete: 0
+    sleep: 0
+    diagexact: 0
+    ipc: 0
+  joints:
+  - {fileID: -770849578500289707}
+  - {fileID: -4343962865673530790}
+  actuators:
+  - {fileID: -94605094531284301}
+  sites:
+  - {fileID: -5589447480270692180}
+  - {fileID: -6687970696840532967}
+  - {fileID: 8252352052225439125}
+  - {fileID: 1013645115051974853}
+  - {fileID: 4409539124855113913}
+  - {fileID: 955909233262886708}
+  - {fileID: 446318212119082378}
+  - {fileID: 8464352553247655839}
+  - {fileID: -621060477368882853}
+  - {fileID: -2664917682557269024}
+  - {fileID: -6953846311946350903}
+  - {fileID: -3831362450512606182}
+  geoms: []
+  sensors: []
+--- !u!114 &446318212119082378
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f7a2995ade2807b4da04c24aa50880a1, type: 3}
+  m_Name: 11-Left-Cart.Site
+  m_EditorClassIdentifier: com.greyhound.mujoco.runtime::Greyhound.MuJoCo.ScriptableObjects.Site
+  body:
+    root: {fileID: -3307206622709248564, guid: a9e853b1aea28fe4bb2a3e0eb39e7795, type: 3}
+    indices: 040000000000000001000000i
+    targetName: Pillow Block
+  site:
+    name: 11-Left-Cart.Site
+    class: 
+    type: 0
+    group: 0
+    material: 
+    mesh: 
+    rgba: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+    size: {x: 0.005, y: 0.005, z: 0.005}
+    useFromto: 0
+    fromtoFrom: {x: 0, y: 0, z: 0}
+    fromtoTo: {x: 0, y: 0, z: 0}
+    pos: {x: 0, y: 0, z: 0.035}
+    quat: {x: 0, y: 0, z: 0, w: 1}
+    user: []
+--- !u!114 &955909233262886708
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f7a2995ade2807b4da04c24aa50880a1, type: 3}
+  m_Name: 10-Left-Rail.Site
+  m_EditorClassIdentifier: com.greyhound.mujoco.runtime::Greyhound.MuJoCo.ScriptableObjects.Site
+  body:
+    root: {fileID: -3307206622709248564, guid: a9e853b1aea28fe4bb2a3e0eb39e7795, type: 3}
+    indices: 0300000002000000i
+    targetName: rod-clamp-16mm003
+  site:
+    name: 10-Left-Rail.Site
+    class: 
+    type: 0
+    group: 0
+    material: 
+    mesh: 
+    rgba: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+    size: {x: 0.005, y: 0.005, z: 0.005}
+    useFromto: 0
+    fromtoFrom: {x: 0, y: 0, z: 0}
+    fromtoTo: {x: 0, y: 0, z: 0}
+    pos: {x: 0.01, y: 0, z: 0}
+    quat: {x: 0, y: 0, z: 0, w: 1}
+    user: []
+--- !u!114 &1013645115051974853
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f7a2995ade2807b4da04c24aa50880a1, type: 3}
+  m_Name: 08-Pole.End.Site
+  m_EditorClassIdentifier: com.greyhound.mujoco.runtime::Greyhound.MuJoCo.ScriptableObjects.Site
+  body:
+    root: {fileID: -3307206622709248564, guid: a9e853b1aea28fe4bb2a3e0eb39e7795, type: 3}
+    indices: 04000000350000000d000000i
+    targetName: marker-tip
+  site:
+    name: 08-Pole.End.Site
+    class: 
+    type: 0
+    group: 0
+    material: 
+    mesh: 
+    rgba: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+    size: {x: 0.005, y: 0.005, z: 0.005}
+    useFromto: 0
+    fromtoFrom: {x: 0, y: 0, z: 0}
+    fromtoTo: {x: 0, y: 0, z: 0}
+    pos: {x: 0, y: 0, z: 0}
+    quat: {x: 0, y: 0, z: 0, w: 1}
+    user: []
+--- !u!114 &4409539124855113913
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f7a2995ade2807b4da04c24aa50880a1, type: 3}
+  m_Name: 09-Pole.End.Target.Site
+  m_EditorClassIdentifier: com.greyhound.mujoco.runtime::Greyhound.MuJoCo.ScriptableObjects.Site
+  body:
+    root: {fileID: -3307206622709248564, guid: a9e853b1aea28fe4bb2a3e0eb39e7795, type: 3}
+    indices: ffffffffi
+    targetName: asy-cart-pole
+  site:
+    name: 09-Pole.End.Target.Site
+    class: 
+    type: 0
+    group: 0
+    material: 
+    mesh: 
+    rgba: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+    size: {x: 0.005, y: 0.005, z: 0.005}
+    useFromto: 0
+    fromtoFrom: {x: 0, y: 0, z: 0}
+    fromtoTo: {x: 0, y: 0, z: 0}
+    pos: {x: -0.01, y: 0.532, z: -0.132}
+    quat: {x: 0, y: 0, z: 0, w: 1}
+    user: []
+--- !u!114 &8252352052225439125
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f7a2995ade2807b4da04c24aa50880a1, type: 3}
+  m_Name: 07-Pole.Pivot.Site
+  m_EditorClassIdentifier: com.greyhound.mujoco.runtime::Greyhound.MuJoCo.ScriptableObjects.Site
+  body:
+    root: {fileID: -3307206622709248564, guid: a9e853b1aea28fe4bb2a3e0eb39e7795, type: 3}
+    indices: 04000000350000000c000000i
+    targetName: marker-pivot
+  site:
+    name: 07-Pole.Pivot.Site
+    class: 
+    type: 0
+    group: 0
+    material: 
+    mesh: 
+    rgba: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+    size: {x: 0.005, y: 0.005, z: 0.005}
+    useFromto: 0
+    fromtoFrom: {x: 0, y: 0, z: 0}
+    fromtoTo: {x: 0, y: 0, z: 0}
+    pos: {x: 0, y: 0, z: 0}
+    quat: {x: 0, y: 0, z: 0, w: 1}
+    user: []
+--- !u!114 &8464352553247655839
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f7a2995ade2807b4da04c24aa50880a1, type: 3}
+  m_Name: 12-Right-Rail.Site
+  m_EditorClassIdentifier: com.greyhound.mujoco.runtime::Greyhound.MuJoCo.ScriptableObjects.Site
+  body:
+    root: {fileID: -3307206622709248564, guid: a9e853b1aea28fe4bb2a3e0eb39e7795, type: 3}
+    indices: 0000000001000000i
+    targetName: rod-clamp-16mm
+  site:
+    name: 12-Right-Rail.Site
+    class: 
+    type: 0
+    group: 0
+    material: 
+    mesh: 
+    rgba: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+    size: {x: 0.005, y: 0.005, z: 0.005}
+    useFromto: 0
+    fromtoFrom: {x: 0, y: 0, z: 0}
+    fromtoTo: {x: 0, y: 0, z: 0}
+    pos: {x: -0.01, y: 0, z: 0}
+    quat: {x: 0, y: 0, z: 0, w: 1}
+    user: []

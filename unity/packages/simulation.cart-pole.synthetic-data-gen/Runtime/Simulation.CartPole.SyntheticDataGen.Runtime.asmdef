@@ -1,0 +1,26 @@
+{
+    "name": "Simulation.CartPole.SyntheticDataGen.Runtime",
+    "rootNamespace": "Simulation.CartPole.SyntheticDataGen",
+    "references": [
+        "com.greyhound.step.runtime",
+        "com.greyhound.utilities.runtime",
+        "com.greyhound.vision.runtime",
+        "com.greyhound.mujoco.runtime",
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [
+        {
+            "name": "Unity",
+            "expression": "6000.5",
+            "define": "LIFECYCLE_APIS_AVAILABLE"
+        }
+    ],
+    "noEngineReferences": false
+}

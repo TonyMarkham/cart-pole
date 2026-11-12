@@ -7,6 +7,15 @@ break the other.
 
 ```text
 __synthetic__/
+├── generator/                hands generation sets to the Unity players that make the detector's training frames
+│   ├── proto/                generation_set.proto: what a generation set holds, for Rust and C#
+│   ├── master.json           the complete generation set every set in the pool starts from
+│   ├── sets/                 the pool: one *.json per set, holding only what differs from master.json
+│   └── rust/
+│       ├── generator.toml    the generator's settings, read when it runs
+│       └── crates/
+│           └── generator/    reads and checks the pool (launching the players comes next);
+│                             its generate-csharp binary rewrites the .proto's C# classes
 ├── orchestrator/rust/        stands in for the physical world
 │   ├── orchestrator.toml     where the MuJoCo physics library is, read when building
 │   └── crates/

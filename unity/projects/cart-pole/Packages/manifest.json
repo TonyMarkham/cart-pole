@@ -1,10 +1,12 @@
 {
   "dependencies": {
-    "com.greyhound.step": "file:../../../../../greyhound-snake/dist/package/com.greyhound.step",
-    "com.greyhound.mujoco": "file:../../../../../greyhound-snake/dist/package/com.greyhound.mujoco",
-    "simulation.cart-pole.synthetic-data-gen": "file:../../packages/simulation.cart-pole.synthetic-data-gen",
-    "simulation.cart-pole.sim-loop": "file:../../packages/simulation.cart-pole.sim-loop",
-    "com.greyhound.vision": "file:../../../../../greyhound-snake/dist/package/com.greyhound.vision",
+    "com.greyhound.step": "file:../../../../../greyhound-snake/package/com.greyhound.step",
+    "com.greyhound.mujoco": "file:../../../../../greyhound-snake/package/com.greyhound.mujoco",
+    "com.greyhound.vision": "file:../../../../../greyhound-snake/package/com.greyhound.vision",
+    "com.greyhound.utilities": "file:../../../../../greyhound-snake/package/com.greyhound.utilities",
+    "simulation.cart-pole.synthetic-data-gen": "file:../../../packages/simulation.cart-pole.synthetic-data-gen",
+    "simulation.cart-pole.sim-loop": "file:../../../packages/simulation.cart-pole.sim-loop",
+    "simulation.cart-pole.assets": "file:../../../packages/simulation.cart-pole.assets",
     "com.unity.ai.navigation": "2.0.15",
     "com.unity.collab-proxy": "2.13.6",
     "com.unity.ide.rider": "3.0.40",

@@ -1,0 +1,20 @@
+{
+    "name": "Simulation.CartPole.SyntheticDataGen.Editor",
+    "rootNamespace": "Simulation.CartPole.SyntheticDataGen.Editor",
+    "references": [
+        "Simulation.CartPole.SyntheticDataGen.Runtime",
+        "com.greyhound.step.runtime",
+        "com.greyhound.utilities.runtime"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

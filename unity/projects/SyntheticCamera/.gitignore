@@ -1,0 +1,17 @@
+.utmp/
+/[Ll]ibrary/
+/[Tt]emp/
+/[Oo]bj/
+/[Bb]uild/
+/[Bb]uilds/
+/[Ll]ogs/
+/[Uu]ser[Ss]ettings/
+*.log
+*.csproj
+*.sln
+*.slnx
+
+/[Aa]ssets/Captures/
+/[Aa]ssets/Captures.meta
+
+Build*/

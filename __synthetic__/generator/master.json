@@ -1,0 +1,90 @@
+{
+  "name": "Master",
+  "seed": 1001,
+  "states": 1000,
+  "fixedPoses": [
+    {
+      "name": "Idler",
+      "joints": [
+        {
+          "joint": "02-Cart.Slider.joint",
+          "value": -0.445
+        },
+        {
+          "joint": "04-Pole.Hinge.joint",
+          "value": -180
+        }
+      ],
+      "props": [
+        "Prop Pose - Idler"
+      ]
+    },
+    {
+      "name": "Motor",
+      "joints": [
+        {
+          "joint": "02-Cart.Slider.joint",
+          "value": 0.445
+        },
+        {
+          "joint": "04-Pole.Hinge.joint",
+          "value": -180
+        }
+      ],
+      "props": [
+        "Prop Pose - Motor"
+      ]
+    }
+  ],
+  "fixedPoseFrames": 25,
+  "cameraImageWidth": 1456,
+  "cameraImageHeight": 1088,
+  "cameraYaw": {
+    "min": -5,
+    "max": 5
+  },
+  "cameraPitch": {
+    "min": -5,
+    "max": 5
+  },
+  "cameraHeight": {
+    "min": -0.1,
+    "max": 0.1
+  },
+  "cameraLateral": {
+    "min": -0.1,
+    "max": 0.1
+  },
+  "maxZ": 2.25,
+  "desks": [
+    "Desk (Writing)",
+    "Desk (Sit-Stand)",
+    "Desk (Panelend)",
+    "Desk (Classic)"
+  ],
+  "skyboxes": [
+    "story_studio_02_4k",
+    "pav_studio_03_4k",
+    "neon_photostudio_4k"
+  ],
+  "skyboxYaw": {
+    "min": 0,
+    "max": 360
+  },
+  "lightYaw": {
+    "min": -60,
+    "max": 60
+  },
+  "lightPitch": {
+    "min": 5,
+    "max": 85
+  },
+  "lightIntensity": {
+    "min": 2,
+    "max": 4
+  },
+  "unlimitedHinge": {
+    "min": -3.1415927,
+    "max": 3.1415927
+  }
+}

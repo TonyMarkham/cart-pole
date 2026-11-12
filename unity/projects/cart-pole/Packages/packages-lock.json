@@ -1,19 +1,25 @@
 {
   "dependencies": {
     "com.greyhound.mujoco": {
-      "version": "file:../../../../../greyhound-snake/dist/package/com.greyhound.mujoco",
+      "version": "file:../../../../../greyhound-snake/package/com.greyhound.mujoco",
       "depth": 0,
       "source": "local",
       "dependencies": {}
     },
     "com.greyhound.step": {
-      "version": "file:../../../../../greyhound-snake/dist/package/com.greyhound.step",
+      "version": "file:../../../../../greyhound-snake/package/com.greyhound.step",
+      "depth": 0,
+      "source": "local",
+      "dependencies": {}
+    },
+    "com.greyhound.utilities": {
+      "version": "file:../../../../../greyhound-snake/package/com.greyhound.utilities",
       "depth": 0,
       "source": "local",
       "dependencies": {}
     },
     "com.greyhound.vision": {
-      "version": "file:../../../../../greyhound-snake/dist/package/com.greyhound.vision",
+      "version": "file:../../../../../greyhound-snake/package/com.greyhound.vision",
       "depth": 0,
       "source": "local",
       "dependencies": {
@@ -189,14 +195,22 @@
         "com.unity.modules.imgui": "1.0.0"
       }
     },
+    "simulation.cart-pole.assets": {
+      "version": "file:../../../packages/simulation.cart-pole.assets",
+      "depth": 0,
+      "source": "local",
+      "dependencies": {
+        "com.greyhound.step": "0.1.0"
+      }
+    },
     "simulation.cart-pole.sim-loop": {
-      "version": "file:../../packages/simulation.cart-pole.sim-loop",
+      "version": "file:../../../packages/simulation.cart-pole.sim-loop",
       "depth": 0,
       "source": "local",
       "dependencies": {}
     },
     "simulation.cart-pole.synthetic-data-gen": {
-      "version": "file:../../packages/simulation.cart-pole.synthetic-data-gen",
+      "version": "file:../../../packages/simulation.cart-pole.synthetic-data-gen",
       "depth": 0,
       "source": "local",
       "dependencies": {}

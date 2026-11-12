@@ -1,0 +1,16 @@
+{
+    "name": "CartPole.Assets",
+    "rootNamespace": "CartPole.Assets",
+    "references": [
+        "com.greyhound.step.runtime"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

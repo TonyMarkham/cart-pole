@@ -8,6 +8,7 @@ members           = [
                       "__live__/orin/wasm/live",
                       "__live__/orin/wasm/run",
                       "__live__/orin/wasm/viewer",
+                      "__synthetic__/generator/rust/crates/generator",
                       "__synthetic__/orchestrator/rust/crates/arduino",
                       "__synthetic__/orchestrator/rust/crates/orchestrator",
                       "__synthetic__/orchestrator/rust/crates/physics",
@@ -26,6 +27,7 @@ members           = [
 # .cargo/config.toml names the target), and the pages with `trunk`, from theirs.
 # Their READMEs have the commands.
 default-members   = [
+                      "__synthetic__/generator/rust/crates/generator",
                       "__synthetic__/orchestrator/rust/crates/arduino",
                       "__synthetic__/orchestrator/rust/crates/orchestrator",
                       "__synthetic__/orchestrator/rust/crates/physics"
@@ -56,6 +58,11 @@ error-location    = { version = "0.1.0" }
 futures-util      = { version = "0.3.34" }
 js-sys            = { version = "0.3.107" }
 panic-halt        = { version = "1.0.0" }
+pbjson            = { version = "0.9.0" }
+pbjson-build      = { version = "0.9.0" }
+prost             = { version = "0.14.5" }
+prost-build       = { version = "0.14.5" }
+protox            = { version = "0.10.0" }
 ra4m1             = { version = "0.2.0" }
 serde             = {
                       version = "1.0.229",
@@ -69,13 +76,20 @@ serde_json        = {
                       version = "1.0.154",
                       features = ["float_roundtrip"]
 }
+sha2              = { version = "0.11.1" }
 thiserror         = { version = "2.0.21" }
 tokio             = {
                       version = "1.54.1",
                       features = ["fs", "macros", "net", "process", "rt-multi-thread", "time"]
 }
 tokio-tungstenite = { version = "0.30.0" }
-toml              = { version = "1.1.8" }
+toml              = { version = "1.2.1" }
+tracing           = { version = "0.1.44" }
+tracing-subscriber = {
+                      version = "0.3.23",
+                      features = ["env-filter"]
+}
+ureq              = { version = "3.5.1" }
 wasm-bindgen      = { version = "0.2.130" }
 wasm-bindgen-futures = { version = "0.4.80" }
 web-sys           = {
@@ -85,10 +99,15 @@ web-sys           = {
                           "Request", "RequestCache", "RequestInit", "Response", "Url", "WebSocket", "Window",
                       ]
 }
+zip               = {
+                      version = "9.5.1",
+                      default-features = false,
+                      features = ["deflate"]
+}
 
 arduino           = { path = "__synthetic__/orchestrator/rust/crates/arduino" }  # Synthetic Arduino
 physics           = { path = "__synthetic__/orchestrator/rust/crates/physics" }  # Custom MuJoCo ABI
-unor4-hal         = { path = "../unor4-hal/crates/unor4-hal" }  # Custom HAL
+unor4-hal         = { version = "0.2.0" }  # Custom HAL
 
 
 

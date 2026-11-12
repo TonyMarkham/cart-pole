@@ -43,14 +43,14 @@ it comes from, each step reproducible from the repo alone. No reward
 change lands until its ELI-5 explanation is written and the user has
 approved it.
 
-**The reward's source of truth is `__synthetic__/trainer/python/reward-plan.md`** 
-the ELI-5 explanation of the reward: r = r_tip ×
-r_target_speed × r_cart × r_reach × r_speed (r_cart added 2026-10-29;
-the same day r_tip's star moved onto the cart and r_reach kept the
-fixed one; 2026-10-30: r_target_speed and r_speed replaced
-r_energy, plugin `tip_speed_cart_centre`), every input MuJoCo's, its values one `gym.toml` table per factor. The root `reward-plan.md` it replaced was deleted
-on 2026-10-28 (in git history at `1e6a1001`); older records that cite it
-say so.
+**The reward's source of truth is `__synthetic__/trainer/python/dm_control_reward.md`**,
+the ELI-5 explanation of the reward the trainer uses: DeepMind's cart-pole
+reward, the scheme `dm_control_cartpole` (`gym.toml` `[reward]`),
+r = upright × small_control × small_velocity × centered, in [0, 1]. Every
+input is MuJoCo's except the command: the pole's angle and speed from its
+state, Cart and Cart Target from the sites, and the command as a fraction
+of the top pulse rate. Its values are one `gym.toml` table per factor;
+`upright` has none.
 
 **MuJoCo is the source of truth** Wherever MuJoCo
 has a value the reward, the episode end or the measures need, the value
@@ -71,8 +71,7 @@ adds repo structure around them, never overrides them.
 
 ## Working with the user
 
-- **The user's word is the record** "NEVER, EVER TREAT ME
-  AS A LIAR AGAIN"). When the user says what they decided or asked for, it is
+- **The user's word is the record**. When the user says what they decided or asked for, it is
   written down as they say it now. Never look for proof, never set their
   earlier words against them, never ask them to pick between them. Worked
   failure: told that the no-hit limit had been asked for the day before, the
@@ -158,9 +157,6 @@ adds repo structure around them, never overrides them.
   `__live__/orin/wasm/viewer` and `__live__/orin/wasm/arduino`.
   Never hand-write JavaScript. Worked failure: the first `/arduino` page was
   about 165 lines of it, with the viewer crate right beside it.
-- **Clippy must be clean, and `unwrap()` is forbidden except in tests**. The workspace's `Cargo.toml` denies it, and the root
-  `clippy.toml` lets tests use it. Check with `cargo clippy --all-targets
-  --no-deps` from the repo root, before saying Rust work is done.
 - **Python policy.** Always `uv`, never pip; install nothing without
   permission (a standing directive). No Python on the dataset-verify path —
   the Python checker retired; verification runs in-process through the
@@ -266,7 +262,7 @@ adds repo structure around them, never overrides them.
 
 ## Repository map
 
-- **Removed on 2026-11-11** (user: they no longer added value), all in git
+- **Removed on 2026-11-11**, all in git
   at commit `ecced2cc`; docs that still cite one say it was removed:
   - folders: `aruco/` (`aruco-gen`, superseded by greyhound's
     `aruco-cli`), `bench-station/` (replaced by `arduino-manager`),
@@ -357,6 +353,29 @@ adds repo structure around them, never overrides them.
   `mujoco_dir`, the file beside `crates/`; the MJCF and its names come from
   the trainer's `settings.toml` `[mjcf]` on the orchestrator's command line),
   `arduino/` (the loop's synthetic Arduino).
+  Beside them, `__synthetic__/generator/rust/crates/generator/` (begun
+  2026-11-12): the dataset generator's orchestrator. It reads and checks the
+  pool, launches `players` Unity players in generator mode, hands each the
+  next set as a `GenerationJob` until the pool is empty, and writes
+  `data.yaml` from their runs (all settings in `generator.toml`; a small
+  pool for a first run in `generator-smoke.toml`). The pool is
+  `__synthetic__/generator/sets/` (one `*.json` per set, holding
+  only the keys that differ from the complete
+  `__synthetic__/generator/master.json`, which each set is laid over). A
+  generation set is defined once in
+  `__synthetic__/generator/proto/generation_set.proto` (protobuf, written
+  as its standard JSON form); it replaces the Unity `GenerationSetSO`.
+  Rust's types are generated at build time (`build.rs`); the C# ones are
+  committed in `simulation.cart-pole.synthetic-data-gen/Runtime/Proto/`
+  and regenerated after every `.proto` change with
+  `cargo run -p generator --bin generate-csharp`, so the only tools any OS
+  needs are Unity and Rust (protoc from NuGet's `Google.Protobuf.Tools`,
+  the same release as the package's `Google.Protobuf.dll`, pinned with its
+  SHA-256 in `__synthetic__/generator/rust/protobuf-tools.toml` and cached
+  in the gitignored `target/protoc/`). It also writes
+  `GenerationSet.Lifecycle.cs`, `[NoAutoStaticsCleanup]` on each generated
+  class under `#if LIFECYCLE_APIS_AVAILABLE` (the runtime asmdef defines it
+  for Unity 6000.5+).
   Roles by the crates' own header comments. The Rust
   detector crate, `object-detection/`, was retired on 2026-10-23:
   a Pi-era POC whose question the removed `detector-plan.md` answered, the
@@ -384,8 +403,6 @@ adds repo structure around them, never overrides them.
   as checks only, in a small `no_std` library crate beside the firmware that
   the firmware itself uses on the board. Nothing that drives the rig runs on
   the PC.
-  The firmware crate keeps one type per file, each file named after its type, and its `use` statements put `use crate::…` first, then a
-  blank line, then the external crates.
 - `__workbench__/` — measurements on the HAL's bench (begun 2026-11-07):
   the R4 WiFi and R3 on this PC's USB (COM3, COM4), wired as unor4-hal's
   `Validation.md` describes. Every timing is taken on one clock, the R3's
@@ -422,7 +439,9 @@ adds repo structure around them, never overrides them.
   moved here) and `train/` —
   the `uv` project, its `README.md` (every step, with its command and where
   its results go), and `runs/` (gitignored except each run's
-  `weights/best.pt` and `weights/best.onnx`, root `.gitignore`). **`data.yaml` comes from Unity's generator**, as part of the generated data, not from a
+  `weights/best.pt` and `weights/best.onnx`, root `.gitignore`). **`data.yaml` comes from the dataset generator**
+  (`__synthetic__/generator/rust/crates/generator`, the Rust orchestrator
+  that runs the Unity players), as part of the generated data, not from a
   training script.
 - **`__documentation__/` — the plans and design docs**, moved there from
   the repo root on 2026-11-11 (`AGENTS.md` and `index.html` stay at the
@@ -602,7 +621,19 @@ in `__object_detection__/train/`.
   mechanics.
 - File I/O via `System.IO` with interpolated `$"{outputDirectory}/..."`
   paths; JSON via `JsonUtility` with small `[Serializable]` mirror
-  classes; no external dependencies beyond the greyhound packages.
+  classes; no external dependencies beyond the greyhound packages,
+  with one exception (user, 2026-11-12): `Google.Protobuf.dll` 3.36.2
+  (BSD-3-Clause, the `netstandard2.0` build) in
+  `simulation.cart-pole.synthetic-data-gen/Runtime/Plugins/`, for the
+  generation-set messages from `__synthetic__/generator/proto/`, with its
+  dependency `System.Runtime.CompilerServices.Unsafe.dll` 4.5.3 (MIT, the
+  `netstandard2.0` build, assembly 4.0.4.1: the exact version
+  Google.Protobuf references, since Unity has no binding redirects) beside
+  it. Unity does not provide Unsafe (without it Unity refuses
+  Google.Protobuf.dll: "Unable to resolve reference
+  'System.Runtime.CompilerServices.Unsafe'"); its other dependency,
+  `System.Memory`, Unity does provide, so that one is not shipped. Both
+  licences are in that package's `Third Party Notices.md`.
 - Editor-only code paths stay behind `#if UNITY_EDITOR` inside runtime
   components (see `RigStateCapture.OnRunCompleted`); the component must
   compile for players regardless.

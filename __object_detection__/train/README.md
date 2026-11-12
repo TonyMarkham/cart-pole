@@ -132,11 +132,11 @@ the computer. A **uv project** is a folder that has a `pyproject.toml`.
 >>     data=D:/git/cart-pole/__object_detection__/datasets/generated/data.yaml `
 >>     imgsz=640 `
 >>     batch=-1 `
->>     epochs=500 `
+>>     epochs=1000 `
 >>     patience=50 `
 >>     device=0 `
 >>     project=D:/git/cart-pole/__object_detection__/train/runs `
->>     name=640-base
+>>     name=640-21k
 >> ```
 >
 >> ### What each setting means

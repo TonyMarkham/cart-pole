@@ -1,0 +1,43 @@
+[package]
+name              = "generator"
+version           = { workspace = true }
+edition           = { workspace = true }
+description       = "Dataset generator orchestrator: runs the pool of GenerationSets (__synthetic__/generator/sets/*.json) on Unity generator players and writes data.yaml"
+
+# The orchestrator itself (src/main.rs).
+[[bin]]
+name              = "generator"
+path              = "src/main.rs"
+
+# Rewrites the Unity package's C# classes of generation_set.proto after a
+# change to it: cargo run -p generator --bin generate-csharp
+[[bin]]
+name              = "generate-csharp"
+path              = "src/bin/generate_csharp/main.rs"
+
+[dependencies]
+clap              = { workspace = true }
+error-location    = { workspace = true }
+futures-util      = { workspace = true }
+pbjson            = { workspace = true }
+prost             = { workspace = true }
+serde             = { workspace = true }
+serde_json        = { workspace = true }
+sha2              = { workspace = true }
+thiserror         = { workspace = true }
+tokio             = { workspace = true }
+tokio-tungstenite = { workspace = true }
+toml              = { workspace = true }
+tracing           = { workspace = true }
+tracing-subscriber = { workspace = true }
+ureq              = { workspace = true }
+zip               = { workspace = true }
+
+[build-dependencies]
+pbjson-build      = { workspace = true }
+prost             = { workspace = true }
+prost-build       = { workspace = true }
+protox            = { workspace = true }
+
+[lints]
+workspace          = true

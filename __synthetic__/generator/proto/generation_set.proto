@@ -1,0 +1,143 @@
+// One generation set: everything one run of the dataset generator draws
+// from, written by hand as JSON in __synthetic__/generator/sets/ (one set per
+// file) and sent by the generator to a Unity player. This file is the single
+// definition: the Rust types (prost, with serde from pbjson) and the C# types
+// (protoc --csharp_out) are generated from it.
+//
+// It replaces the Unity GenerationSetSO asset. Asset references become names
+// the player looks up in its build (desks, skyboxes, props), and joints are
+// MJCF joint names, as in the StateServer's state messages.
+//
+// The JSON form is protobuf's standard JSON mapping: field names in
+// lowerCamelCase (cameraImageWidth).
+// A field left out of the JSON takes its zero value (0, "", empty list,
+// absent message).
+
+syntax = "proto3";
+
+package generator;
+
+// The C# classes generate into the Unity package that uses them
+// (simulation.cart-pole.synthetic-data-gen, Runtime/Proto/); Rust ignores it.
+option csharp_namespace = "Simulation.CartPole.SyntheticDataGen.Proto";
+
+// A uniform draw over [min, max): min + u * (max - min), u in [0, 1).
+// Example: {"min": -5, "max": 5} draws a yaw anywhere from -5 up to 5 degrees.
+message Range {
+  float min = 1;
+  float max = 2;
+}
+
+// One joint's value in a fixed pose, in MJCF's sense: meters for a slide,
+// degrees for a hinge (radians on the StateServer wire; degrees here because
+// poses are written by eye). Example: {"joint": "04-Pole.Hinge.joint",
+// "value": -180} is the pole straight up.
+message JointValue {
+  // The MJCF joint name.
+  string joint = 1;
+  float value = 2;
+}
+
+// One robot state captured on purpose instead of drawn at random, with the
+// props that appear in its frames only. A joint the pose leaves out stays at
+// its imported pose (0).
+message FixedPose {
+  // For the logs only.
+  string name = 1;
+  repeated JointValue joints = 2;
+  // Prop placements, by name in the player's catalog.
+  repeated string props = 3;
+}
+
+message GenerationSet {
+  // The run folder's name part: `run_<name>_<timestamp>`. Unique in the pool.
+  string name = 1;
+  // Field 2 was the set's split (train or val); which sets are val is now
+  // generator.toml's `val` list. Reserved so the number and name are never
+  // reused with another meaning.
+  reserved 2;
+  reserved "split";
+  // Drives every random draw of the run: the same seed replays the same
+  // frames.
+  int32 seed = 3;
+  // Frames captured, fixed-pose frames included.
+  uint32 states = 4;
+
+  // The first fixed_pose_frames frames take their state from fixed_poses in
+  // turn (frame i uses pose i mod the pose count). Example: states 1000,
+  // fixed_pose_frames 200, two poses: 100 frames of each, alternating, then
+  // 800 random states.
+  repeated FixedPose fixed_poses = 5;
+  uint32 fixed_pose_frames = 6;
+
+  // The captured frame's size in pixels.
+  uint32 camera_image_width = 7;
+  uint32 camera_image_height = 8;
+
+  // Camera offsets from its pose in the scene, each drawn per frame; a range
+  // left out draws nothing (offset 0). Yaw and pitch in degrees, height
+  // (world Y) and lateral (world X) in meters.
+  Range camera_yaw = 9;
+  Range camera_pitch = 10;
+  Range camera_height = 11;
+  Range camera_lateral = 12;
+
+  // The frustum-fit cap in meters: a draw whose camera must back off further
+  // than this to keep the robot in frame is discarded and redrawn. Left out:
+  // no cap.
+  optional float max_z = 13;
+
+  // Desks by name in the player's catalog; each frame stands on one drawn
+  // from the list. Empty: no desk.
+  repeated string desks = 14;
+
+  // Skybox materials (HDRIs) by name in the player's catalog, one drawn per
+  // frame and turned about the world's up axis by skybox_yaw (degrees; left
+  // out: unturned). Empty: the scene's own skybox, unturned.
+  repeated string skyboxes = 15;
+  Range skybox_yaw = 16;
+
+  // The directional light, set absolutely per frame (not offsets from the
+  // scene): yaw and pitch in degrees, intensity in Unity's units. A range
+  // left out leaves that value as the scene has it.
+  Range light_yaw = 17;
+  Range light_pitch = 18;
+  Range light_intensity = 19;
+
+  // A random state draws each limited joint within its own MJCF range (the
+  // cart slider: -0.45 to 0.45 m). A hinge without limits (the pole) draws
+  // within this range instead, in radians; an unlimited slide stays at 0.
+  // Left out: an unlimited hinge stays at 0 too.
+  Range unlimited_hinge = 20;
+}
+
+// What the generator sends a Unity player for one run: a set from the pool
+// (master.json with the set's file laid over it), and where to write the run.
+// The player writes `<output_directory>/run_<set name>_<timestamp>/` (images/,
+// labels/, markers.json); the generator writes data.yaml in output_directory
+// once every run is done. output_directory comes from generator.toml's
+// output_dir, not from the set files, so a set says what to render and the
+// machine running it says where it lands. Absolute, so the player's own
+// working directory does not matter.
+message GenerationJob {
+  GenerationSet set = 1;
+  string output_directory = 2;
+}
+
+// What a Unity player sends back when a GenerationJob ends: one binary
+// WebSocket message on the connection the job came on. A player runs one job
+// at a time, so a client sends the next job only after this arrives.
+//
+// error empty: the run finished; run_directory is the folder it wrote
+// (absolute, inside the job's output_directory) and frames equals the set's
+// states.
+// error set, run_directory empty: the job never started (the message is not a
+// GenerationJob, a name the player's catalog or robot does not have, another
+// job still running, or the player is not set up).
+// error set, run_directory set: the run stopped part way; run_directory and
+// frames are what it left on disk.
+message GenerationDone {
+  string run_directory = 1;
+  uint32 frames = 2;
+  string error = 3;
+}

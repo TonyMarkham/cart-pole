@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2ce401a2a6fe0a846b4c51526898465f, type: 3}
+  m_Name: Catalog
+  m_EditorClassIdentifier: Simulation.CartPole.SyntheticDataGen.Runtime::Simulation.CartPole.SyntheticDataGen.CatalogSO
+  m_Desks:
+  - {fileID: 11400000, guid: 85998a8d900ca98e881c971c290d42f9, type: 2}
+  - {fileID: 11400000, guid: 99d758b8972755d7d89489b1e4861853, type: 2}
+  - {fileID: 11400000, guid: ae800926c503bd1fe9d83db7034295fc, type: 2}
+  - {fileID: 11400000, guid: 687552c19743502dfbc751022127a864, type: 2}
+  m_Skyboxes:
+  - {fileID: 2100000, guid: c855ff1a678447cdf94bd9ce23f8832c, type: 2}
+  - {fileID: 2100000, guid: aa692ef708e44a800a86b2a546921c18, type: 2}
+  - {fileID: 2100000, guid: e620e519636769ea191d387c910cd30e, type: 2}
+  m_PropPoses:
+  - {fileID: 11400000, guid: d57357e0c32b96a49bd12a915cb95193, type: 2}
+  - {fileID: 11400000, guid: 1d6e5d6393b04774f9fb10735dfeb00d, type: 2}

@@ -10,8 +10,8 @@ namespace CartPole.Vision.Editor
     // Hierarchy right-click / GameObject menu entry for marker authoring,
     // mirroring the joint flow exactly: select the anchor part, run the
     // command; the STEP source is resolved, the sibling path is built from
-    // the instance root (StepSiblingPath, same reference the Joint SOs
-    // serialize) and a MarkerSO is created. Unity 6.7's rewritten Hierarchy
+    // the instance root (Greyhound.Utilities.SiblingPath, the reference MarkerSO
+    // serializes) and a MarkerSO is created. Unity 6.7's rewritten Hierarchy
     // frames-and-renames after menu invocations, so the work is deferred one
     // editor tick (Defer).
     //
@@ -62,8 +62,8 @@ namespace CartPole.Vision.Editor
             var marker = ScriptableObject.CreateInstance<Simulation.CartPole.SyntheticDataGen.MarkerSO>();
             marker.label = part.name;
             marker.anchor.indices = PathIndices(part.transform, instanceRoot.transform);
-            marker.anchor.name = part.name;
-            marker.stepAssetPath = stepPath;
+            marker.anchor.targetName = part.name;
+            marker.anchor.root = AssetDatabase.LoadAssetAtPath<GameObject>(stepPath);
             AssetDatabase.CreateAsset(marker, assetPath);
 
             // The markers array is private on the rig (the binding lives on
@@ -123,10 +123,11 @@ namespace CartPole.Vision.Editor
         }
 
         // The rig asset for a STEP assembly: the existing rig whose
-        // m_StepAsset is the imported assembly asset, else a fresh one
-        // created beside the marker assets. The m_StepAsset field is
-        // private on the SO, so the reference is written through the
-        // serialized object.
+        // StepAsset (its cart path's root) is the imported assembly asset,
+        // else a fresh one created beside the marker assets, with the
+        // assembly as the root of both part paths. The paths are private
+        // on the SO, so the roots are written through the serialized
+        // object.
         private static Simulation.CartPole.SyntheticDataGen.RigSO FindOrCreateRig(string stepPath)
         {
             var source = AssetDatabase.LoadAssetAtPath<GameObject>(stepPath);
@@ -148,7 +149,8 @@ namespace CartPole.Vision.Editor
                 $"Assets/Cart-Pole/Rig_{fileName}.asset");
             var rig = ScriptableObject.CreateInstance<Simulation.CartPole.SyntheticDataGen.RigSO>();
             var serialized = new SerializedObject(rig);
-            serialized.FindProperty("m_StepAsset").objectReferenceValue = source;
+            serialized.FindProperty("m_Cart").FindPropertyRelative("root").objectReferenceValue = source;
+            serialized.FindProperty("m_Pole").FindPropertyRelative("root").objectReferenceValue = source;
             serialized.ApplyModifiedPropertiesWithoutUndo();
             AssetDatabase.CreateAsset(rig, assetPath);
             return rig;

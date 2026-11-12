@@ -1,0 +1,14 @@
+# The protoc that `cargo run -p generator --bin generate-csharp` uses: NuGet's
+# Google.Protobuf.Tools. It must be the same release as
+# unity/packages/simulation.cart-pole.synthetic-data-gen/Runtime/Plugins/Google.Protobuf.dll
+# (generated C# must match its runtime's version), so bump both together:
+# replace that DLL with the new release's lib/netstandard2.0 build, set
+# version below, and set sha256 to the new .nupkg's SHA-256.
+
+# The release. The package is downloaded from
+# https://api.nuget.org/v3-flatcontainer/google.protobuf.tools/<version>/google.protobuf.tools.<version>.nupkg
+version = "3.36.2"
+
+# The SHA-256 of that version's .nupkg (recorded 2026-11-12 for 3.36.2). A
+# download that does not match is refused.
+sha256 = "9f4a9b0b762421233a9118605fd165e034f19bdcd5991027a9e9356f1341d696"
