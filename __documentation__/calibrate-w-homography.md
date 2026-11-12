@@ -355,7 +355,7 @@ plan does not design.
 
 ## In the synthetic loop
 
-Built, and kept apart from the rig's code (user, 2026-11-01). `synthetic-loop-dia.md`,
+Built, and kept apart from the rig's code (user, 2026-11-01). `__documentation__/synthetic-loop-dia.md`,
 *Calibration*, is its design. It follows this plan's arithmetic, with three differences:
 
 - **The metres are MuJoCo's.** Each point's true position is read from its site, so the
@@ -469,8 +469,9 @@ has a folder per language, and only `__synthetic__/orin/python/` has two.
 ```text
 cart-pole/
 ├── Cargo.toml                       the root workspace, which builds the [root] crates
-├── calibrate-w-homography.md        this plan
-├── __synthetic__/                   the synthetic loop's own calibration (its README)
+├── __documentation__/
+│   └── calibrate-w-homography.md    this plan
+├── __synthetic__/                   the synthetic loop's own calibration (01-TRAIN.md, Step 4)
 └── __live__/
     ├── arduino/
     │   └── rust/
@@ -491,6 +492,7 @@ cart-pole/
     │   │       └── webserver/       receives pictures, serves the pages
     │   └── wasm/
     │       ├── arduino/             [root] the Arduino's pins, in the browser
+    │       ├── calibrate/           [root] the page a person runs the calibration from
     │       └── viewer/              [root] the camera's pictures, in the browser
     └── rpi/
         └── rust/                    the Pi's workspace, pushed and built there
