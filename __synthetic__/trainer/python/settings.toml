@@ -120,7 +120,7 @@ calibration_stop_gap = 0.005
 # x,y (default 0,0) on the display the windows open on.
 command = [
     "target/release/orchestrator.exe",
-    "--player", "unity/projects/SyntheticCamera/Build/SyntheticCamera.exe",
+    "--player", "unity/projects/SyntheticCamera/Build-1.1m/SyntheticCamera.exe",
     "--out", "target/trainer-run",
     # --orin must come last: every argument after it is the Orin's command.
     "--orin", "uv", "run", "--project", "__synthetic__/orin/python", "python", "__synthetic__/orin/python/src/synthetic_orin.py",
