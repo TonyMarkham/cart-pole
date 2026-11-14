@@ -143,10 +143,9 @@ command = [
 # --right-cart-site), placed straight after the program (--orin takes
 # every argument after it).
 
-# The model the Unity exporter writes beside the rig's STEP asset
-# (stepAssetPath: Assets/Simulation/Robot/asy-cart-pole.step), relative
-# to [orchestrator] cwd.
-model = "unity/projects/cart-pole/Assets/Simulation/Robot/asy-cart-pole.step~/asy-cart-pole.xml"
+# The rig's MJCF, with the meshes/ folder it reads beside it, relative to
+# [orchestrator] cwd.
+model = "__synthetic__/mujoco/asy-cart-pole.xml"
 
 # As in the model's <joint name> / actuator name. The joint names are also
 # the wire keys of the player's state message.

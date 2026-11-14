@@ -122,16 +122,20 @@ root's `Cargo.toml`, so what they build goes to the root's `target/`.
 >
 > | What | Where | How it is made |
 > |---|---|---|
-> | The Unity player | `unity/projects/SyntheticCamera/Build-1.1m/SyntheticCamera.exe`, the `--player` path in `trainer/python/settings.toml` `[orchestrator] command` | [01-GENERATE.md](../__object_detection__/01-GENERATE.md), Step 1, choosing the folder `Build-1.1m/` instead of `Build/` |
+> | The Unity player | `unity/projects/SyntheticCamera/Build/SyntheticCamera.exe`, the `--player` path in `trainer/python/settings.toml` `[orchestrator] command` | [01-GENERATE.md](../__object_detection__/01-GENERATE.md), Step 1 |
 > | The detector's TensorRT engine | the `--engine` path in `trainer/python/settings.toml` `[orchestrator] command` | [04-SYNTHETIC_ORIN.md](../__object_detection__/04-SYNTHETIC_ORIN.md): on a fresh clone only its *WEIGHTS* section and Step 2, since the settings already name the detector `640-21k` |
 > | MuJoCo's library | `mujoco_dir` in `orchestrator/rust/orchestrator.toml` | the greyhound checkout beside this repo |
 >
-> The player is the same program that makes the detector's training frames.
-> `Build-1.1m` is a build of the scene with its camera 1.1 m up, where commit
-> `747d9d0f` moved it from 0.9 m for the policy's training; the scene in git
-> has had the camera there since. Here it runs as the camera: the
-> orchestrator starts it with
-> `-player-mode SyntheticCamera -state-server <port>`, and the player waits on
+> The player is the same program that makes the detector's training frames,
+> and the same build. Where its camera stands is not built in: when
+> `trainer/python/settings.toml` `[orchestrator]` has
+> `camera_transform = [px, py, pz, rx, ry, rz]` (world position in metres,
+> then Euler rotation in degrees), the orchestrator places the camera there;
+> left out, the camera stays where the scene has it. Here it runs as the
+> camera: the orchestrator starts it with
+> `-player-mode SyntheticCamera -state-server <port>`, plus
+> `-camera-transform px,py,pz,rx,ry,rz` when the settings have one, and the
+> player waits on
 > that port for its Orin to connect.
 >
 > The **TensorRT engine** is the trained detector compiled by TensorRT,
