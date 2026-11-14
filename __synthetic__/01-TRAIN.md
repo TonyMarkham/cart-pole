@@ -68,56 +68,6 @@ runs its code with the packages it lists, installed in its own `.venv/`. A
 **crate** is one Rust package; the crates are in the workspace of the repo
 root's `Cargo.toml`, so what they build goes to the root's `target/`.
 
-> ## SESSION — the training session's name
->
-> Each training session gets its own folder, `trainer/python/runs/<date>_<time>/`,
-> named for the moment Step 5 started it: `20261113_074052` is 13 November 2026
-> at 07:40:52. Resuming a stopped session (Step 5) names that folder with one
-> shell variable, `SESSION`, and [02-DEPLOY.md](02-DEPLOY.md) sets the same
-> variable with the same command. A resume needs a save to start from, so
-> `SESSION` is the newest session that has one. A variable lives only in the
-> PowerShell window it was set in, so set it in the window that runs the
-> resume:
->
->> ### PowerShell
->> > [!IMPORTANT]
->> > Run from the repo root: the folder with `Cargo.toml` and `AGENTS.md` in it.
->>
->> ```pwsh
->> $SESSION = (Get-ChildItem __synthetic__/trainer/python/runs -Directory | Where-Object { Test-Path (Join-Path $_.FullName "latest.json") } | Sort-Object Name | Select-Object -Last 1).Name
->> ```
->
->> ### What each part means
->>
->> - **`Get-ChildItem … -Directory`**: the folders in `runs/`, one per session.
->> - **`Where-Object { Test-Path … "latest.json" }`**: keeps only the folders
->>   that hold a save, `latest.json` with `latest.zip`. A session gets its
->>   folder the moment it starts, and saves every `[train] save_every` steps
->>   (`gym.toml`, 10,000), and again whenever it ends: at its total, on Ctrl+C,
->>   or on a failure (`train.py`, its `finally`). Only a session that failed
->>   before training began has no save.
->> - **`Sort-Object Name`**: puts them in order of their names. A name is the
->>   date and then the time, the largest unit first, so this is also the order
->>   the sessions were started in.
->> - **`Select-Object -Last 1`**: the last of them, the newest session with a
->>   save.
->> - **`.Name`**: its folder's name alone, without the path before it.
->
->> ### Check it
->> ```pwsh
->> $SESSION
->> ```
->
->> ### Expected Results:
->> The newest session's name: on 2026-11-14, `20261113_074052`, the session
->> that ran to 6,000,000 steps. An empty line means no session in `runs/` has
->> a save yet.
->>
->> > [!WARNING]
->> > The newest session with a save is not always the one you mean: a short
->> > test session started later, and stopped, has a save too, and becomes
->> > `SESSION`. Check its name before resuming it.
-
 > ## Step 1 — what has to exist first
 >
 > | What | Where | How it is made |
@@ -277,23 +227,72 @@ root's `Cargo.toml`, so what they build goes to the root's `target/`.
 > and its reward per step; and the session's time so far and the time it
 > expects is left.
 >
-> A session that stops, by failing or by Ctrl+C, continues from its last
-> save. Set `SESSION` first (*SESSION — the training session's name*, at the
-> top), then:
->
->> ### PowerShell
->> > [!IMPORTANT]
->> > Run from the repo root: the folder with `Cargo.toml` and `AGENTS.md` in it.
+>> ### Resume
 >>
->> ```pwsh
->> uv run --project __synthetic__/trainer/python python __synthetic__/trainer/python/src/train.py --resume "__synthetic__/trainer/python/runs/$SESSION"
->> ```
->
-> The session continues in the same folder, and refuses to start, with its
-> reason, if what the policy sees, how an episode ends, or the values the
-> simulation reports about the rig (`run_values` in `latest.json`: the top
-> pulse rate, the pole's mass, and the like) changed since the session began
-> (`train.py`'s own header).
+>> A session that stops, by failing or by Ctrl+C, continues from its last
+>> save. Each session has its own folder, `trainer/python/runs/<date>_<time>/`,
+>> named for the moment it started: `20261113_074052` is 13 November 2026 at
+>> 07:40:52. The resume names that folder with one shell variable, `SESSION`,
+>> the newest session that has a save, since a resume needs one to start from.
+>> [02-DEPLOY.md](02-DEPLOY.md) sets the same variable with the same command.
+>>
+>> > [!IMPORTANT]
+>> > Set `SESSION` first, in the same PowerShell window as the resume: a
+>> > variable lives only in the window it was set in, and without it there is
+>> > no folder to resume.
+>>
+>>> #### SESSION — the training session's name
+>>> > [!IMPORTANT]
+>>> > Run from the repo root: the folder with `Cargo.toml` and `AGENTS.md` in it.
+>>>
+>>> ```pwsh
+>>> $SESSION = (Get-ChildItem __synthetic__/trainer/python/runs -Directory | Where-Object { Test-Path (Join-Path $_.FullName "latest.json") } | Sort-Object Name | Select-Object -Last 1).Name
+>>> ```
+>>
+>>> #### What each part means
+>>>
+>>> - **`Get-ChildItem … -Directory`**: the folders in `runs/`, one per session.
+>>> - **`Where-Object { Test-Path … "latest.json" }`**: keeps only the folders
+>>>   that hold a save, `latest.json` with `latest.zip`. A session gets its
+>>>   folder the moment it starts, and saves every `[train] save_every` steps
+>>>   (`gym.toml`, 10,000), and again whenever it ends: at its total, on Ctrl+C,
+>>>   or on a failure (`train.py`, its `finally`). Only a session that failed
+>>>   before training began has no save.
+>>> - **`Sort-Object Name`**: puts them in order of their names. A name is the
+>>>   date and then the time, the largest unit first, so this is also the order
+>>>   the sessions were started in.
+>>> - **`Select-Object -Last 1`**: the last of them, the newest session with a
+>>>   save.
+>>> - **`.Name`**: its folder's name alone, without the path before it.
+>>
+>>> #### Check it
+>>> ```pwsh
+>>> $SESSION
+>>> ```
+>>
+>>> #### Expected Results:
+>>> The newest session's name: on 2026-11-14, `20261113_074052`, the session
+>>> that ran to 6,000,000 steps. An empty line means no session in `runs/` has
+>>> a save yet.
+>>>
+>>> > [!WARNING]
+>>> > The newest session with a save is not always the one you mean: a short
+>>> > test session started later, and stopped, has a save too, and becomes
+>>> > `SESSION`. Check its name before resuming it.
+>>
+>>> #### PowerShell — resume
+>>> > [!IMPORTANT]
+>>> > Run from the repo root: the folder with `Cargo.toml` and `AGENTS.md` in it.
+>>>
+>>> ```pwsh
+>>> uv run --project __synthetic__/trainer/python python __synthetic__/trainer/python/src/train.py --resume "__synthetic__/trainer/python/runs/$SESSION"
+>>> ```
+>>
+>> The session continues in the same folder, and refuses to start, with its
+>> reason, if what the policy sees, how an episode ends, or the values the
+>> simulation reports about the rig (`run_values` in `latest.json`: the top
+>> pulse rate, the pole's mass, and the like) changed since the session began
+>> (`train.py`'s own header).
 >
 > Each session gets its own folder, `trainer/python/runs/<date>_<time>/`
 > (`[train] runs_dir`, not in git):
