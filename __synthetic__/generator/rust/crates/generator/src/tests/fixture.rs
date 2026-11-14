@@ -29,7 +29,7 @@ pub(crate) const SET: &str = r#"{
     "cameraImageWidth": 1456,
     "cameraImageHeight": 1088,
     "cameraYaw": {"min": -5, "max": 5},
-    "maxZ": 2.5,
+    "cameraDistance": {"min": -0.1, "max": 0.1},
     "desks": ["Classic", "Standard"],
     "unlimitedHinge": {"min": -3.1415927, "max": 3.1415927}
 }"#;

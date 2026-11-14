@@ -102,6 +102,15 @@ drop_one_message_in = 3_000
 # (__documentation__/synthetic-loop-dia.md, The rail's ends).
 calibration_stop_gap = 0.005
 
+# Optional: the Unity camera's pose for the run, [px, py, pz, rx, ry, rz], world
+# position in metres then Euler rotation in degrees, in Unity's frame, passed as
+# --camera-transform px,py,pz,rx,ry,rz (__documentation__/synthetic-loop-dia.md,
+# Contracts, the camera pose). The orchestrator launches each player with it and
+# sends it with every pose, so moving the camera needs no special player build.
+# Left out, the camera keeps its pose in the player's scene. Example, the camera
+# 1.0 m up and 2.5 m in front of the rig, looking straight at it:
+camera_transform = [0.0, 1.0, -2.5, 0.0, 0.0, 0.0]
+
 # Not the whole command: the trainer inserts the grid, the screen, the two
 # ports, the seed, the random timings, the gym file's max_episode_steps,
 # [mjcf] and [drive] (below) straight after the program, as --instance-rows,
@@ -109,7 +118,7 @@ calibration_stop_gap = 0.005
 # --seed, --frame-ready-min, --frame-ready-max, --to-uno-min, --to-uno-max,
 # --change-motor-min, --change-motor-max, --next-frame-ready-min,
 # --next-frame-ready-max, --drop-one-message-in, --max-episode-steps,
-# --calibration-stop-gap,
+# --calibration-stop-gap, --camera-transform (when camera_transform is given),
 # --model, --cart-joint, --pole-joint, --actuator, the twelve --*-site
 # flags, --full-steps-per-rev, --microsteps, --belt-um-per-rev and
 # --jump-limit, so those never appear here.
@@ -120,7 +129,7 @@ calibration_stop_gap = 0.005
 # x,y (default 0,0) on the display the windows open on.
 command = [
     "target/release/orchestrator.exe",
-    "--player", "unity/projects/SyntheticCamera/Build-1.1m/SyntheticCamera.exe",
+    "--player", "unity/projects/SyntheticCamera/Build/SyntheticCamera.exe",
     "--out", "target/trainer-run",
     # --orin must come last: every argument after it is the Orin's command.
     "--orin", "uv", "run", "--project", "__synthetic__/orin/python", "python", "__synthetic__/orin/python/src/synthetic_orin.py",

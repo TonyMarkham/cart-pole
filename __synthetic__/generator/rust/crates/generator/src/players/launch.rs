@@ -1,5 +1,5 @@
 use crate::{
-    config::Config,
+    config::{CAMERA_TRANSFORM_PARTS, Config},
     error::{app_error::AppError, app_result::AppResult},
     players::{placement::window_position, player_grid::PlayerGrid},
 };
@@ -28,6 +28,11 @@ const WINDOW_POSITION_ARGUMENT: &str = "-window-position";
 /// Between x and y in the window position: PlayerController's
 /// `k_PositionSeparator`, which it splits the value on.
 const POSITION_SEPARATOR: char = ',';
+
+/// The camera's pose, given only when generator.toml has `camera_transform`:
+/// PlayerController's `k_CameraTransformArgument`, followed by
+/// `camera_transform_value`.
+const CAMERA_TRANSFORM_ARGUMENT: &str = "-camera-transform";
 
 // Unity's standalone player arguments, from the Unity Manual's "Unity
 // Standalone Player command line arguments".
@@ -87,7 +92,12 @@ pub(crate) fn launch(config: &Config, grid: PlayerGrid, k: u16, port: u16) -> Ap
         .arg(SCREEN_HEIGHT_ARGUMENT)
         .arg(grid.window.height.to_string())
         .arg(LOG_FILE_ARGUMENT)
-        .arg(&log_file)
+        .arg(&log_file);
+    let camera = config.camera_transform.map(camera_transform_value);
+    if let Some(camera) = &camera {
+        command.arg(CAMERA_TRANSFORM_ARGUMENT).arg(camera);
+    }
+    command
         .stdin(Stdio::null())
         .stdout(Stdio::null())
         .stderr(Stdio::null())
@@ -96,6 +106,7 @@ pub(crate) fn launch(config: &Config, grid: PlayerGrid, k: u16, port: u16) -> Ap
         player = k,
         port,
         window = %position,
+        camera = camera.as_deref().unwrap_or("as in the scene"),
         log = %log_file.display(),
         "launching"
     );
@@ -105,4 +116,15 @@ pub(crate) fn launch(config: &Config, grid: PlayerGrid, k: u16, port: u16) -> Ap
             config.player.display()
         ))
     })
+}
+
+/// `-camera-transform`'s value: generator.toml's `camera_transform` joined by
+/// `POSITION_SEPARATOR`, the form PlayerController splits. Example: `[0.0,
+/// 1.1, -2.5, 0.0, 0.0, 0.0]` is `0,1.1,-2.5,0,0,0`.
+pub(crate) fn camera_transform_value(values: [f64; CAMERA_TRANSFORM_PARTS]) -> String {
+    values
+        .iter()
+        .map(f64::to_string)
+        .collect::<Vec<String>>()
+        .join(&POSITION_SEPARATOR.to_string())
 }

@@ -47,6 +47,10 @@
     "min": -5,
     "max": 5
   },
+  "cameraRoll": {
+    "min": -2.5,
+    "max": 2.5
+  },
   "cameraHeight": {
     "min": -0.1,
     "max": 0.1
@@ -55,7 +59,10 @@
     "min": -0.1,
     "max": 0.1
   },
-  "maxZ": 2.65,
+  "cameraDistance": {
+    "min": -0.1,
+    "max": 0.1
+  },
   "desks": [
     "Desk (Writing)",
     "Desk (Sit-Stand)",

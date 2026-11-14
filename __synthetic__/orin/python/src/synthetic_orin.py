@@ -29,7 +29,10 @@ Messages, control socket (orchestrator):
 - out text   {"type": "registered"}                  once, when this process
                                                      has connected to the
                                                      player (8)
-- in  text   {"id": n, "time": t, "joints": [...]}   the capture state (11)
+- in  text   {"id": n, "time": t, "joints": [...]}   the capture state (11),
+                                                     with "cameraTransform"
+                                                     when the run has a
+                                                     camera pose
 - in  text   {"type": "reset", "gaps": [d1, ... d6]} between episodes (R5):
                                                      pre-warm afresh at them
 - out text   {"type": "reset"}                       the pool is ready (R7)
@@ -43,7 +46,9 @@ Messages, control socket (orchestrator):
                                                      (derived_state.py)
 Messages, frame socket (the player):
 - out text   {"id": n, "joints": [...]}              the trigger (12): the
-                                                     pose, forwarded as is
+                                                     pose, forwarded as is,
+                                                     "cameraTransform" too
+                                                     when given (trigger.py)
 - in  binary the JPEG                                one per trigger (13)
 
 Rules:
@@ -110,6 +115,7 @@ from detector import Detector, FrameError
 from detector_config import DEFAULT_PATH, DetectorConfig
 from fit import Homography
 from frame_socket import FrameSocketSettings, connect_to_player
+from trigger import trigger
 
 # The loop's frame contract (__documentation__/synthetic-loop-dia.md, Contracts).
 FRAME_SIZE = (728, 544)
@@ -253,7 +259,7 @@ def main() -> None:
                         ws.send(json.dumps({"type": "reset"}))
                         continue
                     frame_id, capture = int(pose["id"]), float(pose["time"])
-                    camera.send(json.dumps({"id": frame_id, "joints": pose["joints"]}))
+                    camera.send(trigger(frame_id, pose))
                     jpeg = camera.recv()
                     if not isinstance(jpeg, bytes):
                         raise RuntimeError(f"frame {frame_id}: the player sent text, expected the JPEG")

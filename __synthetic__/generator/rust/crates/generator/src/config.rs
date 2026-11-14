@@ -57,7 +57,18 @@ pub(crate) struct Config {
     /// Each player's Unity log, `player_<k>.log`, goes here (without it,
     /// every player would write the same Player.log).
     pub(crate) log_dir: PathBuf,
+    /// Optional: the camera's pose in every player, `[px, py, pz, rx, ry,
+    /// rz]`, world position in metres then Euler rotation in degrees, given
+    /// as `-camera-transform` (`camera_transform_value`). The set's camera
+    /// ranges are offsets from it. Left out, the camera keeps its pose in the
+    /// player's scene.
+    #[serde(default)]
+    pub(crate) camera_transform: Option<[f64; CAMERA_TRANSFORM_PARTS]>,
 }
+
+/// `camera_transform`'s length: three for the position, three for the
+/// rotation.
+pub(crate) const CAMERA_TRANSFORM_PARTS: usize = 6;
 
 impl Config {
     pub(crate) fn load(path: &Path) -> AppResult<Self> {
@@ -77,6 +88,14 @@ impl Config {
         // The grid is checked here, so a bad one stops the run before any
         // player launches.
         config.grid()?;
+        if let Some(values) = config.camera_transform
+            && values.iter().any(|value| !value.is_finite())
+        {
+            return Err(AppError::settings(format!(
+                "{}: camera_transform {values:?}: every number must be finite",
+                path.display()
+            )));
+        }
         Ok(config)
     }
 

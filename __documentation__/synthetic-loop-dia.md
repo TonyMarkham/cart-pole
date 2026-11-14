@@ -385,7 +385,7 @@ sequenceDiagram
     O->>M: load + reset(start pose)
     O->>A: new(Config: [drive]'s three drive figures and its jump limit m, the cart top speed from MuJoCo's ctrlrange,<br/>and the tick: MuJoCo's timestep)<br/>the cart starts at 50% of the rail, guaranteed (stands in for homing), at rest: sent rate 0, command 0, not in FAULT
     Note over O: the first episode's schedule, from --seed (Timing, The schedule):<br/>steps −5 to 514, each with its capture, picture ready, send and motor change (or lost),<br/>2,600 picks, every time rounded to the nearest 2 ms timestep<br/>the last landed step: none
-    O->>U: launch SyntheticCamera.exe -player-mode SyntheticCamera -state-server PORT<br/>PORT = unity_port + 2k (Training instances); first, since only a listening player can be connected to
+    O->>U: launch SyntheticCamera.exe -player-mode SyntheticCamera -state-server PORT [-camera-transform px,py,pz,rx,ry,rz]<br/>PORT = unity_port + 2k (Training instances); first, since only a listening player can be connected to<br/>-camera-transform only when the run has a camera pose (Contracts, the camera pose)
     Note over U: its StateServer listens on 127.0.0.1:PORT (the frame socket)<br/>it quits when its last client has gone, after one connected
     O->>N: launch --orchestrator ws://… --frames-url ws://127.0.0.1:PORT/ --out DIR --pool-gaps d₁,…,d₆ --homography FILE<br/>d₁ … d₅ the gaps between the captures of steps 0, −1, …, −5 in the schedule (The initial pool), d₆ = d₅<br/>(the Orin picks nothing and holds no timing of its own)
     Note over N: pre-warm: builds the 6-entry pool, slots (−1, −1),<br/>at times −d₁, −(d₁+d₂), …, −(d₁+…+d₆) before t = 0
@@ -399,8 +399,8 @@ sequenceDiagram
     loop every timestep, from the episode's t = 0, through the run's episodes, until the trainer says stop
         opt step n's capture is on this timestep (step 0's at t = 0, ids n counting across the run's episodes)
             Note over O: capture state = MuJoCo's t, qpos, site positions and pole state on this timestep<br/>(read as at 9–10), held under id n until step n's pool goes out (17)
-            O->>N: text {"id":n,"time":t,"joints":[cart, pole]}
-            N->>U: text {"id":n,"joints":[cart, pole]} (the trigger)
+            O->>N: text {"id":n,"time":t,"joints":[cart, pole]} (+ "cameraTransform" when the run has a camera pose)
+            N->>U: text {"id":n,"joints":[cart, pole]} (+ "cameraTransform" when given) (the trigger)
             U-->>N: binary JPEG, 728×544 greyscale q90: the picture
             Note over N: the JPEG does not decode or is not 728×544: a failed frame,<br/>2 × (−1, −1), the error logged<br/>3 failed frames among the pool's 6 entries: the run fails<br/>else letterbox, TensorRT FP16, slot rule:<br/>4 slots (x, y) or (−1, −1)<br/>Pivot and End through the matrix (Calibration): (x, z) in metres or (−1, −1)<br/>push onto the pool at age 0 ms, every older entry ages<br/>by the time since the previous capture (the oldest drops)<br/>save frame_NNNNNN.jpg, append to observations.jsonl (with any error)
             N-->>O: id n and the pool, no timing:<br/>6 entries, newest first, each keyed by its age: −ms from the current<br/>capture time (newest = 0), Pivot's and End's (x, z) in metres<br/>+ failed, when the run fails
@@ -514,11 +514,11 @@ sequenceDiagram
     participant U as Calibrating Unity player
     O->>M: C1: load the MJCF, and for each of the seven poses: reset(the pose), sites()
     M-->>O: C2: Pivot's and End's true (x, z) in that pose (nothing steps: the pole cannot fall)
-    O->>U: C3: launch SyntheticCamera.exe -player-mode SyntheticCamera -state-server PORT<br/>on instance 0's ports, as 4
+    O->>U: C3: launch SyntheticCamera.exe -player-mode SyntheticCamera -state-server PORT [-camera-transform …]<br/>on instance 0's ports, as 4
     O->>N: C4: launch --orchestrator ws://… --frames-url ws://127.0.0.1:PORT/ --out DIR --calibrate DIR/homography.json
     N-->>O: C5: {"type":"registered"}: the Orin has connected to the player, as 6–8
     loop each of the seven poses
-        O->>N: C6: {"type":"measure","pose":name,"joints":[cart, pole],"pivot":[x,z],"end":[x,z]}
+        O->>N: C6: {"type":"measure","pose":name,"joints":[cart, pole],"pivot":[x,z],"end":[x,z]} (+ "cameraTransform", as 11)
         loop until [calibration] images have both Pivot and End
             N->>U: the trigger, as 12
             U-->>N: the JPEG, as 13
@@ -997,6 +997,22 @@ left out the camera, the policy and the WiFi.
   names from the trainer's `[mjcf]` as the keys. The orchestrator sends
   `{"id", "time", "joints"}`; the Orin forwards `{"id", "joints"}`
   unchanged, and Unity drives each joint by its name.
+- **The camera pose (4, 11, 12, C3, C6), optional** (user, 2026-11-14):
+  the Unity camera's world position in metres and Euler rotation in
+  degrees, so a run can move the camera without a special player build.
+  It comes from the trainer's `settings.toml` `[orchestrator]`
+  `camera_transform = [px, py, pz, rx, ry, rz]`, passed to the
+  orchestrator as `--camera-transform px,py,pz,rx,ry,rz`. Left out, there
+  is none, and the camera keeps its pose in the scene. With it, the
+  orchestrator launches each player with `-camera-transform
+  px,py,pz,rx,ry,rz` (the player's `PlayerController` places the camera at
+  startup), and every pose and measure message carries
+  `"cameraTransform": {"position": {"x", "y", "z"}, "eulerRotation":
+  {"x", "y", "z"}}`, which the Orin forwards with the joints and Unity's
+  `StateServer` applies to its camera before the render. Both carry the
+  same pose: the launch argument places the camera before the first
+  frame, and the messages place it in an editor Play mode player that
+  the orchestrator did not launch (`--no-launch`).
 - **The frame (13):** 728×544 greyscale JPEG, quality 90. Greyscale is
   the content, not the channel count: Unity's `GreyscaleEncoder` (the
   dataset generator's own) writes BT.601 luma into all three RGB

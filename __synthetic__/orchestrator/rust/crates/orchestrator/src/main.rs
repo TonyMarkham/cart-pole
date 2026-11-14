@@ -1,5 +1,6 @@
 mod args;
 mod calibration;
+mod camera;
 mod control;
 mod drive;
 mod instance;
@@ -18,6 +19,7 @@ mod window;
 
 use crate::{
     args::Args,
+    camera::camera_transform::CameraTransform,
     calibration::{
         calibration_pose::CalibrationPose, calibration_poses, fit_message::FitMessage,
         fitted_reply::FittedReply, measure_message::MeasureMessage, measured_reply::MeasuredReply,
@@ -151,6 +153,7 @@ async fn main() -> Result<()> {
             orin,
             orin_child,
             player,
+            camera: args.camera_transform,
             next_id: 0,
             held: VecDeque::new(),
             owed: None,
@@ -252,7 +255,15 @@ async fn calibrate(
         poses.len()
     );
     let names = (args.cart_joint.as_str(), args.pole_joint.as_str());
-    let result = measure_and_fit(&mut orin, &poses, names, connect_timeout, homography).await;
+    let result = measure_and_fit(
+        &mut orin,
+        &poses,
+        names,
+        args.camera_transform,
+        connect_timeout,
+        homography,
+    )
+    .await;
     // C10: as 22–25.
     let _ = orin.close(None).await;
     await_close(&mut orin, CLIENT_EXIT_GRACE).await;
@@ -270,6 +281,7 @@ async fn measure_and_fit(
     orin: &mut WebSocketStream<TcpStream>,
     poses: &[CalibrationPose],
     (cart_joint, pole_joint): (&str, &str),
+    camera: Option<CameraTransform>,
     timeout: Duration,
     homography: &Path,
 ) -> Result<()> {
@@ -289,6 +301,7 @@ async fn measure_and_fit(
             ],
             pivot: pose.pivot,
             end: pose.end,
+            camera_transform: camera,
         };
         orin.send(Message::text(serde_json::to_string(&message)?))
             .await

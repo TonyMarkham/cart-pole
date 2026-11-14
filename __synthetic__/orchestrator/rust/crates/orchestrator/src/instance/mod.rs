@@ -4,6 +4,7 @@ pub(crate) mod owed;
 // ---------------------------------------------------------------------------------------------- //
 
 use crate::{
+    camera::camera_transform::CameraTransform,
     instance::{held::Held, owed::Owed},
     orin::{receive_reply, reset_orin, send_pose},
     simulation::Simulation,
@@ -25,6 +26,8 @@ pub(crate) struct Instance {
     pub(crate) orin: WebSocketStream<TcpStream>,
     pub(crate) orin_child: Child,
     pub(crate) player: Option<Child>,
+    // The run's camera pose, sent with every pose; None sends none.
+    pub(crate) camera: Option<CameraTransform>,
     // Ids count on across the instance's episodes.
     pub(crate) next_id: u32,
     // Captured steps, oldest first, until their sends.
@@ -45,7 +48,7 @@ impl Instance {
                     self.next_id += 1;
                     let capture = self.sim.capture();
                     let sent = Instant::now();
-                    send_pose(&mut self.orin, id, &capture, &self.sim.names).await?;
+                    send_pose(&mut self.orin, id, &capture, &self.sim.names, self.camera).await?;
                     let reply = receive_reply(&mut self.orin, id, timeout).await?;
                     let orin_ms = sent.elapsed().as_secs_f64() * 1000.0;
                     self.sim.log(id, &capture, Some(&reply.pool[0]))?;

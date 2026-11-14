@@ -75,17 +75,21 @@ message GenerationSet {
   uint32 camera_image_height = 8;
 
   // Camera offsets from its pose in the scene, each drawn per frame; a range
-  // left out draws nothing (offset 0). Yaw and pitch in degrees, height
-  // (world Y) and lateral (world X) in meters.
+  // left out draws nothing (offset 0). Yaw, pitch and roll in degrees,
+  // height (world Y), lateral (world X) and distance (world Z) in meters.
   Range camera_yaw = 9;
   Range camera_pitch = 10;
   Range camera_height = 11;
   Range camera_lateral = 12;
+  Range camera_roll = 21;
+  Range camera_distance = 22;
 
-  // The frustum-fit cap in meters: a draw whose camera must back off further
-  // than this to keep the robot in frame is discarded and redrawn. Left out:
-  // no cap.
-  optional float max_z = 13;
+  // Field 13 was max_z, the cap on how far the camera could back off along
+  // its view axis to keep the robot in frame; the camera now slides in X and
+  // Y instead and never backs off. Reserved so the number and name are never
+  // reused with another meaning.
+  reserved 13;
+  reserved "max_z";
 
   // Desks by name in the player's catalog; each frame stands on one drawn
   // from the list. Empty: no desk.

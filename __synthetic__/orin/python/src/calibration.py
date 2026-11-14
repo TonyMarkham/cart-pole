@@ -8,7 +8,9 @@ to all the points and writes it where the training instances' Orins will read it
 
 Messages, control socket (orchestrator):
 - in  text  {"type": "measure", "pose": name, "joints": [...], "pivot": [x, z],
-             "end": [x, z]}                                     one pose (C6)
+             "end": [x, z]}                                     one pose (C6), with
+             "cameraTransform" when the run has a camera pose, forwarded in
+             each trigger (trigger.py)
 - out text  {"type": "measured", "pose": name, "images": n, "renders": r}   (C7)
 - in  text  {"type": "fit"}                                     (C8)
 - out text  {"type": "fitted", "ok": bool, "worst_px": w, "lens_k": k}      (C9)
@@ -28,6 +30,7 @@ from detector_config import DetectorConfig
 from fit import Pair, fit, store
 from lens import Optics
 from measure import clipped_mean
+from trigger import trigger
 
 
 class CalibrationError(RuntimeError):
@@ -59,7 +62,7 @@ def measure_pose(
         if renders == calibration["max_renders"]:
             raise CalibrationError(f"pose {message['pose']}: Pivot and End were seen together in only "
                                    f"{len(pivots)} of {renders} renders")
-        camera.send(json.dumps({"id": first_id + renders, "joints": message["joints"]}))
+        camera.send(trigger(first_id + renders, message))
         jpeg = camera.recv()
         renders += 1
         if not isinstance(jpeg, bytes):

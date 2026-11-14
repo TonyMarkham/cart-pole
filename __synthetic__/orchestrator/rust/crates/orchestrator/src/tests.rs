@@ -1,9 +1,10 @@
 use crate::{
     calibration::{fit_message::FitMessage, measure_message::MeasureMessage, stops},
+    camera::{camera_transform::CameraTransform, xyz::Xyz},
     drive::{cart_velocity, drive_config, meters_per_pulse, ramp_tick},
     orin::{
         await_close, derived_state::DerivedState, joint_qpos::JointQpos, orin_reply::OrinReply,
-        reset_message::ResetMessage,
+        pose_message::PoseMessage, reset_message::ResetMessage,
     },
     schedule::{Schedule, nearest_timestep, step_times::StepTimes},
     simulation::limit_switches,
@@ -819,6 +820,7 @@ fn a_measure_carries_the_pose_and_its_true_points() -> Result<()> {
         }],
         pivot: [-0.5, 0.25],
         end: [-0.5, 0.75],
+        camera_transform: None,
     };
     assert_eq!(
         serde_json::to_string(&measure)?,
@@ -827,6 +829,78 @@ fn a_measure_carries_the_pose_and_its_true_points() -> Result<()> {
     assert_eq!(
         serde_json::to_string(&FitMessage { kind: "fit" })?,
         r#"{"type":"fit"}"#
+    );
+    Ok(())
+}
+
+// The camera pose (Contracts, the camera pose): px,py,pz,rx,ry,rz on the
+// command line, read back unchanged for the player's -camera-transform.
+#[test]
+fn a_camera_transform_reads_six_numbers_and_writes_them_back() {
+    let camera: CameraTransform = "0, 1.1,-2.5,0,-3,0.5".parse().unwrap();
+    assert_eq!(
+        camera.position,
+        Xyz {
+            x: 0.0,
+            y: 1.1,
+            z: -2.5
+        }
+    );
+    assert_eq!(
+        camera.euler_rotation,
+        Xyz {
+            x: 0.0,
+            y: -3.0,
+            z: 0.5
+        }
+    );
+    assert_eq!(camera.to_string(), "0,1.1,-2.5,0,-3,0.5");
+    assert!("0,1.1,-2.5,0,0".parse::<CameraTransform>().is_err()); // five
+    assert!("0,1.1,-2.5,0,0,0,0".parse::<CameraTransform>().is_err()); // seven
+    assert!("0,1.1,x,0,0,0".parse::<CameraTransform>().is_err());
+    assert!("0,1.1,NaN,0,0,0".parse::<CameraTransform>().is_err());
+}
+
+// 11 and C6 on the wire: the pose rides along as Unity's Vector3s when the
+// run has one, and is left out when it has none.
+#[test]
+fn a_camera_pose_rides_with_the_pose_and_the_measure_only_when_given() -> Result<()> {
+    let camera: CameraTransform = "0,1.1,-2.5,10,0,0".parse().unwrap();
+    let joints = || {
+        vec![JointQpos {
+            name: "cart".to_string(),
+            qpos: -0.5,
+        }]
+    };
+    let camera_json =
+        r#""cameraTransform":{"position":{"x":0.0,"y":1.1,"z":-2.5},"eulerRotation":{"x":10.0,"y":0.0,"z":0.0}}"#;
+    let pose = |camera_transform| PoseMessage {
+        id: 7,
+        time: 0.25,
+        joints: joints(),
+        camera_transform,
+    };
+    assert_eq!(
+        serde_json::to_string(&pose(Some(camera)))?,
+        format!(r#"{{"id":7,"time":0.25,"joints":[{{"name":"cart","qpos":-0.5}}],{camera_json}}}"#)
+    );
+    assert_eq!(
+        serde_json::to_string(&pose(None))?,
+        r#"{"id":7,"time":0.25,"joints":[{"name":"cart","qpos":-0.5}]}"#
+    );
+    let measure = MeasureMessage {
+        kind: "measure",
+        pose: "left up",
+        joints: joints(),
+        pivot: [-0.5, 0.25],
+        end: [-0.5, 0.75],
+        camera_transform: Some(camera),
+    };
+    assert_eq!(
+        serde_json::to_string(&measure)?,
+        format!(
+            r#"{{"type":"measure","pose":"left up","joints":[{{"name":"cart","qpos":-0.5}}],"pivot":[-0.5,0.25],"end":[-0.5,0.75],{camera_json}}}"#
+        )
     );
     Ok(())
 }

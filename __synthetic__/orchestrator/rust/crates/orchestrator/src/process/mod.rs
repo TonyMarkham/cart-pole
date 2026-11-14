@@ -1,5 +1,6 @@
 use crate::{
     args::Args,
+    camera::camera_transform::CameraTransform,
     window::{Pixels, grid_position},
 };
 
@@ -24,6 +25,9 @@ pub(crate) const CLIENT_EXIT_GRACE: Duration = Duration::from_secs(5);
 const PLAYER_MODE_ARGUMENT: &str = "-player-mode";
 const CAMERA_MODE: &str = "SyntheticCamera";
 const STATE_SERVER_ARGUMENT: &str = "-state-server";
+// Places the player's camera at startup (PlayerController.cs), followed by
+// px,py,pz,rx,ry,rz; given only when the run has a camera pose.
+const CAMERA_TRANSFORM_ARGUMENT: &str = "-camera-transform";
 
 // The frame socket's address as the synthetic Orin connects to it: the
 // player's StateServer on 127.0.0.1, the loop being on this workstation.
@@ -45,7 +49,7 @@ pub(crate) fn start_player(
                     size,
                 )
             });
-            Ok(Some(launch(k, player, port, window)?))
+            Ok(Some(launch(k, player, port, args.camera_transform, window)?))
         }
         _ => {
             eprintln!(
@@ -60,6 +64,7 @@ pub(crate) fn launch(
     k: usize,
     player: &Path,
     port: u16,
+    camera: Option<CameraTransform>,
     window: Option<(Pixels, Pixels)>,
 ) -> Result<Child> {
     let mut command = Command::new(player);
@@ -72,6 +77,10 @@ pub(crate) fn launch(
         "{} {PLAYER_MODE_ARGUMENT} {CAMERA_MODE} {STATE_SERVER_ARGUMENT} {port}",
         player.display()
     );
+    if let Some(camera) = camera {
+        command.arg(CAMERA_TRANSFORM_ARGUMENT).arg(camera.to_string());
+        shown.push_str(&format!(" {CAMERA_TRANSFORM_ARGUMENT} {camera}"));
+    }
     if let Some((
         Pixels { x, y },
         Pixels {

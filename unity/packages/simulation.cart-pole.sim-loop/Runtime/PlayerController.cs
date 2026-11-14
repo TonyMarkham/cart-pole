@@ -31,6 +31,16 @@ namespace Simulation.CartPole.SimLoop
     // editor, it does nothing. A malformed value is logged and the window
     // stays where it opened: its place is for watching, never for the frames,
     // which render into their own target whatever the window's size.
+    //
+    // Camera: -camera-transform px,py,pz,rx,ry,rz places m_Camera at world
+    // position (px, py, pz) in meters with Euler rotation (rx, ry, rz) in
+    // degrees, at Awake, before any other script reads the camera's pose
+    // (the generator takes it as its base pose at Start). Example:
+    //   -camera-transform 0,1.1,-2.5,0,0,0
+    // Without the argument the camera keeps its pose in the scene. A
+    // malformed value, or no m_Camera, fails like a bad -player-mode: a
+    // camera in the wrong place would make wrong frames, not just a
+    // misplaced window.
     [DefaultExecutionOrder(-100)]
     public sealed class PlayerController : MonoBehaviour
     {
@@ -46,10 +56,20 @@ namespace Simulation.CartPole.SimLoop
         private const char k_PositionSeparator = ',';
         private const int k_PositionParts = 2;
 
+        // The command-line argument that places m_Camera, followed by
+        // px,py,pz,rx,ry,rz: -camera-transform 0,1.1,-2.5,0,0,0.
+        private const string k_CameraTransformArgument = "-camera-transform";
+
+        // -camera-transform's value: position x, y, z then rotation x, y, z.
+        private const int k_CameraTransformParts = 6;
+
         // Every log line starts with this, so the Console shows who wrote it.
         private const string k_LogPrefix = "[PlayerController]";
 
         [SerializeField] private PlayerMode m_Mode = PlayerMode.SyntheticCamera;
+
+        // The camera -camera-transform places.
+        [SerializeField] private Camera m_Camera;
 
         // The mode this player runs as: m_Mode, or -player-mode's value once
         // Awake has read it.
@@ -91,6 +111,28 @@ namespace Simulation.CartPole.SimLoop
                 generator.enabled = m_Mode == PlayerMode.SyntheticGenerator;
             }
             Debug.Log($"{k_LogPrefix} running as {m_Mode}", this);
+
+            var cameraText = ArgumentValue(k_CameraTransformArgument);
+            if (cameraText == null)
+            {
+                return;
+            }
+            if (!TryParseCameraTransform(cameraText, out var position, out var eulerRotation))
+            {
+                Fail(loopController, generator,
+                    $"{k_CameraTransformArgument} {cameraText}: expected px,py,pz,rx,ry,rz " +
+                    "(meters, then degrees)");
+                return;
+            }
+            if (m_Camera == null)
+            {
+                Fail(loopController, generator,
+                    $"{k_CameraTransformArgument} given but no Camera is assigned");
+                return;
+            }
+            m_Camera.transform.SetPositionAndRotation(position, Quaternion.Euler(eulerRotation));
+            Debug.Log(
+                $"{k_LogPrefix} camera placed at {position} with rotation {eulerRotation}", this);
         }
 
         private void Start()
@@ -162,6 +204,29 @@ namespace Simulation.CartPole.SimLoop
                 return false;
             }
             position = new Vector2Int(x, y);
+            return true;
+        }
+
+        private static bool TryParseCameraTransform(string text, out Vector3 position, out Vector3 eulerRotation)
+        {
+            position = default;
+            eulerRotation = default;
+            var parts = text.Split(k_PositionSeparator);
+            if (parts.Length != k_CameraTransformParts)
+            {
+                return false;
+            }
+            var values = new float[k_CameraTransformParts];
+            for (var i = 0; i < k_CameraTransformParts; i++)
+            {
+                if (!float.TryParse(parts[i].Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out values[i]) ||
+                    !float.IsFinite(values[i]))
+                {
+                    return false;
+                }
+            }
+            position = new Vector3(values[0], values[1], values[2]);
+            eulerRotation = new Vector3(values[3], values[4], values[5]);
             return true;
         }
     }

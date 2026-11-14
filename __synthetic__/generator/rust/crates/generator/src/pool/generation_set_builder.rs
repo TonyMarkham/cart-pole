@@ -20,8 +20,8 @@ impl GenerationSetBuilder {
 
     /// Replaces every key the set file gives. In proto3 a key left out of
     /// the JSON reads as its zero value, so a key counts as given when it is
-    /// not zero: a non-zero number, a non-empty string or list, a range or
-    /// max_z that is present. A set file therefore cannot change a key to zero or empty.
+    /// not zero: a non-zero number, a non-empty string or list, a range that
+    /// is present. A set file therefore cannot change a key to zero or empty.
     #[must_use]
     pub(crate) fn overlay(mut self, set: GenerationSet) -> Self {
         // Every field named, so a field added to generation_set.proto is a
@@ -38,7 +38,8 @@ impl GenerationSetBuilder {
             camera_pitch,
             camera_height,
             camera_lateral,
-            max_z,
+            camera_roll,
+            camera_distance,
             desks,
             skyboxes,
             skybox_yaw,
@@ -80,8 +81,11 @@ impl GenerationSetBuilder {
         if let Some(range) = camera_lateral {
             self = self.camera_lateral(range);
         }
-        if let Some(meters) = max_z {
-            self = self.max_z(meters);
+        if let Some(range) = camera_roll {
+            self = self.camera_roll(range);
+        }
+        if let Some(range) = camera_distance {
+            self = self.camera_distance(range);
         }
         if !desks.is_empty() {
             self = self.desks(desks);
@@ -174,8 +178,14 @@ impl GenerationSetBuilder {
     }
 
     #[must_use]
-    pub(crate) const fn max_z(mut self, meters: f32) -> Self {
-        self.set.max_z = Some(meters);
+    pub(crate) const fn camera_roll(mut self, range: Range) -> Self {
+        self.set.camera_roll = Some(range);
+        self
+    }
+
+    #[must_use]
+    pub(crate) const fn camera_distance(mut self, range: Range) -> Self {
+        self.set.camera_distance = Some(range);
         self
     }
 

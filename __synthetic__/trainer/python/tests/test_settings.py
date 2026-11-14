@@ -95,6 +95,29 @@ class Loader(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, r"runs 2 instances or 1, got 3"):
             settings.command(0, 3)
 
+    def test_the_camera_pose_reaches_the_orchestrator_only_when_given(self):
+        """[orchestrator] camera_transform is optional: left out, no
+        --camera-transform; given, its six numbers as px,py,pz,rx,ry,rz
+        before --orin; anything but six finite numbers is refused
+        (__documentation__/synthetic-loop-dia.md, Contracts, the camera pose)."""
+        settings, _ = self.fixture.load()
+        self.assertIsNone(settings.camera_transform)
+        self.assertNotIn("--camera-transform", settings.command(0, 1))
+        path = self.fixture.path / "settings.toml"
+        text = path.read_text(encoding="utf-8")
+        given = "calibration_stop_gap = 0.005\ncamera_transform = [0, 1.1, -2.5, 10, 0, 0]"
+        path.write_text(text.replace("calibration_stop_gap = 0.005", given), encoding="utf-8")
+        command = Settings.load(path).command(0, 1)
+        self.assertEqual(command[command.index("--camera-transform") + 1], "0.0,1.1,-2.5,10.0,0.0,0.0")
+        self.assertLess(command.index("--camera-transform"), command.index("--orin"))
+        for bad in ("[0, 1.1, -2.5, 10, 0]", "[0, 1.1, -2.5, 10, 0, nan]", '[0, 1.1, -2.5, 10, 0, "0"]', "1.1"):
+            path.write_text(text.replace("calibration_stop_gap = 0.005",
+                                         f"calibration_stop_gap = 0.005\ncamera_transform = {bad}"),
+                            encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, r"camera_transform"):
+                Settings.load(path)
+        path.write_text(text, encoding="utf-8")
+
     def test_the_grid_holds_at_most_twelve(self):
         from settings import Settings
         path = self.fixture.path / "settings.toml"

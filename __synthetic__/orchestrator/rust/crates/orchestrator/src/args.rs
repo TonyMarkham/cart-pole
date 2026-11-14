@@ -1,4 +1,4 @@
-use crate::{control::Control, window::Pixels};
+use crate::{camera::camera_transform::CameraTransform, control::Control, window::Pixels};
 
 use clap::Parser;
 use std::path::PathBuf;
@@ -216,6 +216,16 @@ pub struct Args {
     /// screen_height.
     #[arg(long, value_parser = clap::value_parser!(i32).range(1..), requires = "screen_width")]
     pub screen_height: Option<i32>,
+
+    /// The Unity camera's pose, px,py,pz,rx,ry,rz: world position in metres,
+    /// then Euler rotation in degrees (__documentation__/synthetic-loop-dia.md,
+    /// Contracts, the camera pose). Each launched player gets it as
+    /// `-camera-transform`, and every pose and measure message carries it as
+    /// `cameraTransform`. Without it, the camera keeps its pose in the
+    /// scene. The trainer passes its settings.toml [orchestrator]
+    /// camera_transform when it has one.
+    #[arg(long, allow_hyphen_values = true)]
+    pub camera_transform: Option<CameraTransform>,
 
     /// The grid's top-left corner, x,y pixels from the top-left corner of
     /// the display the windows open on.

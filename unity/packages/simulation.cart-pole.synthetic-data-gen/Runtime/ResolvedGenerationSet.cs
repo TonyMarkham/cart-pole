@@ -46,15 +46,15 @@ namespace Simulation.CartPole.SyntheticDataGen
         internal int CameraImageWidth { get; private set; }
         internal int CameraImageHeight { get; private set; }
 
-        // Offsets from the camera's pose in the scene: degrees for yaw and
-        // pitch, meters for height (world Y) and lateral (world X).
+        // Offsets from the camera's pose in the scene: degrees for yaw,
+        // pitch and roll, meters for height (world Y), lateral (world X) and
+        // distance (world Z).
         internal float2? CameraYaw { get; private set; }
         internal float2? CameraPitch { get; private set; }
         internal float2? CameraHeight { get; private set; }
         internal float2? CameraLateral { get; private set; }
-
-        // The frustum-fit cap in meters; infinity when the set has none.
-        internal float MaxZ { get; private set; }
+        internal float2? CameraRoll { get; private set; }
+        internal float2? CameraDistance { get; private set; }
 
         // Empty: no desk.
         internal IReadOnlyList<DeskSO> Desks { get; private set; }
@@ -180,7 +180,8 @@ namespace Simulation.CartPole.SyntheticDataGen
                 CameraPitch = ToRange(set.CameraPitch),
                 CameraHeight = ToRange(set.CameraHeight),
                 CameraLateral = ToRange(set.CameraLateral),
-                MaxZ = set.HasMaxZ ? set.MaxZ : float.PositiveInfinity,
+                CameraRoll = ToRange(set.CameraRoll),
+                CameraDistance = ToRange(set.CameraDistance),
                 Desks = desks,
                 Skyboxes = skyboxes,
                 SkyboxYaw = ToRange(set.SkyboxYaw),

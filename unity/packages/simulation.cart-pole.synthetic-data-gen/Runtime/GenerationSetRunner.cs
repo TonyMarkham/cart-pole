@@ -18,12 +18,13 @@ namespace Simulation.CartPole.SyntheticDataGen
     // absolute ranges), pose the robot's joints at the drawn state (each
     // joint's own range, the set's UnlimitedHinge for an unlimited
     // hinge) or the fixed pose and its props, place the
-    // camera at its authored pose plus the drawn offsets, compensate the frustum,
+    // camera at its authored pose plus the drawn offsets, slide it in X and Y
+    // until the robot bounds are in the frame,
     // render the greyscale capture frame, run the 8K verification
     // gate, and write the gated artifacts - all before the next draw.
     // Between states the run awaits, so the player loop and the editor
     // UI keep running: the process never reads as unresponsive. A draw
-    // whose frustum compensation exceeds the set's Max Z is not
+    // that no X/Y slide fits the robot bounds in the frame is not
     // captured and does not count toward States; a discarded fixed-pose
     // frame is retried with the same pose and a fresh environment and
     // camera, so the sequence stays in step. A set with no fixed-pose
@@ -42,6 +43,18 @@ namespace Simulation.CartPole.SyntheticDataGen
 
         private const int JpegQuality = GreyscaleEncoder.Quality;
 
+        // ResolveBounds' passes. With the camera turned at most 5 degrees
+        // from the authored pose, a world-X slide changes each corner's
+        // depth by at most sin 5 deg = 0.087 of the slide, so each pass
+        // leaves under a tenth of the error before it: 8 passes is far
+        // past half a pixel. Hitting the limit discards the draw.
+        private const int k_MaxBoundsPasses = 8;
+
+        // ResolveBounds gives up when the camera's right (up) axis is turned
+        // this far from world X (Y): cos 60 deg. The authored pose looks
+        // down world +Z, so a real draw is never close to it.
+        private const float k_MinAxisAlignment = 0.5f;
+
         private readonly ResolvedGenerationSet set;
         // The markers MarkerManager placed, class i at index i.
         private readonly IReadOnlyList<PlacedMarker> placedMarkers;
@@ -53,6 +66,10 @@ namespace Simulation.CartPole.SyntheticDataGen
         private readonly bool keepBoundsInFrustum;
         private readonly Vector3 cameraBasePosition;
         private readonly Quaternion cameraBaseRotation;
+
+        // RobotBounds' four corners, set by RunAsync when the bounds are
+        // kept in the frame.
+        private Transform[] boundsCorners;
 
         private System.Random random;
         private IReadOnlyList<ResolvedFixedPose> fixedPoses;
@@ -72,7 +89,8 @@ namespace Simulation.CartPole.SyntheticDataGen
         internal int Frames => writer?.Frames ?? 0;
 
         // Why the run stopped before capturing all States frames, null
-        // when it finished: no markers placed, the Max Z cap rejecting
+        // when it finished: no markers placed, a RobotBounds corner
+        // missing, the bounds fit rejecting
         // nearly every draw, or the gate confirming nothing.
         internal string Failure { get; private set; }
 
@@ -113,6 +131,24 @@ namespace Simulation.CartPole.SyntheticDataGen
                 Debug.LogError($"[GenerationSetRunner] {Failure}");
                 return;
             }
+            if (keepBoundsInFrustum)
+            {
+                boundsCorners = new[]
+                {
+                    robotBounds.TopLeft,
+                    robotBounds.TopRight,
+                    robotBounds.BottomLeft,
+                    robotBounds.BottomRight,
+                };
+                if (boundsCorners.Any(corner => corner == null))
+                {
+                    Failure =
+                        $"RobotBounds '{robotBounds.name}' is missing a corner " +
+                        "(Top Left, Top Right, Bottom Left, Bottom Right); the set was skipped";
+                    Debug.LogError($"[GenerationSetRunner] {Failure}");
+                    return;
+                }
+            }
             writer.WriteMarkersJson(placedMarkers);
             captureTarget = new RenderTexture(
                 set.CameraImageWidth, set.CameraImageHeight, 24);
@@ -134,16 +170,16 @@ namespace Simulation.CartPole.SyntheticDataGen
             while (captures < set.States)
             {
                 attempts++;
-                // The redraw guard: a draw only repeats on a Max Z
+                // The redraw guard: a draw only repeats on a bounds-fit
                 // discard, so this cap can only trip on a pathological
-                // configuration (Max Z too small for every pose the
+                // configuration (bounds too big for the frame at every pose the
                 // ranges can draw) - stop with the partial output
                 // named rather than spin forever.
                 if (attempts > set.States * 20 + 100)
                 {
                     Failure =
                         $"'{set.Name}': {attempts} draws " +
-                        $"produced only {captures} captures - the Max Z cap " +
+                        $"produced only {captures} captures - the bounds fit " +
                         "rejects nearly every draw; stopping with the " +
                         $"partial run at {writer.RunDirectory}";
                     Debug.LogError($"[GenerationSetRunner] {Failure}");
@@ -186,12 +222,12 @@ namespace Simulation.CartPole.SyntheticDataGen
             Object.Destroy(captureReadback);
             Debug.Log(
                 $"[GenerationSetRunner] '{set.Name}': {writer.Frames} frames, " +
-                $"{discarded} draws discarded on the Max Z cap, " +
+                $"{discarded} draws discarded by the bounds fit, " +
                 $"elapsed {stopwatch.Elapsed:hh\\:mm\\:ss}");
         }
 
         // One draw through the whole pipeline; false means the draw was
-        // discarded on the Max Z cap (nothing rendered, nothing
+        // discarded by the bounds fit (nothing rendered, nothing
         // written, does not count toward States). With a fixed pose the
         // robot takes that pose instead of a random state, and the pose's
         // props exist for this draw only. The draw order - environment,
@@ -247,29 +283,37 @@ namespace Simulation.CartPole.SyntheticDataGen
             }
         }
 
-        // The camera draw, the frustum fit, and the render, gate and
-        // write of one frame; false means the Max Z cap discarded it.
+        // The camera draw, the bounds fit, and the render, gate and
+        // write of one frame; false means the bounds fit discarded it.
         // Each range the set has is an offset from the camera's authored
-        // pose: lateral along world X and height along world Y in
-        // meters, pitch and yaw in degrees about the authored
-        // orientation. A range the set leaves out adds nothing and draws
-        // nothing.
+        // pose: lateral along world X, height along world Y and distance
+        // along world Z in meters, pitch, yaw and roll in degrees about the
+        // authored orientation. A range the set leaves out adds nothing and
+        // draws nothing. Distance and roll are drawn after the four older
+        // ranges, so a set without them draws the same sequence as before.
         private bool PlaceCameraAndCapture()
         {
             var lateral = DrawOrZero(set.CameraLateral);
             var height = DrawOrZero(set.CameraHeight);
             var pitch = DrawOrZero(set.CameraPitch);
             var yaw = DrawOrZero(set.CameraYaw);
+            var distance = DrawOrZero(set.CameraDistance);
+            var roll = DrawOrZero(set.CameraRoll);
             var transform = captureCamera.transform;
             transform.SetPositionAndRotation(
-                cameraBasePosition + new Vector3(lateral, height, 0f),
-                cameraBaseRotation * Quaternion.Euler(pitch, yaw, 0f));
-            var bounds = robotBounds.Bounds;
-            if (keepBoundsInFrustum && !FrustumFitter.Fit(captureCamera, bounds, set.MaxZ))
+                cameraBasePosition + new Vector3(lateral, height, distance),
+                cameraBaseRotation * Quaternion.Euler(pitch, yaw, roll));
+            // The camera renders into the capture image from here to the
+            // label projection: the bounds fit measures the frame the image
+            // will have (the render-configuration rule).
+            var previousTarget = captureCamera.targetTexture;
+            captureCamera.targetTexture = captureTarget;
+            if (keepBoundsInFrustum && !ResolveBounds())
             {
+                captureCamera.targetTexture = previousTarget;
                 Debug.Log(
                     $"[GenerationSetRunner] '{set.Name}': draw discarded - " +
-                    "the frustum compensation exceeded the Max Z cap");
+                    "no X/Y slide of the camera fits the robot bounds in the frame");
                 return false;
             }
 
@@ -285,8 +329,6 @@ namespace Simulation.CartPole.SyntheticDataGen
 
             var name = writer.NextFrameName();
             var previousActive = RenderTexture.active;
-            var previousTarget = captureCamera.targetTexture;
-            captureCamera.targetTexture = captureTarget;
             captureCamera.Render();
             // The label projection runs while the camera is still in
             // the configuration that rendered the image (the render-
@@ -357,6 +399,97 @@ namespace Simulation.CartPole.SyntheticDataGen
                 return set.States;
             }
             return Mathf.Max(0, frames);
+        }
+
+        // The visible frame's size in metres (x width, y height) at `depth`
+        // metres in front of the camera, as the camera is placed now. Call
+        // it while the camera renders into the capture image: the capture
+        // camera is a physical camera with a gate fit, so the frame's
+        // height depends on the image's aspect (the render-configuration
+        // rule). The size grows in proportion to the depth: at twice the
+        // distance the frame is twice as wide and twice as tall.
+        private Vector2 DetermineImageFrame(float depth)
+        {
+            var bottomLeft = captureCamera.ViewportToWorldPoint(new Vector3(0f, 0f, depth));
+            var bottomRight = captureCamera.ViewportToWorldPoint(new Vector3(1f, 0f, depth));
+            var topLeft = captureCamera.ViewportToWorldPoint(new Vector3(0f, 1f, depth));
+            return new Vector2(
+                Vector3.Distance(bottomLeft, bottomRight),
+                Vector3.Distance(bottomLeft, topLeft));
+        }
+
+        // Slides the camera along world X and world Y, never Z, until the
+        // four corners of the robot bounds are all inside the frame. False
+        // when no slide can do it: a corner is behind the camera, or the
+        // corners span more than the frame is wide or tall at their
+        // distance. Call it while the camera renders into the capture
+        // image (see DetermineImageFrame).
+        //
+        // The rule per corner: projected through the camera, a corner lands
+        // at a viewport point, 0 to 1 across and up the frame. Sliding the
+        // camera s metres along its own right axis moves that point
+        // s / (frame width at the corner's depth) to the left; for the
+        // point to stay between 0 and 1, s must lie between
+        // (x - 1) x width and x x width. Every corner gives such a range;
+        // the slide is the value nearest 0 inside all four (no slide when
+        // they are already in), and no value exists when the ranges do not
+        // overlap. The same holds for up and the frame height. The camera
+        // turns at most a few degrees from the authored pose, so world X
+        // and Y are close to, not exactly, its right and up axes: the
+        // slide is divided by how far world X (Y) points along right (up),
+        // and repeated from the new position until the corners are in,
+        // each pass removing most of what the last one left.
+        private bool ResolveBounds()
+        {
+            var transform = captureCamera.transform;
+            var rightPerWorldX = Vector3.Dot(transform.right, Vector3.right);
+            var upPerWorldY = Vector3.Dot(transform.up, Vector3.up);
+            if (rightPerWorldX < k_MinAxisAlignment || upPerWorldY < k_MinAxisAlignment)
+            {
+                return false;
+            }
+            // A corner within half a pixel of the frame's edge is in.
+            var tolerance = new Vector2(
+                0.5f / set.CameraImageWidth,
+                0.5f / set.CameraImageHeight);
+            for (var pass = 0; pass < k_MaxBoundsPasses; pass++)
+            {
+                var low = new Vector2(float.NegativeInfinity, float.NegativeInfinity);
+                var high = new Vector2(float.PositiveInfinity, float.PositiveInfinity);
+                var isInside = true;
+                foreach (var corner in boundsCorners)
+                {
+                    var viewport = captureCamera.WorldToViewportPoint(corner.position);
+                    if (viewport.z <= 0f)
+                    {
+                        return false;
+                    }
+                    isInside &=
+                        viewport.x >= -tolerance.x && viewport.x <= 1f + tolerance.x &&
+                        viewport.y >= -tolerance.y && viewport.y <= 1f + tolerance.y;
+                    var frame = DetermineImageFrame(viewport.z);
+                    low.x = Mathf.Max(low.x, (viewport.x - 1f) * frame.x);
+                    high.x = Mathf.Min(high.x, viewport.x * frame.x);
+                    low.y = Mathf.Max(low.y, (viewport.y - 1f) * frame.y);
+                    high.y = Mathf.Min(high.y, viewport.y * frame.y);
+                }
+                if (isInside)
+                {
+                    return true;
+                }
+                if (low.x > high.x || low.y > high.y)
+                {
+                    return false;
+                }
+                var slide = new Vector2(
+                    Mathf.Clamp(0f, low.x, high.x),
+                    Mathf.Clamp(0f, low.y, high.y));
+                transform.position += new Vector3(
+                    slide.x / rightPerWorldX,
+                    slide.y / upPerWorldY,
+                    0f);
+            }
+            return false;
         }
 
         private float Draw(float2 range)

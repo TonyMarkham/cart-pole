@@ -28,7 +28,7 @@ namespace Simulation.CartPole.SyntheticDataGen.Proto {
             "A21pbhgBIAEoAhILCgNtYXgYAiABKAIiKgoKSm9pbnRWYWx1ZRINCgVqb2lu",
             "dBgBIAEoCRINCgV2YWx1ZRgCIAEoAiJPCglGaXhlZFBvc2USDAoEbmFtZRgB",
             "IAEoCRIlCgZqb2ludHMYAiADKAsyFS5nZW5lcmF0b3IuSm9pbnRWYWx1ZRIN",
-            "CgVwcm9wcxgDIAMoCSLvBAoNR2VuZXJhdGlvblNldBIMCgRuYW1lGAEgASgJ",
+            "CgVwcm9wcxgDIAMoCSKwBQoNR2VuZXJhdGlvblNldBIMCgRuYW1lGAEgASgJ",
             "EgwKBHNlZWQYAyABKAUSDgoGc3RhdGVzGAQgASgNEikKC2ZpeGVkX3Bvc2Vz",
             "GAUgAygLMhQuZ2VuZXJhdG9yLkZpeGVkUG9zZRIZChFmaXhlZF9wb3NlX2Zy",
             "YW1lcxgGIAEoDRIaChJjYW1lcmFfaW1hZ2Vfd2lkdGgYByABKA0SGwoTY2Ft",
@@ -36,24 +36,26 @@ namespace Simulation.CartPole.SyntheticDataGen.Proto {
             "Z2VuZXJhdG9yLlJhbmdlEiYKDGNhbWVyYV9waXRjaBgKIAEoCzIQLmdlbmVy",
             "YXRvci5SYW5nZRInCg1jYW1lcmFfaGVpZ2h0GAsgASgLMhAuZ2VuZXJhdG9y",
             "LlJhbmdlEigKDmNhbWVyYV9sYXRlcmFsGAwgASgLMhAuZ2VuZXJhdG9yLlJh",
-            "bmdlEhIKBW1heF96GA0gASgCSACIAQESDQoFZGVza3MYDiADKAkSEAoIc2t5",
-            "Ym94ZXMYDyADKAkSJAoKc2t5Ym94X3lhdxgQIAEoCzIQLmdlbmVyYXRvci5S",
-            "YW5nZRIjCglsaWdodF95YXcYESABKAsyEC5nZW5lcmF0b3IuUmFuZ2USJQoL",
-            "bGlnaHRfcGl0Y2gYEiABKAsyEC5nZW5lcmF0b3IuUmFuZ2USKQoPbGlnaHRf",
-            "aW50ZW5zaXR5GBMgASgLMhAuZ2VuZXJhdG9yLlJhbmdlEikKD3VubGltaXRl",
-            "ZF9oaW5nZRgUIAEoCzIQLmdlbmVyYXRvci5SYW5nZUIICgZfbWF4X3pKBAgC",
-            "EANSBXNwbGl0IlAKDUdlbmVyYXRpb25Kb2ISJQoDc2V0GAEgASgLMhguZ2Vu",
-            "ZXJhdG9yLkdlbmVyYXRpb25TZXQSGAoQb3V0cHV0X2RpcmVjdG9yeRgCIAEo",
-            "CSJGCg5HZW5lcmF0aW9uRG9uZRIVCg1ydW5fZGlyZWN0b3J5GAEgASgJEg4K",
-            "BmZyYW1lcxgCIAEoDRINCgVlcnJvchgDIAEoCUItqgIqU2ltdWxhdGlvbi5D",
-            "YXJ0UG9sZS5TeW50aGV0aWNEYXRhR2VuLlByb3RvYgZwcm90bzM="));
+            "bmdlEiUKC2NhbWVyYV9yb2xsGBUgASgLMhAuZ2VuZXJhdG9yLlJhbmdlEikK",
+            "D2NhbWVyYV9kaXN0YW5jZRgWIAEoCzIQLmdlbmVyYXRvci5SYW5nZRINCgVk",
+            "ZXNrcxgOIAMoCRIQCghza3lib3hlcxgPIAMoCRIkCgpza3lib3hfeWF3GBAg",
+            "ASgLMhAuZ2VuZXJhdG9yLlJhbmdlEiMKCWxpZ2h0X3lhdxgRIAEoCzIQLmdl",
+            "bmVyYXRvci5SYW5nZRIlCgtsaWdodF9waXRjaBgSIAEoCzIQLmdlbmVyYXRv",
+            "ci5SYW5nZRIpCg9saWdodF9pbnRlbnNpdHkYEyABKAsyEC5nZW5lcmF0b3Iu",
+            "UmFuZ2USKQoPdW5saW1pdGVkX2hpbmdlGBQgASgLMhAuZ2VuZXJhdG9yLlJh",
+            "bmdlSgQIAhADSgQIDRAOUgVzcGxpdFIFbWF4X3oiUAoNR2VuZXJhdGlvbkpv",
+            "YhIlCgNzZXQYASABKAsyGC5nZW5lcmF0b3IuR2VuZXJhdGlvblNldBIYChBv",
+            "dXRwdXRfZGlyZWN0b3J5GAIgASgJIkYKDkdlbmVyYXRpb25Eb25lEhUKDXJ1",
+            "bl9kaXJlY3RvcnkYASABKAkSDgoGZnJhbWVzGAIgASgNEg0KBWVycm9yGAMg",
+            "ASgJQi2qAipTaW11bGF0aW9uLkNhcnRQb2xlLlN5bnRoZXRpY0RhdGFHZW4u",
+            "UHJvdG9iBnByb3RvMw=="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { },
           new pbr::GeneratedClrTypeInfo(null, null, new pbr::GeneratedClrTypeInfo[] {
             new pbr::GeneratedClrTypeInfo(typeof(global::Simulation.CartPole.SyntheticDataGen.Proto.Range), global::Simulation.CartPole.SyntheticDataGen.Proto.Range.Parser, new[]{ "Min", "Max" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Simulation.CartPole.SyntheticDataGen.Proto.JointValue), global::Simulation.CartPole.SyntheticDataGen.Proto.JointValue.Parser, new[]{ "Joint", "Value" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Simulation.CartPole.SyntheticDataGen.Proto.FixedPose), global::Simulation.CartPole.SyntheticDataGen.Proto.FixedPose.Parser, new[]{ "Name", "Joints", "Props" }, null, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Simulation.CartPole.SyntheticDataGen.Proto.GenerationSet), global::Simulation.CartPole.SyntheticDataGen.Proto.GenerationSet.Parser, new[]{ "Name", "Seed", "States", "FixedPoses", "FixedPoseFrames", "CameraImageWidth", "CameraImageHeight", "CameraYaw", "CameraPitch", "CameraHeight", "CameraLateral", "MaxZ", "Desks", "Skyboxes", "SkyboxYaw", "LightYaw", "LightPitch", "LightIntensity", "UnlimitedHinge" }, new[]{ "MaxZ" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Simulation.CartPole.SyntheticDataGen.Proto.GenerationSet), global::Simulation.CartPole.SyntheticDataGen.Proto.GenerationSet.Parser, new[]{ "Name", "Seed", "States", "FixedPoses", "FixedPoseFrames", "CameraImageWidth", "CameraImageHeight", "CameraYaw", "CameraPitch", "CameraHeight", "CameraLateral", "CameraRoll", "CameraDistance", "Desks", "Skyboxes", "SkyboxYaw", "LightYaw", "LightPitch", "LightIntensity", "UnlimitedHinge" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Simulation.CartPole.SyntheticDataGen.Proto.GenerationJob), global::Simulation.CartPole.SyntheticDataGen.Proto.GenerationJob.Parser, new[]{ "Set", "OutputDirectory" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Simulation.CartPole.SyntheticDataGen.Proto.GenerationDone), global::Simulation.CartPole.SyntheticDataGen.Proto.GenerationDone.Parser, new[]{ "RunDirectory", "Frames", "Error" }, null, null, null, null)
           }));
@@ -814,7 +816,6 @@ namespace Simulation.CartPole.SyntheticDataGen.Proto {
   {
     private static readonly pb::MessageParser<GenerationSet> _parser = new pb::MessageParser<GenerationSet>(() => new GenerationSet());
     private pb::UnknownFieldSet _unknownFields;
-    private int _hasBits0;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pb::MessageParser<GenerationSet> Parser { get { return _parser; } }
@@ -842,7 +843,6 @@ namespace Simulation.CartPole.SyntheticDataGen.Proto {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public GenerationSet(GenerationSet other) : this() {
-      _hasBits0 = other._hasBits0;
       name_ = other.name_;
       seed_ = other.seed_;
       states_ = other.states_;
@@ -854,7 +854,8 @@ namespace Simulation.CartPole.SyntheticDataGen.Proto {
       cameraPitch_ = other.cameraPitch_ != null ? other.cameraPitch_.Clone() : null;
       cameraHeight_ = other.cameraHeight_ != null ? other.cameraHeight_.Clone() : null;
       cameraLateral_ = other.cameraLateral_ != null ? other.cameraLateral_.Clone() : null;
-      maxZ_ = other.maxZ_;
+      cameraRoll_ = other.cameraRoll_ != null ? other.cameraRoll_.Clone() : null;
+      cameraDistance_ = other.cameraDistance_ != null ? other.cameraDistance_.Clone() : null;
       desks_ = other.desks_.Clone();
       skyboxes_ = other.skyboxes_.Clone();
       skyboxYaw_ = other.skyboxYaw_ != null ? other.skyboxYaw_.Clone() : null;
@@ -978,8 +979,8 @@ namespace Simulation.CartPole.SyntheticDataGen.Proto {
     private global::Simulation.CartPole.SyntheticDataGen.Proto.Range cameraYaw_;
     /// <summary>
     /// Camera offsets from its pose in the scene, each drawn per frame; a range
-    /// left out draws nothing (offset 0). Yaw and pitch in degrees, height
-    /// (world Y) and lateral (world X) in meters.
+    /// left out draws nothing (offset 0). Yaw, pitch and roll in degrees,
+    /// height (world Y), lateral (world X) and distance (world Z) in meters.
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
@@ -1026,36 +1027,28 @@ namespace Simulation.CartPole.SyntheticDataGen.Proto {
       }
     }
 
-    /// <summary>Field number for the "max_z" field.</summary>
-    public const int MaxZFieldNumber = 13;
-    private readonly static float MaxZDefaultValue = 0F;
-
-    private float maxZ_;
-    /// <summary>
-    /// The frustum-fit cap in meters: a draw whose camera must back off further
-    /// than this to keep the robot in frame is discarded and redrawn. Left out:
-    /// no cap.
-    /// </summary>
+    /// <summary>Field number for the "camera_roll" field.</summary>
+    public const int CameraRollFieldNumber = 21;
+    private global::Simulation.CartPole.SyntheticDataGen.Proto.Range cameraRoll_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public float MaxZ {
-      get { if ((_hasBits0 & 1) != 0) { return maxZ_; } else { return MaxZDefaultValue; } }
+    public global::Simulation.CartPole.SyntheticDataGen.Proto.Range CameraRoll {
+      get { return cameraRoll_; }
       set {
-        _hasBits0 |= 1;
-        maxZ_ = value;
+        cameraRoll_ = value;
       }
     }
-    /// <summary>Gets whether the "max_z" field is set</summary>
+
+    /// <summary>Field number for the "camera_distance" field.</summary>
+    public const int CameraDistanceFieldNumber = 22;
+    private global::Simulation.CartPole.SyntheticDataGen.Proto.Range cameraDistance_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public bool HasMaxZ {
-      get { return (_hasBits0 & 1) != 0; }
-    }
-    /// <summary>Clears the value of the "max_z" field</summary>
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public void ClearMaxZ() {
-      _hasBits0 &= ~1;
+    public global::Simulation.CartPole.SyntheticDataGen.Proto.Range CameraDistance {
+      get { return cameraDistance_; }
+      set {
+        cameraDistance_ = value;
+      }
     }
 
     /// <summary>Field number for the "desks" field.</summary>
@@ -1186,7 +1179,8 @@ namespace Simulation.CartPole.SyntheticDataGen.Proto {
       if (!object.Equals(CameraPitch, other.CameraPitch)) return false;
       if (!object.Equals(CameraHeight, other.CameraHeight)) return false;
       if (!object.Equals(CameraLateral, other.CameraLateral)) return false;
-      if (!pbc::ProtobufEqualityComparers.BitwiseSingleEqualityComparer.Equals(MaxZ, other.MaxZ)) return false;
+      if (!object.Equals(CameraRoll, other.CameraRoll)) return false;
+      if (!object.Equals(CameraDistance, other.CameraDistance)) return false;
       if(!desks_.Equals(other.desks_)) return false;
       if(!skyboxes_.Equals(other.skyboxes_)) return false;
       if (!object.Equals(SkyboxYaw, other.SkyboxYaw)) return false;
@@ -1212,7 +1206,8 @@ namespace Simulation.CartPole.SyntheticDataGen.Proto {
       if (cameraPitch_ != null) hash ^= CameraPitch.GetHashCode();
       if (cameraHeight_ != null) hash ^= CameraHeight.GetHashCode();
       if (cameraLateral_ != null) hash ^= CameraLateral.GetHashCode();
-      if (HasMaxZ) hash ^= pbc::ProtobufEqualityComparers.BitwiseSingleEqualityComparer.GetHashCode(MaxZ);
+      if (cameraRoll_ != null) hash ^= CameraRoll.GetHashCode();
+      if (cameraDistance_ != null) hash ^= CameraDistance.GetHashCode();
       hash ^= desks_.GetHashCode();
       hash ^= skyboxes_.GetHashCode();
       if (skyboxYaw_ != null) hash ^= SkyboxYaw.GetHashCode();
@@ -1279,10 +1274,6 @@ namespace Simulation.CartPole.SyntheticDataGen.Proto {
         output.WriteRawTag(98);
         output.WriteMessage(CameraLateral);
       }
-      if (HasMaxZ) {
-        output.WriteRawTag(109);
-        output.WriteFloat(MaxZ);
-      }
       desks_.WriteTo(output, _repeated_desks_codec);
       skyboxes_.WriteTo(output, _repeated_skyboxes_codec);
       if (skyboxYaw_ != null) {
@@ -1304,6 +1295,14 @@ namespace Simulation.CartPole.SyntheticDataGen.Proto {
       if (unlimitedHinge_ != null) {
         output.WriteRawTag(162, 1);
         output.WriteMessage(UnlimitedHinge);
+      }
+      if (cameraRoll_ != null) {
+        output.WriteRawTag(170, 1);
+        output.WriteMessage(CameraRoll);
+      }
+      if (cameraDistance_ != null) {
+        output.WriteRawTag(178, 1);
+        output.WriteMessage(CameraDistance);
       }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
@@ -1356,10 +1355,6 @@ namespace Simulation.CartPole.SyntheticDataGen.Proto {
         output.WriteRawTag(98);
         output.WriteMessage(CameraLateral);
       }
-      if (HasMaxZ) {
-        output.WriteRawTag(109);
-        output.WriteFloat(MaxZ);
-      }
       desks_.WriteTo(ref output, _repeated_desks_codec);
       skyboxes_.WriteTo(ref output, _repeated_skyboxes_codec);
       if (skyboxYaw_ != null) {
@@ -1381,6 +1376,14 @@ namespace Simulation.CartPole.SyntheticDataGen.Proto {
       if (unlimitedHinge_ != null) {
         output.WriteRawTag(162, 1);
         output.WriteMessage(UnlimitedHinge);
+      }
+      if (cameraRoll_ != null) {
+        output.WriteRawTag(170, 1);
+        output.WriteMessage(CameraRoll);
+      }
+      if (cameraDistance_ != null) {
+        output.WriteRawTag(178, 1);
+        output.WriteMessage(CameraDistance);
       }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(ref output);
@@ -1423,8 +1426,11 @@ namespace Simulation.CartPole.SyntheticDataGen.Proto {
       if (cameraLateral_ != null) {
         size += 1 + pb::CodedOutputStream.ComputeMessageSize(CameraLateral);
       }
-      if (HasMaxZ) {
-        size += 1 + 4;
+      if (cameraRoll_ != null) {
+        size += 2 + pb::CodedOutputStream.ComputeMessageSize(CameraRoll);
+      }
+      if (cameraDistance_ != null) {
+        size += 2 + pb::CodedOutputStream.ComputeMessageSize(CameraDistance);
       }
       size += desks_.CalculateSize(_repeated_desks_codec);
       size += skyboxes_.CalculateSize(_repeated_skyboxes_codec);
@@ -1498,8 +1504,17 @@ namespace Simulation.CartPole.SyntheticDataGen.Proto {
         }
         CameraLateral.MergeFrom(other.CameraLateral);
       }
-      if (other.HasMaxZ) {
-        MaxZ = other.MaxZ;
+      if (other.cameraRoll_ != null) {
+        if (cameraRoll_ == null) {
+          CameraRoll = new global::Simulation.CartPole.SyntheticDataGen.Proto.Range();
+        }
+        CameraRoll.MergeFrom(other.CameraRoll);
+      }
+      if (other.cameraDistance_ != null) {
+        if (cameraDistance_ == null) {
+          CameraDistance = new global::Simulation.CartPole.SyntheticDataGen.Proto.Range();
+        }
+        CameraDistance.MergeFrom(other.CameraDistance);
       }
       desks_.Add(other.desks_);
       skyboxes_.Add(other.skyboxes_);
@@ -1608,10 +1623,6 @@ namespace Simulation.CartPole.SyntheticDataGen.Proto {
             input.ReadMessage(CameraLateral);
             break;
           }
-          case 109: {
-            MaxZ = input.ReadFloat();
-            break;
-          }
           case 114: {
             desks_.AddEntriesFrom(input, _repeated_desks_codec);
             break;
@@ -1653,6 +1664,20 @@ namespace Simulation.CartPole.SyntheticDataGen.Proto {
               UnlimitedHinge = new global::Simulation.CartPole.SyntheticDataGen.Proto.Range();
             }
             input.ReadMessage(UnlimitedHinge);
+            break;
+          }
+          case 170: {
+            if (cameraRoll_ == null) {
+              CameraRoll = new global::Simulation.CartPole.SyntheticDataGen.Proto.Range();
+            }
+            input.ReadMessage(CameraRoll);
+            break;
+          }
+          case 178: {
+            if (cameraDistance_ == null) {
+              CameraDistance = new global::Simulation.CartPole.SyntheticDataGen.Proto.Range();
+            }
+            input.ReadMessage(CameraDistance);
             break;
           }
         }
@@ -1730,10 +1755,6 @@ namespace Simulation.CartPole.SyntheticDataGen.Proto {
             input.ReadMessage(CameraLateral);
             break;
           }
-          case 109: {
-            MaxZ = input.ReadFloat();
-            break;
-          }
           case 114: {
             desks_.AddEntriesFrom(ref input, _repeated_desks_codec);
             break;
@@ -1775,6 +1796,20 @@ namespace Simulation.CartPole.SyntheticDataGen.Proto {
               UnlimitedHinge = new global::Simulation.CartPole.SyntheticDataGen.Proto.Range();
             }
             input.ReadMessage(UnlimitedHinge);
+            break;
+          }
+          case 170: {
+            if (cameraRoll_ == null) {
+              CameraRoll = new global::Simulation.CartPole.SyntheticDataGen.Proto.Range();
+            }
+            input.ReadMessage(CameraRoll);
+            break;
+          }
+          case 178: {
+            if (cameraDistance_ == null) {
+              CameraDistance = new global::Simulation.CartPole.SyntheticDataGen.Proto.Range();
+            }
+            input.ReadMessage(CameraDistance);
             break;
           }
         }

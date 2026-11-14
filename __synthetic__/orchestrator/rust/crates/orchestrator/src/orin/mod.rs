@@ -8,6 +8,7 @@ pub(crate) mod reset_message;
 // ---------------------------------------------------------------------------------------------- //
 
 use crate::{
+    camera::camera_transform::CameraTransform,
     orin::{
         joint_qpos::JointQpos,
         orin_reply::{OrinReply, POOL_ENTRIES},
@@ -125,6 +126,7 @@ pub(crate) async fn send_pose(
     id: u32,
     capture: &Capture,
     names: &Names,
+    camera: Option<CameraTransform>,
 ) -> Result<()> {
     let message = PoseMessage {
         id,
@@ -139,6 +141,7 @@ pub(crate) async fn send_pose(
                 qpos: capture.pose.pole,
             },
         ],
+        camera_transform: camera,
     };
     orin.send(Message::text(serde_json::to_string(&message)?))
         .await

@@ -4,9 +4,11 @@
 //! (`player_grid`), each player's port and window (`placement`), which
 //! player replies count as a finished run
 //! (`check_done`), the class names in a run's markers.json (`marker_names`)
-//! and data.yaml (`data_yaml`). The set they share is in `fixture`; a test
-//! that writes files gets its own folder from `temp_dir`.
+//! and data.yaml (`data_yaml`), and the players' camera pose argument
+//! (`camera_transform`). The set they share is in `fixture`; a test that
+//! writes files gets its own folder from `temp_dir`.
 
+mod camera_transform;
 mod check_done;
 mod data_yaml;
 mod fixture;

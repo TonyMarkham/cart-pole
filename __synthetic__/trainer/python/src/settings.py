@@ -15,6 +15,7 @@ paths resolve against the file that holds them, so the trainer runs the
 same from any working directory.
 """
 
+import math
 import tomllib
 from dataclasses import dataclass
 from pathlib import Path
@@ -31,6 +32,24 @@ DEFAULT_PATH = Path(__file__).resolve().parent.parent / "settings.toml"
 
 SEED_LIMIT = 2**64  # the orchestrator reads the seed as a u64
 INSTANCES_MAX = 12  # the orchestrator's limit on rows x columns (__documentation__/synthetic-loop-dia.md, Training instances)
+
+CAMERA_TRANSFORM_PARTS = 6  # px, py, pz in metres, then rx, ry, rz in degrees
+
+
+def read_camera_transform(o: dict) -> tuple[float, ...] | None:
+    """[orchestrator] camera_transform, or None when it is left out: six
+    finite numbers, the camera's position then its Euler rotation
+    (__documentation__/synthetic-loop-dia.md, Contracts, the camera pose)."""
+    if "camera_transform" not in o:
+        return None
+    value = o["camera_transform"]
+    if (not isinstance(value, list) or len(value) != CAMERA_TRANSFORM_PARTS
+            or not all(isinstance(v, (int, float)) and not isinstance(v, bool) and math.isfinite(v)
+                       for v in value)):
+        raise ValueError("orchestrator.camera_transform: [px, py, pz, rx, ry, rz], six finite numbers "
+                         f"(metres, then degrees), got {value!r}")
+    return tuple(float(v) for v in value)
+
 
 SITE_KEYS = ("left_site", "right_site", "pivot_site", "end_site", "target_site", "dynamic_target_site",
              "cart_site", "cart_target_site", "left_rail_site", "left_cart_site", "right_rail_site",
@@ -83,6 +102,7 @@ class Settings:
     seed: int
     timings: Timings  # the random timings' bands and the loss
     calibration_stop_gap: float  # m: the calibration's end stops, short of each base
+    camera_transform: tuple[float, ...] | None  # the camera's pose, or None: it keeps its pose in the scene
     mjcf: Mjcf
     drive: Drive
     gym: Path  # [trainer] gym (absolute)
@@ -126,6 +146,8 @@ class Settings:
                     *self.timings.arguments(),
                     "--max-episode-steps", str(read_max_episode_steps(self.gym)),
                     "--calibration-stop-gap", str(self.calibration_stop_gap)]
+        if self.camera_transform is not None:
+            inserted += ["--camera-transform", ",".join(str(v) for v in self.camera_transform)]
         arguments = list(self.arguments)
         if out is not None:
             own = arguments.index("--orin") if "--orin" in arguments else len(arguments)
@@ -169,6 +191,10 @@ class Settings:
         except ValueError as error:
             raise ValueError(f"{path}: {error}") from None
         calibration_stop_gap = checks.number(o, "calibration_stop_gap", "orchestrator.", 0.0)
+        try:
+            camera_transform = read_camera_transform(o)
+        except ValueError as error:
+            raise ValueError(f"{path}: {error}") from None
         m = checks.table(raw, "mjcf", "")
         mjcf = Mjcf(
             model=(cwd / checks.present(m, "model", "mjcf.")).resolve(),
@@ -186,7 +212,8 @@ class Settings:
             path=path, program=program, arguments=tuple(command[1:]), orchestrator_cwd=cwd,
             orin_port=orin_port, unity_port=unity_port, instance_rows=rows, instance_columns=columns,
             screen_width=screen_width, screen_height=screen_height, seed=seed,
-            timings=timings, calibration_stop_gap=calibration_stop_gap, mjcf=mjcf, drive=drive,
+            timings=timings, calibration_stop_gap=calibration_stop_gap,
+            camera_transform=camera_transform, mjcf=mjcf, drive=drive,
             gym=named_file(path, t, "gym"),
             measures=named_file(path, t, "measures") if "measures" in t else None,
         )

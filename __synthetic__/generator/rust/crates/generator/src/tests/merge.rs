@@ -32,7 +32,7 @@ fn given_a_set_file_with_only_a_seed_when_merged_then_only_the_seed_changes() {
     assert_eq!(set.states, master.states);
     assert_eq!(set.desks, master.desks);
     assert_eq!(set.fixed_poses.len(), master.fixed_poses.len());
-    assert!(set.max_z.is_some_and(|max_z| approx(max_z, 2.5)));
+    assert!(set.camera_distance.is_some_and(|range| approx(range.max, 0.1)));
 }
 
 #[test]

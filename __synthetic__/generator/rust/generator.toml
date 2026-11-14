@@ -43,6 +43,14 @@ instance_columns = 3
 screen_width = 3_840
 screen_height = 2_112
 
+# Optional: the camera's pose in every player, [px, py, pz, rx, ry, rz], world
+# position in metres then Euler rotation in degrees, in Unity's frame, given to
+# each player as -camera-transform (PlayerController). Each set's camera ranges
+# (cameraLateral, cameraHeight, cameraDistance, cameraPitch, cameraYaw,
+# cameraRoll) are offsets from it. Left out, the camera keeps its pose in the
+# player's scene. Example, 1.0 m up and 2.5 m in front of the rig:
+camera_transform = [0.0, 1.0, -2.5, 0.0, 0.0, 0.0]
+
 # Player k (from 0) listens on 127.0.0.1:first_port + k (-state-server).
 first_port = 9101
 

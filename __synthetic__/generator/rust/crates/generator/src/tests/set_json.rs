@@ -19,7 +19,7 @@ fn given_a_complete_set_when_parsed_then_every_written_field_is_read() {
     assert!(approx(set.fixed_poses[0].joints[1].value, -180.0));
     assert_eq!(set.fixed_poses[0].props, ["T-Square (Idler)"]);
     assert!(set.camera_yaw.is_some_and(|range| approx(range.max, 5.0)));
-    assert!(set.max_z.is_some_and(|max_z| approx(max_z, 2.5)));
+    assert!(set.camera_distance.is_some_and(|range| approx(range.max, 0.1)));
 }
 
 #[test]
