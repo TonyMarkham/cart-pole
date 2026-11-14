@@ -75,8 +75,13 @@ seeds or new sets (Step 2).
 >
 >> ### PowerShell (the PC's terminal)
 >> ```pwsh
->> Get-Item unity/projects/SyntheticCamera/Build/SyntheticCamera.exe | Select-Object LastWriteTime
+>> Get-Item unity/projects/SyntheticCamera/Build/SyntheticCamera_Data/level0 | Select-Object LastWriteTime
 >> ```
+>
+> `level0` is the built scene, which Unity writes again on every build.
+> `SyntheticCamera.exe` is no guide: it is only Unity's launcher, and a
+> rebuild into the same folder leaves it as it was (measured 2026-11-14: a
+> rebuild at 10:52 left the `.exe` at its first build, 2026-11-11).
 >
 > To rebuild it:
 >
