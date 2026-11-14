@@ -346,10 +346,12 @@ adds repo structure around them, never overrides them.
   and kept apart from `__live__/`. Each part is a folder by language:
   `orchestrator/rust/`, `orin/python/` and `trainer/python/`. The Unity project
   and its sim-loop package, `__object_detection__/` and `__documentation__/` stay
-  where they are. Its two numbered docs have the steps:
-  `__synthetic__/01-TRAIN.md` (training the policy, with the layout of the
-  folders training uses) and `__synthetic__/02-DEPLOY.md` (giving the robot
-  the trained policy).
+  where they are. Its three numbered docs have the steps, each starting
+  where the one before ends: `__synthetic__/01-TRAIN.md` (training the
+  policy, with the layout of the folders training uses; it ends with a
+  trained session), `__synthetic__/02-DEPLOY.md` (exporting that session's
+  policy, checking it and giving it to the robot; keeping it or going back)
+  and `__synthetic__/03-RUN.md` (one balance run on the rig).
 - **The Rust workspace** (`Cargo.toml` at the repo root) — the synthetic
   loop's parts under `__synthetic__/orchestrator/rust/crates/`:
   `orchestrator/` (the loop's driver; it began as the Unity leg's stub),

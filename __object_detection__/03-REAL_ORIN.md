@@ -198,6 +198,14 @@ Two programs load the engine, each only when it starts, so both are restarted
 > unpacks it there. Files of the same name are replaced and nothing is
 > deleted, so what only the Orin has (its lens and calibration results) stays.
 >
+> > [!WARNING]
+> > The whole folder goes, so the PC's `saved/policy.npz` goes too, and Step
+> > 7's brain runs it. If it is not the policy the robot should run, put the
+> > right one back on the PC first ([02-DEPLOY.md](../__synthetic__/02-DEPLOY.md),
+> > *Going back*). A policy that trained with another detector than the one
+> > this file installs should not run with it: 02-DEPLOY.md's Step 2b
+> > compares the two.
+>
 > > [!IMPORTANT]
 > > Run in the PC's terminal, from the repo root, `D:/git/cart-pole/`
 >
@@ -366,8 +374,10 @@ Two programs load the engine, each only when it starts, so both are restarted
 >>
 >> has a `worker ready:` line naming the policy, then
 >> `brain idle at http://127.0.0.1:8091` (`__live__/orin/rust/DEPLOY.md`,
->> step 9). A `[Worker Error]` line instead means the worker could not start;
->> its own message is above it in the file.
+>> step 9). A line `Error: Worker { message: "…" … }` instead means the
+>> worker could not start, and `message` says why; if it says the worker
+>> ended before its ready line, the worker's own message is above it in the
+>> file.
 
 ## Going back
 

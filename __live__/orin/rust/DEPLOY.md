@@ -85,7 +85,10 @@ The Orin is `robo-orin`, at `192.168.0.215`, login `tony`.
 > > > **B4. The Orin's Python**, `~/live-orin-python`, with its environment made
 > > > and `src/policy.py`, `src/brain_worker.py` and `saved/policy.npz` in it: the
 > > > brain starts its worker there (`settings.toml`, `[brain] worker_dir`). The
-> > > Python's own README says how it gets there.
+> > > folder is packed and copied from the PC by `__synthetic__/02-DEPLOY.md`'s
+> > > Step 4 (or `__object_detection__/03-REAL_ORIN.md`'s Step 3); its
+> > > environment is made once on the Orin by the command in
+> > > `__live__/orin/python/readme-old.md`.
 
 > ## Deploying
 >
@@ -351,10 +354,12 @@ The Orin is `robo-orin`, at `192.168.0.215`, login `tony`.
 > > > > `brain idle at http://127.0.0.1:8091`.
 > > >
 > > > > [!FAILURE]
-> > > > A `[Worker Error]` line: the worker could not start, and its own message
-> > > > is above it in the file. The usual causes are the Python folder or its
-> > > > environment missing (B4), or the engine or `saved/policy.npz` not where
-> > > > the Python's `settings.toml` says.
+> > > > A line `Error: Worker { message: "…" … }`: the worker could not start,
+> > > > and `message` says why; if it says the worker ended before its ready
+> > > > line, the worker's own message is above it in the file. The usual
+> > > > causes are the Python folder or its environment missing (B4), or the
+> > > > engine or `saved/policy.npz` not where the Python's `settings.toml`
+> > > > says.
 
 > ## Checking the deploy
 >
